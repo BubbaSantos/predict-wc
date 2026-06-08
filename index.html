@@ -255,13 +255,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .pay-note{font-size:.72rem;color:var(--text-muted);line-height:1.5;}
 
 
-  /* LOADING SCREEN */
-  #app-loader{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;transition:opacity .3s;}
-  #app-loader.fade-out{opacity:0;pointer-events:none;}
-  .loader-logo{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:.15em;color:var(--accent);}
-  .loader-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .loader-text{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.12em;color:var(--text-muted);text-transform:uppercase;}
+  
 
 
 
@@ -491,8 +485,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 </style>
 </head>
 <body>
-
-<div id="app-loader"><div class="loader-logo">⚽ Predictor</div><div class="loader-spinner"></div><div class="loader-text">Loading…</div></div>
 
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
@@ -2756,13 +2748,6 @@ function initTheme(){
   }
 }
 
-function hideLoader(){
-  const el = document.getElementById('app-loader');
-  if(!el) return;
-  el.classList.add('fade-out');
-  setTimeout(()=>{ el.style.display='none'; }, 320);
-}
-
 initTheme();
 // Restore session
 loadSession();
@@ -2772,11 +2757,7 @@ if(currentGroup&&currentPlayer){
   enterApp();
 }
 // Hide loader once fonts/scripts are ready
-// Hide loader with hard timeout regardless of fonts
-setTimeout(hideLoader, 500);
-if(document.fonts && document.fonts.ready){
-  document.fonts.ready.then(hideLoader);
-}
+
 
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
