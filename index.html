@@ -233,6 +233,27 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .score-input{width:36px;height:32px;font-size:.9rem;}
 
 
+
+
+  .lb-filter-btn{background:none;border:none;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;padding:.35rem .75rem;cursor:pointer;transition:all .15s;border-right:1px solid var(--border);}
+  .lb-filter-btn:last-child{border-right:none;}
+  .lb-filter-btn:hover{color:var(--text);background:var(--surface2);}
+  .lb-filter-btn.active{background:var(--surface2);color:var(--group-accent);}
+
+  /* PAY/FUN MODAL */
+  .pay-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:450;display:flex;align-items:center;justify-content:center;padding:1rem;}
+  .pay-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.75rem;max-width:400px;width:100%;text-align:center;}
+  .pay-modal-icon{font-size:2.5rem;margin-bottom:.75rem;}
+  .pay-modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.06em;margin-bottom:.5rem;color:var(--group-accent);}
+  .pay-modal-body{font-size:.875rem;color:var(--text-dim);line-height:1.7;margin-bottom:1.5rem;}
+  .pay-modal-body strong{color:var(--text);}
+  .pay-btns{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
+  .pay-btn-money{background:var(--group-accent);color:#000;border:none;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;padding:.75rem 1rem;border-radius:8px;cursor:pointer;transition:all .15s;}
+  .pay-btn-money:hover{filter:brightness(1.1);}
+  .pay-btn-fun{background:none;border:2px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;padding:.75rem 1rem;border-radius:8px;cursor:pointer;transition:all .15s;}
+  .pay-btn-fun:hover{border-color:var(--text-dim);}
+  .pay-note{font-size:.72rem;color:var(--text-muted);line-height:1.5;}
+
   /* BURGER MENU */
   #burger-btn { display: none; }
   @media(max-width:640px){
@@ -494,7 +515,14 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <div id="view-leaderboard" class="view">
       <div class="page-header">
         <div class="page-title">Leaderboard</div>
-        <button class="sync-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <div id="lb-filter-btns" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:7px;display:flex;overflow:hidden;">
+            <button id="lb-filter-all" class="lb-filter-btn active" onclick="setLbFilter('all')">All</button>
+            <button id="lb-filter-money" class="lb-filter-btn" onclick="setLbFilter('money')">💸 Money</button>
+            <button id="lb-filter-fun" class="lb-filter-btn" onclick="setLbFilter('fun')">😄 Fun</button>
+          </div>
+          <button class="sync-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
+        </div>
       </div>
       <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:1.25rem;">Tap any player to see their predictions.</p>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
@@ -584,6 +612,30 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       </div>
       <div id="admin-panel-controls" class="admin-panel">
         <div class="status-card">
+          <h3>Entry Mode</h3>
+          <div class="toggle-row" style="margin-bottom:.75rem;">
+            <div>
+              <div class="toggle-label" id="entry-mode-label">Money Mode</div>
+              <div class="toggle-desc" id="entry-mode-desc">Players are asked if they want to pay in when they log in</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="entry-mode-toggle" onchange="toggleEntryMode()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;" id="entry-mode-fields">
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Entry Fee</label>
+              <input id="entry-fee" type="text" class="config-input" placeholder="e.g. £5" maxlength="20" />
+            </div>
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Prize Info</label>
+              <input id="entry-prize" type="text" class="config-input" placeholder="e.g. Winner takes all" maxlength="60" />
+            </div>
+          </div>
+          <button class="sync-refresh" onclick="saveEntryMode()">Save Entry Settings</button>
+        </div>
+        <div class="status-card">
           <h3>Competition Status</h3>
           <div class="toggle-row">
             <div><div class="toggle-label" id="comp-status-label">Predictions Open</div><div class="toggle-desc" id="comp-status-desc">Players can submit predictions</div></div>
@@ -617,6 +669,21 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 
   </div><!-- /container -->
 </div><!-- /screen-app -->
+
+
+<!-- PAY/FUN MODAL -->
+<div id="pay-modal" style="display:none;" class="pay-modal-overlay">
+  <div class="pay-modal">
+    <div class="pay-modal-icon">💰</div>
+    <div class="pay-modal-title" id="pay-modal-title">Are you in for money?</div>
+    <div class="pay-modal-body" id="pay-modal-body"></div>
+    <div class="pay-btns">
+      <button class="pay-btn-money" onclick="setPayChoice('money')">💸 I'm paying in</button>
+      <button class="pay-btn-fun" onclick="setPayChoice('fun')">😄 Just for fun</button>
+    </div>
+    <div class="pay-note">No money is collected here — this just lets the organiser know your preference. You can change this later in your profile.</div>
+  </div>
+</div>
 
 <!-- CONFIRM MODAL -->
 <div id="confirm-overlay" class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
@@ -916,6 +983,12 @@ async function loginPlayer(){
     saveSession();
     hideFlow('join');
     enterApp();
+    // Show pay modal if entry mode enabled and player hasn't chosen yet
+    setTimeout(()=>{
+      if(currentGroup&&currentGroup.entry_mode_enabled&&!currentPlayer.pay_choice){
+        showPayModal();
+      }
+    }, 400);
   } catch(e){showErr(errEl,'Error: '+e.message);}
 }
 
@@ -949,6 +1022,12 @@ async function registerPlayer(){
     saveSession();
     hideFlow('join');
     enterApp();
+    // Show pay modal if entry mode enabled and player hasn't chosen yet
+    setTimeout(()=>{
+      if(currentGroup&&currentGroup.entry_mode_enabled&&!currentPlayer.pay_choice){
+        showPayModal();
+      }
+    }, 400);
     if(needsGrace){
       flash('Welcome '+name+'! The tie-break deadline has passed — your request for a grace period has been sent to the admin.','success');
       // Create grace period request
@@ -1155,6 +1234,9 @@ function fmtCountdown(ms){
   return s+'s';
 }
 
+let _lbFilter = 'all';
+let _lbScores = {};
+let _lbPayMap = {};
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -1440,7 +1522,7 @@ async function loadLeaderboard(){
     const [allPreds,allResults,allPlayers]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
     ]);
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]=p.name);
@@ -1455,6 +1537,9 @@ async function loadLeaderboard(){
       else if(pts===5){scores[name].exact++;scores[name].total+=5;}
       else if(pts===3){scores[name].result++;scores[name].total+=3;}
     });
+    _lbScores = scores;
+    renderLeaderboard();
+    return;
     const sorted=Object.entries(scores).sort((a,b)=>b[1].total-a[1].total);
     if(!sorted.length){lb.innerHTML='<div class="empty">No scored predictions yet. Check back once matches kick off.</div>';return;}
     lb.innerHTML=sorted.map(([name,s],i)=>{
@@ -1467,6 +1552,77 @@ async function loadLeaderboard(){
         +'</div>';
     }).join('');
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
+}
+
+
+// ── ENTRY MODE ────────────────────────────────────────
+function loadEntryModeSettings(){
+  if(!currentGroup) return;
+  const enabled = currentGroup.entry_mode_enabled || false;
+  const toggle = document.getElementById('entry-mode-toggle');
+  if(toggle) toggle.checked = enabled;
+  updateEntryModeLabel(enabled);
+  const fields = document.getElementById('entry-mode-fields');
+  if(fields) fields.style.opacity = enabled ? '1' : '.5';
+  const feeEl = document.getElementById('entry-fee');
+  const prizeEl = document.getElementById('entry-prize');
+  if(feeEl) feeEl.value = currentGroup.entry_fee || '';
+  if(prizeEl) prizeEl.value = currentGroup.entry_prize || '';
+}
+
+function toggleEntryMode(){
+  const enabled = document.getElementById('entry-mode-toggle').checked;
+  updateEntryModeLabel(enabled);
+  const fields = document.getElementById('entry-mode-fields');
+  if(fields) fields.style.opacity = enabled ? '1' : '.5';
+}
+
+function updateEntryModeLabel(enabled){
+  const l = document.getElementById('entry-mode-label');
+  const d = document.getElementById('entry-mode-desc');
+  if(l) l.textContent = enabled ? 'Money Mode (On)' : 'Money Mode (Off)';
+  if(d) d.textContent = enabled ? 'Players are asked if they want to pay in when they log in' : 'Players just play for fun';
+}
+
+async function saveEntryMode(){
+  if(!currentGroup) return;
+  const enabled = document.getElementById('entry-mode-toggle').checked;
+  const fee = document.getElementById('entry-fee').value.trim();
+  const prize = document.getElementById('entry-prize').value.trim();
+  try{
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{entry_mode_enabled:enabled,entry_fee:fee,entry_prize:prize}});
+    currentGroup={...currentGroup,entry_mode_enabled:enabled,entry_fee:fee,entry_prize:prize};
+    saveSession();
+    flash('Entry settings saved!','success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+function showPayModal(){
+  const modal = document.getElementById('pay-modal');
+  if(!modal||!currentGroup) return;
+  const fee = currentGroup.entry_fee || '';
+  const prize = currentGroup.entry_prize || '';
+  const titleEl = document.getElementById('pay-modal-title');
+  const bodyEl = document.getElementById('pay-modal-body');
+  if(titleEl) titleEl.textContent = fee ? 'Entry fee: '+fee : 'Are you playing for money?';
+  let body = 'The organiser has set up this competition';
+  if(fee) body += ' with an entry fee of <strong>'+fee+'</strong>';
+  if(prize) body += '. Prize: <strong>'+prize+'</strong>';
+  body += '. Are you paying in or just watching for fun?';
+  if(bodyEl) bodyEl.innerHTML = body;
+  modal.style.display = 'flex';
+}
+
+async function setPayChoice(choice){
+  document.getElementById('pay-modal').style.display = 'none';
+  if(!currentPlayer||!currentGroup) return;
+  try{
+    await sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pay_choice:choice}});
+    currentPlayer = {...currentPlayer, pay_choice:choice};
+    saveSession();
+    if(choice==='money') flash('Great — let the organiser know to collect your entry fee!','success');
+    else flash('No problem — enjoy the competition!','success');
+  }catch(e){ console.warn('pay choice save failed',e); }
 }
 
 // ── COMPACT ───────────────────────────────
@@ -1651,7 +1807,7 @@ async function loadPlayersPanel(){
   loadGraceRequests();
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -1659,7 +1815,7 @@ async function loadPlayersPanel(){
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
-    (playersList||[]).forEach(p=>{pm[p.id]={name:p.name,preds:0,pts:0};});
+    (playersList||[]).forEach(p=>{pm[p.id]={name:p.name,preds:0,pts:0,pay_choice:p.pay_choice};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -1672,7 +1828,7 @@ async function loadPlayersPanel(){
       <div class="player-row">
         <div>
           <div class="player-row-name">${p.name}</div>
-          <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts</div>
+          <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts${p.pay_choice ? ' · '+(p.pay_choice==='money'?'💸 Paying in':'😄 Fun only'):''}</div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
         <div class="player-actions">
@@ -1822,6 +1978,38 @@ async function removePlayer(playerId,name){
       loadPlayersPanel();
     }catch(e){flash('Error: '+e.message,'error');}
   });
+}
+
+
+function setLbFilter(filter){
+  _lbFilter = filter;
+  document.querySelectorAll('.lb-filter-btn').forEach(b=>{
+    b.classList.toggle('active', b.id==='lb-filter-'+filter);
+  });
+  renderLeaderboard();
+}
+
+function renderLeaderboard(){
+  const lb = document.getElementById('leaderboard-list');
+  if(!lb) return;
+
+  let entries = Object.entries(_lbScores||{});
+  if(_lbFilter === 'money') entries = entries.filter(([name])=>_lbPayMap[name]==='money');
+  else if(_lbFilter === 'fun') entries = entries.filter(([name])=>_lbPayMap[name]==='fun'||!_lbPayMap[name]);
+
+  const sorted = entries.sort((a,b)=>b[1].total-a[1].total);
+  if(!sorted.length){ lb.innerHTML='<div class="empty">No players in this category yet.</div>'; return; }
+
+  lb.innerHTML = sorted.map(([name,s],i)=>{
+    const pid = s.playerId||'';
+    const dn = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const payBadge = _lbPayMap[name]==='money' ? '<span style="font-size:.65rem;margin-left:.3rem;">💸</span>' : (_lbPayMap[name]==='fun' ? '<span style="font-size:.65rem;margin-left:.3rem;">😄</span>' : '');
+    return '<div class="lb-row" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
+      +'<div class="lb-rank">'+(i+1)+'</div>'
+      +'<div><div class="lb-name">'+name+payBadge+'</div><div class="lb-breakdown">'+s.played+' predicted · '+s.exact+' exact · '+s.result+' correct results</div></div>'
+      +'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>'
+      +'</div>';
+  }).join('');
 }
 
 function lbRowClick(el){ viewPlayerPredictions(el.dataset.pid, el.dataset.pname); }
@@ -1991,7 +2179,7 @@ async function exportLeaderboardCSV(){
     const [allPreds,allResults,allPlayers]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
     ]);
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]=p.name);
@@ -2019,7 +2207,7 @@ async function exportAllPredictionsCSV(){
     const [preds,res,players]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
     ]);
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (players||[]).forEach(p=>pm[p.id]=p.name);
