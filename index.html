@@ -504,7 +504,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.4</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -902,20 +902,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 </div><!-- /screen-app -->
 
 
-<!-- PAY/FUN MODAL -->
-<div id="pay-modal" style="display:none;" class="pay-modal-overlay">
-  <div class="pay-modal">
-    <div class="pay-modal-icon">💰</div>
-    <div class="pay-modal-title" id="pay-modal-title">Are you in for money?</div>
-    <div class="pay-modal-body" id="pay-modal-body"></div>
-    <div class="pay-btns">
-      <button class="pay-btn-money" onclick="setPayChoice('money')">💸 I'm paying in</button>
-      <button class="pay-btn-fun" onclick="setPayChoice('fun')">😄 Just for fun</button>
-    </div>
-    <div class="pay-note">No money is collected here — this just lets the organiser know your preference. You can change this later in your profile.</div>
-  </div>
-</div>
-
 <!-- CONFIRM MODAL -->
 <div id="confirm-overlay" class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
   <div class="confirm-modal">
@@ -1281,10 +1267,6 @@ function enterApp(){
   refreshGroup().then(()=>{
     // Reload entry mode settings with fresh data
     loadEntryModeSettings();
-    // Check pay modal after group settings are fresh
-    if(currentGroup&&currentGroup.entry_mode_enabled&&currentPlayer&&!currentPlayer.pay_choice){
-      setTimeout(showPayModal, 600);
-    }
   });
   document.getElementById('screen-landing').style.display='none';
   document.getElementById('screen-app').style.display='block';
@@ -2971,6 +2953,6 @@ document.addEventListener('keydown', function(e){
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.4</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.5</div>
 </body>
 </html>
