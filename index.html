@@ -504,6 +504,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
 <div id="screen-landing">
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -604,7 +605,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <button id="nav-rules" onclick="showView('rules')">Rules</button>
       <button id="nav-predict" onclick="showView('predict')">Predict</button>
       <button id="nav-leaderboard" onclick="showView('leaderboard')">Leaderboard</button>
-      <button id="nav-admin" onclick="showView('admin')">Admin</button>
+      <button id="nav-admin" onclick="showView('admin')" style="display:none;">Admin</button>
     </nav>
     <div class="header-user" style="position:relative;">
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
@@ -768,14 +769,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <!-- ADMIN -->
     <div id="view-admin" class="view">
       <div class="page-header"><div class="page-title">Admin</div></div>
-      <div id="admin-gate">
-        <div style="max-width:360px;margin:2rem auto 0;">
-          <label style="display:block;font-size:.72rem;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.4rem;">Admin Password</label>
-          <input type="password" id="admin-pass-input" class="config-input" placeholder="Password" style="margin-bottom:.75rem;" onkeydown="if(event.key==='Enter')checkAdminPass()" />
-          <button class="btn" onclick="checkAdminPass()">Enter Admin →</button>
-        </div>
-      </div>
-      <div id="admin-unlocked" style="display:none;">
+      <div id="admin-unlocked">
       <div class="sync-bar">
         <span><span class="sync-dot" id="sync-dot"></span><span id="sync-status-text">Ready</span></span>
         <button class="sync-refresh" onclick="adminFetchResults()">↻ Fetch Results Now</button>
@@ -1291,7 +1285,9 @@ function enterApp(){
   });
   document.getElementById('screen-landing').style.display='none';
   document.getElementById('screen-app').style.display='block';
-  // Admin tab always visible — password required to unlock
+  // Show admin tab if already authenticated as admin
+  const adminBtn = document.getElementById('nav-admin');
+  if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
   if(currentPlayer){
     const payIcon = currentPlayer.pay_choice==='money' ? ' 💰' : currentPlayer.pay_choice==='fun' ? ' 🤪' : '';
@@ -1345,15 +1341,8 @@ function showView(name){ closeMenu();
   if(name==='predict') loadPredictions();
   if(name==='leaderboard') loadLeaderboard();
   if(name==='admin'){
-    // Reset gate each time unless already unlocked this session
-    if(!isAdmin){
-      document.getElementById('admin-gate').style.display='block';
-      document.getElementById('admin-unlocked').style.display='none';
-    } else {
-      document.getElementById('admin-gate').style.display='none';
-      document.getElementById('admin-unlocked').style.display='block';
-      loadAdminFixtures();startAutoSync();
-    }
+    if(!isAdmin){ showView('home'); flash('Triple-click the version number to access admin','error'); return; }
+    loadAdminFixtures(); startAutoSync();
   }
 }
 
@@ -2880,6 +2869,92 @@ if(currentGroup&&currentPlayer){
 // Hide loader once fonts/scripts are ready
 
 
+
+// ── TEST MODE (click version 3x) ──────────────────────
+let _verClicks = 0, _verTimer = null;
+function versionClick(){
+  _verClicks++;
+  clearTimeout(_verTimer);
+  _verTimer = setTimeout(()=>{ _verClicks=0; }, 2000);
+  if(_verClicks >= 3){
+    _verClicks = 0;
+    activateTestMode();
+  }
+}
+
+function activateTestMode(){
+  // If already in app, show admin access prompt instead
+  if(document.getElementById('screen-app').style.display !== 'none'){
+    showAdminAccessPrompt();
+    return;
+  }
+  // On landing — enter test/preview mode
+  currentGroup = {
+    id: 'test-group-id',
+    name: 'TEST GROUP',
+    tagline: 'Preview mode',
+    key: 'test',
+    admin_password: 'test',
+    accent: '#f59e0b',
+    emoji: '🧪',
+    predictions_open: true,
+    entry_mode_enabled: false,
+    entry_fee: '',
+    entry_prize: '',
+  };
+  currentPlayer = {
+    id: 'test-player-id',
+    name: 'Test Player',
+    nickname: null,
+    group_id: 'test-group-id',
+    pay_choice: null,
+  };
+  isAdmin = true;
+  saveSession();
+  enterApp();
+  showView('predict');
+  flash('🧪 Test mode — no data will be saved','success');
+  window._testMode = true;
+}
+
+function showAdminAccessPrompt(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = 'z-index:400;';
+  modal.innerHTML = '<div class="pred-modal" style="max-width:320px;">'
+    +'<div class="pred-modal-header">'
+    +'<div class="pred-modal-title">🔐 Admin Access</div>'
+    +'<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button>'
+    +'</div>'
+    +'<input type="password" id="admin-access-input" class="config-input" placeholder="Admin password" style="margin-bottom:.75rem;" onkeydown="if(event.key===\'Enter\')checkAdminAccess()" />'
+    +'<button class="btn" onclick="checkAdminAccess()">Enter Admin</button>'
+    +'<div id="admin-access-err" style="font-size:.78rem;color:var(--accent2);margin-top:.5rem;display:none;"></div>'
+    +'</div>';
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('admin-access-input')?.focus(),50);
+}
+
+function checkAdminAccess(){
+  const entered = document.getElementById('admin-access-input')?.value;
+  const errEl = document.getElementById('admin-access-err');
+  if(!currentGroup){ if(errEl){errEl.textContent='No group loaded.';errEl.style.display='block';} return; }
+  if(entered === currentGroup.admin_password){
+    isAdmin = true;
+    saveSession();
+    document.querySelector('.modal-overlay')?.remove();
+    // Show admin tab
+    document.getElementById('nav-admin').style.display = 'inline-block';
+    showView('admin');
+    flash('Admin mode unlocked','success');
+  } else {
+    if(errEl){errEl.textContent='Wrong password.';errEl.style.display='block';}
+    document.getElementById('admin-access-input').value='';
+  }
+}
+
+// Patch sb to no-op in test mode
+const _sbOrig = window.sb || null;
 // ── ENTER KEY → SAVE ALL (desktop only) ──────────────
 document.addEventListener('keydown', function(e){
   if(e.key !== 'Enter') return;
@@ -2902,6 +2977,6 @@ document.addEventListener('keydown', function(e){
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;pointer-events:none;letter-spacing:.06em;z-index:10;">v1.1.9</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.1</div>
 </body>
 </html>
