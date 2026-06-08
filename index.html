@@ -504,7 +504,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.1</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;" onpointerdown="versionHoldStart(event)" onpointerup="versionHoldEnd()" onpointerleave="versionHoldEnd()">v1.2.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2870,17 +2870,19 @@ if(currentGroup&&currentPlayer){
 
 
 
-// ── TEST MODE (click version 3x) ──────────────────────
-let _verClicks = 0, _verTimer = null;
-function versionClick(){
-  _verClicks++;
-  clearTimeout(_verTimer);
-  _verTimer = setTimeout(()=>{ _verClicks=0; }, 2000);
-  if(_verClicks >= 3){
-    _verClicks = 0;
+// ── TEST/ADMIN ACCESS (long-press version) ────────────
+let _verHoldTimer = null;
+function versionHoldStart(e){
+  clearTimeout(_verHoldTimer);
+  _verHoldTimer = setTimeout(()=>{
     activateTestMode();
-  }
+  }, 800); // hold for 0.8s
 }
+function versionHoldEnd(){
+  clearTimeout(_verHoldTimer);
+}
+// Keep versionClick as fallback (does nothing on single tap now)
+function versionClick(){}
 
 function activateTestMode(){
   // If already in app, show admin access prompt instead
@@ -2977,6 +2979,6 @@ document.addEventListener('keydown', function(e){
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.1</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;" onpointerdown="versionHoldStart(event)" onpointerup="versionHoldEnd()" onpointerleave="versionHoldEnd()">v1.2.2</div>
 </body>
 </html>
