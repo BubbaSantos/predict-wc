@@ -626,7 +626,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;" id="entry-mode-fields">
             <div>
               <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Entry Fee</label>
-              <input id="entry-fee" type="text" class="config-input" placeholder="e.g. £5" maxlength="20" />
+              <div style="display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .15s;" onfocusin="this.style.borderColor='var(--group-accent)'" onfocusout="this.style.borderColor='var(--border)'"><span style="padding:.65rem .75rem;color:var(--text-muted);font-weight:600;border-right:1px solid var(--border);font-size:.9rem;">£</span><input id="entry-fee" type="number" min="0" step="0.50" style="background:none;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;padding:.65rem .75rem;outline:none;width:100%;" placeholder="5" /></div>
             </div>
             <div>
               <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Prize Info</label>
@@ -1568,7 +1568,7 @@ function loadEntryModeSettings(){
   if(fields) fields.style.opacity = enabled ? '1' : '.5';
   const feeEl = document.getElementById('entry-fee');
   const prizeEl = document.getElementById('entry-prize');
-  if(feeEl) feeEl.value = currentGroup.entry_fee || '';
+  if(feeEl) feeEl.value = (currentGroup.entry_fee||'').replace('£','');
   if(prizeEl) prizeEl.value = currentGroup.entry_prize || '';
 }
 
@@ -1589,7 +1589,8 @@ function updateEntryModeLabel(enabled){
 async function saveEntryMode(){
   if(!currentGroup) return;
   const enabled = document.getElementById('entry-mode-toggle').checked;
-  const fee = document.getElementById('entry-fee').value.trim();
+  const feeRaw = document.getElementById('entry-fee').value.trim();
+  const fee = feeRaw ? '£'+feeRaw : '';
   const prize = document.getElementById('entry-prize').value.trim();
   try{
     await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{entry_mode_enabled:enabled,entry_fee:fee,entry_prize:prize}});
