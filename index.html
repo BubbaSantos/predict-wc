@@ -1281,7 +1281,16 @@ function renderPredictCard(f,pred,res){
   }
   const resStr=hasResult?`<span class="result-badge">${res.home}–${res.away}</span>`:'';
   const grpLabel=f.isKnockout?(f.group||'KO'):`Grp ${f.group}`;
-  const metaStr=f.isKnockout?koKickoff(f):`${formatDate(f.date)} · ${f.venue}`;
+  const metaStr=(()=>{
+    if(f.isKnockout) return koKickoff(f);
+    const ko = getMatchKickoff(f);
+    if(ko){
+      const bstDate = ko.toLocaleDateString('en-GB',{timeZone:'Europe/London',day:'2-digit',month:'2-digit',year:'numeric'});
+      const bstTime = ko.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'});
+      return `${bstDate} · ${bstTime} BST · ${f.venue}`;
+    }
+    return `${formatDate(f.date)} · ${f.venue}`;
+  })();
   return `<div class="match-card ${isFilled?'saved':''} ${hasResult?'locked':''}">
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
