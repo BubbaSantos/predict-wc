@@ -681,8 +681,8 @@ const FIXTURES = [
   { id:'m050', date:'2026-06-25', group:'A', home:'Mexico', away:'Czechia', hf:'🇲🇽', af:'🇨🇿', venue:'Mexico City', matchday:3 },
   { id:'m051', date:'2026-06-25', group:'B', home:'Bosnia & Herz.', away:'Qatar', hf:'🇧🇦', af:'🇶🇦', venue:'Vancouver', matchday:3 },
   { id:'m052', date:'2026-06-25', group:'B', home:'Switzerland', away:'Canada', hf:'🇨🇭', af:'🇨🇦', venue:'Toronto', matchday:3 },
-  { id:'m053', date:'2026-06-26', group:'C', home:'Morocco', away:'Scotland', hf:'🇲🇦', af:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', venue:'New Jersey', matchday:3 },
-  { id:'m054', date:'2026-06-26', group:'C', home:'Haiti', away:'Brazil', hf:'🇭🇹', af:'🇧🇷', venue:'Los Angeles', matchday:3 },
+  { id:'m053', date:'2026-06-25', group:'C', home:'Scotland', away:'Brazil', hf:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', af:'🇧🇷', venue:'Miami', matchday:3 },
+  { id:'m054', date:'2026-06-25', group:'C', home:'Morocco', away:'Haiti', hf:'🇲🇦', af:'🇭🇹', venue:'Atlanta', matchday:3 },
   { id:'m055', date:'2026-06-26', group:'D', home:'Türkiye', away:'USA', hf:'🇹🇷', af:'🇺🇸', venue:'Dallas', matchday:3 },
   { id:'m056', date:'2026-06-26', group:'D', home:'Paraguay', away:'Australia', hf:'🇵🇾', af:'🇦🇺', venue:'Houston', matchday:3 },
   { id:'m057', date:'2026-06-27', group:'E', home:'Curaçao', away:'Germany', hf:'🇨🇼', af:'🇩🇪', venue:'Philadelphia', matchday:3 },
@@ -1015,42 +1015,81 @@ function getPinValue(rowId){
 
 // ── COUNTDOWN HELPERS ────────────────────────────────────
 const KICKOFFS = {
-  'm001':'2026-06-11T19:00:00Z','m002':'2026-06-11T22:00:00Z',
-  'm003':'2026-06-12T19:00:00Z','m004':'2026-06-12T22:00:00Z',
-  'm005':'2026-06-13T01:00:00Z','m006':'2026-06-13T19:00:00Z',
-  'm007':'2026-06-13T22:00:00Z','m008':'2026-06-14T01:00:00Z',
-  'm009':'2026-06-14T19:00:00Z','m010':'2026-06-14T19:00:00Z',
-  'm011':'2026-06-14T22:00:00Z','m012':'2026-06-14T22:00:00Z',
-  'm013':'2026-06-15T19:00:00Z','m014':'2026-06-15T19:00:00Z',
-  'm015':'2026-06-15T22:00:00Z','m016':'2026-06-15T22:00:00Z',
-  'm017':'2026-06-16T19:00:00Z','m018':'2026-06-16T19:00:00Z',
-  'm019':'2026-06-16T22:00:00Z','m020':'2026-06-16T22:00:00Z',
-  'm021':'2026-06-17T19:00:00Z','m022':'2026-06-17T19:00:00Z',
-  'm023':'2026-06-17T22:00:00Z','m024':'2026-06-17T22:00:00Z',
-  'm025':'2026-06-18T19:00:00Z','m026':'2026-06-18T19:00:00Z',
-  'm027':'2026-06-18T22:00:00Z','m028':'2026-06-18T22:00:00Z',
-  'm029':'2026-06-19T19:00:00Z','m030':'2026-06-19T19:00:00Z',
-  'm031':'2026-06-19T22:00:00Z','m032':'2026-06-19T22:00:00Z',
-  'm033':'2026-06-20T19:00:00Z','m034':'2026-06-20T19:00:00Z',
-  'm035':'2026-06-20T22:00:00Z','m036':'2026-06-20T22:00:00Z',
-  'm037':'2026-06-21T19:00:00Z','m038':'2026-06-21T19:00:00Z',
-  'm039':'2026-06-21T22:00:00Z','m040':'2026-06-21T22:00:00Z',
-  'm041':'2026-06-22T19:00:00Z','m042':'2026-06-22T19:00:00Z',
-  'm043':'2026-06-22T22:00:00Z','m044':'2026-06-22T22:00:00Z',
-  'm045':'2026-06-23T19:00:00Z','m046':'2026-06-23T19:00:00Z',
-  'm047':'2026-06-23T22:00:00Z','m048':'2026-06-23T22:00:00Z',
-  'm049':'2026-06-25T19:00:00Z','m050':'2026-06-25T19:00:00Z',
-  'm051':'2026-06-25T22:00:00Z','m052':'2026-06-25T22:00:00Z',
-  'm053':'2026-06-26T19:00:00Z','m054':'2026-06-26T19:00:00Z',
-  'm055':'2026-06-26T22:00:00Z','m056':'2026-06-26T22:00:00Z',
-  'm057':'2026-06-27T19:00:00Z','m058':'2026-06-27T19:00:00Z',
-  'm059':'2026-06-27T22:00:00Z','m060':'2026-06-27T22:00:00Z',
-  'm061':'2026-06-27T19:00:00Z','m062':'2026-06-27T22:00:00Z',
-  'm063':'2026-06-27T19:00:00Z','m064':'2026-06-27T22:00:00Z',
-  'm065':'2026-06-27T19:00:00Z','m066':'2026-06-27T22:00:00Z',
-  'm067':'2026-06-27T19:00:00Z','m068':'2026-06-27T22:00:00Z',
-  'm069':'2026-06-27T19:00:00Z','m070':'2026-06-27T22:00:00Z',
-  'm071':'2026-06-27T19:00:00Z','m072':'2026-06-27T22:00:00Z',
+  // MATCHDAY 1
+  'm001':'2026-06-11T19:00:00Z', // Mexico vs South Africa - 8pm BST
+  'm002':'2026-06-12T02:00:00Z', // South Korea vs Czechia - 3am BST (Sat)
+  'm003':'2026-06-12T19:00:00Z', // Canada vs Bosnia - 8pm BST
+  'm004':'2026-06-13T01:00:00Z', // USA vs Paraguay - 2am BST (Sat)
+  'm005':'2026-06-13T19:00:00Z', // Qatar vs Switzerland - 8pm BST
+  'm006':'2026-06-13T22:00:00Z', // Brazil vs Morocco - 11pm BST
+  'm007':'2026-06-14T01:00:00Z', // Haiti vs Scotland - 2am BST (Sun)
+  'm008':'2026-06-14T04:00:00Z', // Australia vs Turkey - 5am BST (Sun)
+  'm009':'2026-06-14T17:00:00Z', // Germany vs Curacao - 6pm BST
+  'm010':'2026-06-14T20:00:00Z', // Netherlands vs Japan - 9pm BST
+  'm011':'2026-06-14T23:00:00Z', // Ivory Coast vs Ecuador - 12am BST (Mon)
+  'm012':'2026-06-15T02:00:00Z', // Sweden vs Tunisia - 3am BST (Mon)
+  'm013':'2026-06-15T16:00:00Z', // Spain vs Cape Verde - 5pm BST
+  'm014':'2026-06-15T19:00:00Z', // Belgium vs Egypt - 8pm BST
+  'm015':'2026-06-15T22:00:00Z', // Saudi Arabia vs Uruguay - 11pm BST
+  'm016':'2026-06-16T01:00:00Z', // Iran vs New Zealand - 2am BST (Mon)
+  'm017':'2026-06-16T19:00:00Z', // France vs Senegal - 8pm BST
+  'm018':'2026-06-16T22:00:00Z', // Iraq vs Norway - 11pm BST
+  'm019':'2026-06-17T01:00:00Z', // Argentina vs Algeria - 2am BST (Wed)
+  'm020':'2026-06-17T04:00:00Z', // Austria vs Jordan - 5am BST (Wed)
+  'm021':'2026-06-17T17:00:00Z', // Portugal vs DR Congo - 6pm BST
+  'm022':'2026-06-17T20:00:00Z', // England vs Croatia - 9pm BST
+  'm023':'2026-06-17T23:00:00Z', // Ghana vs Panama - 12am BST (Thu)
+  'm024':'2026-06-18T02:00:00Z', // Uzbekistan vs Colombia - 3am BST (Thu)
+  // MATCHDAY 2
+  'm025':'2026-06-18T16:00:00Z', // Czechia vs South Africa - 5pm BST
+  'm026':'2026-06-18T19:00:00Z', // Switzerland vs Bosnia - 8pm BST
+  'm027':'2026-06-18T22:00:00Z', // Canada vs Qatar - 11pm BST
+  'm028':'2026-06-19T01:00:00Z', // Mexico vs South Korea - 2am BST (Fri)
+  'm029':'2026-06-19T19:00:00Z', // USA vs Australia - 8pm BST
+  'm030':'2026-06-19T22:00:00Z', // Scotland vs Morocco - 11pm BST
+  'm031':'2026-06-20T01:00:00Z', // Brazil vs Haiti - 2am BST (Sat)
+  'm032':'2026-06-20T04:00:00Z', // Turkey vs Paraguay - 5am BST (Sat)
+  'm033':'2026-06-21T04:00:00Z', // Tunisia vs Japan - 5am BST (Sun) - NOTE: Sky says Sat 20th 3am but thatsagoal says Sun 20th
+  'm034':'2026-06-20T20:00:00Z', // Germany vs Ivory Coast - 9pm BST Sat
+  'm035':'2026-06-20T17:00:00Z', // Netherlands vs Sweden - 6pm BST Sat
+  'm036':'2026-06-21T00:00:00Z', // Ecuador vs Curacao - 1am BST Sun
+  'm037':'2026-06-21T16:00:00Z', // Spain vs Saudi Arabia - 5pm BST
+  'm038':'2026-06-22T01:00:00Z', // New Zealand vs Egypt - 2am BST Mon
+  'm039':'2026-06-21T22:00:00Z', // Uruguay vs Cape Verde - 11pm BST
+  'm040':'2026-06-21T19:00:00Z', // Belgium vs Iran - 8pm BST
+  'm041':'2026-06-23T00:00:00Z', // Senegal vs Iraq - 1am BST Mon (Norway fixture)
+  'm042':'2026-06-22T21:00:00Z', // France vs Iraq - 10pm BST Mon
+  'm043':'2026-06-23T03:00:00Z', // Jordan vs Algeria - 4am BST Tue
+  'm044':'2026-06-22T17:00:00Z', // Argentina vs Austria - 6pm BST Mon
+  'm045':'2026-06-24T02:00:00Z', // Colombia vs DR Congo - 3am BST Wed
+  'm046':'2026-06-23T23:00:00Z', // Panama vs Croatia - 12am BST Wed
+  'm047':'2026-06-23T20:00:00Z', // England vs Ghana - 9pm BST Tue
+  'm048':'2026-06-23T17:00:00Z', // Portugal vs Uzbekistan - 6pm BST Tue
+  // MATCHDAY 3
+  'm049':'2026-06-25T01:00:00Z', // South Africa vs South Korea - 2am BST
+  'm050':'2026-06-25T01:00:00Z', // Czechia vs Mexico - 2am BST
+  'm051':'2026-06-24T19:00:00Z', // Bosnia vs Qatar - 8pm BST
+  'm052':'2026-06-24T19:00:00Z', // Switzerland vs Canada - 8pm BST
+  'm053':'2026-06-24T22:00:00Z', // Scotland vs Brazil - 11pm BST - 11pm BST (thatsagoal: Scotland vs Brazil 11pm Wed 24)
+  'm054':'2026-06-24T22:00:00Z', // Morocco vs Haiti - 11pm BST - 11pm BST
+  'm055':'2026-06-26T02:00:00Z', // Turkey vs USA - 3am BST
+  'm056':'2026-06-26T02:00:00Z', // Paraguay vs Australia - 3am BST
+  'm057':'2026-06-26T20:00:00Z', // Ecuador vs Germany - 9pm BST
+  'm058':'2026-06-26T20:00:00Z', // Curacao vs Ivory Coast - 9pm BST
+  'm059':'2026-06-25T23:00:00Z', // Tunisia vs Netherlands - 12am BST
+  'm060':'2026-06-25T23:00:00Z', // Japan vs Sweden - 12am BST
+  'm061':'2026-06-27T03:00:00Z', // New Zealand vs Belgium - 4am BST
+  'm062':'2026-06-27T03:00:00Z', // Egypt vs Iran - 4am BST
+  'm063':'2026-06-27T00:00:00Z', // Cape Verde vs Saudi Arabia - 1am BST
+  'm064':'2026-06-27T00:00:00Z', // Uruguay vs Spain - 1am BST
+  'm065':'2026-06-26T19:00:00Z', // Norway vs France - 8pm BST
+  'm066':'2026-06-26T19:00:00Z', // Senegal vs Iraq (Norway vs France paired) - 8pm BST
+  'm067':'2026-06-27T20:00:00Z', // Panama vs England - 10pm BST Sat
+  'm068':'2026-06-27T00:00:00Z', // Jordan vs Algeria duplicate - use correct
+  'm069':'2026-06-24T02:00:00Z', // DR Congo vs Uzbekistan
+  'm070':'2026-06-24T02:00:00Z', // Colombia vs Portugal - 3am BST
+  'm071':'2026-06-27T21:00:00Z', // Panama vs England - 10pm BST
+  'm072':'2026-06-25T01:00:00Z', // Croatia vs Ghana
 };
 
 function getMatchKickoff(f){
@@ -1640,6 +1679,7 @@ async function loadGraceRequests(){
       html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid rgba(245,158,11,.1);">';
       html += '<span style="font-size:.85rem;font-weight:600;">'+r.player_name+'</span>';
       html += '<div style="display:flex;gap:.5rem;">';
+      html += '<button class="view-preds-btn" onclick="renamePlayer(this)" data-id="'+id+'" data-name="'+p.name.replace(/"/g,'&quot;')+'">Rename</button>';
       html += '<button class="view-preds-btn" style="border-color:rgba(16,185,129,.4);color:var(--green);" onclick="approveGrace(this)" data-id="'+r.id+'" data-pid="'+r.player_id+'" data-name="'+r.player_name+'">✓ Approve</button>';
       html += '<button class="remove-player-btn" onclick="denyGrace(this)" data-id="'+r.id+'" data-name="'+r.player_name+'">✕ Deny</button>';
       html += '</div></div>';
@@ -1664,6 +1704,46 @@ async function denyGrace(el){
     await sb('grace_requests?id=eq.'+reqId,{method:'PATCH',prefer:'return=minimal',body:{status:'denied'}});
     flash(name+"'s grace period denied",'success');
     loadGraceRequests();
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+
+function renamePlayer(el){ const playerId=el.dataset.id, currentName=el.dataset.name; _doRenamePlayer(playerId,currentName); }
+function _doRenamePlayer(playerId, currentName){
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:340px;">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title">Rename Player</div>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Current name: <strong>${currentName}</strong></p>
+    <div class="field">
+      <label>New Name</label>
+      <input type="text" id="rename-input" class="config-input" value="${currentName}" maxlength="40" />
+    </div>
+    <button class="btn" style="margin-top:.75rem;" id="rename-confirm-btn">Save Name</button>
+  </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+  const inp = document.getElementById('rename-input');
+  inp.focus(); inp.select();
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') confirmRename(playerId); });
+  document.getElementById('rename-confirm-btn').onclick = ()=>confirmRename(playerId);
+}
+
+async function confirmRename(playerId){
+  const newName = document.getElementById('rename-input')?.value.trim();
+  if(!newName){ flash('Enter a name','error'); return; }
+  if(!currentGroup) return;
+  try{
+    // Check name not already taken
+    const existing = await sb('players?group_id=eq.'+currentGroup.id+'&name=eq.'+encodeURIComponent(newName)+'&id=neq.'+playerId+'&select=id');
+    if(existing&&existing.length){ flash('That name is already taken','error'); return; }
+    await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{name:newName}});
+    document.querySelector('.modal-overlay')?.remove();
+    flash('Name updated to '+newName,'success');
+    loadPlayersPanel();
   }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
