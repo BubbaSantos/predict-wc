@@ -530,9 +530,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <button class="modal-back" onclick="hideFlow('create')">← Back</button>
     <div class="modal-title">Create <span>Group</span></div>
     <div id="create-step-1">
-      <div class="field"><label>Group Name</label><input id="c-name" type="text" placeholder="e.g. CARA World Cup 2026" maxlength="40" /></div>
-      <div class="field"><label>Tagline <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input id="c-tagline" type="text" placeholder="e.g. May the best predictor win!" maxlength="60" /></div>
-      <div class="field"><label>Group Key <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(shared with players)</span></label><input id="c-key" type="text" placeholder="e.g. cara2026" maxlength="20" autocomplete="off" /></div>
+      <div class="field"><label>Group Name</label><input id="c-name" type="text" placeholder="e.g. World Cup 2026" maxlength="40" /></div>
+      <div class="field"><label>Tagline <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input id="c-tagline" type="text" placeholder="e.g. May the best predictor win" maxlength="60" /></div>
+      <div class="field"><label>Group Key <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(shared with players)</span></label><input id="c-key" type="text" placeholder="e.g. worldcup2026" maxlength="20" autocomplete="off" /></div>
       <div class="field"><label>Admin Password</label><input id="c-adminpw" type="password" placeholder="Something only you know" maxlength="30" /></div>
       <div id="create-error" class="form-error"></div>
       <button class="btn" onclick="createGroup()">Create Group →</button>
@@ -608,6 +608,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     </nav>
     <div class="header-user" style="position:relative;">
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
+      <div style="position:relative;">
       <button class="user-chip" id="h-player-chip" onclick="toggleProfileMenu()" style="cursor:pointer;user-select:none;background:none;border:1px solid var(--border);font-family:inherit;font-size:inherit;" title="Profile"></button>
       <div id="profile-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:190px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden;">
         <div id="profile-menu-header" style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:.06em;text-transform:uppercase;">Profile</div>
@@ -616,6 +617,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button class="profile-menu-item" onclick="showMyPredictions();closeProfileMenu()">📊 My Predictions</button>
         <div style="border-top:1px solid var(--border);margin:.25rem 0;"></div>
         <button class="profile-menu-item" onclick="leaveGroup();closeProfileMenu()" style="color:var(--accent2);">👋 Log Out</button>
+      </div>
       </div>
     </div>
   </header>
@@ -712,7 +714,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
               <div style="font-size:.68rem;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:.06em;">Predict the top scorer</div>
             </div>
           </div>
-          <span id="tiebreak-locked-badge" style="display:none;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.08em;color:var(--accent2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);padding:.25rem .6rem;border-radius:20px;">🔒 LOCKED</span>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span id="tiebreak-locked-badge" style="display:none;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.08em;color:var(--accent2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);padding:.25rem .6rem;border-radius:20px;">🔒 LOCKED</span>
+            <div id="tiebreak-save-btn-top" style=""><button class="save-btn" onclick="confirmSaveTiebreak()" style="padding:.35rem .8rem;font-size:.78rem;">🔒 Lock In</button></div>
+          </div>
         </div>
 
         <!-- Locked message -->
@@ -731,13 +736,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         </div>
 
         <!-- Save + warning -->
-        <div id="tiebreak-save-wrap">
-          <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
-            <button class="save-btn" onclick="confirmSaveTiebreak()" style="padding:.4rem .9rem;">🔒 Lock In</button>
-            <span style="font-size:.72rem;color:var(--text-muted);">⚠️ Cannot be changed once saved</span>
-          </div>
-          <div id="tb-countdown-wrap" style="margin-top:.5rem;"></div>
-        </div>
+        <div id="tiebreak-save-wrap" style="display:none;"></div>
+        <div id="tb-countdown-wrap" style="display:none;"></div>
 
       </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
@@ -1759,6 +1759,9 @@ function confirmSaveTiebreak(){
 function lockTiebreak(){
   const scorer = document.getElementById('tiebreak-scorer')?.value||'';
   const goals = document.getElementById('tiebreak-goals')?.value||'';
+  // Hide lock in button
+  const topBtn = document.getElementById('tiebreak-save-btn-top');
+  if(topBtn) topBtn.style.display='none';
   const section = document.getElementById('tiebreak-section');
   if(!section) return;
   section.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:.1rem 0;">'
@@ -2882,6 +2885,6 @@ document.addEventListener('keydown', function(e){
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;pointer-events:none;letter-spacing:.06em;z-index:10;">v1.1.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;pointer-events:none;letter-spacing:.06em;z-index:10;">v1.1.7</div>
 </body>
 </html>
