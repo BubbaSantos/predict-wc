@@ -983,12 +983,7 @@ async function loginPlayer(){
     saveSession();
     hideFlow('join');
     enterApp();
-    // Show pay modal if entry mode enabled and player hasn't chosen yet
-    setTimeout(()=>{
-      if(currentGroup&&currentGroup.entry_mode_enabled&&!currentPlayer.pay_choice){
-        showPayModal();
-      }
-    }, 400);
+
   } catch(e){showErr(errEl,'Error: '+e.message);}
 }
 
@@ -1022,15 +1017,9 @@ async function registerPlayer(){
     saveSession();
     hideFlow('join');
     enterApp();
-    // Show pay modal if entry mode enabled and player hasn't chosen yet
-    setTimeout(()=>{
-      if(currentGroup&&currentGroup.entry_mode_enabled&&!currentPlayer.pay_choice){
-        showPayModal();
-      }
-    }, 400);
+
     if(needsGrace){
       flash('Welcome '+name+'! The tie-break deadline has passed — your request for a grace period has been sent to the admin.','success');
-      // Create grace period request
       try{ await sb('grace_requests',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:created[0].id,player_name:name,status:'pending'}}); }catch(e){}
     } else {
       flash('Welcome, '+name+'!','success');
@@ -1235,6 +1224,8 @@ function fmtCountdown(ms){
 }
 
 let _lbFilter = 'all';
+let _pendingSaveId = null;
+let _pendingSaveAll = false;
 let _lbScores = {};
 let _lbPayMap = {};
 let _matchCountdownStarted = false;
@@ -1450,6 +1441,12 @@ function markUnsaved(id){const b=document.getElementById(`sbtn-${id}`);if(b){b.t
 
 async function saveSingle(id){
   if(!currentPlayer||!currentGroup)return;
+  // Show pay modal if entry mode on and player hasn't chosen yet
+  if(currentGroup.entry_mode_enabled && !currentPlayer.pay_choice){
+    _pendingSaveId = id;
+    showPayModal();
+    return;
+  }
   const h=document.getElementById(`h-${id}`)?.value.trim(),a=document.getElementById(`a-${id}`)?.value.trim();
   if(h===''||a===''){flash('Enter both scores','error');return;}
   const btn=document.getElementById(`sbtn-${id}`); if(btn)btn.textContent='…';
@@ -1466,6 +1463,11 @@ async function saveSingle(id){
 
 async function saveAllPredictions(){
   if(!currentPlayer||!currentGroup)return;
+  if(currentGroup.entry_mode_enabled && !currentPlayer.pay_choice){
+    _pendingSaveAll = true;
+    showPayModal();
+    return;
+  }
   const toSave=[];
   allFixtures().forEach(f=>{
     if(results[f.id])return;
@@ -1623,6 +1625,9 @@ async function setPayChoice(choice){
     if(choice==='money') flash('Great — let the organiser know to collect your entry fee!','success');
     else flash('No problem — enjoy the competition!','success');
   }catch(e){ console.warn('pay choice save failed',e); }
+  // Resume whatever triggered the modal
+  if(_pendingSaveId){ const id=_pendingSaveId; _pendingSaveId=null; saveSingle(id); }
+  else if(_pendingSaveAll){ _pendingSaveAll=false; saveAllPredictions(); }
 }
 
 // ── COMPACT ───────────────────────────────
