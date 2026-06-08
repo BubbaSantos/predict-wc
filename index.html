@@ -504,7 +504,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1560,10 +1560,14 @@ async function loadPredictions(){
     results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score});
     predictions={}; (preds||[]).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score});
     if(tb&&tb.length){
-      document.getElementById('tiebreak-scorer').value=tb[0].top_scorer||'';
-      document.getElementById('tiebreak-goals').value=tb[0].goals||'';
-      // Lock it — already submitted
-      lockTiebreak();
+      // Set values before locking (lockTiebreak reads them)
+      const scorerEl = document.getElementById('tiebreak-scorer');
+      const goalsEl = document.getElementById('tiebreak-goals');
+      if(scorerEl) scorerEl.value = tb[0].top_scorer||'';
+      if(goalsEl) goalsEl.value = tb[0].goals||'';
+      // If elements don't exist, pass values directly to lockTiebreak
+      if(!scorerEl) lockTiebreakWithValues(tb[0].top_scorer||'', tb[0].goals||'');
+      else lockTiebreak();
     }
     // Grace period banner
     const graceBanner = document.getElementById('grace-banner-wrap');
@@ -1730,9 +1734,28 @@ function confirmSaveTiebreak(){
   );
 }
 
+function lockTiebreakWithValues(scorer, goals){
+  const section = document.getElementById('tiebreak-section');
+  if(!section) return;
+  const topBtn = document.getElementById('tiebreak-save-btn-top');
+  if(topBtn) topBtn.style.display='none';
+  section.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:.1rem 0;">'
+    +'<div style="display:flex;align-items:center;gap:.6rem;">'
+    +'<span>🏆</span>'
+    +'<div>'
+    +'<div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;font-family:\'DM Mono\',monospace;">Tie-Break · Locked</div>'
+    +'<div style="font-size:.9rem;font-weight:600;margin-top:.1rem;">'+scorer+' &nbsp;·&nbsp; <span style="color:var(--group-accent);">'+(goals||'0')+' goals</span></div>'
+    +'</div></div>'
+    +'<span style="font-family:\'DM Mono\',monospace;font-size:.62rem;color:var(--accent2);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);padding:.2rem .55rem;border-radius:20px;letter-spacing:.06em;">🔒 LOCKED</span>'
+    +'</div>';
+}
+
 function lockTiebreak(){
   const scorer = document.getElementById('tiebreak-scorer')?.value||'';
   const goals = document.getElementById('tiebreak-goals')?.value||'';
+  lockTiebreakWithValues(scorer, goals); return;
+  // legacy below (unreachable)
+  const _unused = null;
   // Hide lock in button
   const topBtn = document.getElementById('tiebreak-save-btn-top');
   if(topBtn) topBtn.style.display='none';
@@ -2314,6 +2337,7 @@ async function loadPlayersPanel(){
         <div class="player-actions">
           <button class="view-preds-btn" onclick="adminTogglePay(this)" data-id="${id}" data-choice="${p.pay_choice||''}">${p.pay_choice==='money'?'💸 Money':p.pay_choice==='fun'?'😄 Fun':'💰 Set'}</button>
           <button class="view-preds-btn" onclick="viewPlayerPredictions('${id}','${p.name.replace(/'/g,"\\'")}')">View Preds</button>
+          ${tbm[id] ? `<button class="view-preds-btn" onclick="unlockTiebreak('${id}','${p.name.replace(/'/g,"\\'")}')">🔓 Unlock TB</button>` : ''}
           <button class="view-preds-btn" onclick="resetPlayerPin('${id}','${p.name.replace(/'/g,"\\'")}')">Reset PIN</button>
           <button class="remove-player-btn" onclick="removePlayer('${id}','${p.name.replace(/'/g,"\\'")}')">Remove</button>
         </div>
@@ -2447,6 +2471,17 @@ async function confirmRename(playerId){
   }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
+
+
+async function unlockTiebreak(playerId, name){
+  showConfirm('🔓', 'Unlock Tie-Break', 'This will delete '+name+'\'s tie-break prediction and let them re-enter it. Are you sure?', 'Unlock', async ()=>{
+    try{
+      await sb('tiebreaks?group_id=eq.'+currentGroup.id+'&player_id=eq.'+playerId, {method:'DELETE', prefer:'return=minimal'});
+      flash(name+'\'s tie-break unlocked', 'success');
+      loadPlayersPanel();
+    }catch(e){ flash('Error: '+e.message,'error'); }
+  });
+}
 
 async function adminTogglePay(el){
   const playerId = el.dataset.id;
@@ -2953,6 +2988,6 @@ document.addEventListener('keydown', function(e){
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.2.7</div>
 </body>
 </html>
