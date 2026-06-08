@@ -1650,12 +1650,14 @@ async function loadPlayersPanel(){
   // Load grace requests
   loadGraceRequests();
   try{
-    const [playersList,preds,res]=await Promise.all([
+    const [playersList,preds,res,tbs]=await Promise.all([
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
+    const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     (playersList||[]).forEach(p=>{pm[p.id]={name:p.name,preds:0,pts:0};});
     (preds||[]).forEach(p=>{
@@ -1668,7 +1670,11 @@ async function loadPlayersPanel(){
     if(!Object.keys(pm).length){el.innerHTML='<div class="empty">No players yet.</div>';return;}
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
-        <div><div class="player-row-name">${p.name}</div><div class="player-row-stats">${p.preds} predictions · ${p.pts} pts</div></div>
+        <div>
+          <div class="player-row-name">${p.name}</div>
+          <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts</div>
+          ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
+        </div>
         <div class="player-actions">
           <button class="view-preds-btn" onclick="viewPlayerPredictions('${id}','${p.name.replace(/'/g,"\\'")}')">View Preds</button>
           <button class="view-preds-btn" onclick="resetPlayerPin('${id}','${p.name.replace(/'/g,"\\'")}')">Reset PIN</button>
