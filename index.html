@@ -1116,9 +1116,9 @@ function fmtCountdown(ms){
   const m = Math.floor(s/60);
   const h = Math.floor(m/60);
   const d = Math.floor(h/24);
-  if(d > 2) return d+'d '+(h%24)+'h';
-  if(h > 0) return (h%24)+'h '+(m%60)+'m';
-  if(m > 0) return (m%60)+'m '+(s%60)+'s';
+  if(d >= 1) return d+'d '+(h%24)+'h';
+  if(h > 0) return h+'h '+(m%60)+'m';
+  if(m > 0) return m+'m '+(s%60)+'s';
   return s+'s';
 }
 
