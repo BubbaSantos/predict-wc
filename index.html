@@ -1256,7 +1256,7 @@ function renderPredictCard(f,pred,res){
     <div class="match-meta">
       <span class="match-info"><span class="group-tag">${grpLabel}</span> · ${metaStr}</span>
       <div style="display:flex;align-items:center;gap:.5rem;">${resStr}
-        ${hasResult?`<span class="save-btn" style="cursor:default;opacity:.5;">Locked</span>`:`<button class="save-btn" id="sbtn-${f.id}" onclick="saveSingle('${f.id}')">Save</button>`}
+        ${hasResult?`<span class="save-btn" style="cursor:default;opacity:.5;">Locked</span>`:`<button class="save-btn" id="sbtn-${f.id}" onclick="saveSingle('${f.id}')">Save</button>`+(!kicked?` <span id="cd-${f.id}" style="font-family:'DM Mono',monospace;font-size:.6rem;color:rgba(239,68,68,.6);">locks in …</span>`:'')}
       </div>
     </div>
   </div>`;
