@@ -630,6 +630,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         </div>
       </div>
       <div id="grace-banner-wrap"></div>
+      <div id="pay-status-line" style="display:none;font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:7px;"></div>
       <div class="tie-break-section" id="tiebreak-section">
 
         <!-- Header row -->
@@ -700,6 +701,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           </div>
           <button class="sync-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
         </div>
+      </div>
+      <div id="lb-pot-display" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:.78rem;color:var(--text-muted);">💰 Total pot</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--group-accent);line-height:1;" id="lb-pot-amount">£0</div>
       </div>
       <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:1.25rem;">Tap any player to see their predictions.</p>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
@@ -1234,12 +1239,8 @@ function enterApp(){
   // Admin tab always visible — password required to unlock
 
   if(currentPlayer){
-    const payLine = currentPlayer.pay_choice==='money'
-      ? '<div style="font-size:.65rem;color:var(--text-muted);margin-top:.1rem;">is playing for money 💰</div>'
-      : currentPlayer.pay_choice==='fun'
-      ? '<div style="font-size:.65rem;color:var(--text-muted);margin-top:.1rem;">is playing for fun 🤪</div>'
-      : '';
-    document.getElementById('h-player-chip').innerHTML='<div><strong>'+currentPlayer.name+'</strong>'+payLine+'</div>';
+    const payIcon = currentPlayer.pay_choice==='money' ? ' 💰' : currentPlayer.pay_choice==='fun' ? ' 🤪' : '';
+    document.getElementById('h-player-chip').innerHTML='<strong>'+currentPlayer.name+'</strong>'+payIcon;
     document.getElementById('pred-player-name').textContent=currentPlayer.name;
   } else {
     document.getElementById('h-player-chip').innerHTML='<strong>Admin</strong>';
@@ -1553,6 +1554,12 @@ async function loadPredictions(){
     if(compactMode) list.classList.add('compact');
     startMatchCountdowns();
     startTiebreakCountdown();
+    // Show pay status line under tiebreak
+    const payStatusEl = document.getElementById('pay-status-line');
+    if(payStatusEl && currentGroup && currentGroup.entry_mode_enabled && currentPlayer && currentPlayer.pay_choice){
+      payStatusEl.textContent = currentPlayer.pay_choice==='money' ? 'You are playing for money 💰' : 'You are playing for fun 🤪';
+      payStatusEl.style.display = 'block';
+    } else if(payStatusEl){ payStatusEl.style.display='none'; }
     // Show pay choice section if entry mode enabled
     const pcWrap = document.getElementById('pay-choice-wrap');
     const pcInfo = document.getElementById('pay-choice-info');
@@ -1853,12 +1860,8 @@ async function setPayChoice(choice){
     currentPlayer = {...currentPlayer, pay_choice:choice};
     saveSession();
     if(_lbPayMap && currentPlayer) _lbPayMap[currentPlayer.name] = choice;
-    // Update header chip
-    const payLine2 = choice==='money'
-      ? '<div style="font-size:.65rem;color:var(--text-muted);margin-top:.1rem;">is playing for money 💰</div>'
-      : '<div style="font-size:.65rem;color:var(--text-muted);margin-top:.1rem;">is playing for fun 🤪</div>';
     const chip = document.getElementById('h-player-chip');
-    if(chip && currentPlayer) chip.innerHTML='<div><strong>'+currentPlayer.name+'</strong>'+payLine2+'</div>';
+    if(chip && currentPlayer) chip.innerHTML='<strong>'+currentPlayer.name+'</strong>'+(choice==='money'?' 💰':' 🤪');
     if(choice==='money') flash('Great — let the organiser know to collect your entry fee!','success');
     else flash('No problem — enjoy the competition!','success');
   }catch(e){ console.warn('pay choice save failed',e); }
@@ -2275,12 +2278,8 @@ async function setPayChoiceBtn(choice){
     currentPlayer = {...currentPlayer, pay_choice:choice};
     saveSession();
     if(_lbPayMap && currentPlayer) _lbPayMap[currentPlayer.name] = choice;
-    // Update header chip
-    const payLine2 = choice==='money'
-      ? '<div style="font-size:.65rem;color:var(--text-muted);margin-top:.1rem;">is playing for money 💰</div>'
-      : '<div style="font-size:.65rem;color:var(--text-muted);margin-top:.1rem;">is playing for fun 🤪</div>';
     const chip = document.getElementById('h-player-chip');
-    if(chip && currentPlayer) chip.innerHTML='<div><strong>'+currentPlayer.name+'</strong>'+payLine2+'</div>';
+    if(chip && currentPlayer) chip.innerHTML='<strong>'+currentPlayer.name+'</strong>'+(choice==='money'?' 💰':' 🤪');
     // Update UI
     document.getElementById('pay-btn-money').style.display='none';
     document.getElementById('pay-btn-fun').style.display='none';
@@ -2305,6 +2304,19 @@ function setLbFilter(filter){
 function renderLeaderboard(){
   const lb = document.getElementById('leaderboard-list');
   if(!lb) return;
+
+  // Update pot display
+  const potDisplay = document.getElementById('lb-pot-display');
+  const potAmount = document.getElementById('lb-pot-amount');
+  if(potDisplay && potAmount && currentGroup && currentGroup.entry_mode_enabled && currentGroup.entry_fee){
+    const moneyPlayers = Object.keys(_lbPayMap).filter(n=>_lbPayMap[n]==='money').length;
+    const fee = parseFloat((currentGroup.entry_fee||'0').replace('£',''))||0;
+    const pot = moneyPlayers * fee;
+    if(_lbFilter === 'money' && pot > 0){
+      potDisplay.style.display='flex';
+      potAmount.textContent = '£'+pot.toFixed(pot%1===0?0:2);
+    } else { potDisplay.style.display='none'; }
+  } else if(potDisplay){ potDisplay.style.display='none'; }
 
   let entries = Object.entries(_lbScores||{});
   if(_lbFilter === 'money') entries = entries.filter(([name])=>_lbPayMap[name]==='money');
