@@ -1039,8 +1039,23 @@ async function registerPlayer(){
 }
 
 // ── ENTER APP ────────────────────────────
+
+async function refreshGroup(){
+  if(!currentGroup) return;
+  try{
+    const grps = await sb('groups?id=eq.'+currentGroup.id+'&select=*');
+    if(grps&&grps.length){
+      currentGroup = {...currentGroup, ...grps[0]};
+      saveSession();
+      applyBranding();
+    }
+  }catch(e){ console.warn('refreshGroup failed',e); }
+}
+
 function enterApp(){
   applyBranding();
+  // Refresh group settings from DB to pick up any admin changes
+  refreshGroup();
   document.getElementById('screen-landing').style.display='none';
   document.getElementById('screen-app').style.display='block';
   // Admin tab always visible — password required to unlock
