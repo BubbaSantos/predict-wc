@@ -1186,6 +1186,8 @@ function enterApp(){
   applyBranding();
   // Refresh group settings from DB to pick up any admin changes
   refreshGroup().then(()=>{
+    // Reload entry mode settings with fresh data
+    loadEntryModeSettings();
     // Check pay modal after group settings are fresh
     if(currentGroup&&currentGroup.entry_mode_enabled&&currentPlayer&&!currentPlayer.pay_choice){
       setTimeout(showPayModal, 600);
@@ -1721,6 +1723,7 @@ async function loadLeaderboard(){
 // ── ENTRY MODE ────────────────────────────────────────
 function loadEntryModeSettings(){
   if(!currentGroup) return;
+  if(!document.getElementById('entry-mode-toggle')) return; // admin panel not open yet
   const enabled = currentGroup.entry_mode_enabled || false;
   const toggle = document.getElementById('entry-mode-toggle');
   if(toggle) toggle.checked = enabled;
