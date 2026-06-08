@@ -1171,7 +1171,7 @@ async function registerPlayer(){
 // ── ENTER APP ────────────────────────────
 
 async function refreshGroup(){
-  if(!currentGroup) return;
+  if(!currentGroup) return Promise.resolve();
   try{
     const grps = await sb('groups?id=eq.'+currentGroup.id+'&select=*');
     if(grps&&grps.length){
@@ -1185,7 +1185,12 @@ async function refreshGroup(){
 function enterApp(){
   applyBranding();
   // Refresh group settings from DB to pick up any admin changes
-  refreshGroup();
+  refreshGroup().then(()=>{
+    // Check pay modal after group settings are fresh
+    if(currentGroup&&currentGroup.entry_mode_enabled&&currentPlayer&&!currentPlayer.pay_choice){
+      setTimeout(showPayModal, 600);
+    }
+  });
   document.getElementById('screen-landing').style.display='none';
   document.getElementById('screen-app').style.display='block';
   // Admin tab always visible — password required to unlock
@@ -2406,7 +2411,7 @@ async function doReset(type){
     const ops=[];
     if(type==='results'||type==='all') ops.push(sb(`results?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='predictions'||type==='all') ops.push(sb(`predictions?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
-    if(type==='all') ops.push(sb(`tiebreaks?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
+    if(type==='predictions'||type==='all') ops.push(sb(`tiebreaks?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     await Promise.all(ops);
     if(type==='results'||type==='all')results={};
     flash('Reset complete','success');
