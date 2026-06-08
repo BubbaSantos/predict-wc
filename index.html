@@ -365,6 +365,62 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .status-card { transition: border-color .15s; }
   .status-card:hover { border-color: rgba(245,158,11,.2); }
 
+
+  /* MORE ANIMATIONS */
+  @keyframes slideInRight { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes flipIn { from{opacity:0;transform:rotateY(-15deg)} to{opacity:1;transform:rotateY(0)} }
+  @keyframes expandIn { from{opacity:0;max-height:0} to{opacity:1;max-height:200px} }
+
+  /* Predict page header */
+  .page-title { animation: slideInRight .3s ease; }
+
+  /* Score filled celebration */
+  .score-input.filled { animation: popIn .2s ease; border-color: rgba(16,185,129,.5); }
+
+  /* Modal overlay fade */
+  .modal-overlay { animation: fadeIn .15s ease; }
+
+  /* Pay status line slide in */
+  #pay-status-line { animation: slideDown .3s ease; }
+
+  /* Group hero cards pulse on hover */
+  .group-hero { transition: transform .2s, box-shadow .2s; }
+  .group-hero:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.15); }
+
+  /* Compact toggle bounce */
+  .compact-toggle { transition: all .15s; }
+  .compact-toggle:active { transform: scale(.92); }
+
+  /* Leaderboard rank pop */
+  .lb-rank { transition: transform .2s; }
+  .lb-row:hover .lb-rank { transform: scale(1.15); }
+
+  /* Points counter animate */
+  .lb-points { transition: color .3s; }
+
+  /* Tie break section */
+  .tie-break-section { transition: all .3s; }
+
+  /* Save all button */
+  .btn-save-all:active { transform: scale(.97); }
+
+  /* Filter btn active */
+  .lb-filter-btn.active { animation: scaleIn .15s ease; }
+
+  /* Admin tabs */
+  .admin-tab { transition: all .15s; }
+  .admin-tab:active { transform: scale(.95); }
+
+  /* Match card saved border glow */
+  .match-card.saved { box-shadow: 0 0 0 1px rgba(16,185,129,.2); }
+
+  /* Grace banner */
+  .grace-banner { animation: slideDown .3s ease; }
+
+  /* Players popup list items */
+  .pred-modal div[style*="border-bottom"] { transition: background .1s; }
+  .pred-modal div[style*="border-bottom"]:hover { background: var(--surface2); }
+
   /* LIGHT MODE */
   body.light {
     --bg:#f0f2f7;
@@ -625,7 +681,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="page-header">
         <div class="page-title">Predictions</div>
         <div style="display:flex;align-items:center;gap:.5rem;">
-          <div class="user-chip">Playing as <strong id="pred-player-name"></strong></div>
+          <button class="compact-toggle" onclick="showPlayersPopup()" id="players-popup-btn">👥 Players</button>
           <button class="compact-toggle" id="compact-btn" onclick="toggleCompact()">⊟ Compact</button>
         </div>
       </div>
@@ -652,7 +708,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div style="display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:end;margin-bottom:.75rem;">
           <div>
             <label style="display:block;font-size:.68rem;color:var(--text-muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.07em;">Player name</label>
-            <input type="text" id="tiebreak-scorer" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;padding:.65rem .9rem;border-radius:8px;outline:none;transition:border-color .15s;" placeholder="e.g. Kylian Mbappé" maxlength="40" onfocus="this.style.borderColor='var(--group-accent)'" onblur="this.style.borderColor='var(--border)'" />
+            <input type="text" id="tiebreak-scorer" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;padding:.65rem .9rem;border-radius:8px;outline:none;transition:border-color .15s;" placeholder="e.g. McTominay" maxlength="40" onfocus="this.style.borderColor='var(--group-accent)'" onblur="this.style.borderColor='var(--border)'" />
           </div>
           <div>
             <label style="display:block;font-size:.68rem;color:var(--text-muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.07em;">Goals</label>
@@ -1759,13 +1815,13 @@ async function loadLeaderboard(){
     const [allPreds,allResults,allPlayers]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
     ]);
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]=p.name);
     const scores={};
     (allPreds||[]).forEach(p=>{
-      const name=pm[p.player_id]||'Unknown';
+      const pdata=pm[p.player_id]; const name=(pdata&&(pdata.display||pdata.name))||'Unknown';
       if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0,playerId:p.player_id};
       const res=rm[p.match_id]; if(!res)return;
       const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
@@ -1898,6 +1954,69 @@ function advanceToNextMatch(currentMatchId){
       nextInput.closest('.match-card')?.scrollIntoView({behavior:'smooth', block:'center'});
     }
   }
+}
+
+
+async function showPlayersPopup(){
+  if(!currentGroup) return;
+  try{
+    const players = await sb('players?group_id=eq.'+currentGroup.id+'&select=id,name,nickname,pay_choice&order=name');
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'z-index:350;';
+    const rows = (players||[]).map(p=>{
+      const display = p.nickname ? p.nickname : p.name;
+      const payIcon = p.pay_choice==='money' ? ' 💰' : p.pay_choice==='fun' ? ' 🤪' : '';
+      const isMine = currentPlayer && p.id === currentPlayer.id;
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .25rem;border-bottom:1px solid var(--border);">'
+        +'<span style="font-size:.9rem;font-weight:'+(isMine?'600':'400')+';color:'+(isMine?'var(--group-accent)':'var(--text)')+';">'
+        +display+payIcon+(isMine?' ◀':'')+'</span>'
+        +(isMine ? '<button class="view-preds-btn" onclick="showNicknameModal();this.closest(\'.modal-overlay\').remove()">Edit nickname</button>' : '')
+        +'</div>';
+    }).join('');
+    modal.innerHTML = '<div class="pred-modal" style="max-width:320px;">'
+      +'<div class="pred-modal-header">'
+      +'<div class="pred-modal-title">Players ('+(players||[]).length+')</div>'
+      +'<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button>'
+      +'</div>'
+      +(rows||'<div class="empty">No players yet.</div>')
+      +'</div>';
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+    document.body.appendChild(modal);
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+function showNicknameModal(){
+  if(!currentPlayer) return;
+  const current = currentPlayer.nickname || '';
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = 'z-index:360;';
+  modal.innerHTML = '<div class="pred-modal" style="max-width:320px;">'
+    +'<div class="pred-modal-header">'
+    +'<div class="pred-modal-title">Your Nickname</div>'
+    +'<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button>'
+    +'</div>'
+    +'<p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Shown to other players. Your real name is still used by the admin.</p>'
+    +'<input id="nickname-input" type="text" class="config-input" value="'+current+'" maxlength="30" placeholder="e.g. The Predictor" style="margin-bottom:.75rem;" />'
+    +'<button class="btn" onclick="saveNickname()">Save Nickname</button>'
+    +'<button class="btn-ghost" style="margin-top:.5rem;" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>'
+    +'</div>';
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  setTimeout(()=>{ const i=document.getElementById('nickname-input'); if(i){i.focus();i.select();} },50);
+}
+
+async function saveNickname(){
+  const val = document.getElementById('nickname-input')?.value.trim();
+  if(!currentPlayer) return;
+  try{
+    await sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{nickname:val||null}});
+    currentPlayer = {...currentPlayer, nickname: val||null};
+    saveSession();
+    document.querySelector('.modal-overlay')?.remove();
+    flash('Nickname '+(val?'set to '+val:'removed')+'!','success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
 // ── COMPACT ───────────────────────────────
@@ -2082,7 +2201,7 @@ async function loadPlayersPanel(){
   loadGraceRequests();
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -2090,7 +2209,7 @@ async function loadPlayersPanel(){
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
-    (playersList||[]).forEach(p=>{pm[p.id]={name:p.name,preds:0,pts:0,pay_choice:p.pay_choice};});
+    (playersList||[]).forEach(p=>{pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -2102,7 +2221,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.name}</div>
+          <div class="player-row-name">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}</div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts${p.pay_choice ? ' · '+(p.pay_choice==='money'?'💸 Paying in':'😄 Fun only'):''}</div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
@@ -2504,7 +2623,7 @@ async function exportLeaderboardCSV(){
     const [allPreds,allResults,allPlayers]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
     ]);
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]=p.name);
@@ -2532,7 +2651,7 @@ async function exportAllPredictionsCSV(){
     const [preds,res,players]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,pay_choice`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
     ]);
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (players||[]).forEach(p=>pm[p.id]=p.name);
