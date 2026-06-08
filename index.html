@@ -193,7 +193,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .toggle-switch input:checked + .toggle-slider:before{transform:translateX(20px);background:var(--green);}
 
 /* ── CONFIRM MODAL ── */
-.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .15s;}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:none;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .15s;pointer-events:none;}
 .confirm-overlay.show{opacity:1;}
 .confirm-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.75rem;max-width:420px;width:100%;transform:translateY(12px);transition:transform .15s;}
 .confirm-overlay.show .confirm-modal{transform:translateY(0);}
@@ -241,7 +241,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .lb-filter-btn.active{background:var(--surface2);color:var(--group-accent);}
 
   /* PAY/FUN MODAL */
-  .pay-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:450;display:flex;align-items:center;justify-content:center;padding:1rem;}
+  .pay-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:450;display:none;align-items:center;justify-content:center;padding:1rem;}
   .pay-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.75rem;max-width:400px;width:100%;text-align:center;}
   .pay-modal-icon{font-size:2.5rem;margin-bottom:.75rem;}
   .pay-modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.06em;margin-bottom:.5rem;color:var(--group-accent);}
@@ -2279,11 +2279,15 @@ function showConfirm(icon,title,body,okLabel,fn){
   document.getElementById('confirm-ok-btn').textContent=okLabel;
   _pendingConfirmFn=fn;
   const ov=document.getElementById('confirm-overlay');
-  ov.style.display='flex';requestAnimationFrame(()=>ov.classList.add('show'));
+  ov.style.display='flex';
+  ov.style.pointerEvents='all';
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>ov.classList.add('show')); });
 }
 function closeConfirm(){
   const ov=document.getElementById('confirm-overlay');
-  ov.classList.remove('show');setTimeout(()=>{ov.style.display='none';_pendingConfirmFn=null;},150);
+  ov.classList.remove('show');
+  ov.style.pointerEvents='none';
+  setTimeout(()=>{ov.style.display='none';_pendingConfirmFn=null;},160);
 }
 function confirmOk(){if(_pendingConfirmFn)_pendingConfirmFn();closeConfirm();}
 
