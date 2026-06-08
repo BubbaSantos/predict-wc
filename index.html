@@ -646,6 +646,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <button class="save-btn" onclick="confirmSaveTiebreak()">Save Tie-Break</button>
           <span style="font-size:.72rem;color:var(--text-muted);margin-left:.75rem;">⚠️ Once saved this cannot be changed</span>
         </div>
+        <div id="pay-choice-wrap" style="display:none;margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border);">
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace;">💰 Are you playing for money?</div>
+          <div id="pay-choice-info" style="font-size:.78rem;color:var(--text-dim);margin-bottom:.75rem;"></div>
+          <div style="display:flex;gap:.6rem;">
+            <button id="pay-btn-money" onclick="setPayChoiceBtn('money')" class="save-btn" style="flex:1;text-align:center;padding:.5rem;">💸 I'm paying in</button>
+            <button id="pay-btn-fun" onclick="setPayChoiceBtn('fun')" class="save-btn" style="flex:1;text-align:center;padding:.5rem;">😄 Just for fun</button>
+          </div>
+          <div id="pay-choice-locked" style="display:none;font-size:.8rem;margin-top:.5rem;"></div>
+        </div>
         <div id="tb-countdown-wrap" style="margin-top:.6rem;"></div>
       </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
@@ -1512,6 +1521,31 @@ async function loadPredictions(){
     if(compactMode) list.classList.add('compact');
     startMatchCountdowns();
     startTiebreakCountdown();
+    // Show pay choice section if entry mode enabled
+    const pcWrap = document.getElementById('pay-choice-wrap');
+    const pcInfo = document.getElementById('pay-choice-info');
+    const pcLocked = document.getElementById('pay-choice-locked');
+    const moneyBtn = document.getElementById('pay-btn-money');
+    const funBtn = document.getElementById('pay-btn-fun');
+    if(pcWrap && currentGroup && currentGroup.entry_mode_enabled){
+      pcWrap.style.display = 'block';
+      const fee = currentGroup.entry_fee || '';
+      const prize = currentGroup.entry_prize || '';
+      let info = '';
+      if(fee) info += 'Entry fee: <strong style="color:var(--group-accent)">'+fee+'</strong>';
+      if(prize) info += (info?' · ':'')+'Prize: <strong>'+prize+'</strong>';
+      if(pcInfo) pcInfo.innerHTML = info;
+      if(currentPlayer && currentPlayer.pay_choice){
+        if(moneyBtn) moneyBtn.style.display='none';
+        if(funBtn) funBtn.style.display='none';
+        if(pcLocked){
+          pcLocked.style.display='block';
+          pcLocked.innerHTML = currentPlayer.pay_choice==='money'
+            ? '<span style="color:var(--green)">✓ Paying in 💸</span>'
+            : '<span style="color:var(--text-muted)">✓ Playing for fun 😄</span>';
+        }
+      }
+    } else if(pcWrap){ pcWrap.style.display='none'; }
   }catch(e){list.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
@@ -1564,9 +1598,9 @@ function renderPredictCard(f,pred,res){
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
       <div style="display:flex;align-items:center;gap:.4rem;">
-        <input class="score-input ${pred.home!==''?'filled':''}" type="number" min="0" max="99" id="h-${f.id}" value="${pred.home}" placeholder="–" ${hasResult?'disabled':''} oninput="markUnsaved('${f.id}')" />
+        <input class="score-input ${pred.home!==''?'filled':''}" type="number" min="0" max="99" id="h-${f.id}" value="${pred.home}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} oninput="scoreInput(this,'a-'+this.id.slice(2))" data-match-id="${f.id}" />
         <span class="score-sep">–</span>
-        <input class="score-input ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" ${hasResult?'disabled':''} oninput="markUnsaved('${f.id}')" />
+        <input class="score-input ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} oninput="scoreInput(this,null)" data-match-id="${f.id}" />
       </div>${ptsBadge}
     </div>
     <div class="team away"><span class="team-name">${f.away}</span><span class="team-flag">${f.af}</span></div>
@@ -1604,12 +1638,7 @@ function markUnsaved(id){const b=document.getElementById(`sbtn-${id}`);if(b){b.t
 
 async function saveSingle(id){
   if(!currentPlayer||!currentGroup)return;
-  // Show pay modal if entry mode on and player hasn't chosen yet
-  if(currentGroup.entry_mode_enabled && !currentPlayer.pay_choice){
-    _pendingSaveId = id;
-    showPayModal();
-    return;
-  }
+
   const h=document.getElementById(`h-${id}`)?.value.trim(),a=document.getElementById(`a-${id}`)?.value.trim();
   if(h===''||a===''){flash('Enter both scores','error');return;}
   const btn=document.getElementById(`sbtn-${id}`); if(btn)btn.textContent='…';
@@ -1626,11 +1655,7 @@ async function saveSingle(id){
 
 async function saveAllPredictions(){
   if(!currentPlayer||!currentGroup)return;
-  if(currentGroup.entry_mode_enabled && !currentPlayer.pay_choice){
-    _pendingSaveAll = true;
-    showPayModal();
-    return;
-  }
+
   const toSave=[];
   allFixtures().forEach(f=>{
     if(results[f.id])return;
@@ -1794,6 +1819,36 @@ async function setPayChoice(choice){
   // Resume whatever triggered the modal
   if(_pendingSaveId){ const id=_pendingSaveId; _pendingSaveId=null; saveSingle(id); }
   else if(_pendingSaveAll){ _pendingSaveAll=false; saveAllPredictions(); }
+}
+
+
+// ── SCORE AUTO-ADVANCE ────────────────────────────────
+function scoreInput(el, nextId){
+  const v = el.value.replace(/[^0-9]/g,'');
+  el.value = v.slice(0,2);
+  const matchId = el.dataset.matchId || el.id.replace('h-','').replace('a-','');
+  markUnsaved(matchId);
+
+  if(v.length >= 1 && nextId){
+    const next = document.getElementById(nextId);
+    if(next && !next.disabled){ next.focus(); next.select(); }
+  } else if(v.length >= 1 && !nextId && el.dataset.matchId){
+    advanceToNextMatch(el.dataset.matchId);
+  }
+}
+
+function advanceToNextMatch(currentMatchId){
+  const fixtures = allFixtures().filter(f => !isMatchLocked(f));
+  const idx = fixtures.findIndex(f => f.id === currentMatchId);
+  if(idx !== -1 && idx < fixtures.length - 1){
+    const nextFix = fixtures[idx + 1];
+    const nextInput = document.getElementById('h-' + nextFix.id);
+    if(nextInput && !nextInput.disabled){
+      nextInput.focus();
+      nextInput.select();
+      nextInput.closest('.match-card')?.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }
 }
 
 // ── COMPACT ───────────────────────────────
@@ -2152,6 +2207,27 @@ async function removePlayer(playerId,name){
 }
 
 
+
+async function setPayChoiceBtn(choice){
+  if(!currentPlayer||!currentGroup) return;
+  try{
+    await sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pay_choice:choice}});
+    currentPlayer = {...currentPlayer, pay_choice:choice};
+    saveSession();
+    if(_lbPayMap && currentPlayer) _lbPayMap[currentPlayer.name] = choice;
+    // Update UI
+    document.getElementById('pay-btn-money').style.display='none';
+    document.getElementById('pay-btn-fun').style.display='none';
+    const locked = document.getElementById('pay-choice-locked');
+    if(locked){
+      locked.style.display='block';
+      locked.innerHTML = choice==='money'
+        ? '<span style="color:var(--green)">✓ Paying in 💸</span>'
+        : '<span style="color:var(--text-muted)">✓ Playing for fun 😄</span>';
+    }
+    flash(choice==='money' ? 'Locked in — let the organiser know!' : 'Got it — enjoy the competition!','success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
 function setLbFilter(filter){
   _lbFilter = filter;
   document.querySelectorAll('.lb-filter-btn').forEach(b=>{
