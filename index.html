@@ -1623,6 +1623,7 @@ async function setPayChoice(choice){
     await sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pay_choice:choice}});
     currentPlayer = {...currentPlayer, pay_choice:choice};
     saveSession();
+    if(_lbPayMap && currentPlayer) _lbPayMap[currentPlayer.name] = choice;
     if(choice==='money') flash('Great — let the organiser know to collect your entry fee!','success');
     else flash('No problem — enjoy the competition!','success');
   }catch(e){ console.warn('pay choice save failed',e); }
@@ -2001,7 +2002,7 @@ function renderLeaderboard(){
 
   let entries = Object.entries(_lbScores||{});
   if(_lbFilter === 'money') entries = entries.filter(([name])=>_lbPayMap[name]==='money');
-  else if(_lbFilter === 'fun') entries = entries.filter(([name])=>_lbPayMap[name]==='fun'||!_lbPayMap[name]);
+  else if(_lbFilter === 'fun') entries = entries.filter(([name])=>_lbPayMap[name]==='fun');
 
   const sorted = entries.sort((a,b)=>b[1].total-a[1].total);
   if(!sorted.length){ lb.innerHTML='<div class="empty">No players in this category yet.</div>'; return; }
