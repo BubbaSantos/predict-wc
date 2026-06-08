@@ -232,7 +232,38 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .matchday-group{margin-bottom:1.5rem;}
 .compact .score-input{width:36px;height:32px;font-size:.9rem;}
 
-@media(max-width:600px){
+
+  /* BURGER MENU */
+  #burger-btn { display: none; }
+  @media(max-width:640px){
+    #burger-btn { display: block !important; }
+    #main-nav {
+      display: none;
+      position: absolute;
+      top: 56px;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-direction: column;
+      padding: .5rem;
+      z-index: 99;
+      gap: .25rem;
+    }
+    #main-nav.open { display: flex; }
+    #main-nav button {
+      width: 100%;
+      text-align: left;
+      padding: .65rem 1rem;
+      font-size: .9rem;
+      border-radius: 6px;
+    }
+    .header-user { gap: .35rem; }
+    .user-chip { font-size: .7rem; padding: .2rem .5rem; }
+    .leave-btn { font-size: .7rem; }
+  }
+
+  @media(max-width:600px){
   .landing-cards{grid-template-columns:1fr;}
   .header-group{display:none;}
   .header-logo{font-size:1rem;}
@@ -343,6 +374,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div class="header-group" id="h-group-sub"></div>
       </div>
     </div>
+    <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu" style="display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:.3rem .4rem;border-radius:5px;font-size:1.2rem;line-height:1;">☰</button>
     <nav id="main-nav">
       <button id="nav-home" class="active" onclick="showView('home')">Home</button>
       <button id="nav-rules" onclick="showView('rules')">Rules</button>
@@ -974,7 +1006,8 @@ function leaveGroup(){
 }
 
 // ── VIEW SWITCHING ────────────────────────
-function showView(name){
+function showView(name){ closeMenu();
+
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
@@ -1437,6 +1470,21 @@ async function loadLeaderboard(){
 }
 
 // ── COMPACT ───────────────────────────────
+
+function toggleMenu(){
+  const nav = document.getElementById('main-nav');
+  const btn = document.getElementById('burger-btn');
+  nav.classList.toggle('open');
+  btn.textContent = nav.classList.contains('open') ? '✕' : '☰';
+}
+
+function closeMenu(){
+  const nav = document.getElementById('main-nav');
+  const btn = document.getElementById('burger-btn');
+  nav.classList.remove('open');
+  if(btn) btn.textContent = '☰';
+}
+
 function toggleCompact(){
   compactMode=!compactMode;
   const list=document.getElementById('fixtures-list');
