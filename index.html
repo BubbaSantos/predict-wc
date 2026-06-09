@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.1</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -707,6 +707,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <button class="user-chip" id="h-player-chip" type="button" style="cursor:pointer;user-select:none;background:none;border:1px solid var(--border);font-family:inherit;font-size:inherit;" title="Profile"></button>
       <div id="profile-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:190px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden;">
         <div id="profile-menu-header" style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;">Profile</div>
+        <div id="profile-pay-item" style="display:none;padding:.55rem 1rem;font-size:.8rem;color:var(--text-muted);gap:.6rem;align-items:center;border-bottom:1px solid var(--border);"></div>
         <button class="profile-menu-item" onclick="showNicknameModal();closeProfileMenu()">✏️ Change Nickname</button>
         <button class="profile-menu-item" onclick="showChangePinModal();closeProfileMenu()">🔑 Change PIN</button>
         <button class="profile-menu-item" onclick="showMyPredictions();closeProfileMenu()">📊 My Predictions</button>
@@ -1497,8 +1498,7 @@ function enterApp(){
   if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
   if(currentPlayer){
-    const payIcon = currentPlayer.pay_choice==='money' ? ' 💰' : currentPlayer.pay_choice==='fun' ? ' 🤪' : '';
-    document.getElementById('h-player-chip').innerHTML='<strong>'+currentPlayer.name+'</strong>'+payIcon;
+    document.getElementById('h-player-chip').innerHTML='<strong>'+currentPlayer.name+'</strong>';
     document.getElementById('pred-player-name').textContent=currentPlayer.name;
   } else {
     document.getElementById('h-player-chip').innerHTML='<strong>Admin</strong>';
@@ -1839,9 +1839,8 @@ async function loadPredictions(){
     startMatchCountdowns();
     startTiebreakCountdown();
     // Update header chip with fresh pay choice
-    const payIcon2 = currentPlayer.pay_choice==='money' ? ' 💰' : currentPlayer.pay_choice==='fun' ? ' 🤪' : '';
     const chip2 = document.getElementById('h-player-chip');
-    if(chip2) chip2.innerHTML='<strong>'+(currentPlayer.nickname||currentPlayer.name)+'</strong>'+payIcon2;
+    if(chip2) chip2.innerHTML='<strong>'+(currentPlayer.nickname||currentPlayer.name)+'</strong>';
 
     // Render pay choice card
     renderPayChoiceCard();
@@ -2421,7 +2420,7 @@ async function loadHome(){
       const dateStr = ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
       const timeStr = ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       const predHtml = pred
-        ? `<div class="home-next-pred">${pred.h}–${pred.a} <span style="color:var(--green);font-size:.7rem;">✓ Predicted</span></div>`
+        ? `<div class="home-next-pred">You predicted ${pred.h}–${pred.a}</div>`
         : `<div class="home-next-nopred">Not predicted yet</div>`;
       nextHtml = progressHtml + `<div class="home-next-match">
         <div>
@@ -2531,7 +2530,9 @@ function initProfileMenu(){
   chip.addEventListener('click', function(ev){
     ev.preventDefault();
     ev.stopPropagation();
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    const opening = menu.style.display !== 'block';
+    menu.style.display = opening ? 'block' : 'none';
+    if(opening) updatePayChoiceMenuItem();
   });
 
   // Close when tapping/clicking anywhere else
@@ -2556,6 +2557,15 @@ function toggleProfileMenu(){
 function closeProfileMenu(){
   const menu = document.getElementById('profile-menu');
   if(menu) menu.style.display='none';
+}
+
+function updatePayChoiceMenuItem(){
+  const el = document.getElementById('profile-pay-item');
+  if(!el) return;
+  const choice = currentPlayer && currentPlayer.pay_choice;
+  if(choice==='money') { el.textContent='💸 Playing for money'; el.style.display='flex'; }
+  else if(choice==='fun') { el.textContent='😄 Playing for fun'; el.style.display='flex'; }
+  else { el.style.display='none'; }
 }
 
 
@@ -3884,6 +3894,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.1</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.2</div>
 </body>
 </html>
