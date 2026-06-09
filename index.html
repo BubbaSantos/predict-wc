@@ -151,6 +151,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .home-cta-btn.primary{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:var(--group-accent);}
+.home-cta-btn.start-here{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.5);color:#10b981;animation:startHerePulse 1.4s ease-in-out infinite;}
+@keyframes startHerePulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4);}50%{box-shadow:0 0 0 7px rgba(16,185,129,0);}}
 .fe-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;}
 .fe-row:last-child{margin-bottom:0;}
 .fe-emoji{width:3.2rem;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem;font-size:1rem;color:var(--text);outline:none;font-family:inherit;}
@@ -598,7 +600,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.3</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -746,6 +748,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="home-countdown-sub" style="font-size:.65rem;color:var(--text-muted);margin-top:.6rem;"></div>
       </div>
 
+      <!-- Next Upcoming Game -->
+      <div class="home-card" id="home-next-card">
+        <div class="home-card-title">My Next Prediction</div>
+        <div id="home-next-game"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+        <div class="home-cta" style="margin-top:.75rem;">
+          <button id="home-predict-btn" class="home-cta-btn primary" onclick="showView('predict')">All Predictions</button>
+        </div>
+      </div>
+
       <!-- Mini Leaderboard -->
       <div class="home-card" id="home-mini-lb-card">
         <div class="home-card-title">Standings</div>
@@ -760,15 +771,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div class="home-card-title">Last Place Forfeit Vote</div>
         <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">What should the loser have to do?</div>
         <div id="home-forfeit"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
-      </div>
-
-      <!-- Next Upcoming Game -->
-      <div class="home-card" id="home-next-card">
-        <div class="home-card-title">My Next Prediction</div>
-        <div id="home-next-game"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
-        <div class="home-cta" style="margin-top:.75rem;">
-          <button class="home-cta-btn primary" onclick="showView('predict')">All Predictions</button>
-        </div>
       </div>
 
       <!-- Match Stats -->
@@ -2542,6 +2544,20 @@ async function loadHome(){
     }
     if(nextEl) nextEl.innerHTML = nextHtml;
 
+    // Start Here button for new players
+    const predictBtn = document.getElementById('home-predict-btn');
+    if(predictBtn){
+      if(myPredCount === 0){
+        predictBtn.textContent = '⚽ Start Here';
+        predictBtn.classList.add('start-here');
+        predictBtn.classList.remove('primary');
+      } else {
+        predictBtn.textContent = 'All Predictions';
+        predictBtn.classList.remove('start-here');
+        predictBtn.classList.add('primary');
+      }
+    }
+
     // Forfeit vote section
     const forfeitEnabled = currentGroup.forfeit_enabled !== false;
     const forfeitCard = document.getElementById('home-forfeit-card');
@@ -4044,6 +4060,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.3</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.4</div>
 </body>
 </html>
