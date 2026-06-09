@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.0</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1567,7 +1567,7 @@ function showView(name){ closeMenu();
   document.getElementById('view-'+name).classList.add('active');
   const nb=document.getElementById('nav-'+name);
   if(nb) nb.classList.add('active');
-  if(name==='home') loadHome();
+  if(name==='home'){ loadHome(); startCountdown(); }
   if(name==='predict') loadPredictions();
   if(name==='leaderboard') loadLeaderboard();
   if(name==='admin'){
@@ -2518,6 +2518,7 @@ async function loadHome(){
     if(nextEl) nextEl.innerHTML = errHtml;
     if(statsEl) statsEl.innerHTML = errHtml;
   }
+  startCountdown();
 }
 
 // ── PROFILE MENU (robust wiring) ──────────────────────
@@ -3883,6 +3884,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.0</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.1</div>
 </body>
 </html>
