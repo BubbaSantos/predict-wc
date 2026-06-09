@@ -94,6 +94,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .match-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;margin-bottom:.5rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.75rem;transition:border-color .15s;}
 .match-card:hover{border-color:rgba(245,158,11,.2);}
 .match-card.locked{opacity:.65;} .match-card.saved{border-color:rgba(16,185,129,.25);}
+#fixtures-list.hide-predicted .match-card[data-predicted="true"]{display:none;}
 .team{display:flex;align-items:center;gap:.5rem;font-size:.875rem;font-weight:500;}
 .team.away{justify-content:flex-end;text-align:right;}
 .team-flag{font-size:1.1rem;}
@@ -149,6 +150,17 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .home-cta-btn.primary{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:var(--group-accent);}
+.fe-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;}
+.fe-row:last-child{margin-bottom:0;}
+.fe-emoji{width:3.2rem;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem;font-size:1rem;color:var(--text);outline:none;font-family:inherit;}
+.fe-label{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.45rem .7rem;font-size:.82rem;color:var(--text);outline:none;}
+.fe-emoji:focus,.fe-label:focus{border-color:var(--group-accent);}
+.cl-entry{padding:.85rem 0;border-bottom:1px solid var(--border);}
+.cl-entry:last-child{border-bottom:none;}
+.cl-ver{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--group-accent);font-weight:600;}
+.cl-date{font-size:.7rem;color:var(--text-muted);margin-left:.5rem;}
+.cl-notes{margin-top:.5rem;padding-left:1.1rem;list-style:disc;}
+.cl-notes li{font-size:.8rem;color:var(--text-dim);margin-bottom:.2rem;line-height:1.4;}
 .forfeit-option{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem;margin-bottom:.35rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;transition:border-color .15s,background .15s;}
 .forfeit-option:hover{border-color:var(--group-accent);background:rgba(245,158,11,.06);}
 .forfeit-option:last-child{margin-bottom:0;}
@@ -574,7 +586,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -791,6 +803,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="page-header">
         <div class="page-title">Predictions</div>
         <div style="display:flex;align-items:center;gap:.5rem;">
+          <button class="compact-toggle" id="hide-pred-btn" onclick="toggleHidePredicted()">👁 Hide Done</button>
           <button class="compact-toggle" onclick="showPlayersPopup()" id="players-popup-btn">👥 Players</button>
           <button class="compact-toggle" id="compact-btn" onclick="toggleCompact()">⊟ Compact</button>
         </div>
@@ -872,6 +885,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button class="admin-tab" onclick="switchAdminTab('fixtures')">➕ Fixtures</button>
         <button class="admin-tab" onclick="switchAdminTab('branding')">🎨 Branding</button>
         <button class="admin-tab" onclick="switchAdminTab('controls')">⚙️ Controls</button>
+        <button class="admin-tab" onclick="switchAdminTab('changelog')">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
         <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Results sync automatically every 5 minutes. Override manually below.</p>
@@ -959,6 +973,31 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <button class="sync-refresh" onclick="saveEntryMode()">Save Entry Settings</button>
         </div>
         <div class="status-card">
+          <h3>Tiebreaker Data</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Used to break ties on the leaderboard. Leave blank if the tournament isn't finished.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Actual Top Scorer</label>
+              <input id="actual-top-scorer" type="text" class="config-input" placeholder="e.g. Mbappé" maxlength="60" />
+            </div>
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Goals Scored</label>
+              <input id="actual-top-goals" type="number" min="0" class="config-input" placeholder="e.g. 8" />
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem;">
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">In the Money Override</label>
+              <input id="itm-override" type="text" class="config-input" placeholder="Auto — leave blank" maxlength="60" />
+            </div>
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Forfeit Override</label>
+              <input id="forfeit-override" type="text" class="config-input" placeholder="Auto — leave blank" maxlength="60" />
+            </div>
+          </div>
+          <button class="sync-refresh" onclick="saveTiebreakerSettings()">Save Tiebreaker Settings</button>
+        </div>
+        <div class="status-card">
           <h3>Competition Status</h3>
           <div class="toggle-row">
             <div><div class="toggle-label" id="comp-status-label">Predictions Open</div><div class="toggle-desc" id="comp-status-desc">Players can submit predictions</div></div>
@@ -969,6 +1008,22 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <h3>Export</h3>
           <button class="view-preds-btn" onclick="exportLeaderboardCSV()" style="margin-right:.5rem;">📥 Leaderboard CSV</button>
           <button class="view-preds-btn" onclick="exportAllPredictionsCSV()">📥 All Predictions CSV</button>
+        </div>
+        <div class="status-card">
+          <h3>Forfeit Poll</h3>
+          <div class="toggle-row" style="margin-bottom:1rem;">
+            <div>
+              <div class="toggle-label">Show Forfeit Poll</div>
+              <div class="toggle-desc">Display the forfeit vote on the home page</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="forfeit-enabled-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">Options</div>
+          <div id="forfeit-options-editor"></div>
+          <button class="sync-refresh" style="margin-top:.85rem;" onclick="saveForfeitSettings()">Save Forfeit Settings</button>
         </div>
         <div class="status-card" style="border-color:rgba(239,68,68,.2);">
           <h3 style="color:var(--accent2);">⚠️ Danger Zone</h3>
@@ -987,6 +1042,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             </div>
           </div>
         </div>
+      </div>
+      <div id="admin-panel-changelog" class="admin-panel">
+        <div id="changelog-content"></div>
       </div>
     </div>
 
@@ -1571,6 +1629,7 @@ let _pendingSaveId = null;
 let _pendingSaveAll = false;
 let _lbScores = {};
 let _lbPayMap = {};
+let _lbTiebreaks = {};
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -1756,7 +1815,7 @@ function renderPredictCard(f,pred,res){
     }
     return `${formatDate(f.date)} · ${f.venue}`;
   })();
-  return `<div class="match-card ${isFilled?'saved':''} ${hasResult?'locked':''}">
+  return `<div class="match-card ${isFilled?'saved':''} ${hasResult?'locked':''}" data-predicted="${isFilled}">
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
       <div style="display:flex;align-items:center;gap:.4rem;">
@@ -1905,15 +1964,18 @@ async function loadLeaderboard(){
   const lb=document.getElementById('leaderboard-list');
   lb.innerHTML='<div class="loading">Calculating…</div>';
   try{
-    const [allPreds,allResults,allPlayers]=await Promise.all([
+    const [allPreds,allResults,allPlayers,allTiebreaks]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
+      sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
+    _lbTiebreaks={}; (allTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
     const scores={};
-    (allPreds||[]).forEach(p=>{
+    const fvIds=new Set(FORFEIT_OPTIONS.map(o=>o.id));
+    (allPreds||[]).filter(p=>!fvIds.has(p.match_id)).forEach(p=>{
       const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
       if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0,playerId:p.player_id};
       scores[name].played++;
@@ -1949,6 +2011,111 @@ const FORFEIT_OPTIONS = [
   {id:'fv-3', emoji:'🩲',  label:'Wear a mankini to your next social event'},
 ];
 const FORFEIT_IDS = new Set(FORFEIT_OPTIONS.map(o=>o.id));
+const CHANGELOG = [
+  {v:'1.5.6',date:'09 Jun 2026',notes:['Admin can toggle forfeit poll on/off and customise all 4 options','Full tiebreaker logic for In the Money and Forfeit badges (top scorer → goal tally → correct results)','Admin overrides for In the Money and Forfeit labels','Hide Predicted toggle on predict page','Admin changelog tab']},
+  {v:'1.5.5',date:'09 Jun 2026',notes:['Moved forfeit poll below standings on home page','Reduced forfeit option card size']},
+  {v:'1.5.4',date:'09 Jun 2026',notes:['Added forfeit vote section to home page with 4 options','Votes stored using existing predictions infrastructure — no schema changes']},
+  {v:'1.5.3',date:'09 Jun 2026',notes:['Enter key works on group key, login name and PIN fields','Login name/PIN values carry over when switching to registration form']},
+  {v:'1.5.2',date:'09 Jun 2026',notes:['Removed Players column from home match stats table']},
+  {v:'1.5.1',date:'09 Jun 2026',notes:['Fixed home page sections not loading on first visit','Fixed player options menu being clipped by sibling rows in admin']},
+  {v:'1.5.0',date:'09 Jun 2026',notes:['Reworked home page: mini standings, next game card, match stats','Gold/silver/bronze row backgrounds on leaderboard','In the Money and Forfeit badges on leaderboard and home standings','Total pot displayed in group hero block']},
+];
+
+function getForfeitOptions(){
+  const stored = currentGroup&&currentGroup.forfeit_options;
+  if(stored&&Array.isArray(stored)&&stored.length===4){
+    return stored.map((o,i)=>({id:'fv-'+i,emoji:o.emoji||FORFEIT_OPTIONS[i].emoji,label:o.label||FORFEIT_OPTIONS[i].label}));
+  }
+  return FORFEIT_OPTIONS;
+}
+
+function lbCompare(a, b){
+  const [,sa]= a, [,sb]= b;
+  if(sb.total !== sa.total) return sb.total - sa.total;
+  const ats = (currentGroup&&currentGroup.actual_top_scorer||'').trim().toLowerCase();
+  if(ats){
+    const tbA=_lbTiebreaks[sa.playerId]||{}, tbB=_lbTiebreaks[sb.playerId]||{};
+    const aC=(tbA.top_scorer||'').toLowerCase()===ats, bC=(tbB.top_scorer||'').toLowerCase()===ats;
+    if(aC!==bC) return bC?1:-1;
+  }
+  const atg=currentGroup&&currentGroup.actual_top_goals;
+  if(atg!==null&&atg!==undefined&&atg!==''){
+    const tbA=_lbTiebreaks[sa.playerId]||{}, tbB=_lbTiebreaks[sb.playerId]||{};
+    const aD=tbA.goals!=null?Math.abs(+tbA.goals-+atg):9999, bD=tbB.goals!=null?Math.abs(+tbB.goals-+atg):9999;
+    if(aD!==bD) return aD-bD;
+  }
+  return sb.result-sa.result;
+}
+
+function loadForfeitSettings(){
+  const tog=document.getElementById('forfeit-enabled-toggle');
+  if(!tog) return;
+  tog.checked = currentGroup.forfeit_enabled !== false;
+  const editor=document.getElementById('forfeit-options-editor');
+  if(!editor) return;
+  const opts=getForfeitOptions();
+  editor.innerHTML=opts.map((o,i)=>`
+    <div class="fe-row">
+      <input class="fe-emoji" id="fe-emoji-${i}" type="text" maxlength="4" value="${o.emoji}" placeholder="✂️">
+      <input class="fe-label" id="fe-label-${i}" type="text" maxlength="80" value="${o.label}" placeholder="Option ${i+1}">
+    </div>`).join('');
+}
+
+async function saveForfeitSettings(){
+  if(!currentGroup) return;
+  const enabled=document.getElementById('forfeit-enabled-toggle')?.checked ?? true;
+  const options=[0,1,2,3].map(i=>({
+    emoji:(document.getElementById('fe-emoji-'+i)?.value.trim())||FORFEIT_OPTIONS[i].emoji,
+    label:(document.getElementById('fe-label-'+i)?.value.trim())||FORFEIT_OPTIONS[i].label,
+  }));
+  try{
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{forfeit_enabled:enabled,forfeit_options:options}});
+    currentGroup={...currentGroup,forfeit_enabled:enabled,forfeit_options:options};
+    saveSession();
+    flash('Forfeit settings saved!','success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
+async function saveTiebreakerSettings(){
+  if(!currentGroup) return;
+  const ats=(document.getElementById('actual-top-scorer')?.value.trim())||'';
+  const atg=document.getElementById('actual-top-goals')?.value;
+  const itmOv=(document.getElementById('itm-override')?.value.trim())||'';
+  const fOv=(document.getElementById('forfeit-override')?.value.trim())||'';
+  try{
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{actual_top_scorer:ats||null,actual_top_goals:atg!==''&&atg!=null?+atg:null,itm_override:itmOv||null,forfeit_override:fOv||null}});
+    currentGroup={...currentGroup,actual_top_scorer:ats||null,actual_top_goals:atg!==''&&atg!=null?+atg:null,itm_override:itmOv||null,forfeit_override:fOv||null};
+    saveSession();
+    flash('Tiebreaker settings saved!','success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
+function loadTiebreakerSettings(){
+  const atsEl=document.getElementById('actual-top-scorer');
+  const atgEl=document.getElementById('actual-top-goals');
+  const itmEl=document.getElementById('itm-override');
+  const fEl=document.getElementById('forfeit-override');
+  if(atsEl) atsEl.value=currentGroup.actual_top_scorer||'';
+  if(atgEl) atgEl.value=currentGroup.actual_top_goals!=null?currentGroup.actual_top_goals:'';
+  if(itmEl) itmEl.value=currentGroup.itm_override||'';
+  if(fEl) fEl.value=currentGroup.forfeit_override||'';
+}
+
+function renderChangelog(){
+  const el=document.getElementById('changelog-content');
+  if(!el) return;
+  el.innerHTML='<div class="page-header" style="padding-bottom:.5rem;"><div class="page-title">Changelog</div></div>'
+    +CHANGELOG.map(c=>`<div class="cl-entry"><span class="cl-ver">v${c.v}</span><span class="cl-date">${c.date}</span><ul class="cl-notes">${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>`).join('');
+}
+
+let _hidePredicted=false;
+function toggleHidePredicted(){
+  _hidePredicted=!_hidePredicted;
+  const list=document.getElementById('fixtures-list');
+  const btn=document.getElementById('hide-pred-btn');
+  if(list) list.classList.toggle('hide-predicted',_hidePredicted);
+  if(btn) btn.textContent=_hidePredicted?'👁 Show Done':'👁 Hide Done';
+}
 
 async function castForfeitVote(optionId){
   if(!currentPlayer||!currentGroup) return;
@@ -1956,7 +2123,7 @@ async function castForfeitVote(optionId){
   if(forfeitEl) forfeitEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{
     // Remove any existing forfeit vote for this player
-    for(const o of FORFEIT_OPTIONS){
+    for(const o of getForfeitOptions()){
       await sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.${o.id}`,{method:'DELETE',prefer:'return=minimal'});
     }
     // Insert new vote (empty string = just clearing the vote)
@@ -1974,11 +2141,13 @@ async function loadHome(){
   const forfeitEl = document.getElementById('home-forfeit');
   const statsEl = document.getElementById('home-match-stats');
   try{
-    const [allPreds, allResults, allPlayers] = await Promise.all([
+    const [allPreds, allResults, allPlayers, homeTiebreaks] = await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
+      sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
+    _lbTiebreaks={}; (homeTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
 
     // Split forfeit votes from real game predictions
     const forfeitVotes = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
@@ -2012,9 +2181,11 @@ async function loadHome(){
       scores[name].total += pts;
     });
 
-    const sorted = Object.entries(scores).sort((a,b)=>b[1].total-a[1].total);
+    const sorted = Object.entries(scores).sort((a,b)=>lbCompare(a,b));
     const myDisplayName = currentPlayer ? (currentPlayer.nickname||currentPlayer.name) : null;
     const myIdx = sorted.findIndex(([name])=>name===myDisplayName);
+    const itmName = (currentGroup.itm_override||'').trim() || sorted[0]?.[0];
+    const forfeitName = (currentGroup.forfeit_override||'').trim() || (sorted.length>1?sorted[sorted.length-1]?.[0]:null);
 
     // Mini leaderboard HTML
     const rankClasses = ['mlb-gold','mlb-silver','mlb-bronze'];
@@ -2025,18 +2196,22 @@ async function loadHome(){
     } else {
       sorted.slice(0,3).forEach(([name,s],i)=>{
         const isYou = name===myDisplayName;
+        const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
+        const mBadge = mIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':mIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
         lbHtml += `<div class="mini-lb-row ${rankClasses[i]}">
           <div class="mini-lb-rank">${medals[i]}</div>
-          <div class="mini-lb-name">${name}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}</div>
+          <div class="mini-lb-name">${name}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}</div>
           <div class="mini-lb-pts">${s.total} pts</div>
         </div>`;
       });
       if(myIdx > 2){
         const [myName,myS] = sorted[myIdx];
         lbHtml += '<hr class="home-divider">';
+        const myIsItm = myName===itmName, myIsForfeit = myName===forfeitName&&sorted.length>1;
+        const myBadge = myIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':myIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
         lbHtml += `<div class="mini-lb-row mlb-you">
           <div class="mini-lb-rank">${myIdx+1}</div>
-          <div class="mini-lb-name">${myName} <span style="font-size:.65rem;color:#818cf8;">(you)</span></div>
+          <div class="mini-lb-name">${myName} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}</div>
           <div class="mini-lb-pts">${myS.total} pts</div>
         </div>`;
       }
@@ -2080,7 +2255,11 @@ async function loadHome(){
     if(nextEl) nextEl.innerHTML = nextHtml;
 
     // Forfeit vote section
-    if(forfeitEl){
+    const forfeitEnabled = currentGroup.forfeit_enabled !== false;
+    const forfeitCard = document.getElementById('home-forfeit-card');
+    if(forfeitCard) forfeitCard.style.display = forfeitEnabled ? 'block' : 'none';
+    const activeForfeitOpts = getForfeitOptions();
+    if(forfeitEl && forfeitEnabled){
       const myVote = forfeitVotes.find(p=>p.player_id===currentPlayer?.id)?.match_id || null;
       const hasVoted = !!myVote;
       const totalVotes = forfeitVotes.length;
@@ -2092,14 +2271,14 @@ async function loadHome(){
 
       if(!hasVoted && currentPlayer){
         // Show voting options
-        forfeitEl.innerHTML = FORFEIT_OPTIONS.map(o=>`
+        forfeitEl.innerHTML = activeForfeitOpts.map(o=>`
           <div class="forfeit-option" onclick="castForfeitVote('${o.id}')">
             <div class="forfeit-option-emoji">${o.emoji}</div>
             <div class="forfeit-option-label">${o.label}</div>
           </div>`).join('');
       } else {
         // Show results
-        const resultsHtml = FORFEIT_OPTIONS.map(o=>{
+        const resultsHtml = activeForfeitOpts.map(o=>{
           const count = voteCounts[o.id];
           const pct = totalVotes>0 ? Math.round(count/totalVotes*100) : 0;
           const isLeading = count === maxVotes && count > 0;
@@ -2600,7 +2779,7 @@ function checkAdminPass(){
 
 function switchAdminTab(name){
   document.querySelectorAll('.admin-tab').forEach((b,i)=>{
-    const tabs=['results','players','fixtures','branding','controls'];
+    const tabs=['results','players','fixtures','branding','controls','changelog'];
     b.classList.toggle('active',tabs[i]===name);
   });
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
@@ -2608,6 +2787,8 @@ function switchAdminTab(name){
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
+  if(name==='controls'){loadForfeitSettings();loadTiebreakerSettings();}
+  if(name==='changelog')renderChangelog();
 }
 
 async function loadAdminFixtures(){
@@ -3104,16 +3285,20 @@ function renderLeaderboard(){
   if(_lbFilter === 'money') entries = entries.filter(([name])=>_lbPayMap[name]==='money');
   else if(_lbFilter === 'fun') entries = entries.filter(([name])=>_lbPayMap[name]==='fun');
 
-  const sorted = entries.sort((a,b)=>b[1].total-a[1].total);
+  const sorted = entries.sort((a,b)=>lbCompare(a,b));
   if(!sorted.length){ lb.innerHTML='<div class="empty">No players in this category yet.</div>'; return; }
 
   const lastIdx = sorted.length - 1;
+  const itmName = (currentGroup.itm_override||'').trim() || sorted[0]?.[0];
+  const forfeitName = (currentGroup.forfeit_override||'').trim() || sorted[lastIdx]?.[0];
   lb.innerHTML = sorted.map(([name,s],i)=>{
     const pid = s.playerId||'';
     const dn = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     const payBadge = _lbPayMap[name]==='money' ? '<span style="font-size:.65rem;margin-left:.3rem;">💸</span>' : (_lbPayMap[name]==='fun' ? '<span style="font-size:.65rem;margin-left:.3rem;">😄</span>' : '');
+    const isItm = name===itmName;
+    const isForfeit = name===forfeitName && sorted.length>1;
     const rowClass = i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row';
-    const statusBadge = i===0 ? '<span class="lb-badge lb-badge-money">In the Money</span>' : (i===lastIdx && sorted.length>1) ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
+    const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+(i+1)+'</div>'
       +'<div><div class="lb-name">'+name+payBadge+statusBadge+'</div><div class="lb-breakdown">'+s.played+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
@@ -3515,6 +3700,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.6</div>
 </body>
 </html>
