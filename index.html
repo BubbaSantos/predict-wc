@@ -519,7 +519,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.4.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.4.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2063,6 +2063,16 @@ function scoreInput(el, nextId){
   el.value = v.slice(0,2);
   const matchId = el.dataset.matchId || el.id.replace('h-','').replace('a-','');
   markUnsaved(matchId);
+  // If either score cleared, remove saved state and delete from DB
+  if(v.length === 0){
+    const card = el.closest('.match-card');
+    if(card) card.classList.remove('saved');
+    // Delete prediction from DB silently
+    if(currentPlayer && currentGroup && predictions[matchId]){
+      delete predictions[matchId];
+      sb('predictions?group_id=eq.'+currentGroup.id+'&player_id=eq.'+currentPlayer.id+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'}).catch(()=>{});
+    }
+  }
   if(v.length >= 1) checkScotlandEasterEgg(matchId);
 
   if(v.length >= 1 && nextId){
@@ -2554,20 +2564,29 @@ async function confirmRename(playerId){
 // ── PLAYER OPTIONS MENU ───────────────────────────────
 function togglePlayerMenu(btn){
   const menu = btn.nextElementSibling;
+  if(!menu) return;
   const isOpen = menu.style.display === 'block';
-  closePlayerMenus();
-  if(!isOpen){
-    menu.style.display = 'block';
-    // Close on outside click
-    setTimeout(()=>{
-      document.addEventListener('click', closePlayerMenus, {once:true});
-    }, 10);
-  }
+  // Close all first
+  document.querySelectorAll('.player-options-menu').forEach(m=>{ if(m!==menu) m.style.display='none'; });
+  menu.style.display = isOpen ? 'none' : 'block';
 }
 
 function closePlayerMenus(){
   document.querySelectorAll('.player-options-menu').forEach(m=>m.style.display='none');
+  document.querySelectorAll('.pay-submenu').forEach(e=>e.remove());
 }
+
+// Single persistent listener to close menus on outside tap/click
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.player-options-btn') && !e.target.closest('.player-options-menu')){
+    closePlayerMenus();
+  }
+});
+document.addEventListener('touchstart', function(e){
+  if(!e.target.closest('.player-options-btn') && !e.target.closest('.player-options-menu')){
+    closePlayerMenus();
+  }
+}, {passive:true});
 
 function showRenameInMenu(id, name){
   closePlayerMenus();
@@ -3174,6 +3193,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.4.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.4.7</div>
 </body>
 </html>
