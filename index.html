@@ -1968,9 +1968,13 @@ async function loadHome(){
       .filter(({ko})=>ko && ko>now)
       .sort((a,b)=>a.ko-b.ko);
 
+    const totalFixtures = allFixtures().length;
+    const myPredCount = Object.keys(myPredMap).length;
+    const progressHtml = `<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.75rem;">You've predicted <strong style="color:var(--text-dim);">${myPredCount}</strong> of <strong style="color:var(--text-dim);">${totalFixtures}</strong> games</div>`;
+
     let nextHtml = '';
     if(!upcoming.length){
-      nextHtml = '<div style="font-size:.82rem;color:var(--text-muted);">No upcoming fixtures.</div>';
+      nextHtml = progressHtml + '<div style="font-size:.82rem;color:var(--text-muted);">No upcoming fixtures.</div>';
     } else {
       const {f, ko} = upcoming[0];
       const pred = myPredMap[f.id];
@@ -1979,7 +1983,7 @@ async function loadHome(){
       const predHtml = pred
         ? `<div class="home-next-pred">${pred.h}–${pred.a} <span style="color:var(--green);font-size:.7rem;">✓ Predicted</span></div>`
         : `<div class="home-next-nopred">Not predicted yet</div>`;
-      nextHtml = `<div class="home-next-match">
+      nextHtml = progressHtml + `<div class="home-next-match">
         <div>
           <div class="home-next-teams">${f.hf} ${f.home} <span style="color:var(--text-muted);">v</span> ${f.away} ${f.af}</div>
           <div class="home-next-date">${dateStr} · ${timeStr} · ${f.venue||''}</div>
