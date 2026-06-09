@@ -118,10 +118,17 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 /* ── LEADERBOARD ── */
 .lb-row{display:grid;grid-template-columns:3rem 1fr auto;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.5rem;transition:border-color .15s;}
 .lb-row:hover{border-color:var(--group-accent);}
+.lb-row.lb-gold{background:rgba(251,191,36,.13);border-color:rgba(251,191,36,.45);}
+.lb-row.lb-silver{background:rgba(148,163,184,.13);border-color:rgba(148,163,184,.45);}
+.lb-row.lb-bronze{background:rgba(217,119,6,.13);border-color:rgba(217,119,6,.45);}
+.lb-row.lb-last{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);}
 .lb-rank{font-size:1.6rem;line-height:1;color:var(--text-muted);text-align:center;}
-.lb-row:nth-child(1) .lb-rank{color:var(--gold);}
-.lb-row:nth-child(2) .lb-rank{color:var(--silver);}
-.lb-row:nth-child(3) .lb-rank{color:var(--bronze);}
+.lb-row.lb-gold .lb-rank{color:var(--gold);}
+.lb-row.lb-silver .lb-rank{color:var(--silver);}
+.lb-row.lb-bronze .lb-rank{color:var(--bronze);}
+.lb-badge{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:.15rem .45rem;border-radius:4px;margin-left:.4rem;vertical-align:middle;}
+.lb-badge-money{background:rgba(34,197,94,.18);color:#16a34a;}
+.lb-badge-forfeit{background:rgba(239,68,68,.18);color:#dc2626;}
 .lb-name{font-weight:600;font-size:.95rem;}
 .lb-breakdown{font-size:.72rem;color:var(--text-muted);margin-top:.15rem;}
 .lb-points{font-family:'DM Mono',monospace;font-size:2rem;color:var(--group-accent);line-height:1;}
@@ -2788,13 +2795,16 @@ function renderLeaderboard(){
   const sorted = entries.sort((a,b)=>b[1].total-a[1].total);
   if(!sorted.length){ lb.innerHTML='<div class="empty">No players in this category yet.</div>'; return; }
 
+  const lastIdx = sorted.length - 1;
   lb.innerHTML = sorted.map(([name,s],i)=>{
     const pid = s.playerId||'';
     const dn = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     const payBadge = _lbPayMap[name]==='money' ? '<span style="font-size:.65rem;margin-left:.3rem;">💸</span>' : (_lbPayMap[name]==='fun' ? '<span style="font-size:.65rem;margin-left:.3rem;">😄</span>' : '');
-    return '<div class="lb-row" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
+    const rowClass = i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row';
+    const statusBadge = i===0 ? '<span class="lb-badge lb-badge-money">In the Money</span>' : (i===lastIdx && sorted.length>1) ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
+    return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+(i+1)+'</div>'
-      +'<div><div class="lb-name">'+name+payBadge+'</div><div class="lb-breakdown">'+s.played+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
+      +'<div><div class="lb-name">'+name+payBadge+statusBadge+'</div><div class="lb-breakdown">'+s.played+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
       +'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>'
       +'</div>';
   }).join('');
