@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.2</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -741,9 +741,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 
       <!-- Countdown -->
       <div id="home-countdown-card" style="display:none;text-align:center;padding:1.25rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:1.25rem;">
-        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">Tournament kicks off in</div>
+        <div id="home-countdown-label" style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;"></div>
         <div id="home-countdown" style="display:flex;justify-content:center;gap:1rem;"></div>
-        <div style="font-size:.65rem;color:var(--text-muted);margin-top:.6rem;">Mexico 🇲🇽 vs South Africa 🇿🇦 · 11 Jun, 20:00 BST</div>
+        <div id="home-countdown-sub" style="font-size:.65rem;color:var(--text-muted);margin-top:.6rem;"></div>
       </div>
 
       <!-- Mini Leaderboard -->
@@ -1573,20 +1573,59 @@ function enterApp(){
 let _countdownInterval = null;
 function startCountdown(){
   clearInterval(_countdownInterval);
-  const card = document.getElementById('home-countdown-card');
-  const el   = document.getElementById('home-countdown');
+  const card  = document.getElementById('home-countdown-card');
+  const label = document.getElementById('home-countdown-label');
+  const el    = document.getElementById('home-countdown');
+  const sub   = document.getElementById('home-countdown-sub');
   if(!card || !el) return;
+
+  const unit = (n,l) => `<div style="min-width:3rem;"><div style="font-size:2rem;font-weight:900;color:#ef4444;font-family:'DM Mono',monospace;line-height:1;">${String(n).padStart(2,'0')}</div><div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-top:.15rem;">${l}</div></div>`;
+
   function tick(){
-    const diff = FIRST_MATCH_UTC - Date.now();
-    if(diff <= 0){ card.style.display='none'; clearInterval(_countdownInterval); return; }
+    const now = Date.now();
+    const fixtures = allFixtures();
+    const LIVE_WINDOW = 130 * 60 * 1000; // 130 min live window
+
+    // Games currently live
+    const live = fixtures.filter(f=>{
+      const ko = getMatchKickoff(f);
+      return ko && now >= ko.getTime() && now < ko.getTime() + LIVE_WINDOW;
+    });
+
+    if(live.length){
+      card.style.display='block';
+      if(label) label.innerHTML='🔴 Live Now';
+      if(label) label.style.color='#ef4444';
+      el.innerHTML = live.map(f=>`<div style="font-size:.9rem;font-weight:600;color:var(--text);white-space:nowrap;">${f.hf} ${f.home} <span style="color:var(--text-muted);">vs</span> ${f.af} ${f.away}</div>`).join('');
+      el.style.flexDirection='column';
+      el.style.gap='.35rem';
+      if(sub) sub.textContent='';
+      return;
+    }
+
+    // Reset flex direction for countdown mode
+    el.style.flexDirection='row';
+    el.style.gap='1rem';
+
+    // Next upcoming game
+    const upcoming = fixtures
+      .map(f=>({f, ko:getMatchKickoff(f)}))
+      .filter(({ko})=>ko && ko.getTime() > now)
+      .sort((a,b)=>a.ko-b.ko)[0];
+
+    if(!upcoming){ card.style.display='none'; clearInterval(_countdownInterval); return; }
+
+    const diff = upcoming.ko.getTime() - now;
     card.style.display='block';
-    const d = Math.floor(diff/86400000);
-    const h = Math.floor((diff%86400000)/3600000);
-    const m = Math.floor((diff%3600000)/60000);
-    const s = Math.floor((diff%60000)/1000);
-    const unit = (n,l) => `<div style="min-width:3rem;"><div style="font-size:2rem;font-weight:900;color:#ef4444;font-family:'DM Mono',monospace;line-height:1;">${String(n).padStart(2,'0')}</div><div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-top:.15rem;">${l}</div></div>`;
-    el.innerHTML = unit(d,'days') + unit(h,'hrs') + unit(m,'min') + unit(s,'sec');
+    if(label){ label.textContent = upcoming.ko.getTime() === FIRST_MATCH_UTC.getTime() ? 'Tournament kicks off in' : 'Next game in'; label.style.color=''; }
+    const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+    el.innerHTML = unit(d,'days')+unit(h,'hrs')+unit(m,'min')+unit(s,'sec');
+    const f=upcoming.f;
+    const koDate = upcoming.ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    const koTime = upcoming.ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    if(sub) sub.textContent=`${f.hf} ${f.home} vs ${f.away} ${f.af} · ${koDate}, ${koTime}`;
   }
+
   tick();
   _countdownInterval = setInterval(tick, 1000);
 }
@@ -4005,6 +4044,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.2</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.3</div>
 </body>
 </html>
