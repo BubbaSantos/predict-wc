@@ -116,6 +116,37 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .tie-break-section h3{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.75rem;}
 
 /* ── LEADERBOARD ── */
+/* ── HOME DASHBOARD ── */
+.home-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;margin-bottom:1rem;}
+.home-card-title{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.85rem;font-weight:600;}
+.mini-lb-row{display:grid;grid-template-columns:2.2rem 1fr auto;align-items:center;gap:.75rem;padding:.55rem .5rem;border-radius:8px;margin-bottom:.3rem;transition:background .15s;}
+.mini-lb-row.mlb-gold{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);}
+.mini-lb-row.mlb-silver{background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.3);}
+.mini-lb-row.mlb-bronze{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.3);}
+.mini-lb-row.mlb-you{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.3);}
+.mini-lb-rank{font-size:1.1rem;font-weight:700;text-align:center;color:var(--text-muted);}
+.mlb-gold .mini-lb-rank{color:var(--gold);}
+.mlb-silver .mini-lb-rank{color:var(--silver);}
+.mlb-bronze .mini-lb-rank{color:var(--bronze);}
+.mlb-you .mini-lb-rank{color:#818cf8;}
+.mini-lb-name{font-size:.88rem;font-weight:600;}
+.mini-lb-pts{font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:var(--group-accent);}
+.home-divider{border:none;border-top:1px solid var(--border);margin:.6rem 0;}
+.home-next-match{display:flex;align-items:center;justify-content:space-between;gap:.75rem;}
+.home-next-teams{font-size:.95rem;font-weight:600;flex:1;}
+.home-next-date{font-size:.72rem;color:var(--text-muted);}
+.home-next-pred{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--group-accent);}
+.home-next-nopred{font-size:.75rem;color:var(--text-muted);font-style:italic;}
+.match-stat-row{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid rgba(30,45,69,.5);font-size:.78rem;}
+.match-stat-row:last-child{border-bottom:none;}
+.match-stat-teams{color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.match-stat-count{color:var(--text-muted);font-size:.72rem;text-align:right;white-space:nowrap;}
+.match-stat-pct{font-family:'DM Mono',monospace;font-size:.72rem;text-align:right;white-space:nowrap;}
+.home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
+.home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
+.home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
+.home-cta-btn.primary{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:var(--group-accent);}
+/* ── LEADERBOARD ── */
 .lb-row{display:grid;grid-template-columns:3rem 1fr auto;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.5rem;transition:border-color .15s;}
 .lb-row:hover{border-color:var(--group-accent);}
 .lb-row.lb-gold{background:rgba(251,191,36,.13);border-color:rgba(251,191,36,.45);}
@@ -657,17 +688,29 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <div class="group-hero-key" id="gh-key"></div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:500px;">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;cursor:pointer;" onclick="showView('predict')">
-          <div style="font-size:1.5rem;margin-bottom:.5rem;">⚽</div>
-          <div style="font-size:1.2rem;letter-spacing:.06em;margin-bottom:.25rem;">My Predictions</div>
-          <div style="font-size:.78rem;color:var(--text-muted);">Enter your score predictions</div>
+
+      <!-- Mini Leaderboard -->
+      <div class="home-card" id="home-mini-lb-card">
+        <div class="home-card-title">Standings</div>
+        <div id="home-mini-lb"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+        <div class="home-cta" style="margin-top:.75rem;">
+          <button class="home-cta-btn" onclick="showView('leaderboard')">Full Leaderboard</button>
         </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;cursor:pointer;" onclick="showView('leaderboard')">
-          <div style="font-size:1.5rem;margin-bottom:.5rem;">🏆</div>
-          <div style="font-size:1.2rem;letter-spacing:.06em;margin-bottom:.25rem;">Leaderboard</div>
-          <div style="font-size:.78rem;color:var(--text-muted);">See the current standings</div>
+      </div>
+
+      <!-- Next Upcoming Game -->
+      <div class="home-card" id="home-next-card">
+        <div class="home-card-title">My Next Prediction</div>
+        <div id="home-next-game"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+        <div class="home-cta" style="margin-top:.75rem;">
+          <button class="home-cta-btn primary" onclick="showView('predict')">All Predictions</button>
         </div>
+      </div>
+
+      <!-- Match Stats -->
+      <div class="home-card" id="home-stats-card">
+        <div class="home-card-title">Match Stats</div>
+        <div id="home-match-stats"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
     </div>
 
@@ -1344,6 +1387,7 @@ function showView(name){ closeMenu();
   document.getElementById('view-'+name).classList.add('active');
   const nb=document.getElementById('nav-'+name);
   if(nb) nb.classList.add('active');
+  if(name==='home') loadHome();
   if(name==='predict') loadPredictions();
   if(name==='leaderboard') loadLeaderboard();
   if(name==='admin'){
@@ -1853,6 +1897,141 @@ async function loadLeaderboard(){
 
 
 
+
+// ── HOME DASHBOARD ────────────────────────────────────
+async function loadHome(){
+  if(!currentGroup) return;
+  const lbEl = document.getElementById('home-mini-lb');
+  const nextEl = document.getElementById('home-next-game');
+  const statsEl = document.getElementById('home-match-stats');
+  try{
+    const [allPreds, allResults, allPlayers] = await Promise.all([
+      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
+    ]);
+
+    const rm = {}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
+    const pm = {}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
+
+    // Build leaderboard scores
+    const scores = {};
+    (allPreds||[]).forEach(p=>{
+      const pdata = pm[p.player_id];
+      const name = (pdata&&(pdata.display||pdata.name))||'Unknown';
+      if(!scores[name]) scores[name]={total:0,played:0,playerId:p.player_id};
+      scores[name].played++;
+      const res = rm[p.match_id]; if(!res) return;
+      const pts = calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+      scores[name].total += pts;
+    });
+
+    const sorted = Object.entries(scores).sort((a,b)=>b[1].total-a[1].total);
+    const myDisplayName = currentPlayer ? (currentPlayer.nickname||currentPlayer.name) : null;
+    const myIdx = sorted.findIndex(([name])=>name===myDisplayName);
+
+    // Mini leaderboard HTML
+    const rankClasses = ['mlb-gold','mlb-silver','mlb-bronze'];
+    const medals = ['🥇','🥈','🥉'];
+    let lbHtml = '';
+    if(!sorted.length){
+      lbHtml = '<div style="font-size:.8rem;color:var(--text-muted);">No scores yet.</div>';
+    } else {
+      sorted.slice(0,3).forEach(([name,s],i)=>{
+        const isYou = name===myDisplayName;
+        lbHtml += `<div class="mini-lb-row ${rankClasses[i]}">
+          <div class="mini-lb-rank">${medals[i]}</div>
+          <div class="mini-lb-name">${name}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}</div>
+          <div class="mini-lb-pts">${s.total} pts</div>
+        </div>`;
+      });
+      if(myIdx > 2){
+        const [myName,myS] = sorted[myIdx];
+        lbHtml += '<hr class="home-divider">';
+        lbHtml += `<div class="mini-lb-row mlb-you">
+          <div class="mini-lb-rank">${myIdx+1}</div>
+          <div class="mini-lb-name">${myName} <span style="font-size:.65rem;color:#818cf8;">(you)</span></div>
+          <div class="mini-lb-pts">${myS.total} pts</div>
+        </div>`;
+      }
+    }
+    if(lbEl) lbEl.innerHTML = lbHtml;
+
+    // Next upcoming game
+    const now = new Date();
+    const myPredMap = {};
+    (allPreds||[]).forEach(p=>{ if(p.player_id===currentPlayer?.id) myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
+
+    const upcoming = allFixtures()
+      .filter(f=>!rm[f.id])
+      .map(f=>({f, ko:getMatchKickoff(f)}))
+      .filter(({ko})=>ko && ko>now)
+      .sort((a,b)=>a.ko-b.ko);
+
+    let nextHtml = '';
+    if(!upcoming.length){
+      nextHtml = '<div style="font-size:.82rem;color:var(--text-muted);">No upcoming fixtures.</div>';
+    } else {
+      const {f, ko} = upcoming[0];
+      const pred = myPredMap[f.id];
+      const dateStr = ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+      const timeStr = ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      const predHtml = pred
+        ? `<div class="home-next-pred">${pred.h}–${pred.a} <span style="color:var(--green);font-size:.7rem;">✓ Predicted</span></div>`
+        : `<div class="home-next-nopred">Not predicted yet</div>`;
+      nextHtml = `<div class="home-next-match">
+        <div>
+          <div class="home-next-teams">${f.hf} ${f.home} <span style="color:var(--text-muted);">v</span> ${f.away} ${f.af}</div>
+          <div class="home-next-date">${dateStr} · ${timeStr} · ${f.venue||''}</div>
+        </div>
+        ${predHtml}
+      </div>`;
+    }
+    if(nextEl) nextEl.innerHTML = nextHtml;
+
+    // Match stats — completed matches (have result)
+    const completedFixtures = allFixtures().filter(f=>rm[f.id]);
+    if(!completedFixtures.length){
+      if(statsEl) statsEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">No completed matches yet.</div>';
+    } else {
+      // Build per-match prediction lookup
+      const matchPreds = {};
+      (allPreds||[]).forEach(p=>{
+        if(!matchPreds[p.match_id]) matchPreds[p.match_id]=[];
+        matchPreds[p.match_id].push(p);
+      });
+      const totalPlayers = (allPlayers||[]).length;
+      // Sort by those with most predictions first (most recent/interesting)
+      const rows = completedFixtures.map(f=>{
+        const res = rm[f.id];
+        const preds = matchPreds[f.id]||[];
+        const n = preds.length;
+        const correct = preds.filter(p=>calcPoints(p.home_score,p.away_score,res.home_score,res.away_score)>=3).length;
+        const exact = preds.filter(p=>calcPoints(p.home_score,p.away_score,res.home_score,res.away_score)>=5).length;
+        const pctResult = n>0 ? Math.round(correct/n*100) : 0;
+        const pctExact = n>0 ? Math.round(exact/n*100) : 0;
+        return {f,res,n,pctResult,pctExact};
+      }).sort((a,b)=>b.n-a.n);
+
+      const headerHtml = `<div class="match-stat-row" style="border-bottom:1px solid var(--border);padding-bottom:.4rem;margin-bottom:.2rem;">
+        <div style="font-size:.65rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);">Match</div>
+        <div style="font-size:.65rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);text-align:right;">Players</div>
+        <div style="font-size:.65rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);text-align:right;">Result%</div>
+        <div style="font-size:.65rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);text-align:right;">Score%</div>
+      </div>`;
+      const rowsHtml = rows.map(({f,res,n,pctResult,pctExact})=>`
+        <div class="match-stat-row">
+          <div class="match-stat-teams">${f.hf}${f.home} v ${f.away}${f.af} <span style="color:var(--text-muted);font-size:.68rem;">${res.home_score}–${res.away_score}</span></div>
+          <div class="match-stat-count">${n}/${totalPlayers}</div>
+          <div class="match-stat-pct" style="color:${pctResult>=50?'var(--green)':'var(--text-muted)'}">${pctResult}%</div>
+          <div class="match-stat-pct" style="color:${pctExact>=30?'var(--group-accent)':'var(--text-muted)'}">${pctExact}%</div>
+        </div>`).join('');
+      if(statsEl) statsEl.innerHTML = headerHtml + rowsHtml;
+    }
+  } catch(e){
+    if(lbEl) lbEl.innerHTML=`<div style="font-size:.82rem;color:var(--text-muted);">⚠️ ${e.message}</div>`;
+  }
+}
 
 // ── PROFILE MENU (robust wiring) ──────────────────────
 function initProfileMenu(){
