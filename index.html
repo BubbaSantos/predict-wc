@@ -77,7 +77,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .page-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.08em;}
 
 /* ── GROUP HERO (shown when logged in) ── */
-.group-hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2rem;margin-bottom:2rem;display:flex;align-items:center;gap:1.5rem;}
+.group-hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2rem;margin-bottom:2rem;display:flex;align-items:center;gap:1.5rem;position:relative;}
+.gh-pot{position:absolute;bottom:.85rem;right:1rem;text-align:right;}
+.gh-pot-label{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);}
+.gh-pot-amount{font-family:'DM Mono',monospace;font-size:1.4rem;color:var(--group-accent);line-height:1.1;}
 .group-hero-icon{font-size:3rem;line-height:1;}
 .group-hero-name{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:.06em;color:var(--group-accent);line-height:1;}
 .group-hero-tag{font-size:.85rem;color:var(--text-dim);margin-top:.3rem;}
@@ -686,6 +689,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <div class="group-hero-name" id="gh-name">Group</div>
           <div class="group-hero-tag" id="gh-tag"></div>
           <div class="group-hero-key" id="gh-key"></div>
+        </div>
+        <div class="gh-pot" id="gh-pot" style="display:none;">
+          <div class="gh-pot-label">Total Pot</div>
+          <div class="gh-pot-amount" id="gh-pot-amount">£0</div>
         </div>
       </div>
 
@@ -1908,11 +1915,24 @@ async function loadHome(){
     const [allPreds, allResults, allPlayers] = await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
     ]);
 
     const rm = {}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm = {}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
+
+    // Total pot
+    const potEl = document.getElementById('gh-pot');
+    const potAmtEl = document.getElementById('gh-pot-amount');
+    if(potEl && potAmtEl && currentGroup.entry_mode_enabled && currentGroup.entry_fee){
+      const fee = parseFloat((currentGroup.entry_fee||'0').replace('£',''))||0;
+      const moneyCount = (allPlayers||[]).filter(p=>p.pay_choice==='money').length;
+      const pot = fee * moneyCount;
+      if(pot > 0){
+        potAmtEl.textContent = '£'+pot.toFixed(pot%1===0?0:2);
+        potEl.style.display = 'block';
+      } else { potEl.style.display = 'none'; }
+    } else if(potEl){ potEl.style.display = 'none'; }
 
     // Build leaderboard scores
     const scores = {};
