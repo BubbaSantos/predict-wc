@@ -349,8 +349,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 
   /* SAVED MATCH CARD */
   @keyframes savedPulse { 0%{box-shadow:0 0 0 0 rgba(16,185,129,.4)} 70%{box-shadow:0 0 0 8px rgba(16,185,129,0)} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0)} }
-  .match-card.saved { border-color:rgba(16,185,129,.5) !important; background:rgba(16,185,129,.04); animation: savedPulse .6s ease; }
-  body.light .match-card.saved { background:rgba(16,185,129,.06); }
+  .match-card.saved { border-color:rgba(16,185,129,.4) !important; background:rgba(16,185,129,.06); transition: background .3s, border-color .3s; }
+  body.light .match-card.saved { background:rgba(16,185,129,.08); border-color:rgba(16,185,129,.5) !important; }
 
   /* MORE ANIMATIONS */
   @keyframes slideInRight { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
@@ -495,7 +495,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.1</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1674,7 +1674,10 @@ function renderAdminCard(f,res){
     <div class="team away"><span class="team-name">${f.away}</span><span class="team-flag">${f.af}</span></div>
     <div class="match-meta">
       <span class="match-info"><span class="group-tag">${grpLabel}</span> · ${formatDate(f.date)}</span>
-      <button class="actual-save-btn" onclick="saveResult('${f.id}')">Save</button>
+      <div style="display:flex;gap:.4rem;align-items:center;">
+        <button class="actual-save-btn" onclick="saveResult('${f.id}')">Save</button>
+        ${(h!==null&&h!==undefined&&h!=='') ? `<button class="actual-save-btn" onclick="clearResult('${f.id}')" style="background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.7rem;padding:.3rem .5rem;">✕</button>` : ''}
+      </div>
     </div>
   </div>`;
 }
@@ -1695,7 +1698,7 @@ async function saveSingle(id){
     document.getElementById(`h-${id}`)?.classList.add('filled');
     document.getElementById(`a-${id}`)?.classList.add('filled');
     flash('Saved!','success');
-    const _sc=document.getElementById('h-'+id)?.closest('.match-card'); if(_sc){_sc.classList.add('saved');setTimeout(()=>_sc.classList.remove('saved'),2000);}
+    const _sc=document.getElementById('h-'+id)?.closest('.match-card'); if(_sc) _sc.classList.add('saved');
   }catch(e){if(btn)btn.textContent='Save';flash('Error: '+e.message,'error');}
 }
 
@@ -2268,6 +2271,27 @@ async function saveAllResults(){
     flash(toSave.length+' result'+(toSave.length>1?'s':'')+' saved!', 'success');
     renderFixtures(document.getElementById('admin-fixtures-list'), true);
   } catch(e){ flash('Error: '+e.message, 'error'); }
+}
+
+
+async function clearResult(id){
+  if(!currentGroup) return;
+  try{
+    await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    delete results[id];
+    // Clear the inputs
+    const rh = document.getElementById('rh-'+id);
+    const ra = document.getElementById('ra-'+id);
+    if(rh) rh.value='';
+    if(ra) ra.value='';
+    // Re-render just this card
+    const card = document.getElementById('acard-'+id);
+    if(card){
+      const f = allFixtures().find(f=>f.id===id);
+      if(f) card.outerHTML = renderAdminCard(f, null);
+    }
+    flash('Result cleared','success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
 async function saveResult(id){
@@ -3014,6 +3038,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.1</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.3</div>
 </body>
 </html>
