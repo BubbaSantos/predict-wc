@@ -352,6 +352,14 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .match-card.saved { border-color:rgba(16,185,129,.4) !important; background:rgba(16,185,129,.06); transition: background .3s, border-color .3s; }
   body.light .match-card.saved { background:rgba(16,185,129,.08); border-color:rgba(16,185,129,.5) !important; }
 
+
+  /* SCOTLAND EASTER EGG */
+  #scotland-banner{position:fixed;top:0;left:0;right:0;z-index:9999;pointer-events:none;overflow:hidden;height:0;}
+  #scotland-banner.show{height:auto;}
+  .scotland-ticker{background:linear-gradient(135deg,#003f7f,#1a5fa8);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.15em;padding:.6rem 0;white-space:nowrap;overflow:hidden;}
+  .scotland-ticker-inner{display:inline-block;animation:tickerScroll 6s linear;}
+  @keyframes tickerScroll{0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)}}
+
   /* MORE ANIMATIONS */
   @keyframes slideInRight { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
   @keyframes flipIn { from{opacity:0;transform:rotateY(-15deg)} to{opacity:1;transform:rotateY(0)} }
@@ -494,8 +502,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
+<div id="scotland-banner"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.3</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2021,17 +2030,63 @@ async function setPayChoice(choice){
 }
 
 
+
+// ── SCOTLAND EASTER EGG ───────────────────────────────
+const SCOTLAND_FIXTURES = ['m007','m030','m053'];
+const SCOTLAND_MESSAGES = [
+  '🏴󠁧󠁢󠁳󠁣󠁴󠁿  No Scotland No Party!  🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  '🎉  Yass Scotland C\'mon!!  🎉',
+  '💙  Stevie Clarke\'s Tartan Army!  💙',
+  '🕺  Yes Sir I Can Boogie!  🕺',
+  '🏴󠁧󠁢󠁳󠁣󠁴󠁿  Scotland, Scotland, Scotland!  🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+];
+let _scotlandTimer = null;
+
+function checkScotlandEasterEgg(matchId){
+  if(!SCOTLAND_FIXTURES.includes(matchId)) return;
+  const f = allFixtures().find(f=>f.id===matchId);
+  if(!f) return;
+  const hEl = document.getElementById('h-'+matchId);
+  const aEl = document.getElementById('a-'+matchId);
+  if(!hEl||!aEl) return;
+  const h = parseInt(hEl.value);
+  const a = parseInt(aEl.value);
+  if(isNaN(h)||isNaN(a)) return;
+  // Check if Scotland won
+  const scotHome = f.home === 'Scotland';
+  const scotWon = scotHome ? h > a : a > h;
+  if(scotWon) showScotlandBanner();
+}
+
+function showScotlandBanner(){
+  const banner = document.getElementById('scotland-banner');
+  if(!banner) return;
+  const msg = SCOTLAND_MESSAGES[Math.floor(Math.random()*SCOTLAND_MESSAGES.length)];
+  const repeat = msg + '   ·   ' + msg + '   ·   ' + msg;
+  banner.innerHTML = '<div class="scotland-ticker"><span class="scotland-ticker-inner">'+repeat+'</span></div>';
+  banner.classList.add('show');
+  clearTimeout(_scotlandTimer);
+  _scotlandTimer = setTimeout(()=>{
+    banner.classList.remove('show');
+    banner.innerHTML='';
+  }, 6500);
+}
+
 // ── SCORE AUTO-ADVANCE ────────────────────────────────
 function scoreInput(el, nextId){
   const v = el.value.replace(/[^0-9]/g,'');
   el.value = v.slice(0,2);
   const matchId = el.dataset.matchId || el.id.replace('h-','').replace('a-','');
   markUnsaved(matchId);
+  if(v.length >= 1) checkScotlandEasterEgg(matchId);
 
   if(v.length >= 1 && nextId){
     const next = document.getElementById(nextId);
     if(next && !next.disabled){ next.focus(); next.select(); }
+    // Check after away score entered (nextId means we just filled home)
+    checkScotlandEasterEgg(matchId);
   } else if(v.length >= 1 && !nextId && el.dataset.matchId){
+    checkScotlandEasterEgg(el.dataset.matchId);
     advanceToNextMatch(el.dataset.matchId);
   }
 }
@@ -3038,6 +3093,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.3</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.6</div>
 </body>
 </html>
