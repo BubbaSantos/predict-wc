@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.9</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -736,6 +736,13 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <div class="gh-pot-label">Total Pot</div>
           <div class="gh-pot-amount" id="gh-pot-amount">£0</div>
         </div>
+      </div>
+
+      <!-- Countdown -->
+      <div id="home-countdown-card" style="display:none;text-align:center;padding:1.25rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:1.25rem;">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">Tournament kicks off in</div>
+        <div id="home-countdown" style="display:flex;justify-content:center;gap:1rem;"></div>
+        <div style="font-size:.65rem;color:var(--text-muted);margin-top:.6rem;">Mexico 🇲🇽 vs South Africa 🇿🇦 · 11 Jun, 20:00 BST</div>
       </div>
 
       <!-- Mini Leaderboard -->
@@ -1497,6 +1504,28 @@ function enterApp(){
     document.getElementById('h-player-chip').innerHTML='<strong>Admin</strong>';
   }
   showView('home');
+  startCountdown();
+}
+
+let _countdownInterval = null;
+function startCountdown(){
+  clearInterval(_countdownInterval);
+  const card = document.getElementById('home-countdown-card');
+  const el   = document.getElementById('home-countdown');
+  if(!card || !el) return;
+  function tick(){
+    const diff = FIRST_MATCH_UTC - Date.now();
+    if(diff <= 0){ card.style.display='none'; clearInterval(_countdownInterval); return; }
+    card.style.display='block';
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    const unit = (n,l) => `<div style="min-width:3rem;"><div style="font-size:2rem;font-weight:900;color:#ef4444;font-family:'DM Mono',monospace;line-height:1;">${String(n).padStart(2,'0')}</div><div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-top:.15rem;">${l}</div></div>`;
+    el.innerHTML = unit(d,'days') + unit(h,'hrs') + unit(m,'min') + unit(s,'sec');
+  }
+  tick();
+  _countdownInterval = setInterval(tick, 1000);
 }
 
 function applyBranding(){
@@ -3854,6 +3883,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.9</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.0</div>
 </body>
 </html>
