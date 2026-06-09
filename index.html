@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.6</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2730,8 +2730,8 @@ function showScotlandBanner(){
   if(!top||!bot) return;
   const msg = SCOTLAND_MESSAGES[Math.floor(Math.random()*SCOTLAND_MESSAGES.length)];
   const repeat = msg + '   ·   ' + msg + '   ·   ' + msg;
-  top.innerHTML = '<div class="scotland-ticker"><span class="scotland-ticker-inner">'+repeat+'</span></div>';
-  bot.innerHTML = '<div class="scotland-ticker"><span class="scotland-ticker-inner2">'+repeat+'</span></div>';
+  top.innerHTML = '<div class="scotland-ticker"><span class="scotland-ticker-inner2">'+repeat+'</span></div>';
+  bot.innerHTML = '<div class="scotland-ticker"><span class="scotland-ticker-inner">'+repeat+'</span></div>';
   top.classList.add('show');
   bot.classList.add('show');
   clearTimeout(_scotlandTimer);
@@ -3895,6 +3895,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.6</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.7</div>
 </body>
 </html>
