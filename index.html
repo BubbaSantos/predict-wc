@@ -560,7 +560,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.2</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -603,7 +603,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <button class="modal-back" onclick="hideFlow('join')">← Back</button>
     <div class="modal-title">Join <span>Group</span></div>
     <div id="join-step-1">
-      <div class="field"><label>Group Key</label><input id="j-key" type="text" placeholder="Enter the group key" maxlength="20" autocomplete="off" /></div>
+      <div class="field"><label>Group Key</label><input id="j-key" type="text" placeholder="Enter the group key" maxlength="20" autocomplete="off" onkeydown="if(event.key==='Enter')findGroup()" /></div>
       <div id="join-error-1" class="form-error"></div>
       <button class="btn" onclick="findGroup()">Find Group →</button>
     </div>
@@ -613,13 +613,13 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Already have an account? Log in below. New here? Register.</p>
       <!-- Login -->
       <div id="join-login-form">
-        <div class="field"><label>Your Name</label><input id="j-login-name" type="text" placeholder="Your name" maxlength="40" /></div>
+        <div class="field"><label>Your Name</label><input id="j-login-name" type="text" placeholder="Your name" maxlength="40" onkeydown="if(event.key==='Enter')loginPlayer()" /></div>
         <div class="field"><label>Your 4-digit PIN</label>
           <div class="pin-row" id="j-login-pin-row">
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp0" oninput="pinNext(this,'jp1','j-login-pin-row')" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp1" oninput="pinNext(this,'jp2','j-login-pin-row')" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp2" oninput="pinNext(this,'jp3','j-login-pin-row')" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp3" oninput="pinDone('j-login-pin-row')" />
+            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp0" oninput="pinNext(this,'jp1','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
+            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp1" oninput="pinNext(this,'jp2','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
+            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp2" oninput="pinNext(this,'jp3','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
+            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp3" oninput="pinDone('j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
           </div>
         </div>
         <div id="join-error-2" class="form-error"></div>
@@ -1236,6 +1236,17 @@ async function findGroup(){
 function toggleRegister(show){
   document.getElementById('join-login-form').style.display=show?'none':'block';
   document.getElementById('join-register-form').style.display=show?'block':'none';
+  if(show){
+    // Carry over whatever the user already typed in the login form
+    const loginName = document.getElementById('j-login-name').value.trim();
+    if(loginName) document.getElementById('j-reg-name').value = loginName;
+    ['jp0','jp1','jp2','jp3'].forEach((id,i)=>{
+      const src = document.getElementById(id);
+      const dst = document.getElementById('rp'+i);
+      if(src && dst && src.value) dst.value = src.value;
+    });
+    document.getElementById('j-reg-name').focus();
+  }
 }
 
 async function loginPlayer(){
@@ -3415,6 +3426,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.2</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.3</div>
 </body>
 </html>
