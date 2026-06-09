@@ -139,7 +139,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .home-next-match{display:flex;align-items:center;justify-content:space-between;gap:.75rem;}
 .home-next-teams{font-size:.95rem;font-weight:600;flex:1;}
 .home-next-date{font-size:.72rem;color:var(--text-muted);}
-.home-next-pred{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--group-accent);}
+.home-next-pred{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--group-accent);}
 .home-next-nopred{font-size:.75rem;color:var(--text-muted);font-style:italic;}
 .match-stat-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid rgba(30,45,69,.5);font-size:.78rem;}
 .match-stat-row:last-child{border-bottom:none;}
@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.3</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3099,7 +3099,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.pin ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.75rem;font-family:\'DM Mono\',monospace;">PIN: '+p.pin+'</span>' : ''}</div>
+          <div class="player-row-name">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}</div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts${p.pay_choice ? ' · '+(p.pay_choice==='money'?'💸 Paying in':'😄 Fun only'):''}</div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
@@ -3894,6 +3894,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.3</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.4</div>
 </body>
 </html>
