@@ -592,7 +592,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.0</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -978,6 +978,22 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             </div>
           </div>
           <button class="sync-refresh" onclick="saveEntryMode()">Save Entry Settings</button>
+        </div>
+        <div class="status-card">
+          <h3>Leaderboard Views</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Choose which filter tabs players can see. At least one must be ticked.</div>
+          <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:.85rem;">
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem;">
+              <input type="checkbox" id="lb-view-all" checked> All Players
+            </label>
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem;">
+              <input type="checkbox" id="lb-view-money" checked> 💸 Money
+            </label>
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem;">
+              <input type="checkbox" id="lb-view-fun" checked> 😄 Fun
+            </label>
+          </div>
+          <button class="sync-refresh" onclick="saveLbViewSettings()">Save Leaderboard Views</button>
         </div>
         <div class="status-card">
           <h3>Tiebreaker Data</h3>
@@ -2013,9 +2029,22 @@ async function loadLeaderboard(){
     // Build pay map display->choice
     _lbPayMap={};
     (allPlayers||[]).forEach(p=>{ _lbPayMap[p.nickname||p.name]=p.pay_choice||null; });
-    // Show filter buttons only if entry mode enabled
+    // Show filter buttons based on which views are enabled
     const filterBtns = document.getElementById('lb-filter-btns');
-    if(filterBtns) filterBtns.style.display = (currentGroup&&currentGroup.entry_mode_enabled) ? 'flex' : 'none';
+    if(filterBtns && currentGroup && currentGroup.entry_mode_enabled){
+      const views = getLbViews();
+      const allBtn = document.getElementById('lb-filter-all');
+      const moneyBtn = document.getElementById('lb-filter-money');
+      const funBtn = document.getElementById('lb-filter-fun');
+      if(allBtn) allBtn.style.display = views.includes('all') ? '' : 'none';
+      if(moneyBtn) moneyBtn.style.display = views.includes('money') ? '' : 'none';
+      if(funBtn) funBtn.style.display = views.includes('fun') ? '' : 'none';
+      filterBtns.style.display = views.length > 1 ? 'flex' : 'none';
+      if(!views.includes(_lbFilter)){
+        _lbFilter = views[0];
+        document.querySelectorAll('.lb-filter-btn').forEach(b=>b.classList.toggle('active', b.id==='lb-filter-'+_lbFilter));
+      }
+    } else if(filterBtns){ filterBtns.style.display = 'none'; }
     _lbScores = scores;
     renderLeaderboard();
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
@@ -2126,6 +2155,38 @@ function loadTiebreakerSettings(){
   if(atgEl) atgEl.value=currentGroup.actual_top_goals!=null?currentGroup.actual_top_goals:'';
   if(itmEl) itmEl.value=currentGroup.itm_override||'';
   if(fEl) fEl.value=currentGroup.forfeit_override||'';
+}
+
+function getLbViews(){
+  const stored=currentGroup&&currentGroup.lb_views;
+  if(stored&&typeof stored==='string') return stored.split(',').map(s=>s.trim()).filter(Boolean);
+  return ['all','money','fun'];
+}
+
+function loadLbViewSettings(){
+  const views=getLbViews();
+  const allEl=document.getElementById('lb-view-all');
+  const moneyEl=document.getElementById('lb-view-money');
+  const funEl=document.getElementById('lb-view-fun');
+  if(allEl) allEl.checked=views.includes('all');
+  if(moneyEl) moneyEl.checked=views.includes('money');
+  if(funEl) funEl.checked=views.includes('fun');
+}
+
+async function saveLbViewSettings(){
+  if(!currentGroup) return;
+  const views=[];
+  if(document.getElementById('lb-view-all')?.checked) views.push('all');
+  if(document.getElementById('lb-view-money')?.checked) views.push('money');
+  if(document.getElementById('lb-view-fun')?.checked) views.push('fun');
+  if(!views.length){flash('At least one view must be enabled','error');return;}
+  const viewStr=views.join(',');
+  try{
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{lb_views:viewStr}});
+    currentGroup={...currentGroup,lb_views:viewStr};
+    saveSession();
+    flash('Leaderboard views saved!','success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
 function loadTickerSettings(){
@@ -2849,7 +2910,7 @@ function switchAdminTab(name){
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
-  if(name==='controls'){loadForfeitSettings();loadTiebreakerSettings();loadTickerSettings();}
+  if(name==='controls'){loadForfeitSettings();loadTiebreakerSettings();loadLbViewSettings();loadTickerSettings();}
   if(name==='changelog')renderChangelog();
 }
 
@@ -3337,7 +3398,10 @@ function renderLeaderboard(){
     const moneyPlayers = Object.keys(_lbPayMap).filter(n=>_lbPayMap[n]==='money').length;
     const fee = parseFloat((currentGroup.entry_fee||'0').replace('£',''))||0;
     const pot = moneyPlayers * fee;
-    if(_lbFilter === 'money' && pot > 0){
+    const views = getLbViews();
+    const onlyAll = views.includes('all') && !views.includes('money');
+    const showPot = pot > 0 && (_lbFilter === 'money' || onlyAll);
+    if(showPot){
       potDisplay.style.display='flex';
       potAmount.textContent = '£'+pot.toFixed(pot%1===0?0:2);
     } else { potDisplay.style.display='none'; }
@@ -3762,6 +3826,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.0</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.1</div>
 </body>
 </html>
