@@ -560,7 +560,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.0</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1338,6 +1338,10 @@ function enterApp(){
   refreshGroup().then(()=>{
     // Reload entry mode settings with fresh data
     loadEntryModeSettings();
+    // Reload home now that group data is fresh (entry fees, etc.)
+    if(document.getElementById('view-home')?.classList.contains('active')){
+      loadHome();
+    }
   });
   document.getElementById('screen-landing').style.display='none';
   document.getElementById('screen-app').style.display='block';
@@ -2053,7 +2057,10 @@ async function loadHome(){
       if(statsEl) statsEl.innerHTML = headerHtml + rowsHtml;
     }
   } catch(e){
-    if(lbEl) lbEl.innerHTML=`<div style="font-size:.82rem;color:var(--text-muted);">⚠️ ${e.message}</div>`;
+    const errHtml = `<div style="font-size:.82rem;color:var(--text-muted);">⚠️ ${e.message}</div>`;
+    if(lbEl) lbEl.innerHTML = errHtml;
+    if(nextEl) nextEl.innerHTML = errHtml;
+    if(statsEl) statsEl.innerHTML = errHtml;
   }
 }
 
@@ -2776,13 +2783,17 @@ function togglePlayerMenu(btn){
   const menu = btn.nextElementSibling;
   if(!menu) return;
   const isOpen = menu.style.display === 'block';
-  // Close all first
+  // Close all first (reset z-index on all rows)
   document.querySelectorAll('.player-options-menu').forEach(m=>{ if(m!==menu) m.style.display='none'; });
+  document.querySelectorAll('.player-row').forEach(r=>r.style.zIndex='');
   menu.style.display = isOpen ? 'none' : 'block';
+  // Elevate this row above siblings so menu isn't clipped
+  if(!isOpen) btn.closest('.player-row').style.zIndex = '10';
 }
 
 function closePlayerMenus(){
   document.querySelectorAll('.player-options-menu').forEach(m=>m.style.display='none');
+  document.querySelectorAll('.player-row').forEach(r=>r.style.zIndex='');
   document.querySelectorAll('.pay-submenu').forEach(e=>e.remove());
 }
 
@@ -3406,6 +3417,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.0</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.5.1</div>
 </body>
 </html>
