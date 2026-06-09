@@ -167,7 +167,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .player-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.4rem;}
 .player-row-name{font-weight:600;font-size:.9rem;}
 .player-row-stats{font-size:.72rem;color:var(--text-muted);margin-top:.15rem;}
-.player-actions{display:flex;gap:.5rem;}
+.player-actions{display:flex;flex-wrap:wrap;gap:.4rem;max-width:100%;}
 .view-preds-btn{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;font-weight:600;padding:.25rem .6rem;border-radius:5px;cursor:pointer;transition:all .15s;}
 .view-preds-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .remove-player-btn{background:none;border:1px solid rgba(239,68,68,.3);color:var(--accent2);font-size:.72rem;font-weight:600;padding:.25rem .6rem;border-radius:5px;cursor:pointer;transition:all .15s;}
@@ -508,7 +508,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.8</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.4.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1819,24 +1819,16 @@ async function loadLeaderboard(){
       else if(pts===5){scores[name].exact++;scores[name].total+=5;}
       else if(pts===3){scores[name].result++;scores[name].total+=3;}
     });
+    // Build pay map display->choice
+    _lbPayMap={};
+    (allPlayers||[]).forEach(p=>{ _lbPayMap[p.nickname||p.name]=p.pay_choice||null; });
+    // Show filter buttons only if entry mode enabled
+    const filterBtns = document.getElementById('lb-filter-btns');
+    if(filterBtns) filterBtns.style.display = (currentGroup&&currentGroup.entry_mode_enabled) ? 'flex' : 'none';
     _lbScores = scores;
     renderLeaderboard();
-    return;
-    const sorted=Object.entries(scores).sort((a,b)=>b[1].total-a[1].total);
-    if(!sorted.length){lb.innerHTML='<div class="empty">No scored predictions yet. Check back once matches kick off.</div>';return;}
-    lb.innerHTML=sorted.map(([name,s],i)=>{
-      const pid=s.playerId||'';
-      const dn=name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-      return '<div class="lb-row" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
-        +'<div class="lb-rank">'+(i+1)+'</div>'
-        +'<div><div class="lb-name">'+name+'</div><div class="lb-breakdown">'+s.played+' predicted \u00b7 '+s.exact+' exact \u00b7 '+s.result+' correct results</div></div>'
-        +'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>'
-        +'</div>';
-    }).join('');
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
-
-
 
 // ── PROFILE MENU ─────────────────────────────────────
 
@@ -1883,35 +1875,6 @@ function closeProfileMenu(){
 }
 
 
-// ── PROFILE MENU ──────────────────────────────────────
-let _profileMenuOpen = false;
-
-function toggleProfileMenu(){
-  const menu = document.getElementById('profile-menu');
-  if(!menu) return;
-  _profileMenuOpen = !_profileMenuOpen;
-  menu.style.display = _profileMenuOpen ? 'block' : 'none';
-}
-
-// Close menu when clicking outside
-document.addEventListener('click', function(e){
-  if(_profileMenuOpen && !document.getElementById('profile-wrap')?.contains(e.target)){
-    _profileMenuOpen = false;
-    const menu = document.getElementById('profile-menu');
-    if(menu) menu.style.display = 'none';
-  }
-});
-
-function profileAction(action){
-  _profileMenuOpen = false;
-  const menu = document.getElementById('profile-menu');
-  if(menu) menu.style.display = 'none';
-
-  if(action === 'nickname') showNicknameModal();
-  else if(action === 'pin') showChangePinModal();
-  else if(action === 'preds') showMyPredictions();
-  else if(action === 'logout') leaveGroup();
-}
 
 function showChangePinModal(){
   if(!currentPlayer) return;
@@ -2476,7 +2439,6 @@ async function loadGraceRequests(){
       html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid rgba(245,158,11,.1);">';
       html += '<span style="font-size:.85rem;font-weight:600;">'+r.player_name+'</span>';
       html += '<div style="display:flex;gap:.5rem;">';
-      html += '<button class="view-preds-btn" onclick="renamePlayer(this)" data-id="'+id+'" data-name="'+p.name.replace(/"/g,'&quot;')+'">Rename</button>';
       html += '<button class="view-preds-btn" style="border-color:rgba(16,185,129,.4);color:var(--green);" onclick="approveGrace(this)" data-id="'+r.id+'" data-pid="'+r.player_id+'" data-name="'+r.player_name+'">✓ Approve</button>';
       html += '<button class="remove-player-btn" onclick="denyGrace(this)" data-id="'+r.id+'" data-name="'+r.player_name+'">✕ Deny</button>';
       html += '</div></div>';
@@ -2885,7 +2847,7 @@ async function exportLeaderboardCSV(){
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     const scores={};
     (allPreds||[]).forEach(p=>{
-      const name=pm[p.player_id]||'?';
+      const _pd=pm[p.player_id]; const name=(typeof _pd==='string'?_pd:(_pd&&(_pd.display||_pd.name)))||'?';
       if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0};
       const res=rm[p.match_id]; if(!res)return;
       const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
@@ -3105,6 +3067,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.3.8</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.4.0</div>
 </body>
 </html>
