@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.4</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -818,11 +818,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <div id="view-predict" class="view">
       <div class="page-header">
         <div class="page-title">Predictions</div>
-        <div style="display:flex;align-items:center;gap:.5rem;">
-          <button class="compact-toggle" id="hide-pred-btn" onclick="toggleHidePredicted()">👁 Hide Done</button>
-          <button class="compact-toggle" onclick="showPlayersPopup()" id="players-popup-btn">👥 Players</button>
-          <button class="compact-toggle" id="compact-btn" onclick="toggleCompact()">⊟ Compact</button>
-        </div>
       </div>
       <div id="grace-banner-wrap"></div>
       <div id="pay-choice-card" style="display:none;margin-bottom:1rem;"></div>
@@ -862,6 +857,11 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="tiebreak-save-wrap" style="display:none;"></div>
         <div id="tb-countdown-wrap" style="display:none;"></div>
 
+      </div>
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
+        <button class="compact-toggle" id="hide-pred-btn" onclick="toggleHidePredicted()">👁 Hide Done</button>
+        <button class="compact-toggle" onclick="showPlayersPopup()" id="players-popup-btn">👥 Players</button>
+        <button class="compact-toggle" id="compact-btn" onclick="toggleCompact()">⊟ Compact</button>
       </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
     </div>
@@ -3853,6 +3853,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.4</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.5</div>
 </body>
 </html>
