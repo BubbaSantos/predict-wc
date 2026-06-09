@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.1</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1200,6 +1200,12 @@ const THEMES = {
     preview:['#020c02','#051505','#22c55e'],
     vars:{'--bg':'#020c02','--surface':'#051505','--surface2':'#082308','--border':'#144d14','--text':'#bbf7bb','--text-muted':'#4a7a4a','--text-dim':'#86c986','--gold':'#fbbf24','--silver':'#86c986','--bronze':'#d97706','--header-bg':'rgba(2,12,2,.92)'},
     bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(34,197,94,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(22,163,74,.04) 0%,transparent 50%)'
+  },
+  ember:{
+    label:'Ember', desc:'Near-black with orange fire',
+    preview:['#0a0602','#140c03','#f97316'],
+    vars:{'--bg':'#0a0602','--surface':'#140c03','--surface2':'#1e1204','--border':'#3a2008','--text':'#fef3e2','--text-muted':'#7a5530','--text-dim':'#c49060','--gold':'#fb923c','--silver':'#c49060','--bronze':'#ea580c','--header-bg':'rgba(10,6,2,.93)'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(249,115,22,.1) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(234,88,12,.05) 0%,transparent 50%)'
   },
 };
 
@@ -3999,6 +4005,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.1</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.2</div>
 </body>
 </html>
