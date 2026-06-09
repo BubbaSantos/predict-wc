@@ -429,7 +429,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .scotland-ticker-inner2{display:inline-block;animation:tickerScroll2 6s linear;}
   @keyframes tickerScroll{0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)}}
   @keyframes tickerScroll2{0%{transform:translateX(-100%)} 100%{transform:translateX(100vw)}}
-  #news-ticker{background:#fde047;color:#111;font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;border-bottom:2px solid #b45309;letter-spacing:.04em;line-height:2.4;position:sticky;top:56px;z-index:50;cursor:pointer;}
+  #news-ticker{background:#fde047;color:#111;font-size:.82rem;font-weight:700;white-space:nowrap;border-bottom:2px solid #b45309;letter-spacing:.04em;line-height:2.4;position:sticky;top:56px;z-index:50;display:flex;align-items:center;}
+  #ticker-hide-btn{flex-shrink:0;padding:0 .65rem 0 .5rem;cursor:pointer;font-size:.7rem;opacity:.7;border-right:1px solid rgba(0,0,0,.15);white-space:nowrap;}
+  #ticker-hide-btn:hover{opacity:1;}
+  #ticker-scroll-wrap{overflow:hidden;flex:1;}
   #news-ticker-inner{display:inline-block;padding-right:12rem;animation:newsTicker 30s linear infinite;}
   @keyframes newsTicker{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
   #ticker-tab{display:none;position:fixed;top:60px;left:0;z-index:51;background:#fde047;color:#111;font-size:.65rem;font-weight:700;padding:.28rem .55rem .28rem .45rem;border-radius:0 6px 6px 0;border:1.5px solid #b45309;border-left:none;cursor:pointer;letter-spacing:.04em;box-shadow:2px 2px 6px rgba(0,0,0,.15);}
@@ -544,6 +547,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   #burger-btn { display: none; }
   @media(max-width:640px){
     #news-ticker{font-size:.65rem;line-height:1.9;border-bottom-width:1px;}
+    #ticker-hide-btn{font-size:.6rem;padding:0 .45rem 0 .35rem;}
     #news-ticker-inner{padding-right:6rem;}
     #ticker-tab{font-size:.6rem;padding:.22rem .45rem .22rem .35rem;}
 
@@ -594,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.2</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -712,7 +716,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       </div>
     </div>
   </header>
-  <div id="news-ticker" style="display:none;" onclick="hideTicker()"><span id="news-ticker-inner">📢 <span id="news-ticker-text"></span></span></div>
+  <div id="news-ticker" style="display:none;">
+    <span id="ticker-hide-btn" onclick="hideTicker()">✕ hide</span>
+    <div id="ticker-scroll-wrap"><span id="news-ticker-inner">📢 <span id="news-ticker-text"></span></span></div>
+  </div>
   <div id="ticker-tab" onclick="showTicker()">📢 Show news</div>
 
   <div class="container">
@@ -3847,6 +3854,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.2</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.6.3</div>
 </body>
 </html>
