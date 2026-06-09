@@ -600,7 +600,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.4</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1570,6 +1570,7 @@ function enterApp(){
   }
   showView('home');
   startCountdown();
+  startHeartbeat();
 }
 
 let _countdownInterval = null;
@@ -1632,6 +1633,19 @@ function startCountdown(){
   _countdownInterval = setInterval(tick, 1000);
 }
 
+let _heartbeatInterval = null;
+async function startHeartbeat(){
+  if(!currentPlayer) return;
+  const ping = () => sb(`players?id=eq.${currentPlayer.id}`, 'PATCH', {last_seen: new Date().toISOString()});
+  ping();
+  clearInterval(_heartbeatInterval);
+  _heartbeatInterval = setInterval(ping, 30000);
+}
+function stopHeartbeat(){
+  clearInterval(_heartbeatInterval);
+  _heartbeatInterval = null;
+}
+
 function applyTheme(themeId){
   const t = THEMES[themeId] || THEMES.dark;
   const root = document.documentElement;
@@ -1663,6 +1677,7 @@ function leaveGroup(){
   currentGroup=null; currentPlayer=null; isAdmin=false;
   predictions={}; results={}; knockoutFixtures=[];
   if(autoSyncInterval){clearInterval(autoSyncInterval);autoSyncInterval=null;}
+  stopHeartbeat();
   localStorage.removeItem('wc26_group');
   localStorage.removeItem('wc26_player');
   localStorage.removeItem('wc26_isAdmin');
@@ -3206,7 +3221,7 @@ async function loadPlayersPanel(){
   loadGraceRequests();
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -3214,7 +3229,8 @@ async function loadPlayersPanel(){
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
-    (playersList||[]).forEach(p=>{pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin};});
+    const now2=Date.now();
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -3226,7 +3242,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}</div>
+          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts${p.pay_choice ? ' · '+(p.pay_choice==='money'?'💸 Paying in':'😄 Fun only'):''}</div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
@@ -4060,6 +4076,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.4</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.5</div>
 </body>
 </html>
