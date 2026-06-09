@@ -437,6 +437,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   #ticker-hide-btn:hover{opacity:1;}
   #ticker-scroll-wrap{display:inline-block;overflow:hidden;width:calc(100% - 5rem);vertical-align:middle;}
   #news-ticker-inner{display:inline-block;padding-right:12rem;animation:newsTicker 30s linear infinite;}
+  .ticker-speed-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);border-radius:.4rem;padding:.25rem .6rem;font-size:.72rem;cursor:pointer;transition:all .15s;}
+  .ticker-speed-btn:hover{border-color:var(--group-accent);color:var(--text);}
+  .ticker-speed-btn.active{background:var(--group-accent);border-color:var(--group-accent);color:#000;font-weight:700;}
   @keyframes newsTicker{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
   #ticker-tab{display:none;position:fixed;top:60px;left:0;z-index:51;background:#fde047;color:#111;font-size:.65rem;font-weight:700;padding:.28rem .55rem .28rem .45rem;border-radius:0 6px 6px 0;border:1.5px solid #b45309;border-left:none;cursor:pointer;letter-spacing:.04em;box-shadow:2px 2px 6px rgba(0,0,0,.15);}
 
@@ -600,7 +603,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1072,6 +1075,14 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           </div>
           <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Message</label>
           <textarea id="ticker-text" class="config-input" rows="2" maxlength="500" placeholder="e.g. 🏆 Matchday 3 kicks off tonight — get your predictions in!" style="resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-top:.75rem;">
+            <label style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">Speed</label>
+            <div style="display:flex;gap:.4rem;">
+              <button id="ticker-speed-slow" class="ticker-speed-btn" onclick="setTickerSpeed('slow')">🐢 Slow</button>
+              <button id="ticker-speed-normal" class="ticker-speed-btn" onclick="setTickerSpeed('normal')">▶ Normal</button>
+              <button id="ticker-speed-fast" class="ticker-speed-btn" onclick="setTickerSpeed('fast')">⚡ Fast</button>
+            </div>
+          </div>
           <button class="sync-refresh" style="margin-top:.85rem;" onclick="saveTickerSettings()">Save Ticker</button>
         </div>
         <div class="status-card">
@@ -2358,15 +2369,28 @@ function loadTickerSettings(){
   const txt=document.getElementById('ticker-text');
   if(tog) tog.checked=currentGroup.ticker_enabled===true;
   if(txt) txt.value=currentGroup.ticker_text||'';
+  setTickerSpeed(currentGroup.ticker_speed||'normal', true);
+}
+
+function setTickerSpeed(speed, silent){
+  ['slow','normal','fast'].forEach(s=>{
+    const btn=document.getElementById('ticker-speed-'+s);
+    if(btn) btn.classList.toggle('active', s===speed);
+  });
+  if(!silent){
+    if(!window._pendingTickerSpeed) window._pendingTickerSpeed = {};
+    window._pendingTickerSpeed = speed;
+  }
 }
 
 async function saveTickerSettings(){
   if(!currentGroup) return;
   const enabled=document.getElementById('ticker-enabled-toggle')?.checked??false;
   const text=(document.getElementById('ticker-text')?.value||'').trim();
+  const speed=(['slow','normal','fast'].find(s=>document.getElementById('ticker-speed-'+s)?.classList.contains('active')))||'normal';
   try{
-    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{ticker_enabled:enabled,ticker_text:text||null}});
-    currentGroup={...currentGroup,ticker_enabled:enabled,ticker_text:text||null};
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed}});
+    currentGroup={...currentGroup,ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed};
     saveSession();
     renderTicker();
     flash('Ticker saved!','success');
@@ -2383,7 +2407,10 @@ function renderTicker(){
   const text=(currentGroup&&currentGroup.ticker_text||'').trim();
   if(!enabled||!text){el.style.display='none';if(tab)tab.style.display='none';return;}
   textEl.textContent=text;
-  const duration=Math.min(60,Math.max(14,text.length*0.18))+'s';
+  const speed=currentGroup&&currentGroup.ticker_speed;
+  const mult=speed==='slow'?0.27:speed==='fast'?0.10:0.18;
+  const [minD,maxD]=speed==='slow'?[20,90]:speed==='fast'?[8,35]:[14,60];
+  const duration=Math.min(maxD,Math.max(minD,text.length*mult))+'s';
   inner.style.animationDuration=duration;
   const hidden=localStorage.getItem('tickerHidden')==='1';
   el.style.display=hidden?'none':'block';
@@ -4076,6 +4103,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.6</div>
 </body>
 </html>
