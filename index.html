@@ -598,7 +598,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.7</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -963,6 +963,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <button class="btn-save-all" style="width:auto;padding:.6rem 1.5rem;font-size:.85rem;margin-top:1rem;" onclick="saveBranding()">Save Branding</button>
         </div>
         <div class="status-card">
+          <h3>Site Theme</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Changes the look for everyone in the group.</div>
+          <div id="theme-picker" style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.85rem;"></div>
+          <button class="sync-refresh" onclick="saveTheme()">Save Theme</button>
+        </div>
+        <div class="status-card">
           <h3>Security Settings</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
             <div><label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">New Group Key</label><input id="new-group-key" type="text" class="config-input" maxlength="20" placeholder="Leave blank to keep current" autocomplete="off" /></div>
@@ -1145,6 +1151,33 @@ const ACCENT_COLOURS = [
   {name:'Lime',     val:'#84cc16'},
   {name:'Pink',     val:'#ec4899'},
 ];
+
+const THEMES = {
+  dark:{
+    label:'Dark', desc:'Deep navy — the default',
+    preview:['#0a0e1a','#111827','#f59e0b'],
+    vars:{'--bg':'#0a0e1a','--surface':'#111827','--surface2':'#1a2235','--border':'#1e2d45','--text':'#e2e8f0','--text-muted':'#64748b','--text-dim':'#94a3b8','--gold':'#fbbf24','--silver':'#94a3b8','--bronze':'#d97706'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(245,158,11,.07) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(16,185,129,.04) 0%,transparent 50%)'
+  },
+  light:{
+    label:'Light', desc:'Clean white, minimal',
+    preview:['#f1f5f9','#ffffff','#0f172a'],
+    vars:{'--bg':'#f1f5f9','--surface':'#ffffff','--surface2':'#f8fafc','--border':'#e2e8f0','--text':'#0f172a','--text-muted':'#94a3b8','--text-dim':'#475569','--gold':'#d97706','--silver':'#64748b','--bronze':'#92400e'},
+    bodyGradient:'none'
+  },
+  forest:{
+    label:'Forest', desc:'Dark green, earthy feel',
+    preview:['#0d1a0f','#132616','#10b981'],
+    vars:{'--bg':'#0d1a0f','--surface':'#132616','--surface2':'#1a3220','--border':'#2d4f35','--text':'#d1fae5','--text-muted':'#6b8f72','--text-dim':'#a7c9b0','--gold':'#fbbf24','--silver':'#94a3b8','--bronze':'#d97706'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(16,185,129,.1) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(5,150,105,.06) 0%,transparent 50%)'
+  },
+  slate:{
+    label:'Slate', desc:'Warm stone, warm feel',
+    preview:['#1c1917','#292524','#f97316'],
+    vars:{'--bg':'#1c1917','--surface':'#292524','--surface2':'#3c3836','--border':'#57534e','--text':'#fafaf9','--text-muted':'#a8a29e','--text-dim':'#d6d3d1','--gold':'#fbbf24','--silver':'#94a3b8','--bronze':'#d97706'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(249,115,22,.07) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(239,68,68,.04) 0%,transparent 50%)'
+  },
+};
 
 const FIXTURES = [
   // MATCHDAY 1
@@ -1528,8 +1561,16 @@ function startCountdown(){
   _countdownInterval = setInterval(tick, 1000);
 }
 
+function applyTheme(themeId){
+  const t = THEMES[themeId] || THEMES.dark;
+  const root = document.documentElement;
+  Object.entries(t.vars).forEach(([k,v])=>root.style.setProperty(k,v));
+  document.body.style.backgroundImage = t.bodyGradient==='none' ? 'none' : t.bodyGradient;
+}
+
 function applyBranding(){
   if(!currentGroup) return;
+  applyTheme(currentGroup.theme||'dark');
   const accent = currentGroup.accent||'#f59e0b';
   document.documentElement.style.setProperty('--group-accent', accent);
   const emoji = currentGroup.emoji||'⚽';
@@ -3536,12 +3577,51 @@ function loadBrandingPanel(){
   document.getElementById('brand-name').value=currentGroup.name||'';
   document.getElementById('brand-tagline').value=currentGroup.tagline||'';
   document.getElementById('brand-emoji').value=currentGroup.emoji||'⚽';
-  // Render colour swatches
   const grid=document.getElementById('colour-grid');
   grid.innerHTML=ACCENT_COLOURS.map(c=>`
     <div class="colour-swatch ${currentGroup.accent===c.val?'selected':''}"
       style="background:${c.val};" title="${c.name}"
       onclick="selectColour('${c.val}',this)"></div>`).join('');
+  renderThemePicker();
+}
+
+let _selectedTheme = null;
+function renderThemePicker(){
+  const el = document.getElementById('theme-picker');
+  if(!el) return;
+  const current = _selectedTheme || currentGroup.theme || 'dark';
+  el.innerHTML = Object.entries(THEMES).map(([id,t])=>{
+    const [bg,surface,accent] = t.preview;
+    const isActive = id===current;
+    return `<div onclick="selectTheme('${id}')" style="cursor:pointer;border-radius:10px;border:2px solid ${isActive?'var(--group-accent)':'var(--border)'};padding:.65rem;background:var(--surface2);transition:border-color .15s;" id="theme-card-${id}">
+      <div style="display:flex;gap:.3rem;margin-bottom:.5rem;">
+        <div style="flex:2;height:18px;border-radius:4px;background:${bg};border:1px solid rgba(255,255,255,.08);"></div>
+        <div style="flex:1;height:18px;border-radius:4px;background:${surface};border:1px solid rgba(255,255,255,.08);"></div>
+        <div style="width:18px;height:18px;border-radius:50%;background:${accent};flex-shrink:0;"></div>
+      </div>
+      <div style="font-size:.8rem;font-weight:600;color:var(--text);">${t.label}</div>
+      <div style="font-size:.65rem;color:var(--text-muted);">${t.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectTheme(id){
+  _selectedTheme = id;
+  document.querySelectorAll('[id^="theme-card-"]').forEach(el=>{
+    el.style.borderColor = el.id==='theme-card-'+id ? 'var(--group-accent)' : 'var(--border)';
+  });
+}
+
+async function saveTheme(){
+  if(!currentGroup) return;
+  const themeId = _selectedTheme || currentGroup.theme || 'dark';
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{theme:themeId}});
+    currentGroup = {...currentGroup, theme:themeId};
+    saveSession();
+    applyBranding();
+    flash('Theme saved!','success');
+  }catch(e){flash('Error: '+e.message,'error');}
 }
 
 let selectedColour = null;
@@ -3895,6 +3975,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.7.7</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.0</div>
 </body>
 </html>
