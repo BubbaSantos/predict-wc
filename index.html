@@ -1422,6 +1422,8 @@ function getFlag(n){return FLAG[norm(n)]||'🏳️';}
 let currentGroup   = null; // {id, name, tagline, key, admin_password, accent, emoji}
 let currentPlayer  = null; // {id, name, group_id}
 let isAdmin        = false;
+let _godUnlocked   = false;
+let _inGodSession  = false;
 let predictions    = {};
 let results        = {};
 let knockoutFixtures = [];
@@ -4222,9 +4224,6 @@ function checkAdminAccess(){
 }
 
 // ── GOD MODE ─────────────────────────────
-let _godUnlocked = false;
-let _inGodSession = false;
-
 function showGodMode(){
   document.getElementById('screen-godmode').classList.add('show');
   document.getElementById('god-gate').style.display='block';
