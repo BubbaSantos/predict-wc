@@ -621,7 +621,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .god-shadow-badge.show{display:block;}
 @media(max-width:480px){.god-create-grid{grid-template-columns:1fr;}.god-actions{flex-direction:column;}}
 /* ── SETUP WIZARD ─────────────────────── */
-.setup-screen{position:fixed;inset:0;background:var(--bg);z-index:99999;overflow-y:auto;display:none;flex-direction:column;min-height:100dvh;}
+.setup-screen{position:fixed;inset:0;background:var(--bg);z-index:9600;overflow-y:auto;display:none;flex-direction:column;min-height:100dvh;}
 .setup-screen.show{display:flex;}
 .setup-progress-bar{height:3px;background:var(--surface2);position:sticky;top:0;z-index:1;flex-shrink:0;}
 .setup-progress-fill{height:100%;background:var(--group-accent);transition:width .35s ease;}
@@ -705,12 +705,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.9</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
     <div class="landing-cards">
-      <div class="landing-card" onclick="showFlow('create')">
+      <div class="landing-card" onclick="showSetupWizard()">
         <div class="landing-card-icon">🏆</div>
         <div class="landing-card-title">Create Group</div>
         <div class="landing-card-desc">Start a new competition and become the admin</div>
@@ -1813,7 +1813,7 @@ function showSetupWizard(){
   _wizStep = 1;
   const _ss = document.getElementById('screen-setup');
   _ss.classList.add('show');
-  _ss.style.cssText = 'display:flex!important;visibility:visible!important;opacity:1!important;';
+  _ss.style.display = 'flex';
   document.getElementById('screen-landing').style.display='none';
   // Populate forfeit options editor
   const opts = typeof FORFEIT_OPTIONS !== 'undefined' ? FORFEIT_OPTIONS : [{emoji:'✂️',label:'Gets a haircut'},{emoji:'🌶️',label:'Eats a chilli'},{emoji:'🐔',label:'Does a forfeit dance'},{emoji:'🥶',label:'Ice bucket challenge'}];
@@ -1843,16 +1843,23 @@ function exitSetupWizard(){
 }
 
 function wizUpdateProgress(){
-  const pct = (_wizStep / WIZ_TOTAL) * 100;
-  document.getElementById('setup-progress-fill').style.width = pct+'%';
-  document.getElementById('setup-step-label').textContent = `Step ${_wizStep} of ${WIZ_TOTAL}`;
-  document.getElementById('setup-back-btn').textContent = _wizStep === 1 ? '✕ Cancel' : '← Back';
-  document.getElementById('setup-next-btn').style.display = _wizStep < WIZ_TOTAL ? '' : 'none';
-  document.getElementById('setup-golive-btn').style.display = _wizStep === WIZ_TOTAL ? '' : 'none';
+  // Activate the correct step first — do this unconditionally so content is never blank
   document.querySelectorAll('.setup-step').forEach((el,i)=>{
     el.classList.toggle('active', i+1 === _wizStep);
   });
-  document.getElementById('setup-error').textContent = '';
+  const pct = (_wizStep / WIZ_TOTAL) * 100;
+  const pfill = document.getElementById('setup-progress-fill');
+  const slabel = document.getElementById('setup-step-label');
+  const backBtn = document.getElementById('setup-back-btn');
+  const nextBtn = document.getElementById('setup-next-btn');
+  const goBtn = document.getElementById('setup-golive-btn');
+  const errEl2 = document.getElementById('setup-error');
+  if(pfill) pfill.style.width = pct+'%';
+  if(slabel) slabel.textContent = `Step ${_wizStep} of ${WIZ_TOTAL}`;
+  if(backBtn) backBtn.textContent = _wizStep === 1 ? '✕ Cancel' : '← Back';
+  if(nextBtn) nextBtn.style.display = _wizStep < WIZ_TOTAL ? '' : 'none';
+  if(goBtn) goBtn.style.display = _wizStep === WIZ_TOTAL ? '' : 'none';
+  if(errEl2) errEl2.textContent = '';
   if(_wizStep === WIZ_TOTAL) buildWizReview();
 }
 
@@ -3064,7 +3071,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
-  {v:'1.13.9',date:'10 Jun 2026',notes:['Bypass wizard for Create Group — use simple modal while wizard blank-page bug is investigated separately']},
+  {v:'1.14.0',date:'10 Jun 2026',notes:['Fix wizard blank page — activate step content first in wizUpdateProgress (before any element lookups), null-safe all getElementById calls; re-enable wizard for Create Group']},
   {v:'1.13.7',date:'10 Jun 2026',notes:['Fix Create Group — restore landing hide + force wizard style.display=flex (belt-and-suspenders to guarantee wizard shows regardless of CSS class state)']},
   {v:'1.13.6',date:'10 Jun 2026',notes:['Fix blank page when clicking Create Group — force wizard visible with direct style.display (bypasses CSS class system); stop hiding landing behind wizard (redundant since wizard is position:fixed over it)']},
   {v:'1.13.5',date:'10 Jun 2026',notes:['Fix blank page on group creation — enter app directly after wizard, then show group info overlay on top (eliminates all blank-screen window)']},
@@ -5631,6 +5638,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.9</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.0</div>
 </body>
 </html>
