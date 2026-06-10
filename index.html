@@ -667,6 +667,19 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .groupinfo-pill.on{border-color:var(--group-accent);color:var(--group-accent);}
 .groupinfo-pill.off{color:var(--text-muted);}
 .groupinfo-url-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-muted);word-break:break-all;margin-bottom:.5rem;}
+.sharecard-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9300;display:none;align-items:center;justify-content:center;padding:1.5rem;box-sizing:border-box;flex-direction:column;gap:1rem;}
+.sharecard-overlay.show{display:flex;}
+.sharecard{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:2rem 1.75rem;width:100%;max-width:360px;box-sizing:border-box;text-align:center;}
+.sharecard-emoji{font-size:3rem;line-height:1;margin-bottom:.5rem;}
+.sharecard-name{font-size:1.6rem;font-weight:900;letter-spacing:.04em;margin-bottom:.2rem;}
+.sharecard-tagline{font-size:.82rem;color:var(--text-muted);margin-bottom:1.5rem;}
+.sharecard-key-label{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem;}
+.sharecard-key{font-family:'DM Mono',monospace;font-size:2rem;font-weight:800;letter-spacing:.12em;word-break:break-all;line-height:1.15;margin-bottom:1.5rem;}
+.sharecard-rows{display:flex;flex-direction:column;gap:.6rem;}
+.sharecard-row{display:flex;align-items:center;justify-content:center;gap:.5rem;font-size:.88rem;}
+.sharecard-row-icon{font-size:1rem;}
+.sharecard-row-text{font-weight:600;}
+.sharecard-row-muted{color:var(--text-muted);}
 </style>
 </head>
 <body>
@@ -676,7 +689,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1069,7 +1082,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div class="status-card">
           <h3>Group Details</h3>
           <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.85rem;">Your shareable group info — send to friends so they can join.</div>
-          <button class="view-preds-btn" onclick="showGroupInfoAdmin()">📋 View Group Info &amp; Share</button>
+          <div style="display:flex;flex-direction:column;gap:.5rem;">
+            <button class="view-preds-btn" onclick="showShareCard()">📸 Share Card (screenshot this)</button>
+            <button class="view-preds-btn" style="background:var(--surface2);" onclick="showGroupInfoAdmin()">📋 View Full Group Info</button>
+          </div>
         </div>
         <div class="status-card">
           <h3>Entry Mode</h3>
@@ -1390,6 +1406,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <button class="btn" id="setup-next-btn" onclick="setupNext()">Next →</button>
     <button class="btn" id="setup-golive-btn" onclick="setupGoLive()" style="display:none;">🚀 Go Live</button>
   </div>
+</div>
+
+<!-- SHARE CARD -->
+<div id="sharecard-overlay" class="sharecard-overlay" onclick="if(event.target===this)closeShareCard()">
+  <div id="sharecard-content" class="sharecard"></div>
+  <button class="btn-ghost" style="font-size:.82rem;padding:.5rem .75rem;max-width:360px;width:100%;" onclick="closeShareCard()">Close</button>
 </div>
 
 <!-- GROUP INFO MODAL -->
@@ -1968,6 +1990,57 @@ function groupInfoEnterGroup(){
 function showGroupInfoAdmin(){
   if(!currentGroup) return;
   showGroupInfo(currentGroup, false);
+}
+
+async function showShareCard(){
+  if(!currentGroup) return;
+  const g = currentGroup;
+  const accent = g.accent || '#f59e0b';
+  const fee = g.entry_mode_enabled && g.entry_fee ? g.entry_fee : null;
+  const paidPlaces = g.paid_places || 1;
+  const percs = g.place_percentages || [100];
+
+  let moneyHtml = '';
+  if(fee){
+    moneyHtml = `<div class="sharecard-row"><span class="sharecard-row-icon">💰</span><span class="sharecard-row-text">${fee} entry fee`;
+    if(g.entry_prize) moneyHtml += ` &mdash; ${g.entry_prize}`;
+    moneyHtml += `</span></div>`;
+    if(paidPlaces > 1){
+      const ordinals = ['1st','2nd','3rd','4th','5th'];
+      const splitStr = percs.slice(0,paidPlaces).map((p,i)=>`${ordinals[i]} ${p}%`).join(' · ');
+      moneyHtml += `<div class="sharecard-row"><span class="sharecard-row-icon">🏆</span><span class="sharecard-row-text sharecard-row-muted" style="font-size:.8rem;">${splitStr}</span></div>`;
+    }
+  } else {
+    moneyHtml = `<div class="sharecard-row"><span class="sharecard-row-icon">🆓</span><span class="sharecard-row-text sharecard-row-muted">Free to play</span></div>`;
+  }
+
+  document.getElementById('sharecard-content').innerHTML = `
+    <div class="sharecard-emoji">${g.emoji||'⚽'}</div>
+    <div class="sharecard-name" style="color:${accent};">${g.name}</div>
+    ${g.tagline ? `<div class="sharecard-tagline">${g.tagline}</div>` : '<div style="margin-bottom:1.5rem;"></div>'}
+    <div class="sharecard-key-label">Group Key</div>
+    <div class="sharecard-key" style="color:${accent};">${g.key}</div>
+    <div class="sharecard-rows">
+      ${moneyHtml}
+      <div class="sharecard-row" id="sharecard-player-row"><span class="sharecard-row-icon">👥</span><span class="sharecard-row-text sharecard-row-muted">Loading…</span></div>
+    </div>`;
+
+  const overlay = document.getElementById('sharecard-overlay');
+  overlay.style.display = 'flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.add('show')));
+
+  try{
+    const rows = await sb(`players?group_id=eq.${g.id}&select=id`);
+    const n = rows ? rows.length : 0;
+    const el = document.getElementById('sharecard-player-row');
+    if(el) el.innerHTML = `<span class="sharecard-row-icon">👥</span><span class="sharecard-row-text">${n} player${n===1?'':'s'} joined</span>`;
+  }catch(e){}
+}
+
+function closeShareCard(){
+  const overlay = document.getElementById('sharecard-overlay');
+  overlay.classList.remove('show');
+  setTimeout(()=>{ overlay.style.display='none'; }, 200);
 }
 
 function copyToClipboard(text, btn, label){
@@ -4988,6 +5061,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.8</div>
 </body>
 </html>
