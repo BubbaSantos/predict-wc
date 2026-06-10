@@ -620,6 +620,53 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .god-shadow-badge{position:fixed;bottom:.4rem;left:.6rem;font-size:.6rem;color:#a855f7;opacity:.6;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;display:none;}
 .god-shadow-badge.show{display:block;}
 @media(max-width:480px){.god-create-grid{grid-template-columns:1fr;}.god-actions{flex-direction:column;}}
+/* ── SETUP WIZARD ─────────────────────── */
+.setup-screen{position:fixed;inset:0;background:var(--bg);z-index:8500;overflow-y:auto;display:none;flex-direction:column;min-height:100dvh;}
+.setup-screen.show{display:flex;}
+.setup-progress-bar{height:3px;background:var(--surface2);position:sticky;top:0;z-index:1;flex-shrink:0;}
+.setup-progress-fill{height:100%;background:var(--group-accent);transition:width .35s ease;}
+.setup-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem .5rem;max-width:520px;width:100%;margin:0 auto;box-sizing:border-box;}
+.setup-back-btn{background:none;border:none;color:var(--text-muted);font-size:.85rem;cursor:pointer;padding:.25rem .5rem;margin-left:-.5rem;}
+.setup-back-btn:hover{color:var(--text);}
+.setup-step-label{font-size:.72rem;color:var(--text-muted);font-family:'DM Mono',monospace;}
+.setup-body{flex:1;padding:.75rem 1.25rem;max-width:520px;width:100%;margin:0 auto;box-sizing:border-box;}
+.setup-footer{padding:.75rem 1.25rem 2.5rem;max-width:520px;width:100%;margin:0 auto;box-sizing:border-box;}
+.setup-step{display:none;}.setup-step.active{display:block;}
+.setup-step-icon{font-size:2rem;margin-bottom:.5rem;}
+.setup-step h2{font-size:1.25rem;font-weight:700;margin:0 0 .25rem;}
+.setup-step .setup-step-sub{font-size:.82rem;color:var(--text-muted);margin:0 0 1.25rem;}
+.setup-divider{border:none;border-top:1px solid var(--border);margin:1rem 0;}
+.setup-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);}
+.setup-toggle-row:last-child{border-bottom:none;}
+.setup-toggle-label{font-size:.875rem;font-weight:600;}
+.setup-toggle-desc{font-size:.75rem;color:var(--text-muted);margin-top:.1rem;}
+.setup-review-row{display:flex;justify-content:space-between;align-items:baseline;padding:.4rem 0;border-bottom:1px solid var(--border);font-size:.85rem;}
+.setup-review-row:last-child{border-bottom:none;}
+.setup-review-label{color:var(--text-muted);font-size:.78rem;}
+.setup-review-val{font-weight:600;text-align:right;}
+.setup-review-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;margin-bottom:.85rem;}
+.setup-review-section h4{font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin:0 0 .5rem;}
+.setup-error{color:var(--accent2);font-size:.8rem;margin-bottom:.75rem;min-height:1.1rem;}
+/* ── GROUP INFO MODAL ─────────────────── */
+.groupinfo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9200;display:none;align-items:center;justify-content:center;padding:1rem;box-sizing:border-box;}
+.groupinfo-overlay.show{display:flex;}
+.groupinfo-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;width:100%;max-width:420px;max-height:90dvh;overflow-y:auto;box-sizing:border-box;}
+.groupinfo-header{text-align:center;margin-bottom:1.25rem;}
+.groupinfo-emoji{font-size:2.5rem;line-height:1;margin-bottom:.4rem;}
+.groupinfo-name{font-size:1.4rem;font-weight:800;letter-spacing:.04em;}
+.groupinfo-tagline{font-size:.8rem;color:var(--text-muted);margin-top:.2rem;}
+.groupinfo-key-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;}
+.groupinfo-key-label{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;}
+.groupinfo-key-value{font-family:'DM Mono',monospace;font-size:1.25rem;font-weight:700;letter-spacing:.1em;word-break:break-all;}
+.groupinfo-copy-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.75rem;font-weight:600;padding:.35rem .7rem;border-radius:7px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.groupinfo-copy-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
+.groupinfo-section{margin-bottom:.85rem;}
+.groupinfo-section-title{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;}
+.groupinfo-pills{display:flex;flex-wrap:wrap;gap:.4rem;}
+.groupinfo-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:.75rem;padding:.25rem .65rem;}
+.groupinfo-pill.on{border-color:var(--group-accent);color:var(--group-accent);}
+.groupinfo-pill.off{color:var(--text-muted);}
+.groupinfo-url-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-muted);word-break:break-all;margin-bottom:.5rem;}
 </style>
 </head>
 <body>
@@ -629,12 +676,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.4</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
     <div class="landing-cards">
-      <div class="landing-card" onclick="showFlow('create')">
+      <div class="landing-card" onclick="showSetupWizard()">
         <div class="landing-card-icon">🏆</div>
         <div class="landing-card-title">Create Group</div>
         <div class="landing-card-desc">Start a new competition and become the admin</div>
@@ -1020,6 +1067,11 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       </div>
       <div id="admin-panel-controls" class="admin-panel">
         <div class="status-card">
+          <h3>Group Details</h3>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.85rem;">Your shareable group info — send to friends so they can join.</div>
+          <button class="view-preds-btn" onclick="showGroupInfoAdmin()">📋 View Group Info &amp; Share</button>
+        </div>
+        <div class="status-card">
           <h3>Entry Mode</h3>
           <div class="toggle-row" style="margin-bottom:.75rem;">
             <div>
@@ -1236,6 +1288,120 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 
 <!-- God mode shadow indicator (bottom-left when shadow-admining a group) -->
 <div id="god-shadow-badge" class="god-shadow-badge" onclick="returnToGodMode()" title="Return to God Mode">⚡ god mode</div>
+
+<!-- ══ SETUP WIZARD ══ -->
+<div id="screen-setup" class="setup-screen">
+  <div class="setup-progress-bar"><div class="setup-progress-fill" id="setup-progress-fill" style="width:25%"></div></div>
+  <div class="setup-header" style="max-width:520px;margin:0 auto;width:100%;box-sizing:border-box;padding:1rem 1.25rem .5rem;">
+    <button class="setup-back-btn" onclick="setupBack()" id="setup-back-btn">← Back</button>
+    <span class="setup-step-label" id="setup-step-label">Step 1 of 4</span>
+  </div>
+  <div class="setup-body">
+
+    <!-- Step 1: Group -->
+    <div class="setup-step active" id="setup-step-1">
+      <div class="setup-step-icon">🏆</div>
+      <h2>Set Up Your Group</h2>
+      <p class="setup-step-sub">The basics — name, key, and how you'll log in.</p>
+      <div class="field"><label>Group Name</label><input id="wiz-name" type="text" placeholder="e.g. World Cup 2026" maxlength="40" /></div>
+      <div class="field"><label>Tagline <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label><input id="wiz-tagline" type="text" placeholder="e.g. May the best predictor win" maxlength="60" /></div>
+      <div class="field"><label>Group Key <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(shared with players)</span></label><input id="wiz-key" type="text" placeholder="e.g. worldcup2026" maxlength="20" autocomplete="off" /></div>
+      <div class="field"><label>Admin Password</label><input id="wiz-adminpw" type="password" placeholder="Something only you know" maxlength="30" /></div>
+      <hr class="setup-divider">
+      <div class="field"><label>Your Name <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(as a player)</span></label><input id="wiz-player-name" type="text" placeholder="e.g. John Smith" maxlength="40" /></div>
+      <div class="field"><label>Your PIN</label>
+        <div class="pin-row" id="wiz-pin-row">
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp0" oninput="pinNext(this,'wp1','wiz-pin-row')" />
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp1" oninput="pinNext(this,'wp2','wiz-pin-row')" />
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp2" oninput="pinNext(this,'wp3','wiz-pin-row')" />
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp3" oninput="pinDone('wiz-pin-row')" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Entry & Prizes -->
+    <div class="setup-step" id="setup-step-2">
+      <div class="setup-step-icon">💰</div>
+      <h2>Entry & Prizes</h2>
+      <p class="setup-step-sub">Are players putting money in? Set the fee and how it's paid out.</p>
+      <div class="setup-toggle-row" style="margin-bottom:.85rem;">
+        <div>
+          <div class="setup-toggle-label">Money Mode</div>
+          <div class="setup-toggle-desc">Players pay an entry fee to join</div>
+        </div>
+        <label class="toggle-switch"><input type="checkbox" id="wiz-entry-enabled" onchange="wizToggleEntry()"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="wiz-entry-fields" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+          <div>
+            <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Entry Fee (£)</label>
+            <div style="display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;" onfocusin="this.style.borderColor='var(--group-accent)'" onfocusout="this.style.borderColor='var(--border)'">
+              <span style="padding:.65rem .75rem;color:var(--text-muted);font-weight:600;border-right:1px solid var(--border);font-size:.9rem;">£</span>
+              <input id="wiz-entry-fee" type="number" min="0" step="0.50" style="background:none;border:none;color:var(--text);font-size:.9rem;padding:.65rem .75rem;outline:none;width:100%;" placeholder="5" />
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Paid Places</label>
+            <input id="wiz-paid-places" type="number" min="1" max="10" value="1" class="config-input" oninput="updateWizPctEditor()" />
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:.75rem;">
+          <label>Prize Description <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input id="wiz-entry-prize" type="text" class="config-input" placeholder="e.g. Winner takes all" maxlength="60" />
+        </div>
+        <div id="wiz-pct-editor"></div>
+      </div>
+    </div>
+
+    <!-- Step 3: Forfeit -->
+    <div class="setup-step" id="setup-step-3">
+      <div class="setup-step-icon">😬</div>
+      <h2>Forfeit</h2>
+      <p class="setup-step-sub">Should the last-place player face a forfeit? Let the group vote on what they have to do.</p>
+      <div class="setup-toggle-row">
+        <div>
+          <div class="setup-toggle-label">Forfeit Badge</div>
+          <div class="setup-toggle-desc">Show a forfeit label on the leaderboard</div>
+        </div>
+        <label class="toggle-switch"><input type="checkbox" id="wiz-forfeit-enabled" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setup-toggle-row" style="margin-bottom:.85rem;">
+        <div>
+          <div class="setup-toggle-label">Forfeit Poll</div>
+          <div class="setup-toggle-desc">Let players vote on the home page</div>
+        </div>
+        <label class="toggle-switch"><input type="checkbox" id="wiz-poll-enabled" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin:.85rem 0 .5rem;">Poll Options</div>
+      <div id="wiz-forfeit-options"></div>
+    </div>
+
+    <!-- Step 4: Review -->
+    <div class="setup-step" id="setup-step-4">
+      <div class="setup-step-icon">✅</div>
+      <h2>Ready to Go?</h2>
+      <p class="setup-step-sub">Check everything looks right, then hit Go Live.</p>
+      <div id="wiz-review-content"></div>
+    </div>
+
+  </div>
+  <div class="setup-footer">
+    <div class="setup-error" id="setup-error"></div>
+    <button class="btn" id="setup-next-btn" onclick="setupNext()">Next →</button>
+    <button class="btn" id="setup-golive-btn" onclick="setupGoLive()" style="display:none;">🚀 Go Live</button>
+  </div>
+</div>
+
+<!-- GROUP INFO MODAL -->
+<div id="groupinfo-overlay" class="groupinfo-overlay" onclick="if(event.target===this)closeGroupInfo()">
+  <div class="groupinfo-modal">
+    <div id="groupinfo-content"></div>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:1.25rem;">
+      <button class="btn" onclick="groupInfoEnterGroup()">Enter Group →</button>
+      <button class="btn-ghost" style="font-size:.82rem;padding:.5rem;" onclick="closeGroupInfo()">Close</button>
+    </div>
+  </div>
+</div>
 
 <!-- CONFIRM MODAL -->
 <div id="confirm-overlay" class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
@@ -1502,6 +1668,316 @@ function hideFlow(name){
 }
 
 // ── CREATE GROUP ─────────────────────────
+// ── SETUP WIZARD ─────────────────────────
+let _wizStep = 1;
+const WIZ_TOTAL = 4;
+
+function showSetupWizard(){
+  _wizStep = 1;
+  document.getElementById('screen-setup').classList.add('show');
+  document.getElementById('screen-landing').style.display='none';
+  // Populate forfeit options editor
+  const opts = typeof FORFEIT_OPTIONS !== 'undefined' ? FORFEIT_OPTIONS : [{emoji:'✂️',label:'Gets a haircut'},{emoji:'🌶️',label:'Eats a chilli'},{emoji:'🐔',label:'Does a forfeit dance'},{emoji:'🥶',label:'Ice bucket challenge'}];
+  const foe = document.getElementById('wiz-forfeit-options');
+  if(foe) foe.innerHTML = opts.map((o,i)=>`
+    <div class="fe-row">
+      <input class="fe-emoji" id="wfe-emoji-${i}" type="text" maxlength="4" value="${o.emoji}" placeholder="✂️">
+      <input class="fe-label" id="wfe-label-${i}" type="text" maxlength="80" value="${o.label}" placeholder="Option ${i+1}">
+    </div>`).join('');
+  wizUpdateProgress();
+  // Auto-suggest key from name
+  const nameEl = document.getElementById('wiz-name');
+  const keyEl = document.getElementById('wiz-key');
+  if(nameEl && keyEl){
+    nameEl.oninput = ()=>{
+      if(!keyEl._userEdited) keyEl.value = nameEl.value.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,20);
+    };
+    keyEl.oninput = ()=>{ keyEl._userEdited = true; };
+  }
+}
+
+function exitSetupWizard(){
+  document.getElementById('screen-setup').classList.remove('show');
+  document.getElementById('screen-landing').style.display='';
+}
+
+function wizUpdateProgress(){
+  const pct = (_wizStep / WIZ_TOTAL) * 100;
+  document.getElementById('setup-progress-fill').style.width = pct+'%';
+  document.getElementById('setup-step-label').textContent = `Step ${_wizStep} of ${WIZ_TOTAL}`;
+  document.getElementById('setup-back-btn').textContent = _wizStep === 1 ? '✕ Cancel' : '← Back';
+  document.getElementById('setup-next-btn').style.display = _wizStep < WIZ_TOTAL ? '' : 'none';
+  document.getElementById('setup-golive-btn').style.display = _wizStep === WIZ_TOTAL ? '' : 'none';
+  document.querySelectorAll('.setup-step').forEach((el,i)=>{
+    el.classList.toggle('active', i+1 === _wizStep);
+  });
+  document.getElementById('setup-error').textContent = '';
+  if(_wizStep === WIZ_TOTAL) buildWizReview();
+}
+
+function wizToggleEntry(){
+  const on = document.getElementById('wiz-entry-enabled').checked;
+  document.getElementById('wiz-entry-fields').style.display = on ? '' : 'none';
+  if(on) updateWizPctEditor();
+}
+
+function updateWizPctEditor(existingPercs){
+  const editor = document.getElementById('wiz-pct-editor');
+  if(!editor) return;
+  const n = Math.max(1, parseInt(document.getElementById('wiz-paid-places')?.value)||1);
+  if(n <= 1){ editor.innerHTML=''; return; }
+  const percs = existingPercs && existingPercs.length ? existingPercs : Array(n).fill(Math.floor(100/n));
+  const ordinals = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];
+  editor.innerHTML = `<div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">Prize Split (%)</div>`+
+    Array(n).fill(0).map((_,i)=>`
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
+      <span style="font-size:.78rem;color:var(--text-muted);width:2.5rem;flex-shrink:0;">${ordinals[i]}</span>
+      <input type="number" id="wiz-pct-${i}" class="config-input" value="${percs[i]||0}" min="0" max="100" style="width:5.5rem;" oninput="wizCheckPct()" />
+      <span style="font-size:.75rem;color:var(--text-muted);">%</span>
+    </div>`).join('');
+  wizCheckPct();
+}
+
+function wizCheckPct(){
+  const n = Math.max(1, parseInt(document.getElementById('wiz-paid-places')?.value)||1);
+  let total = 0;
+  for(let i=0;i<n;i++) total += parseFloat(document.getElementById('wiz-pct-'+i)?.value)||0;
+  const warn = document.getElementById('setup-error');
+  if(warn && Math.round(total) !== 100 && n > 1) warn.textContent = `Prize percentages total ${Math.round(total)}% — must be 100%`;
+  else if(warn) warn.textContent = '';
+}
+
+async function setupNext(){
+  const errEl = document.getElementById('setup-error');
+  errEl.textContent = '';
+
+  if(_wizStep === 1){
+    const name = document.getElementById('wiz-name').value.trim();
+    const key = document.getElementById('wiz-key').value.trim().toLowerCase();
+    const adminpw = document.getElementById('wiz-adminpw').value.trim();
+    const playerName = document.getElementById('wiz-player-name').value.trim();
+    const pin = getPinValue('wiz-pin-row');
+    if(!name) { errEl.textContent = 'Enter a group name.'; return; }
+    if(!key || key.length < 3) { errEl.textContent = 'Group key must be at least 3 characters.'; return; }
+    if(!adminpw) { errEl.textContent = 'Enter an admin password.'; return; }
+    if(!playerName) { errEl.textContent = 'Enter your name as a player.'; return; }
+    if(pin.length !== 4) { errEl.textContent = 'Choose a 4-digit PIN.'; return; }
+    // Check key availability
+    try{
+      const existing = await sb(`groups?key=eq.${encodeURIComponent(key)}&select=id`);
+      if(existing && existing.length){ errEl.textContent = 'That group key is already taken.'; return; }
+    }catch(e){ errEl.textContent = 'Could not check key: '+e.message; return; }
+  }
+  if(_wizStep === 2){
+    const entryOn = document.getElementById('wiz-entry-enabled').checked;
+    if(entryOn){
+      const n = Math.max(1, parseInt(document.getElementById('wiz-paid-places')?.value)||1);
+      if(n > 1){
+        let total = 0;
+        for(let i=0;i<n;i++) total += parseFloat(document.getElementById('wiz-pct-'+i)?.value)||0;
+        if(Math.round(total) !== 100){ errEl.textContent = `Prize percentages total ${Math.round(total)}% — must be 100%`; return; }
+      }
+    }
+  }
+  _wizStep++;
+  wizUpdateProgress();
+  document.querySelector('.setup-body').scrollTop = 0;
+}
+
+function setupBack(){
+  if(_wizStep === 1){ exitSetupWizard(); return; }
+  _wizStep--;
+  wizUpdateProgress();
+}
+
+function buildWizReview(){
+  const name = document.getElementById('wiz-name').value.trim();
+  const tagline = document.getElementById('wiz-tagline').value.trim();
+  const key = document.getElementById('wiz-key').value.trim().toLowerCase();
+  const playerName = document.getElementById('wiz-player-name').value.trim();
+  const entryOn = document.getElementById('wiz-entry-enabled').checked;
+  const fee = document.getElementById('wiz-entry-fee')?.value.trim() || '';
+  const prize = document.getElementById('wiz-entry-prize')?.value.trim() || '';
+  const paidPlaces = Math.max(1, parseInt(document.getElementById('wiz-paid-places')?.value)||1);
+  const forfeitOn = document.getElementById('wiz-forfeit-enabled').checked;
+  const pollOn = document.getElementById('wiz-poll-enabled').checked;
+  const html = `
+    <div class="setup-review-section">
+      <h4>🏆 Group</h4>
+      <div class="setup-review-row"><span class="setup-review-label">Name</span><span class="setup-review-val">${name}</span></div>
+      ${tagline?`<div class="setup-review-row"><span class="setup-review-label">Tagline</span><span class="setup-review-val">${tagline}</span></div>`:''}
+      <div class="setup-review-row"><span class="setup-review-label">Group Key</span><span class="setup-review-val" style="font-family:'DM Mono',monospace;">${key}</span></div>
+      <div class="setup-review-row"><span class="setup-review-label">Your name</span><span class="setup-review-val">${playerName}</span></div>
+    </div>
+    <div class="setup-review-section">
+      <h4>💰 Entry</h4>
+      ${entryOn
+        ? `<div class="setup-review-row"><span class="setup-review-label">Fee</span><span class="setup-review-val">£${fee||'?'} per player</span></div>
+           <div class="setup-review-row"><span class="setup-review-label">Paid Places</span><span class="setup-review-val">${paidPlaces}</span></div>
+           ${prize?`<div class="setup-review-row"><span class="setup-review-label">Prize info</span><span class="setup-review-val">${prize}</span></div>`:''}`
+        : `<div style="font-size:.8rem;color:var(--text-muted);">Money mode off</div>`}
+    </div>
+    <div class="setup-review-section">
+      <h4>😬 Forfeit</h4>
+      <div class="setup-review-row"><span class="setup-review-label">Badge</span><span class="setup-review-val">${forfeitOn?'On':'Off'}</span></div>
+      <div class="setup-review-row"><span class="setup-review-label">Poll</span><span class="setup-review-val">${pollOn?'On':'Off'}</span></div>
+    </div>`;
+  document.getElementById('wiz-review-content').innerHTML = html;
+}
+
+async function setupGoLive(){
+  const errEl = document.getElementById('setup-error');
+  errEl.textContent = '';
+  const goliveBtn = document.getElementById('setup-golive-btn');
+  goliveBtn.textContent = 'Creating…';
+  goliveBtn.disabled = true;
+
+  const name       = document.getElementById('wiz-name').value.trim();
+  const tagline    = document.getElementById('wiz-tagline').value.trim();
+  const key        = document.getElementById('wiz-key').value.trim().toLowerCase();
+  const adminpw    = document.getElementById('wiz-adminpw').value.trim();
+  const playerName = document.getElementById('wiz-player-name').value.trim();
+  const playerPin  = getPinValue('wiz-pin-row');
+  const entryOn    = document.getElementById('wiz-entry-enabled').checked;
+  const feeRaw     = document.getElementById('wiz-entry-fee')?.value.trim() || '';
+  const prize      = document.getElementById('wiz-entry-prize')?.value.trim() || '';
+  const paidPlaces = Math.max(1, parseInt(document.getElementById('wiz-paid-places')?.value)||1);
+  const forfeitOn  = document.getElementById('wiz-forfeit-enabled').checked;
+  const pollOn     = document.getElementById('wiz-poll-enabled').checked;
+
+  const forfeitOpts = [0,1,2,3].map(i=>({
+    emoji:(document.getElementById('wfe-emoji-'+i)?.value.trim())||'',
+    label:(document.getElementById('wfe-label-'+i)?.value.trim())||'',
+  }));
+
+  let placePercentages = [100];
+  if(entryOn && paidPlaces > 1){
+    placePercentages = [];
+    for(let i=0;i<paidPlaces;i++) placePercentages.push(parseFloat(document.getElementById('wiz-pct-'+i)?.value)||0);
+  }
+
+  const fee = entryOn && feeRaw ? '£'+parseFloat(feeRaw).toFixed(2).replace(/\.00$/,'') : '';
+
+  try{
+    const grp = await sb('groups',{method:'POST',prefer:'return=representation',headers:{'Prefer':'return=representation','Content-Type':'application/json'},body:{
+      name, tagline, key, admin_password: adminpw,
+      accent:'#f59e0b', emoji:'⚽',
+      entry_mode_enabled: entryOn,
+      entry_fee: fee || null,
+      entry_prize: prize || null,
+      paid_places: paidPlaces,
+      place_percentages: placePercentages,
+      forfeit_enabled: forfeitOn,
+      forfeit_poll_enabled: pollOn,
+      forfeit_options: forfeitOpts,
+    }});
+    currentGroup = grp[0];
+    isAdmin = true;
+
+    const created = await sb('players?select=*',{method:'POST',prefer:'return=representation',headers:{'Prefer':'return=representation'},body:{
+      group_id: currentGroup.id, name: playerName, pin: playerPin, is_admin: true
+    }});
+    currentPlayer = {id:created[0].id, name:created[0].name, group_id:created[0].group_id, is_admin: true};
+
+    saveSession();
+    document.getElementById('screen-setup').classList.remove('show');
+    showGroupInfo(currentGroup, true);
+  }catch(e){
+    errEl.textContent = 'Error: '+e.message;
+    goliveBtn.textContent = '🚀 Go Live';
+    goliveBtn.disabled = false;
+  }
+}
+
+function showGroupInfo(group, fromWizard){
+  const fee = group.entry_mode_enabled && group.entry_fee ? group.entry_fee : null;
+  const paidPlaces = group.paid_places || 1;
+  const percs = group.place_percentages || [100];
+  const forfeitOn = group.forfeit_enabled !== false;
+  const pollOn = group.forfeit_poll_enabled !== false;
+  const pollEnded = !!group.forfeit_poll_ended;
+  const pollWinner = group.forfeit_poll_winner || null;
+  const pageUrl = window.location.href.split('?')[0].split('#')[0];
+
+  let entryHtml = '';
+  if(fee){
+    entryHtml = `<div class="setup-review-row"><span class="setup-review-label">Fee</span><span class="setup-review-val">${fee} per player</span></div>`;
+    if(group.entry_prize) entryHtml += `<div class="setup-review-row"><span class="setup-review-label">Prize</span><span class="setup-review-val">${group.entry_prize}</span></div>`;
+    if(paidPlaces > 1){
+      const ordinals = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];
+      const splitStr = percs.slice(0,paidPlaces).map((p,i)=>`${ordinals[i]} ${p}%`).join(' · ');
+      entryHtml += `<div class="setup-review-row"><span class="setup-review-label">Split</span><span class="setup-review-val" style="font-size:.78rem;">${splitStr}</span></div>`;
+    }
+  } else {
+    entryHtml = `<div style="font-size:.8rem;color:var(--text-muted);">No entry fee</div>`;
+  }
+
+  const forfeitPills = [
+    forfeitOn ? '<span class="groupinfo-pill on">Forfeit badge ✓</span>' : '<span class="groupinfo-pill off">Forfeit badge off</span>',
+    pollOn ? '<span class="groupinfo-pill on">Poll enabled ✓</span>' : '<span class="groupinfo-pill off">Poll off</span>',
+    pollEnded ? `<span class="groupinfo-pill on">Winner: ${pollWinner||'—'}</span>` : '',
+  ].filter(Boolean).join('');
+
+  document.getElementById('groupinfo-content').innerHTML = `
+    <div class="groupinfo-header">
+      <div class="groupinfo-emoji">${group.emoji||'⚽'}</div>
+      <div class="groupinfo-name" style="color:${group.accent||'#f59e0b'};">${group.name}</div>
+      ${group.tagline ? `<div class="groupinfo-tagline">${group.tagline}</div>` : ''}
+    </div>
+    <div class="groupinfo-section">
+      <div class="groupinfo-section-title">Group Key</div>
+      <div class="groupinfo-key-box">
+        <div>
+          <div class="groupinfo-key-label">Share this with your friends</div>
+          <div class="groupinfo-key-value">${group.key}</div>
+        </div>
+        <button class="groupinfo-copy-btn" onclick="copyToClipboard('${group.key}', this, 'Copied!')">Copy</button>
+      </div>
+    </div>
+    <div class="groupinfo-section">
+      <div class="groupinfo-section-title">Entry & Prizes</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.6rem .85rem;">${entryHtml}</div>
+    </div>
+    <div class="groupinfo-section">
+      <div class="groupinfo-section-title">Forfeit</div>
+      <div class="groupinfo-pills">${forfeitPills}</div>
+    </div>
+    <div class="groupinfo-section">
+      <div class="groupinfo-section-title">Join Link</div>
+      <div class="groupinfo-url-box">${pageUrl}</div>
+      <button class="groupinfo-copy-btn" style="width:100%;justify-content:center;" onclick="copyToClipboard('${pageUrl}', this, 'Copied!')">Copy Link</button>
+    </div>`;
+
+  const overlay = document.getElementById('groupinfo-overlay');
+  overlay.style.display = 'flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.add('show')));
+  overlay._fromWizard = !!fromWizard;
+}
+
+function closeGroupInfo(){
+  const overlay = document.getElementById('groupinfo-overlay');
+  overlay.classList.remove('show');
+  setTimeout(()=>{ overlay.style.display='none'; }, 200);
+}
+
+function groupInfoEnterGroup(){
+  closeGroupInfo();
+  enterApp();
+}
+
+function showGroupInfoAdmin(){
+  if(!currentGroup) return;
+  showGroupInfo(currentGroup, false);
+}
+
+function copyToClipboard(text, btn, label){
+  navigator.clipboard.writeText(text).then(()=>{
+    const orig = btn.textContent;
+    btn.textContent = label || 'Copied!';
+    setTimeout(()=>{ btn.textContent = orig; }, 1800);
+  }).catch(()=>{ flash('Copy failed — please copy manually.','error'); });
+}
+
 async function createGroup(){
   const name       = document.getElementById('c-name').value.trim();
   const tagline    = document.getElementById('c-tagline').value.trim();
@@ -2364,6 +2840,7 @@ const FORFEIT_OPTIONS = [
 ];
 const FORFEIT_IDS = new Set(FORFEIT_OPTIONS.map(o=>o.id));
 const CHANGELOG = [
+  {v:'1.9.5',date:'10 Jun 2026',notes:['Setup wizard when creating a group — walks through group details, entry & prizes, forfeit settings, then a review step','Go Live button creates the group in one shot','Group Info card shown after Go Live — shows key, entry, forfeit, and a copyable join link; also accessible from Admin → Controls']},
   {v:'1.9.4',date:'10 Jun 2026',notes:['Separate toggles for forfeit badge (leaderboard) and forfeit poll (home page)','End Poll button locks in winning option; Reopen Poll resets it','Closed poll shows winner on home page forfeit card','Forfeit badge on leaderboard shows winning poll option when poll is ended']},
   {v:'1.5.6',date:'09 Jun 2026',notes:['Admin can toggle forfeit poll on/off and customise all 4 options','Full tiebreaker logic for In the Money and Forfeit badges (top scorer → goal tally → correct results)','Admin overrides for In the Money and Forfeit labels','Hide Predicted toggle on predict page','Admin changelog tab']},
   {v:'1.5.5',date:'09 Jun 2026',notes:['Moved forfeit poll below standings on home page','Reduced forfeit option card size']},
@@ -4511,6 +4988,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.4</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.5</div>
 </body>
 </html>
