@@ -4148,17 +4148,7 @@ if(currentGroup&&currentPlayer){
 
 
 // ── TEST/ADMIN ACCESS ────────────────────────────────
-let _versionClickCount = 0, _versionClickTimer = null;
-function versionClick(e){
-  _versionClickCount++;
-  clearTimeout(_versionClickTimer);
-  _versionClickTimer = setTimeout(()=>{
-    const n = _versionClickCount;
-    _versionClickCount = 0;
-    if(n >= 3){ showGodMode(); }
-    else { activateTestMode(); }
-  }, 400);
-}
+function versionClick(e){ if(e&&e.shiftKey){ showGodMode(); return; } activateTestMode(); }
 
 function activateTestMode(){
   // If already in app, show admin access prompt instead
