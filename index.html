@@ -603,7 +603,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.9</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.10.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -776,6 +776,13 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="home-forfeit"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
+      <!-- Paid Places Vote -->
+      <div class="home-card" id="home-paidplaces-card">
+        <div class="home-card-title">Paid Places Vote</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
+        <div id="home-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+      </div>
+
       <!-- Match Stats -->
       <div class="home-card" id="home-stats-card">
         <div class="home-card-title">Match Stats</div>
@@ -871,6 +878,18 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="tb-countdown-wrap" style="display:none;"></div>
 
       </div>
+      <!-- Group Votes -->
+      <div class="home-card" id="predict-forfeit-card" style="margin-bottom:1rem;">
+        <div class="home-card-title">Last Place Forfeit Vote</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">What should the loser have to do?</div>
+        <div id="predict-forfeit"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+      </div>
+      <div class="home-card" id="predict-paidplaces-card" style="margin-bottom:1rem;">
+        <div class="home-card-title">Paid Places Vote</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
+        <div id="predict-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+      </div>
+
       <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
         <button class="compact-toggle" id="hide-pred-btn" onclick="toggleHidePredicted()">👁 Hide Done</button>
         <button class="compact-toggle" onclick="showPlayersPopup()" id="players-popup-btn">👥 Players</button>
@@ -1057,6 +1076,19 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           </div>
         </div>
         <div class="status-card">
+          <h3>Votes</h3>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label" id="votes-lock-label">Votes Open</div>
+              <div class="toggle-desc" id="votes-lock-desc">Players can cast and change votes</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="votes-locked-toggle" onchange="toggleVotesLocked()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="status-card">
           <h3>Export</h3>
           <button class="view-preds-btn" onclick="exportLeaderboardCSV()" style="margin-right:.5rem;">📥 Leaderboard CSV</button>
           <button class="view-preds-btn" onclick="exportAllPredictionsCSV()">📥 All Predictions CSV</button>
@@ -1144,6 +1176,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="msg-bar" class="msg-bar"></div>
 
 <script>
+// ════════════════════════════════════════
+//  VERSIONING  Major.Minor.Patch
+//    Major — breaking change or full redesign (reset minor + patch to 0)
+//    Minor — new feature or notable enhancement (reset patch to 0)
+//    Patch — bug fix, tweak, or small improvement
+//  Always bump BOTH version strings (screen-landing div + ver-btn) on every push.
 // ════════════════════════════════════════
 //  CONFIG
 // ════════════════════════════════════════
@@ -1984,6 +2022,7 @@ async function loadPredictions(){
 
     // Render pay choice card
     renderPayChoiceCard();
+    loadPredictVotes();
 
   }catch(e){list.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
@@ -2192,8 +2231,7 @@ async function loadLeaderboard(){
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     _lbTiebreaks={}; (allTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
     const scores={};
-    const fvIds=new Set(FORFEIT_OPTIONS.map(o=>o.id));
-    (allPreds||[]).filter(p=>!fvIds.has(p.match_id)).forEach(p=>{
+    (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id)).forEach(p=>{
       const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
       if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0,playerId:p.player_id};
       scores[name].played++;
@@ -2242,7 +2280,19 @@ const FORFEIT_OPTIONS = [
   {id:'fv-3', emoji:'🩲',  label:'Wear a mankini to your next social event'},
 ];
 const FORFEIT_IDS = new Set(FORFEIT_OPTIONS.map(o=>o.id));
+const PAIDPLACES_OPTIONS = [
+  {id:'pp-0', emoji:'🥇', label:'Top 1 — winner takes all'},
+  {id:'pp-1', emoji:'🥈', label:'Top 2 paid'},
+  {id:'pp-2', emoji:'🥉', label:'Top 3 paid'},
+  {id:'pp-3', emoji:'🏅', label:'Top 4 paid'},
+];
+const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
+const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.10.3',date:'10 Jun 2026',notes:['Versioning scheme documented in code (Major.Minor.Patch)']},
+  {v:'1.10.2',date:'10 Jun 2026',notes:['Admin Controls: Votes lock — prevent players from changing votes once cast']},
+  {v:'1.10.1',date:'10 Jun 2026',notes:['Both vote sections (Forfeit + Paid Places) now appear on the Predict page']},
+  {v:'1.10.0',date:'10 Jun 2026',notes:['New group vote: how many places should be paid out (1–4)']},
   {v:'1.8.9',date:'10 Jun 2026',notes:['Fix create group — blank screen after creation is now resolved']},
   {v:'1.5.6',date:'09 Jun 2026',notes:['Admin can toggle forfeit poll on/off and customise all 4 options','Full tiebreaker logic for In the Money and Forfeit badges (top scorer → goal tally → correct results)','Admin overrides for In the Money and Forfeit labels','Hide Predicted toggle on predict page','Admin changelog tab']},
   {v:'1.5.5',date:'09 Jun 2026',notes:['Moved forfeit poll below standings on home page','Reduced forfeit option card size']},
@@ -2400,6 +2450,31 @@ async function saveTickerSettings(){
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
+// ── VOTES LOCK ────────────────────────────
+function loadVotesSettings(){
+  const tog=document.getElementById('votes-locked-toggle');
+  if(!tog||!currentGroup) return;
+  const locked=currentGroup.votes_locked===true;
+  tog.checked=locked;
+  updateVotesLockedLabel(locked);
+}
+function updateVotesLockedLabel(locked){
+  const l=document.getElementById('votes-lock-label'),d=document.getElementById('votes-lock-desc');
+  if(l){l.textContent=locked?'Votes Locked':'Votes Open';l.style.color=locked?'var(--accent2)':'var(--green)';}
+  if(d)d.textContent=locked?'Votes are locked — no changes allowed':'Players can cast and change votes';
+}
+async function toggleVotesLocked(){
+  if(!currentGroup) return;
+  const locked=document.getElementById('votes-locked-toggle').checked;
+  updateVotesLockedLabel(locked);
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{votes_locked:locked}});
+    currentGroup={...currentGroup,votes_locked:locked};
+    saveSession();
+    flash('Votes '+(locked?'locked':'unlocked'),'success');
+  }catch(e){flash('Error: '+e.message,'error');}
+}
+
 function renderTicker(){
   const el=document.getElementById('news-ticker');
   const tab=document.getElementById('ticker-tab');
@@ -2452,21 +2527,99 @@ function toggleHidePredicted(){
   if(btn) btn.textContent=_hidePredicted?'👁 Show Done':'👁 Hide Done';
 }
 
+// ── VOTE RENDERING ───────────────────────
+function renderVoteSection(containerEl, allVotes, options, votesLocked, castFnName){
+  if(!containerEl) return;
+  const myVote = allVotes.find(p=>p.player_id===currentPlayer?.id)?.match_id || null;
+  const hasVoted = !!myVote;
+  const totalVotes = allVotes.length;
+  const voteCounts = {};
+  options.forEach(o=>{ voteCounts[o.id]=0; });
+  allVotes.forEach(p=>{ if(voteCounts[p.match_id]!==undefined) voteCounts[p.match_id]++; });
+  const maxVotes = Math.max(...Object.values(voteCounts), 1);
+
+  if(!hasVoted && currentPlayer && !votesLocked){
+    containerEl.innerHTML = options.map(o=>`
+      <div class="forfeit-option" onclick="${castFnName}('${o.id}')">
+        <div class="forfeit-option-emoji">${o.emoji}</div>
+        <div class="forfeit-option-label">${o.label}</div>
+      </div>`).join('');
+  } else {
+    const resultsHtml = options.map(o=>{
+      const count = voteCounts[o.id];
+      const pct = totalVotes>0 ? Math.round(count/totalVotes*100) : 0;
+      const isLeading = count === maxVotes && count > 0;
+      const isMyVote = myVote === o.id;
+      return `<div class="forfeit-result${isLeading?' fv-leading':''}${isMyVote?' fv-my-vote':''}">
+        <div class="forfeit-result-meta">
+          <div class="forfeit-result-name">${o.emoji} ${o.label}</div>
+          <div class="forfeit-result-count">${pct}%</div>
+        </div>
+        <div class="forfeit-result-bar-wrap"><div class="forfeit-result-bar" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+    const changeBtn = (currentPlayer && hasVoted && !votesLocked)
+      ? `<div style="margin-top:.75rem;text-align:center;"><button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;" onclick="${castFnName}('')">Change vote</button></div>` : '';
+    const lockNote = (votesLocked && currentPlayer)
+      ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.6rem;text-align:center;">🔒 Votes locked</div>` : '';
+    containerEl.innerHTML = resultsHtml + changeBtn + lockNote;
+  }
+}
+
+// ── VOTE CASTING ─────────────────────────
+async function _doCastVote(optionId, options){
+  for(const o of options){
+    await sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.${o.id}`,{method:'DELETE',prefer:'return=minimal'});
+  }
+  if(optionId) await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:optionId,home_score:1,away_score:0}});
+}
 async function castForfeitVote(optionId){
-  if(!currentPlayer||!currentGroup) return;
-  const forfeitEl = document.getElementById('home-forfeit');
-  if(forfeitEl) forfeitEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
-  try{
-    // Remove any existing forfeit vote for this player
-    for(const o of getForfeitOptions()){
-      await sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.${o.id}`,{method:'DELETE',prefer:'return=minimal'});
-    }
-    // Insert new vote (empty string = just clearing the vote)
-    if(optionId){
-      await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:optionId,home_score:1,away_score:0}});
-    }
-  }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  if(!currentPlayer||!currentGroup)return;
+  const el=document.getElementById('home-forfeit');
+  if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
+  try{ await _doCastVote(optionId,getForfeitOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadHome();
+}
+async function castForfeitVotePredict(optionId){
+  if(!currentPlayer||!currentGroup)return;
+  const el=document.getElementById('predict-forfeit');
+  if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
+  try{ await _doCastVote(optionId,getForfeitOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  loadPredictVotes();
+}
+async function castPaidPlacesVote(optionId){
+  if(!currentPlayer||!currentGroup)return;
+  const el=document.getElementById('home-paidplaces');
+  if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
+  try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  loadHome();
+}
+async function castPaidPlacesVotePredict(optionId){
+  if(!currentPlayer||!currentGroup)return;
+  const el=document.getElementById('predict-paidplaces');
+  if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
+  try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  loadPredictVotes();
+}
+async function loadPredictVotes(){
+  if(!currentGroup||!currentPlayer) return;
+  const forfeitCard=document.getElementById('predict-forfeit-card');
+  const ppCard=document.getElementById('predict-paidplaces-card');
+  const forfeitEl=document.getElementById('predict-forfeit');
+  const ppEl=document.getElementById('predict-paidplaces');
+  const forfeitEnabled=currentGroup.forfeit_enabled!==false;
+  if(forfeitCard) forfeitCard.style.display=forfeitEnabled?'block':'none';
+  if(ppCard) ppCard.style.display='block';
+  const votesLocked=currentGroup.votes_locked===true;
+  const allIds=[...FORFEIT_IDS,...PAIDPLACES_IDS].join(',');
+  try{
+    const votes=await sb(`predictions?group_id=eq.${currentGroup.id}&match_id=in.(${allIds})&select=player_id,match_id`);
+    if(forfeitEl&&forfeitEnabled) renderVoteSection(forfeitEl,(votes||[]).filter(p=>FORFEIT_IDS.has(p.match_id)),getForfeitOptions(),votesLocked,'castForfeitVotePredict');
+    if(ppEl) renderVoteSection(ppEl,(votes||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id)),PAIDPLACES_OPTIONS,votesLocked,'castPaidPlacesVotePredict');
+  }catch(e){
+    if(forfeitEl) forfeitEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">⚠️ '+e.message+'</div>';
+    if(ppEl) ppEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">⚠️ '+e.message+'</div>';
+  }
 }
 
 async function loadHome(){
@@ -2485,8 +2638,9 @@ async function loadHome(){
     _lbTiebreaks={}; (homeTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
 
     // Split forfeit votes from real game predictions
-    const forfeitVotes = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
-    const gamePreds    = (allPreds||[]).filter(p=>!FORFEIT_IDS.has(p.match_id));
+    const forfeitVotes    = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
+    const paidPlacesVotes = (allPreds||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id));
+    const gamePreds       = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
 
     const rm = {}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm = {}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
@@ -2603,47 +2757,14 @@ async function loadHome(){
       }
     }
 
-    // Forfeit vote section
+    // Vote sections
+    const votesLocked = currentGroup.votes_locked === true;
     const forfeitEnabled = currentGroup.forfeit_enabled !== false;
     const forfeitCard = document.getElementById('home-forfeit-card');
     if(forfeitCard) forfeitCard.style.display = forfeitEnabled ? 'block' : 'none';
-    const activeForfeitOpts = getForfeitOptions();
-    if(forfeitEl && forfeitEnabled){
-      const myVote = forfeitVotes.find(p=>p.player_id===currentPlayer?.id)?.match_id || null;
-      const hasVoted = !!myVote;
-      const totalVotes = forfeitVotes.length;
-      // Count votes per option
-      const voteCounts = {};
-      FORFEIT_OPTIONS.forEach(o=>{ voteCounts[o.id]=0; });
-      forfeitVotes.forEach(p=>{ if(voteCounts[p.match_id]!==undefined) voteCounts[p.match_id]++; });
-      const maxVotes = Math.max(...Object.values(voteCounts), 1);
-
-      if(!hasVoted && currentPlayer){
-        // Show voting options
-        forfeitEl.innerHTML = activeForfeitOpts.map(o=>`
-          <div class="forfeit-option" onclick="castForfeitVote('${o.id}')">
-            <div class="forfeit-option-emoji">${o.emoji}</div>
-            <div class="forfeit-option-label">${o.label}</div>
-          </div>`).join('');
-      } else {
-        // Show results
-        const resultsHtml = activeForfeitOpts.map(o=>{
-          const count = voteCounts[o.id];
-          const pct = totalVotes>0 ? Math.round(count/totalVotes*100) : 0;
-          const isLeading = count === maxVotes && count > 0;
-          const isMyVote = myVote === o.id;
-          return `<div class="forfeit-result${isLeading?' fv-leading':''}${isMyVote?' fv-my-vote':''}">
-            <div class="forfeit-result-meta">
-              <div class="forfeit-result-name">${o.emoji} ${o.label}</div>
-              <div class="forfeit-result-count">${pct}%</div>
-            </div>
-            <div class="forfeit-result-bar-wrap"><div class="forfeit-result-bar" style="width:${pct}%"></div></div>
-          </div>`;
-        }).join('');
-        const changeBtn = currentPlayer ? `<div style="margin-top:.75rem;text-align:center;"><button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;" onclick="castForfeitVote('')">Change vote</button></div>` : '';
-        forfeitEl.innerHTML = resultsHtml + changeBtn;
-      }
-    }
+    if(forfeitEl && forfeitEnabled) renderVoteSection(forfeitEl, forfeitVotes, getForfeitOptions(), votesLocked, 'castForfeitVote');
+    const ppEl = document.getElementById('home-paidplaces');
+    renderVoteSection(ppEl, paidPlacesVotes, PAIDPLACES_OPTIONS, votesLocked, 'castPaidPlacesVote');
 
     // Match stats — completed matches (have result)
     const completedFixtures = allFixtures().filter(f=>rm[f.id]);
@@ -3149,7 +3270,7 @@ function switchAdminTab(name){
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
-  if(name==='controls'){loadForfeitSettings();loadTiebreakerSettings();loadLbViewSettings();loadTickerSettings();}
+  if(name==='controls'){loadForfeitSettings();loadTiebreakerSettings();loadLbViewSettings();loadTickerSettings();loadVotesSettings();}
   if(name==='changelog')renderChangelog();
 }
 
@@ -3885,7 +4006,7 @@ async function exportLeaderboardCSV(){
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     const scores={};
-    (allPreds||[]).forEach(p=>{
+    (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id)).forEach(p=>{
       const _pd=pm[p.player_id]; const name=(typeof _pd==='string'?_pd:(_pd&&(_pd.display||_pd.name)))||'?';
       if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0};
       scores[name].played++;
@@ -4106,6 +4227,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.9</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.10.3</div>
 </body>
 </html>
