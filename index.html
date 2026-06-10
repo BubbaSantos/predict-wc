@@ -49,11 +49,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .btn-ghost{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.82rem;font-weight:600;padding:.55rem 1rem;border-radius:7px;cursor:pointer;transition:all .15s;margin-top:.5rem;width:100%;}
 .btn-ghost:hover{border-color:var(--text);color:var(--text);}
-.bio-btn{display:flex;align-items:center;justify-content:center;gap:.6rem;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;padding:.85rem 1.5rem;border-radius:12px;cursor:pointer;width:100%;transition:border-color .15s,color .15s;touch-action:manipulation;}
-.bio-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
-.bio-or{display:flex;align-items:center;gap:.5rem;margin:.6rem 0;}
-.bio-or hr{flex:1;border:none;border-top:1px solid var(--border);}
-.bio-or span{font-size:.72rem;color:var(--text-muted);white-space:nowrap;}
 .modal-back{display:flex;align-items:center;gap:.4rem;color:var(--text-muted);font-size:.8rem;cursor:pointer;margin-bottom:1.25rem;background:none;border:none;transition:color .15s;}
 .modal-back:hover{color:var(--text);}
 .divider{border:none;border-top:1px solid var(--border);margin:1rem 0;}
@@ -710,7 +705,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.1</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -725,13 +720,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div class="landing-card-title">Join Group</div>
         <div class="landing-card-desc">Enter your group key to join an existing competition</div>
       </div>
-    </div>
-    <div id="landing-bio" style="display:none;width:100%;max-width:480px;margin-top:.85rem;">
-      <button class="bio-btn" onclick="biometricLogin()" id="bio-landing-btn">
-        <span style="font-size:1.3rem;">👤</span>
-        <span id="bio-landing-label">Sign in with Face ID</span>
-      </button>
-      <div style="text-align:center;margin-top:.4rem;font-size:.68rem;color:var(--text-muted);cursor:pointer;text-decoration:underline;" onclick="clearBiometric()">forget saved login</div>
     </div>
   </div>
 </div>
@@ -776,13 +764,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <div id="join-step-2" style="display:none;">
       <div id="join-group-preview" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;text-align:center;"></div>
       <hr class="divider">
-      <div id="join-bio-section" style="display:none;margin-bottom:.75rem;">
-        <button class="bio-btn" onclick="biometricLoginFromModal()" id="join-bio-btn">
-          <span style="font-size:1.3rem;">👤</span>
-          <span id="join-bio-label">Sign in with Face ID</span>
-        </button>
-        <div class="bio-or"><hr><span>or use PIN</span><hr></div>
-      </div>
       <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Already have an account? Log in below. New here? Register.</p>
       <!-- Login -->
       <div id="join-login-form">
@@ -2286,7 +2267,6 @@ async function createGroup(){
     saveLastLogin(key, playerName);
     hideFlow('create');
     enterApp();
-    offerBiometric(key, currentGroup.id, playerName, playerPin);
     flash('Group created! Share the key: '+key,'success');
     setTimeout(()=>{
       showConfirm('🔐','Admin Access','To access the admin panel, tap the version number (bottom right corner) and enter your admin password. Keep it safe!','Got it', ()=>{});
@@ -2317,15 +2297,6 @@ async function findGroup(){
     // Pre-fill name from last login
     const last = getLastLogin();
     if(last.playerName){ const n=document.getElementById('j-login-name'); if(n&&!n.value) n.value=last.playerName; }
-    // Show biometric option if we have a credential for this group
-    const bioCred = getBioCred();
-    const bioSec = document.getElementById('join-bio-section');
-    if(bioCred && bioCred.groupKey===key){
-      document.getElementById('join-bio-label').textContent=`Sign in as ${bioCred.playerName} with Face ID`;
-      bioSec.style.display='block';
-    } else {
-      bioSec.style.display='none';
-    }
   } catch(e){showErr(errEl,'Error: '+e.message);}
 }
 
@@ -2382,7 +2353,6 @@ async function loginPlayer(){
     saveLastLogin(groupKey, name);
     hideFlow('join');
     enterApp();
-    offerBiometric(groupKey, groupId, name, pin);
 
   } catch(e){showErr(errEl,'Error: '+e.message);}
 }
@@ -2418,7 +2388,6 @@ async function registerPlayer(){
     saveLastLogin(currentGroup.key, name);
     hideFlow('join');
     enterApp();
-    offerBiometric(currentGroup.key, groupId, name, pin);
 
     if(needsGrace){
       flash('Welcome '+name+'! The tie-break deadline has passed — your request for a grace period has been sent to the admin.','success');
@@ -5465,7 +5434,6 @@ if(currentGroup&&currentPlayer){
 } else if(currentGroup&&isAdmin){
   enterApp();
 }
-updateBioLandingBtn();
 // Hide loader once fonts/scripts are ready
 
 
@@ -5553,7 +5521,7 @@ function showAdminAccessPrompt(){
   inp.addEventListener('keydown', e=>{ if(e.key==='Enter') doCheck(); });
 }
 
-// ── REMEMBER LOGIN + BIOMETRIC ───────────
+// ── REMEMBER LOGIN ───────────────────────
 function saveLastLogin(groupKey, playerName){
   localStorage.setItem('wc26_last_key', groupKey||'');
   localStorage.setItem('wc26_last_name', playerName||'');
@@ -5561,103 +5529,6 @@ function saveLastLogin(groupKey, playerName){
 function getLastLogin(){
   return {groupKey:localStorage.getItem('wc26_last_key')||'', playerName:localStorage.getItem('wc26_last_name')||''};
 }
-function getBioCred(){
-  const s=localStorage.getItem('wc26_bio_cred');
-  return s?JSON.parse(s):null;
-}
-function clearBiometric(){
-  localStorage.removeItem('wc26_bio_cred');
-  const el=document.getElementById('landing-bio');
-  if(el) el.style.display='none';
-  flash('Saved login removed','success');
-}
-function updateBioLandingBtn(){
-  const cred=getBioCred();
-  const el=document.getElementById('landing-bio');
-  if(!el) return;
-  if(cred){
-    const lbl=document.getElementById('bio-landing-label');
-    if(lbl) lbl.textContent='Sign in as '+cred.playerName;
-    el.style.display='block';
-  } else {
-    el.style.display='none';
-  }
-}
-async function isBiometricAvailable(){
-  if(!window.PublicKeyCredential||!PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return false;
-  try{ return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); }catch(e){ return false; }
-}
-async function offerBiometric(groupKey, groupId, playerName, pin){
-  if(!await isBiometricAvailable()) return;
-  if(getBioCred()) return;
-  const modal=document.createElement('div');
-  modal.className='modal-overlay';
-  modal.style.cssText='z-index:9901;';
-  modal.innerHTML='<div class="pred-modal" style="max-width:300px;text-align:center;">'
-    +'<div style="font-size:2.2rem;margin-bottom:.4rem;">👤</div>'
-    +'<div class="pred-modal-title" style="margin-bottom:.4rem;">Save with Face ID?</div>'
-    +'<div style="font-size:.82rem;color:var(--text-muted);margin-bottom:1.25rem;">Sign in instantly next time without entering your PIN.</div>'
-    +'<button class="btn" id="bio-offer-yes" style="touch-action:manipulation;">Save with Face ID</button>'
-    +'<button class="btn-ghost" id="bio-offer-no">Not now</button>'
-    +'</div>';
-  document.body.appendChild(modal);
-  const doSave=()=>saveBiometric(modal,groupKey,groupId,playerName,pin);
-  modal.querySelector('#bio-offer-no').addEventListener('click',()=>modal.remove());
-  const yBtn=modal.querySelector('#bio-offer-yes');
-  yBtn.addEventListener('touchend',e=>{e.preventDefault();doSave();},{passive:false});
-  yBtn.addEventListener('click',doSave);
-}
-async function saveBiometric(modal,groupKey,groupId,playerName,pin){
-  modal.remove();
-  try{
-    const userId=crypto.getRandomValues(new Uint8Array(16));
-    const challenge=crypto.getRandomValues(new Uint8Array(32));
-    const cred=await navigator.credentials.create({publicKey:{
-      challenge,
-      rp:{name:'WC Predictor',id:location.hostname},
-      user:{id:userId,name:playerName,displayName:playerName},
-      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},
-      timeout:60000
-    }});
-    localStorage.setItem('wc26_bio_cred',JSON.stringify({
-      credentialId:Array.from(new Uint8Array(cred.rawId)),
-      groupKey,groupId,playerName,pin
-    }));
-    updateBioLandingBtn();
-    flash('Face ID saved — tap your name on the home screen next time','success');
-  }catch(e){
-    if(e.name!=='NotAllowedError') flash('Could not save Face ID','error');
-  }
-}
-async function _doBiometricLogin(onSuccess){
-  const stored=getBioCred();
-  if(!stored){flash('No saved login found','error');return;}
-  try{
-    const challenge=crypto.getRandomValues(new Uint8Array(32));
-    await navigator.credentials.get({publicKey:{
-      challenge,
-      allowCredentials:[{type:'public-key',id:new Uint8Array(stored.credentialId),transports:['internal']}],
-      userVerification:'required',
-      timeout:60000
-    }});
-    const grps=await sb(`groups?key=eq.${encodeURIComponent(stored.groupKey)}&select=*`);
-    if(!grps||!grps.length){flash('Group not found — please log in manually','error');return;}
-    currentGroup=grps[0];
-    const players=await sb(`players?group_id=eq.${grps[0].id}&name=eq.${encodeURIComponent(stored.playerName)}&select=id,name,group_id,pin,is_admin`);
-    if(!players||!players.length){flash('Player not found — please log in manually','error');return;}
-    const player=players[0];
-    currentPlayer={id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false};
-    isAdmin=!!(player.is_admin)||(currentGroup.admin_password===stored.pin);
-    saveSession();
-    onSuccess();
-    enterApp();
-  }catch(e){
-    if(e.name!=='NotAllowedError') flash('Biometric failed — please log in manually','error');
-  }
-}
-function biometricLogin(){ _doBiometricLogin(()=>{}); }
-function biometricLoginFromModal(){ _doBiometricLogin(()=>hideFlow('join')); }
 
 // ── GOD MODE ─────────────────────────────
 function showGodMode(){
@@ -5799,6 +5670,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.1</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.2</div>
 </body>
 </html>
