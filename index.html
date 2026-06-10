@@ -705,7 +705,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.3</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1184,7 +1184,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <div class="toggle-row" style="margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border);">
             <div>
               <div class="toggle-label" id="votes-lock-label">Votes Open</div>
-              <div class="toggle-desc" id="votes-lock-desc">Players can cast and change votes</div>
+              <div class="toggle-desc" id="votes-lock-desc">Players can vote and change their vote freely</div>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="votes-locked-toggle" onchange="toggleVotesLocked()">
@@ -3376,7 +3376,7 @@ function loadVotesSettings(){
 function updateVotesLockedLabel(locked){
   const l=document.getElementById('votes-lock-label'),d=document.getElementById('votes-lock-desc');
   if(l){l.textContent=locked?'Votes Locked':'Votes Open';l.style.color=locked?'var(--accent2)':'var(--green)';}
-  if(d)d.textContent=locked?'Votes are locked — no changes allowed':'Players can cast and change votes';
+  if(d)d.textContent=locked?'Voted players can\'t change — new voters can still cast a first vote':'Players can vote and change their vote freely';
 }
 async function toggleVotesLocked(){
   if(!currentGroup) return;
@@ -3515,8 +3515,8 @@ function renderVoteSection(containerEl, allVotes, options, votesLocked, castFnNa
   options.forEach(o=>{ voteCounts[o.id]=0; });
   allVotes.forEach(p=>{ if(voteCounts[p.match_id]!==undefined) voteCounts[p.match_id]++; });
 
-  if(!hasVoted && currentPlayer && !votesLocked){
-    // Un-voted: show options to pick from
+  if(!hasVoted && currentPlayer){
+    // Un-voted: show options — first-time votes are always allowed even when locked
     containerEl.innerHTML = options.map(o=>`
       <div class="forfeit-option" onclick="${castFnName}('${o.id}')">
         <div class="forfeit-option-emoji">${o.emoji}</div>
@@ -3562,7 +3562,7 @@ async function _doCastVote(optionId, options){
 }
 async function castForfeitVote(optionId){
   if(!currentPlayer||!currentGroup)return;
-  if(currentGroup.votes_locked===true){flash('Votes are locked','error');loadHome();return;}
+  if(currentGroup.votes_locked===true && !optionId){flash('Your vote is locked in','error');loadHome();return;}
   const el=document.getElementById('home-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -3570,7 +3570,7 @@ async function castForfeitVote(optionId){
 }
 async function castForfeitVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
-  if(currentGroup.votes_locked===true){flash('Votes are locked','error');loadPredictVotes();return;}
+  if(currentGroup.votes_locked===true && !optionId){flash('Your vote is locked in','error');loadPredictVotes();return;}
   const el=document.getElementById('predict-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -3578,7 +3578,7 @@ async function castForfeitVotePredict(optionId){
 }
 async function castPaidPlacesVote(optionId){
   if(!currentPlayer||!currentGroup)return;
-  if(currentGroup.paidplaces_votes_locked===true){flash('Votes are locked','error');loadHome();return;}
+  if(currentGroup.paidplaces_votes_locked===true && !optionId){flash('Your vote is locked in','error');loadHome();return;}
   const el=document.getElementById('home-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -3586,7 +3586,7 @@ async function castPaidPlacesVote(optionId){
 }
 async function castPaidPlacesVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
-  if(currentGroup.paidplaces_votes_locked===true){flash('Votes are locked','error');loadPredictVotes();return;}
+  if(currentGroup.paidplaces_votes_locked===true && !optionId){flash('Your vote is locked in','error');loadPredictVotes();return;}
   const el=document.getElementById('predict-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -5619,6 +5619,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.3</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.4</div>
 </body>
 </html>
