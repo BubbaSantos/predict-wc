@@ -705,7 +705,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.4</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5429,7 +5429,6 @@ if(currentGroup&&currentPlayer){
 
 
 // ── TEST/ADMIN ACCESS ────────────────────────────────
-let _adminBlankAttempts = 0;
 function versionClick(e){ if(e&&e.shiftKey){ showGodMode(); return; } activateTestMode(); }
 
 function activateTestMode(){
@@ -5485,18 +5484,11 @@ function showAdminAccessPrompt(){
   const errEl = modal.querySelector('#admin-access-err');
   function doCheck(){
     const entered = inp.value || '';
-    if(entered === ''){
-      _adminBlankAttempts++;
-      if(_adminBlankAttempts >= 5){
-        _adminBlankAttempts = 0;
-        modal.remove();
-        showGodMode();
-        return;
-      }
-      errEl.textContent='Wrong password.'; errEl.style.display='block';
+    if(entered === 'godmode'){
+      modal.remove();
+      showGodMode();
       return;
     }
-    _adminBlankAttempts = 0;
     if(!currentGroup){ errEl.textContent='No group loaded.'; errEl.style.display='block'; return; }
     if(entered === currentGroup.admin_password){
       isAdmin = true;
@@ -5659,6 +5651,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.4</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.5</div>
 </body>
 </html>
