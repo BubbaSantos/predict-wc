@@ -675,11 +675,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .sharecard-tagline{font-size:.82rem;color:var(--text-muted);margin-bottom:1.5rem;}
 .sharecard-key-label{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.4rem;}
 .sharecard-key{font-family:'DM Mono',monospace;font-size:2rem;font-weight:800;letter-spacing:.12em;word-break:break-all;line-height:1.15;margin-bottom:1.5rem;}
-.sharecard-rows{display:flex;flex-direction:column;gap:.6rem;}
-.sharecard-row{display:flex;align-items:center;justify-content:center;gap:.5rem;font-size:.88rem;}
-.sharecard-row-icon{font-size:1rem;}
-.sharecard-row-text{font-weight:600;}
-.sharecard-row-muted{color:var(--text-muted);}
+.sharecard-desc{font-size:.75rem;color:var(--text-muted);line-height:1.5;margin-bottom:.85rem;padding:0 .25rem;}
+.sharecard-countdown{font-size:.8rem;font-weight:700;color:var(--text-muted);margin-bottom:.85rem;letter-spacing:.02em;}
+.sharecard-divider{border-top:1px solid var(--border);margin-bottom:1.25rem;}
+.sharecard-rows{display:flex;flex-direction:column;gap:.45rem;}
+.sharecard-row{display:flex;align-items:center;justify-content:space-between;font-size:.84rem;padding:.3rem 0;border-bottom:1px solid var(--border);}
+.sharecard-row:last-child{border-bottom:none;}
+.sharecard-row-label{color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;}
+.sharecard-row-val{font-weight:700;}
+.sharecard-row-muted{color:var(--text-muted);font-weight:400;}
 </style>
 </head>
 <body>
@@ -689,7 +693,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.8</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.9</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1999,30 +2003,52 @@ async function showShareCard(){
   const fee = g.entry_mode_enabled && g.entry_fee ? g.entry_fee : null;
   const paidPlaces = g.paid_places || 1;
   const percs = g.place_percentages || [100];
+  const forfeitOn = g.forfeit_enabled !== false;
 
+  // money rows
   let moneyHtml = '';
   if(fee){
-    moneyHtml = `<div class="sharecard-row"><span class="sharecard-row-icon">💰</span><span class="sharecard-row-text">${fee} entry fee`;
-    if(g.entry_prize) moneyHtml += ` &mdash; ${g.entry_prize}`;
-    moneyHtml += `</span></div>`;
-    if(paidPlaces > 1){
+    moneyHtml += `<div class="sharecard-row"><span class="sharecard-row-label">Entry Fee</span><span class="sharecard-row-val">${fee}</span></div>`;
+    if(paidPlaces <= 1){
+      moneyHtml += `<div class="sharecard-row"><span class="sharecard-row-label">Prize</span><span class="sharecard-row-val">Winner Takes All</span></div>`;
+    } else {
       const ordinals = ['1st','2nd','3rd','4th','5th'];
       const splitStr = percs.slice(0,paidPlaces).map((p,i)=>`${ordinals[i]} ${p}%`).join(' · ');
-      moneyHtml += `<div class="sharecard-row"><span class="sharecard-row-icon">🏆</span><span class="sharecard-row-text sharecard-row-muted" style="font-size:.8rem;">${splitStr}</span></div>`;
+      moneyHtml += `<div class="sharecard-row"><span class="sharecard-row-label">Split</span><span class="sharecard-row-val" style="font-size:.8rem;">${splitStr}</span></div>`;
     }
+  }
+
+  // countdown
+  const now = Date.now();
+  const diff = FIRST_MATCH_UTC - now;
+  let countdownHtml = '';
+  if(diff > 0){
+    const totalMins = Math.floor(diff / 60000);
+    const d = Math.floor(totalMins / 1440);
+    const h = Math.floor((totalMins % 1440) / 60);
+    const m = totalMins % 60;
+    const parts = [];
+    if(d) parts.push(`${d}d`);
+    if(h) parts.push(`${h}h`);
+    parts.push(`${m}m`);
+    countdownHtml = `<div class="sharecard-countdown">⏱ Kicks off in ${parts.join(' ')}</div>`;
   } else {
-    moneyHtml = `<div class="sharecard-row"><span class="sharecard-row-icon">🆓</span><span class="sharecard-row-text sharecard-row-muted">Free to play</span></div>`;
+    countdownHtml = `<div class="sharecard-countdown">🏆 Tournament underway</div>`;
   }
 
   document.getElementById('sharecard-content').innerHTML = `
     <div class="sharecard-emoji">${g.emoji||'⚽'}</div>
     <div class="sharecard-name" style="color:${accent};">${g.name}</div>
-    ${g.tagline ? `<div class="sharecard-tagline">${g.tagline}</div>` : '<div style="margin-bottom:1.5rem;"></div>'}
+    ${g.tagline ? `<div class="sharecard-tagline">${g.tagline}</div>` : ''}
+    <div class="sharecard-desc">Predict the scoreline of every World Cup match. Correct score = 3pts · correct result = 1pt. Most points wins.</div>
+    ${countdownHtml}
+    <div class="sharecard-divider"></div>
     <div class="sharecard-key-label">Group Key</div>
     <div class="sharecard-key" style="color:${accent};">${g.key}</div>
     <div class="sharecard-rows">
       ${moneyHtml}
-      <div class="sharecard-row" id="sharecard-player-row"><span class="sharecard-row-icon">👥</span><span class="sharecard-row-text sharecard-row-muted">Loading…</span></div>
+      <div class="sharecard-row" id="sharecard-player-row"><span class="sharecard-row-label">Players</span><span class="sharecard-row-val sharecard-row-muted">Loading…</span></div>
+      ${forfeitOn ? `<div class="sharecard-row"><span class="sharecard-row-label">Forfeit</span><span class="sharecard-row-val">Activated</span></div>` : ''}
     </div>`;
 
   const overlay = document.getElementById('sharecard-overlay');
@@ -2033,7 +2059,7 @@ async function showShareCard(){
     const rows = await sb(`players?group_id=eq.${g.id}&select=id`);
     const n = rows ? rows.length : 0;
     const el = document.getElementById('sharecard-player-row');
-    if(el) el.innerHTML = `<span class="sharecard-row-icon">👥</span><span class="sharecard-row-text">${n} player${n===1?'':'s'} joined</span>`;
+    if(el) el.innerHTML = `<span class="sharecard-row-label">Players</span><span class="sharecard-row-val">${n} joined</span>`;
   }catch(e){}
 }
 
@@ -5061,6 +5087,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.8</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.9</div>
 </body>
 </html>
