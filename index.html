@@ -703,7 +703,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.0</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3600,21 +3600,45 @@ async function loadPredictVotes(){
     const votes=await sb(`predictions?group_id=eq.${currentGroup.id}&match_id=in.(${allIds})&select=player_id,match_id`);
     const forfeitVotesFiltered = (votes||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
     const ppVotesFiltered = (votes||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id));
-    if(forfeitEl&&forfeitEnabled){
-      renderVoteSection(forfeitEl,forfeitVotesFiltered,getForfeitOptions(),forfeitLocked,'castForfeitVotePredict');
-      const myForfeitVote = forfeitVotesFiltered.some(p=>p.player_id===currentPlayer?.id);
+    if(forfeitCard&&forfeitEnabled){
+      const myForfeitVoteRow = forfeitVotesFiltered.find(p=>p.player_id===currentPlayer?.id);
       const fTitle = document.getElementById('predict-forfeit-title');
-      const fDesc = forfeitCard?.querySelector('.predict-vote-desc');
-      if(fTitle) fTitle.innerHTML = 'Last Place Forfeit Vote' + (myForfeitVote ? ' <span class="voted-badge">✓ Voted</span>' : '');
-      if(fDesc) fDesc.style.display = myForfeitVote ? 'none' : '';
+      const fDesc = forfeitCard.querySelector('.predict-vote-desc');
+      if(myForfeitVoteRow){
+        const myOpt = getForfeitOptions().find(o=>o.id===myForfeitVoteRow.match_id)||{emoji:'',label:'Voted'};
+        if(fTitle) fTitle.style.display='none';
+        if(fDesc) fDesc.style.display='none';
+        forfeitCard.style.padding='.6rem .8rem';
+        if(forfeitEl) forfeitEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+          <span style="font-size:.88rem;color:var(--text);">${myOpt.emoji} ${myOpt.label}</span>
+          <span class="voted-badge">✓ Voted</span>
+        </div>`;
+      } else if(forfeitEl){
+        if(fTitle){fTitle.style.display='';fTitle.textContent='Last Place Forfeit Vote';}
+        if(fDesc) fDesc.style.display='';
+        forfeitCard.style.padding='';
+        renderVoteSection(forfeitEl,forfeitVotesFiltered,getForfeitOptions(),forfeitLocked,'castForfeitVotePredict');
+      }
     }
-    if(ppEl&&ppPollEnabled){
-      renderVoteSection(ppEl,ppVotesFiltered,getPaidPlacesOptions(),ppLocked,'castPaidPlacesVotePredict');
-      const myPPVote = ppVotesFiltered.some(p=>p.player_id===currentPlayer?.id);
+    if(ppCard&&ppPollEnabled){
+      const myPPVoteRow = ppVotesFiltered.find(p=>p.player_id===currentPlayer?.id);
       const ppTitle = document.getElementById('predict-paidplaces-title');
-      const ppDesc = ppCard?.querySelector('.predict-vote-desc');
-      if(ppTitle) ppTitle.innerHTML = getPaidPlacesQuestion() + (myPPVote ? ' <span class="voted-badge">✓ Voted</span>' : '');
-      if(ppDesc) ppDesc.style.display = myPPVote ? 'none' : '';
+      const ppDesc = ppCard.querySelector('.predict-vote-desc');
+      if(myPPVoteRow){
+        const myOpt = getPaidPlacesOptions().find(o=>o.id===myPPVoteRow.match_id)||{emoji:'',label:'Voted'};
+        if(ppTitle) ppTitle.style.display='none';
+        if(ppDesc) ppDesc.style.display='none';
+        ppCard.style.padding='.6rem .8rem';
+        if(ppEl) ppEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+          <span style="font-size:.88rem;color:var(--text);">${myOpt.emoji} ${myOpt.label}</span>
+          <span class="voted-badge">✓ Voted</span>
+        </div>`;
+      } else if(ppEl){
+        if(ppTitle){ppTitle.style.display='';ppTitle.textContent=getPaidPlacesQuestion();}
+        if(ppDesc) ppDesc.style.display='';
+        ppCard.style.padding='';
+        renderVoteSection(ppEl,ppVotesFiltered,getPaidPlacesOptions(),ppLocked,'castPaidPlacesVotePredict');
+      }
     }
   }catch(e){
     if(forfeitEl) forfeitEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">⚠️ '+e.message+'</div>';
@@ -4459,7 +4483,22 @@ async function adminAutoSave(matchId){
       const f = allFixtures().find(f=>f.id===matchId);
       if(f) card.outerHTML = renderAdminCard(f, {home:+h,away:+a});
     }
+    adminAdvanceToNext(matchId);
   }catch(e){ console.warn('admin auto-save failed',matchId,e); }
+}
+
+function adminAdvanceToNext(currentMatchId){
+  const fixtures = allFixtures();
+  const idx = fixtures.findIndex(f => f.id === currentMatchId);
+  if(idx !== -1 && idx < fixtures.length - 1){
+    const nextFix = fixtures[idx + 1];
+    const nextInput = document.getElementById('rh-' + nextFix.id);
+    if(nextInput){
+      nextInput.focus();
+      nextInput.select();
+      nextInput.closest('.admin-match')?.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }
 }
 
 
@@ -5569,6 +5608,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.0</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.1</div>
 </body>
 </html>
