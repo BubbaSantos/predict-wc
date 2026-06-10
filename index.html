@@ -694,7 +694,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.4</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -879,7 +879,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <!-- Paid Places Vote -->
       <div class="home-card" id="home-paidplaces-card">
         <div class="home-card-title">Paid Places Vote</div>
-        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
+        <div id="home-paidplaces-question" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
         <div id="home-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
@@ -986,7 +986,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       </div>
       <div class="home-card" id="predict-paidplaces-card" style="margin-bottom:1rem;">
         <div class="home-card-title">Paid Places Vote</div>
-        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
+        <div id="predict-paidplaces-question" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
         <div id="predict-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
@@ -1262,6 +1262,36 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             <button id="forfeit-end-poll-btn" class="view-preds-btn" onclick="endForfeitPoll()">🔒 End Poll</button>
             <button id="forfeit-reopen-poll-btn" class="view-preds-btn" onclick="reopenForfeitPoll()" style="display:none;">🔓 Reopen Poll</button>
           </div>
+        </div>
+        <div class="status-card">
+          <h3>Paid Places Vote</h3>
+          <div class="toggle-row" style="margin-bottom:.75rem;">
+            <div>
+              <div class="toggle-label">Show Vote</div>
+              <div class="toggle-desc">Display vote on home &amp; predict pages</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="paidplaces-enabled-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row" style="margin-bottom:1rem;">
+            <div>
+              <div class="toggle-label" id="paidplaces-lock-label">Votes Open</div>
+              <div class="toggle-desc" id="paidplaces-lock-desc">Players can cast and change their vote</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="paidplaces-locked-toggle" onchange="updatePaidPlacesLockLabel()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="margin-bottom:.85rem;">
+            <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem;">Question</label>
+            <input id="paidplaces-question-input" type="text" class="config-input" maxlength="100" placeholder="How many places should be paid out?" />
+          </div>
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">Options</div>
+          <div id="paidplaces-options-editor"></div>
+          <button class="sync-refresh" style="margin-top:.85rem;" onclick="savePaidPlacesSettings()">Save Settings</button>
         </div>
         <div class="status-card" style="border-color:rgba(239,68,68,.2);">
           <h3 style="color:var(--accent2);">⚠️ Danger Zone</h3>
@@ -2992,6 +3022,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.10.5',date:'10 Jun 2026',notes:['Paid Places Vote admin settings — enable/disable toggle, separate votes-locked toggle, custom question text, and editable options']},
   {v:'1.10.4',date:'10 Jun 2026',notes:['Forfeit banner on leaderboard — shows leading vote or locked-in winner below the pot display']},
   {v:'1.10.3',date:'10 Jun 2026',notes:['Versioning scheme (Major.Minor.Patch) documented in code','Votes lock admin toggle — prevent players from changing votes once cast','Forfeit + Paid Places vote sections on Predict page','New Paid Places group vote (how many places paid out)','Fix create group blank screen (POST + separate SELECT by key)']},
   {v:'1.10.2',date:'10 Jun 2026',notes:['Admin Controls: remove View Full Group Info button from controls tab']},
@@ -3013,6 +3044,18 @@ function getForfeitOptions(){
     return stored.map((o,i)=>({id:'fv-'+i,emoji:o.emoji||FORFEIT_OPTIONS[i].emoji,label:o.label||FORFEIT_OPTIONS[i].label}));
   }
   return FORFEIT_OPTIONS;
+}
+
+function getPaidPlacesOptions(){
+  const stored = currentGroup&&currentGroup.paidplaces_options;
+  if(stored&&Array.isArray(stored)&&stored.length===4){
+    return stored.map((o,i)=>({id:'pp-'+i,emoji:o.emoji||PAIDPLACES_OPTIONS[i].emoji,label:o.label||PAIDPLACES_OPTIONS[i].label}));
+  }
+  return PAIDPLACES_OPTIONS;
+}
+
+function getPaidPlacesQuestion(){
+  return (currentGroup&&currentGroup.paidplaces_question&&currentGroup.paidplaces_question.trim()) || 'How many places should be paid out?';
 }
 
 function lbCompare(a, b){
@@ -3229,6 +3272,52 @@ async function toggleVotesLocked(){
   }catch(e){flash('Error: '+e.message,'error');}
 }
 
+// ── PAID PLACES VOTE SETTINGS ─────────────
+function loadPaidPlacesSettings(){
+  const tog=document.getElementById('paidplaces-enabled-toggle');
+  if(!tog||!currentGroup) return;
+  tog.checked = currentGroup.paidplaces_poll_enabled !== false;
+  const lockTog=document.getElementById('paidplaces-locked-toggle');
+  const locked = currentGroup.paidplaces_votes_locked===true;
+  if(lockTog) lockTog.checked = locked;
+  updatePaidPlacesLockLabel();
+  const qInput=document.getElementById('paidplaces-question-input');
+  if(qInput) qInput.value = currentGroup.paidplaces_question||'';
+  const editor=document.getElementById('paidplaces-options-editor');
+  if(!editor) return;
+  const opts=getPaidPlacesOptions();
+  editor.innerHTML=opts.map((o,i)=>`
+    <div class="fe-row">
+      <input class="fe-emoji" id="pp-emoji-${i}" type="text" maxlength="4" value="${o.emoji}" placeholder="🥇">
+      <input class="fe-label" id="pp-label-${i}" type="text" maxlength="80" value="${o.label}" placeholder="Option ${i+1}">
+    </div>`).join('');
+}
+
+function updatePaidPlacesLockLabel(){
+  const locked=document.getElementById('paidplaces-locked-toggle')?.checked;
+  const l=document.getElementById('paidplaces-lock-label'),d=document.getElementById('paidplaces-lock-desc');
+  if(l){l.textContent=locked?'Votes Locked':'Votes Open';l.style.color=locked?'var(--accent2)':'var(--green)';}
+  if(d)d.textContent=locked?'Votes are locked — no changes allowed':'Players can cast and change their vote';
+}
+
+async function savePaidPlacesSettings(){
+  if(!currentGroup) return;
+  const enabled=document.getElementById('paidplaces-enabled-toggle')?.checked ?? true;
+  const locked=document.getElementById('paidplaces-locked-toggle')?.checked ?? false;
+  const question=(document.getElementById('paidplaces-question-input')?.value.trim())||'';
+  const options=[0,1,2,3].map(i=>({
+    emoji:(document.getElementById('pp-emoji-'+i)?.value.trim())||PAIDPLACES_OPTIONS[i].emoji,
+    label:(document.getElementById('pp-label-'+i)?.value.trim())||PAIDPLACES_OPTIONS[i].label,
+  }));
+  try{
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{paidplaces_poll_enabled:enabled,paidplaces_votes_locked:locked,paidplaces_question:question||null,paidplaces_options:options}});
+    currentGroup={...currentGroup,paidplaces_poll_enabled:enabled,paidplaces_votes_locked:locked,paidplaces_question:question||null,paidplaces_options:options};
+    saveSession();
+    updatePaidPlacesLockLabel();
+    flash('Paid places vote settings saved!','success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
 function renderTicker(){
   const el=document.getElementById('news-ticker');
   const tab=document.getElementById('ticker-tab');
@@ -3345,14 +3434,14 @@ async function castPaidPlacesVote(optionId){
   if(!currentPlayer||!currentGroup)return;
   const el=document.getElementById('home-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
-  try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  try{ await _doCastVote(optionId,getPaidPlacesOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadHome();
 }
 async function castPaidPlacesVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
   const el=document.getElementById('predict-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
-  try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  try{ await _doCastVote(optionId,getPaidPlacesOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadPredictVotes();
 }
 async function loadPredictVotes(){
@@ -3362,14 +3451,20 @@ async function loadPredictVotes(){
   const forfeitEl=document.getElementById('predict-forfeit');
   const ppEl=document.getElementById('predict-paidplaces');
   const forfeitEnabled=currentGroup.forfeit_enabled!==false;
+  const ppPollEnabled=currentGroup.paidplaces_poll_enabled!==false;
   if(forfeitCard) forfeitCard.style.display=forfeitEnabled?'block':'none';
-  if(ppCard) ppCard.style.display='block';
-  const votesLocked=currentGroup.votes_locked===true;
+  if(ppCard) ppCard.style.display=ppPollEnabled?'block':'none';
+  if(ppPollEnabled){
+    const ppQEl=document.getElementById('predict-paidplaces-question');
+    if(ppQEl) ppQEl.textContent=getPaidPlacesQuestion();
+  }
+  const forfeitLocked=currentGroup.votes_locked===true;
+  const ppLocked=currentGroup.paidplaces_votes_locked===true;
   const allIds=[...FORFEIT_IDS,...PAIDPLACES_IDS].join(',');
   try{
     const votes=await sb(`predictions?group_id=eq.${currentGroup.id}&match_id=in.(${allIds})&select=player_id,match_id`);
-    if(forfeitEl&&forfeitEnabled) renderVoteSection(forfeitEl,(votes||[]).filter(p=>FORFEIT_IDS.has(p.match_id)),getForfeitOptions(),votesLocked,'castForfeitVotePredict');
-    if(ppEl) renderVoteSection(ppEl,(votes||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id)),PAIDPLACES_OPTIONS,votesLocked,'castPaidPlacesVotePredict');
+    if(forfeitEl&&forfeitEnabled) renderVoteSection(forfeitEl,(votes||[]).filter(p=>FORFEIT_IDS.has(p.match_id)),getForfeitOptions(),forfeitLocked,'castForfeitVotePredict');
+    if(ppEl&&ppPollEnabled) renderVoteSection(ppEl,(votes||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id)),getPaidPlacesOptions(),ppLocked,'castPaidPlacesVotePredict');
   }catch(e){
     if(forfeitEl) forfeitEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">⚠️ '+e.message+'</div>';
     if(ppEl) ppEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">⚠️ '+e.message+'</div>';
@@ -3509,6 +3604,18 @@ async function loadHome(){
         predictBtn.classList.remove('start-here');
         predictBtn.classList.add('primary');
       }
+    }
+
+    // Paid places vote section
+    const ppPollEnabled = currentGroup.paidplaces_poll_enabled !== false;
+    const ppHomeCard = document.getElementById('home-paidplaces-card');
+    if(ppHomeCard) ppHomeCard.style.display = ppPollEnabled ? 'block' : 'none';
+    if(ppPollEnabled){
+      const ppHomeEl = document.getElementById('home-paidplaces');
+      const ppQEl = document.getElementById('home-paidplaces-question');
+      if(ppQEl) ppQEl.textContent = getPaidPlacesQuestion();
+      const ppLocked = currentGroup.paidplaces_votes_locked === true;
+      if(ppHomeEl) renderVoteSection(ppHomeEl, paidPlacesVotes, getPaidPlacesOptions(), ppLocked, 'castPaidPlacesVote');
     }
 
     // Forfeit vote section
@@ -4103,7 +4210,7 @@ function switchAdminTab(name){
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
-  if(name==='controls'){loadForfeitSettings();loadTiebreakerSettings();loadLbViewSettings();loadTickerSettings();loadVotesSettings();}
+  if(name==='controls'){loadForfeitSettings();loadPaidPlacesSettings();loadTiebreakerSettings();loadLbViewSettings();loadTickerSettings();loadVotesSettings();}
   if(name==='changelog')renderChangelog();
 }
 
@@ -5281,6 +5388,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.4</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.5</div>
 </body>
 </html>
