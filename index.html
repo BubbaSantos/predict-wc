@@ -927,10 +927,11 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <button class="sync-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
         </div>
       </div>
-      <div id="lb-pot-display" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;">
+      <div id="lb-pot-display" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:.78rem;color:var(--text-muted);">💰 Total pot</div>
         <div style="font-size:1.8rem;color:var(--group-accent);line-height:1;" id="lb-pot-amount">£0</div>
       </div>
+      <div id="lb-pot-breakdown" style="display:none;margin-bottom:1.25rem;"></div>
       <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:1.25rem;">Tap any player to see their predictions.</p>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
     </div>
@@ -1036,10 +1037,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
               <div style="display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .15s;" onfocusin="this.style.borderColor='var(--group-accent)'" onfocusout="this.style.borderColor='var(--border)'"><span style="padding:.65rem .75rem;color:var(--text-muted);font-weight:600;border-right:1px solid var(--border);font-size:.9rem;">£</span><input id="entry-fee" type="number" min="0" step="0.50" style="background:none;border:none;color:var(--text);font-size:.9rem;padding:.65rem .75rem;outline:none;width:100%;" placeholder="5" /></div>
             </div>
             <div>
-              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Prize Info</label>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Paid Places</label>
+              <input id="paid-places" type="number" min="1" max="10" value="1" class="config-input" oninput="updatePlacePctEditor()" />
+            </div>
+            <div style="grid-column:1/-1;">
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Prize Description</label>
               <input id="entry-prize" type="text" class="config-input" placeholder="e.g. Winner takes all" maxlength="60" />
             </div>
           </div>
+          <div id="place-pct-editor" style="margin-bottom:.75rem;"></div>
           <button class="sync-refresh" onclick="saveEntryMode()">Save Entry Settings</button>
         </div>
         <div class="status-card">
@@ -2900,7 +2906,7 @@ async function showMyPredictions(){
 // ── ENTRY MODE ────────────────────────────────────────
 function loadEntryModeSettings(){
   if(!currentGroup) return;
-  if(!document.getElementById('entry-mode-toggle')) return; // admin panel not open yet
+  if(!document.getElementById('entry-mode-toggle')) return;
   const enabled = currentGroup.entry_mode_enabled || false;
   const toggle = document.getElementById('entry-mode-toggle');
   if(toggle) toggle.checked = enabled;
@@ -2909,8 +2915,11 @@ function loadEntryModeSettings(){
   if(fields) fields.style.opacity = enabled ? '1' : '.5';
   const feeEl = document.getElementById('entry-fee');
   const prizeEl = document.getElementById('entry-prize');
+  const ppEl = document.getElementById('paid-places');
   if(feeEl) feeEl.value = (currentGroup.entry_fee||'').replace('£','');
   if(prizeEl) prizeEl.value = currentGroup.entry_prize || '';
+  if(ppEl) ppEl.value = currentGroup.paid_places || 1;
+  updatePlacePctEditor(currentGroup.place_percentages);
 }
 
 function toggleEntryMode(){
@@ -2927,15 +2936,53 @@ function updateEntryModeLabel(enabled){
   if(d) d.textContent = enabled ? 'Players are asked if they want to pay in when they log in' : 'Players just play for fun';
 }
 
+function updatePlacePctEditor(existingPercs){
+  const editor = document.getElementById('place-pct-editor');
+  if(!editor) return;
+  const n = Math.max(1, parseInt(document.getElementById('paid-places')?.value)||1);
+  if(n <= 1){ editor.innerHTML=''; return; }
+  const defaults = {2:[60,40],3:[50,30,20],4:[45,30,15,10]};
+  const def = defaults[n] || Array.from({length:n},(_,i)=>i===0?Math.ceil(100/n)+100-Math.ceil(100/n)*n:Math.floor(100/n));
+  const percs = (existingPercs&&existingPercs.length===n) ? existingPercs : def;
+  editor.innerHTML = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem;">'
+    +'<div style="font-size:.7rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.65rem;">Prize Split (must total 100%)</div>'
+    +percs.map((p,i)=>`<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.45rem;">
+      <span style="font-size:.82rem;color:var(--text-dim);min-width:4.5rem;">${['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'][i]||'Place '+(i+1)}</span>
+      <input type="number" id="place-pct-${i}" class="config-input" value="${p}" min="0" max="100" style="width:5.5rem;" oninput="checkPctTotal()" />
+      <span style="font-size:.82rem;color:var(--text-muted);">%</span>
+    </div>`).join('')
+    +'<div id="pct-total-indicator" style="font-size:.75rem;margin-top:.3rem;"></div>'
+    +'</div>';
+  checkPctTotal();
+}
+
+function checkPctTotal(){
+  const n = Math.max(1, parseInt(document.getElementById('paid-places')?.value)||1);
+  let total=0;
+  for(let i=0;i<n;i++) total+=parseFloat(document.getElementById('place-pct-'+i)?.value)||0;
+  const ind=document.getElementById('pct-total-indicator');
+  if(!ind) return;
+  if(Math.abs(total-100)<0.01){ ind.textContent='✓ Total: 100%'; ind.style.color='var(--green)'; }
+  else { ind.textContent='Total: '+total+'% (must equal 100%)'; ind.style.color='var(--accent2)'; }
+}
+
 async function saveEntryMode(){
   if(!currentGroup) return;
   const enabled = document.getElementById('entry-mode-toggle').checked;
   const feeRaw = document.getElementById('entry-fee').value.trim();
   const fee = feeRaw ? '£'+feeRaw : '';
   const prize = document.getElementById('entry-prize').value.trim();
+  const paidPlaces = Math.max(1, parseInt(document.getElementById('paid-places')?.value)||1);
+  let placePercentages = [100];
+  if(paidPlaces > 1){
+    placePercentages = [];
+    for(let i=0;i<paidPlaces;i++) placePercentages.push(parseFloat(document.getElementById('place-pct-'+i)?.value)||0);
+    const total = placePercentages.reduce((a,b)=>a+b,0);
+    if(Math.abs(total-100)>0.5){ flash('Prize percentages must total 100%','error'); return; }
+  }
   try{
-    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{entry_mode_enabled:enabled,entry_fee:fee,entry_prize:prize}});
-    currentGroup={...currentGroup,entry_mode_enabled:enabled,entry_fee:fee,entry_prize:prize};
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{entry_mode_enabled:enabled,entry_fee:fee,entry_prize:prize,paid_places:paidPlaces,place_percentages:placePercentages}});
+    currentGroup={...currentGroup,entry_mode_enabled:enabled,entry_fee:fee,entry_prize:prize,paid_places:paidPlaces,place_percentages:placePercentages};
     saveSession();
     flash('Entry settings saved!','success');
   }catch(e){ flash('Error: '+e.message,'error'); }
@@ -3755,21 +3802,45 @@ function renderLeaderboard(){
   if(!lb) return;
   const totalFix = allFixtures().length;
 
-  // Update pot display
-  const potDisplay = document.getElementById('lb-pot-display');
-  const potAmount = document.getElementById('lb-pot-amount');
-  if(potDisplay && potAmount && currentGroup && currentGroup.entry_mode_enabled && currentGroup.entry_fee){
+  // Pot + prize split setup
+  const paidPlaces   = currentGroup.paid_places || 1;
+  const placePercs   = currentGroup.place_percentages || [100];
+  const forfeitEnabled = currentGroup.forfeit_enabled !== false;
+  const potDisplay   = document.getElementById('lb-pot-display');
+  const potAmount    = document.getElementById('lb-pot-amount');
+  const potBreakdown = document.getElementById('lb-pot-breakdown');
+  let pot = 0;
+  if(potDisplay && currentGroup.entry_mode_enabled && currentGroup.entry_fee){
     const moneyPlayers = Object.keys(_lbPayMap).filter(n=>_lbPayMap[n]==='money').length;
     const fee = parseFloat((currentGroup.entry_fee||'0').replace('£',''))||0;
-    const pot = moneyPlayers * fee;
+    pot = moneyPlayers * fee;
     const views = getLbViews();
     const onlyAll = views.includes('all') && !views.includes('money');
     const showPot = pot > 0 && (_lbFilter === 'money' || onlyAll);
     if(showPot){
       potDisplay.style.display='flex';
       potAmount.textContent = '£'+pot.toFixed(pot%1===0?0:2);
-    } else { potDisplay.style.display='none'; }
-  } else if(potDisplay){ potDisplay.style.display='none'; }
+      // Prize breakdown for multiple paid places
+      if(potBreakdown && paidPlaces > 1){
+        const fmt = v => '£'+v.toFixed(v%1===0?0:2);
+        const places = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'];
+        potBreakdown.style.display='flex';
+        potBreakdown.style.flexWrap='wrap';
+        potBreakdown.style.gap='.4rem';
+        potBreakdown.innerHTML = Array.from({length:paidPlaces},(_,i)=>{
+          const pct = placePercs[i]||0;
+          const prize = pot*pct/100;
+          return `<span style="font-size:.75rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:.2rem .55rem;color:var(--group-accent);">${places[i]||'Place '+(i+1)} ${fmt(prize)}</span>`;
+        }).join('');
+      } else if(potBreakdown){ potBreakdown.style.display='none'; }
+    } else {
+      potDisplay.style.display='none';
+      if(potBreakdown) potBreakdown.style.display='none';
+    }
+  } else {
+    if(potDisplay) potDisplay.style.display='none';
+    if(potBreakdown) potBreakdown.style.display='none';
+  }
 
   let entries = Object.entries(_lbScores||{});
   if(_lbFilter === 'money') entries = entries.filter(([name])=>_lbPayMap[name]==='money');
@@ -3779,16 +3850,21 @@ function renderLeaderboard(){
   if(!sorted.length){ lb.innerHTML='<div class="empty">No players in this category yet.</div>'; return; }
 
   const lastIdx = sorted.length - 1;
-  const itmName = (currentGroup.itm_override||'').trim() || sorted[0]?.[0];
   const forfeitName = (currentGroup.forfeit_override||'').trim() || sorted[lastIdx]?.[0];
   lb.innerHTML = sorted.map(([name,s],i)=>{
     const pid = s.playerId||'';
     const dn = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     const payBadge = _lbPayMap[name]==='money' ? '<span style="font-size:.65rem;margin-left:.3rem;">💸</span>' : (_lbPayMap[name]==='fun' ? '<span style="font-size:.65rem;margin-left:.3rem;">😄</span>' : '');
-    const isItm = name===itmName;
-    const isForfeit = name===forfeitName && sorted.length>1;
+    const isItm = i < paidPlaces;
+    const isForfeit = forfeitEnabled && name===forfeitName && sorted.length>1 && !isItm;
+    let prizeText = '';
+    if(isItm && pot > 0){
+      const pct = placePercs[i]||0;
+      const prize = pot*pct/100;
+      if(prize>0) prizeText = ' · £'+prize.toFixed(prize%1===0?0:2);
+    }
     const rowClass = i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row';
-    const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
+    const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+(i+1)+'</div>'
       +'<div><div class="lb-name">'+name+payBadge+statusBadge+'</div><div class="lb-breakdown">'+s.played+' of '+totalFix+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
