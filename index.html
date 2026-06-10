@@ -694,7 +694,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1255,7 +1255,14 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             </label>
           </div>
           <div id="forfeit-poll-status" style="margin-bottom:.85rem;"></div>
-          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">Options</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+            <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;">Options</div>
+            <div style="display:flex;gap:.3rem;">
+              <button class="compact-toggle" id="fe-count-2" onclick="setForfeitOptionCount(2)">2</button>
+              <button class="compact-toggle" id="fe-count-3" onclick="setForfeitOptionCount(3)">3</button>
+              <button class="compact-toggle active" id="fe-count-4" onclick="setForfeitOptionCount(4)">4</button>
+            </div>
+          </div>
           <div id="forfeit-options-editor"></div>
           <div style="display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap;">
             <button class="sync-refresh" onclick="saveForfeitSettings()">Save Settings</button>
@@ -1289,7 +1296,14 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem;">Question</label>
             <input id="paidplaces-question-input" type="text" class="config-input" maxlength="100" placeholder="How many places should be paid out?" />
           </div>
-          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">Options</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+            <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;">Options</div>
+            <div style="display:flex;gap:.3rem;">
+              <button class="compact-toggle" id="pp-count-2" onclick="setPaidPlacesOptionCount(2)">2</button>
+              <button class="compact-toggle" id="pp-count-3" onclick="setPaidPlacesOptionCount(3)">3</button>
+              <button class="compact-toggle active" id="pp-count-4" onclick="setPaidPlacesOptionCount(4)">4</button>
+            </div>
+          </div>
           <div id="paidplaces-options-editor"></div>
           <button class="sync-refresh" style="margin-top:.85rem;" onclick="savePaidPlacesSettings()">Save Settings</button>
         </div>
@@ -3022,6 +3036,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.10.6',date:'10 Jun 2026',notes:['Variable option count (2–4) for both vote settings cards','Compact tiebreak-style collapse once player has voted — shows chosen option with Change button']},
   {v:'1.10.5',date:'10 Jun 2026',notes:['Paid Places Vote admin settings — enable/disable toggle, separate votes-locked toggle, custom question text, and editable options']},
   {v:'1.10.4',date:'10 Jun 2026',notes:['Forfeit banner on leaderboard — shows leading vote or locked-in winner below the pot display']},
   {v:'1.10.3',date:'10 Jun 2026',notes:['Versioning scheme (Major.Minor.Patch) documented in code','Votes lock admin toggle — prevent players from changing votes once cast','Forfeit + Paid Places vote sections on Predict page','New Paid Places group vote (how many places paid out)','Fix create group blank screen (POST + separate SELECT by key)']},
@@ -3040,7 +3055,7 @@ const CHANGELOG = [
 
 function getForfeitOptions(){
   const stored = currentGroup&&currentGroup.forfeit_options;
-  if(stored&&Array.isArray(stored)&&stored.length===4){
+  if(stored&&Array.isArray(stored)&&stored.length>=2&&stored.length<=4){
     return stored.map((o,i)=>({id:'fv-'+i,emoji:o.emoji||FORFEIT_OPTIONS[i].emoji,label:o.label||FORFEIT_OPTIONS[i].label}));
   }
   return FORFEIT_OPTIONS;
@@ -3048,7 +3063,7 @@ function getForfeitOptions(){
 
 function getPaidPlacesOptions(){
   const stored = currentGroup&&currentGroup.paidplaces_options;
-  if(stored&&Array.isArray(stored)&&stored.length===4){
+  if(stored&&Array.isArray(stored)&&stored.length>=2&&stored.length<=4){
     return stored.map((o,i)=>({id:'pp-'+i,emoji:o.emoji||PAIDPLACES_OPTIONS[i].emoji,label:o.label||PAIDPLACES_OPTIONS[i].label}));
   }
   return PAIDPLACES_OPTIONS;
@@ -3078,6 +3093,29 @@ function lbCompare(a, b){
   return sb.result-sa.result;
 }
 
+function _renderForfeitOptionsRows(count, opts){
+  const editor=document.getElementById('forfeit-options-editor');
+  if(!editor) return;
+  editor.dataset.count=count;
+  editor.innerHTML=Array.from({length:count},(_,i)=>`
+    <div class="fe-row">
+      <input class="fe-emoji" id="fe-emoji-${i}" type="text" maxlength="4" value="${opts[i]?.emoji||FORFEIT_OPTIONS[i]?.emoji||''}" placeholder="✂️">
+      <input class="fe-label" id="fe-label-${i}" type="text" maxlength="80" value="${opts[i]?.label||FORFEIT_OPTIONS[i]?.label||''}" placeholder="Option ${i+1}">
+    </div>`).join('');
+  [2,3,4].forEach(n=>{
+    const b=document.getElementById('fe-count-'+n);
+    if(b) b.classList.toggle('active',n===count);
+  });
+}
+
+function setForfeitOptionCount(n){
+  const cur=[0,1,2,3].map(i=>({
+    emoji:document.getElementById('fe-emoji-'+i)?.value||FORFEIT_OPTIONS[i].emoji,
+    label:document.getElementById('fe-label-'+i)?.value||FORFEIT_OPTIONS[i].label,
+  }));
+  _renderForfeitOptionsRows(n,cur);
+}
+
 function loadForfeitSettings(){
   const tog=document.getElementById('forfeit-enabled-toggle');
   if(!tog) return;
@@ -3098,21 +3136,16 @@ function loadForfeitSettings(){
       if(reopenBtn) reopenBtn.style.display='none';
     }
   }
-  const editor=document.getElementById('forfeit-options-editor');
-  if(!editor) return;
   const opts=getForfeitOptions();
-  editor.innerHTML=opts.map((o,i)=>`
-    <div class="fe-row">
-      <input class="fe-emoji" id="fe-emoji-${i}" type="text" maxlength="4" value="${o.emoji}" placeholder="✂️">
-      <input class="fe-label" id="fe-label-${i}" type="text" maxlength="80" value="${o.label}" placeholder="Option ${i+1}">
-    </div>`).join('');
+  _renderForfeitOptionsRows(opts.length, opts);
 }
 
 async function saveForfeitSettings(){
   if(!currentGroup) return;
   const enabled=document.getElementById('forfeit-enabled-toggle')?.checked ?? true;
   const pollEnabled=document.getElementById('forfeit-poll-enabled-toggle')?.checked ?? true;
-  const options=[0,1,2,3].map(i=>({
+  const count=parseInt(document.getElementById('forfeit-options-editor')?.dataset?.count)||4;
+  const options=Array.from({length:count},(_,i)=>({
     emoji:(document.getElementById('fe-emoji-'+i)?.value.trim())||FORFEIT_OPTIONS[i].emoji,
     label:(document.getElementById('fe-label-'+i)?.value.trim())||FORFEIT_OPTIONS[i].label,
   }));
@@ -3273,24 +3306,40 @@ async function toggleVotesLocked(){
 }
 
 // ── PAID PLACES VOTE SETTINGS ─────────────
+function _renderPaidPlacesOptionsRows(count, opts){
+  const editor=document.getElementById('paidplaces-options-editor');
+  if(!editor) return;
+  editor.dataset.count=count;
+  editor.innerHTML=Array.from({length:count},(_,i)=>`
+    <div class="fe-row">
+      <input class="fe-emoji" id="pp-emoji-${i}" type="text" maxlength="4" value="${opts[i]?.emoji||PAIDPLACES_OPTIONS[i]?.emoji||''}" placeholder="🥇">
+      <input class="fe-label" id="pp-label-${i}" type="text" maxlength="80" value="${opts[i]?.label||PAIDPLACES_OPTIONS[i]?.label||''}" placeholder="Option ${i+1}">
+    </div>`).join('');
+  [2,3,4].forEach(n=>{
+    const b=document.getElementById('pp-count-'+n);
+    if(b) b.classList.toggle('active',n===count);
+  });
+}
+
+function setPaidPlacesOptionCount(n){
+  const cur=[0,1,2,3].map(i=>({
+    emoji:document.getElementById('pp-emoji-'+i)?.value||PAIDPLACES_OPTIONS[i].emoji,
+    label:document.getElementById('pp-label-'+i)?.value||PAIDPLACES_OPTIONS[i].label,
+  }));
+  _renderPaidPlacesOptionsRows(n,cur);
+}
+
 function loadPaidPlacesSettings(){
   const tog=document.getElementById('paidplaces-enabled-toggle');
   if(!tog||!currentGroup) return;
   tog.checked = currentGroup.paidplaces_poll_enabled !== false;
   const lockTog=document.getElementById('paidplaces-locked-toggle');
-  const locked = currentGroup.paidplaces_votes_locked===true;
-  if(lockTog) lockTog.checked = locked;
+  if(lockTog) lockTog.checked = currentGroup.paidplaces_votes_locked===true;
   updatePaidPlacesLockLabel();
   const qInput=document.getElementById('paidplaces-question-input');
   if(qInput) qInput.value = currentGroup.paidplaces_question||'';
-  const editor=document.getElementById('paidplaces-options-editor');
-  if(!editor) return;
   const opts=getPaidPlacesOptions();
-  editor.innerHTML=opts.map((o,i)=>`
-    <div class="fe-row">
-      <input class="fe-emoji" id="pp-emoji-${i}" type="text" maxlength="4" value="${o.emoji}" placeholder="🥇">
-      <input class="fe-label" id="pp-label-${i}" type="text" maxlength="80" value="${o.label}" placeholder="Option ${i+1}">
-    </div>`).join('');
+  _renderPaidPlacesOptionsRows(opts.length, opts);
 }
 
 function updatePaidPlacesLockLabel(){
@@ -3305,7 +3354,8 @@ async function savePaidPlacesSettings(){
   const enabled=document.getElementById('paidplaces-enabled-toggle')?.checked ?? true;
   const locked=document.getElementById('paidplaces-locked-toggle')?.checked ?? false;
   const question=(document.getElementById('paidplaces-question-input')?.value.trim())||'';
-  const options=[0,1,2,3].map(i=>({
+  const count=parseInt(document.getElementById('paidplaces-options-editor')?.dataset?.count)||4;
+  const options=Array.from({length:count},(_,i)=>({
     emoji:(document.getElementById('pp-emoji-'+i)?.value.trim())||PAIDPLACES_OPTIONS[i].emoji,
     label:(document.getElementById('pp-label-'+i)?.value.trim())||PAIDPLACES_OPTIONS[i].label,
   }));
@@ -3379,21 +3429,38 @@ function renderVoteSection(containerEl, allVotes, options, votesLocked, castFnNa
   const voteCounts = {};
   options.forEach(o=>{ voteCounts[o.id]=0; });
   allVotes.forEach(p=>{ if(voteCounts[p.match_id]!==undefined) voteCounts[p.match_id]++; });
-  const maxVotes = Math.max(...Object.values(voteCounts), 1);
 
   if(!hasVoted && currentPlayer && !votesLocked){
+    // Un-voted: show options to pick from
     containerEl.innerHTML = options.map(o=>`
       <div class="forfeit-option" onclick="${castFnName}('${o.id}')">
         <div class="forfeit-option-emoji">${o.emoji}</div>
         <div class="forfeit-option-label">${o.label}</div>
       </div>`).join('');
+  } else if(hasVoted && currentPlayer){
+    // Voted: compact tiebreak-style summary
+    const myOpt = options.find(o=>o.id===myVote) || {emoji:'?',label:'Unknown'};
+    const rightSide = votesLocked
+      ? `<span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent2);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);padding:.2rem .55rem;border-radius:20px;letter-spacing:.06em;white-space:nowrap;">🔒 LOCKED</span>`
+      : `<button class="btn-ghost" style="font-size:.72rem;padding:.25rem .65rem;" onclick="${castFnName}('')">Change</button>`;
+    containerEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:.1rem 0;">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span style="font-size:1.4rem;line-height:1;">${myOpt.emoji}</span>
+        <div>
+          <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;font-family:'DM Mono',monospace;">Your vote · ${totalVotes} total</div>
+          <div style="font-size:.9rem;font-weight:600;margin-top:.1rem;">${myOpt.label}</div>
+        </div>
+      </div>
+      ${rightSide}
+    </div>`;
   } else {
+    // Observer or locked-out non-voter: show bar chart results
+    const maxVotes = Math.max(...Object.values(voteCounts), 1);
     const resultsHtml = options.map(o=>{
       const count = voteCounts[o.id];
       const pct = totalVotes>0 ? Math.round(count/totalVotes*100) : 0;
       const isLeading = count === maxVotes && count > 0;
-      const isMyVote = myVote === o.id;
-      return `<div class="forfeit-result${isLeading?' fv-leading':''}${isMyVote?' fv-my-vote':''}">
+      return `<div class="forfeit-result${isLeading?' fv-leading':''}">
         <div class="forfeit-result-meta">
           <div class="forfeit-result-name">${o.emoji} ${o.label}</div>
           <div class="forfeit-result-count">${pct}%</div>
@@ -3401,11 +3468,9 @@ function renderVoteSection(containerEl, allVotes, options, votesLocked, castFnNa
         <div class="forfeit-result-bar-wrap"><div class="forfeit-result-bar" style="width:${pct}%"></div></div>
       </div>`;
     }).join('');
-    const changeBtn = (currentPlayer && hasVoted && !votesLocked)
-      ? `<div style="margin-top:.75rem;text-align:center;"><button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;" onclick="${castFnName}('')">Change vote</button></div>` : '';
     const lockNote = (votesLocked && currentPlayer)
-      ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.6rem;text-align:center;">🔒 Votes locked</div>` : '';
-    containerEl.innerHTML = resultsHtml + changeBtn + lockNote;
+      ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.6rem;text-align:center;">🔒 Votes locked — not voted</div>` : '';
+    containerEl.innerHTML = resultsHtml + lockNote;
   }
 }
 
@@ -3420,28 +3485,28 @@ async function castForfeitVote(optionId){
   if(!currentPlayer||!currentGroup)return;
   const el=document.getElementById('home-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
-  try{ await _doCastVote(optionId,getForfeitOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadHome();
 }
 async function castForfeitVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
   const el=document.getElementById('predict-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
-  try{ await _doCastVote(optionId,getForfeitOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadPredictVotes();
 }
 async function castPaidPlacesVote(optionId){
   if(!currentPlayer||!currentGroup)return;
   const el=document.getElementById('home-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
-  try{ await _doCastVote(optionId,getPaidPlacesOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadHome();
 }
 async function castPaidPlacesVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
   const el=document.getElementById('predict-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
-  try{ await _doCastVote(optionId,getPaidPlacesOptions()); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadPredictVotes();
 }
 async function loadPredictVotes(){
@@ -3622,17 +3687,10 @@ async function loadHome(){
     const forfeitPollEnabled = currentGroup.forfeit_poll_enabled !== false;
     const forfeitCard = document.getElementById('home-forfeit-card');
     if(forfeitCard) forfeitCard.style.display = forfeitPollEnabled ? 'block' : 'none';
-    const activeForfeitOpts = getForfeitOptions();
+    const forfeitLocked = currentGroup.votes_locked === true;
     if(forfeitEl && forfeitPollEnabled){
-      const myVote = forfeitVotes.find(p=>p.player_id===currentPlayer?.id)?.match_id || null;
-      const hasVoted = !!myVote;
-      const totalVotes = forfeitVotes.length;
-      const voteCounts = {};
-      FORFEIT_OPTIONS.forEach(o=>{ voteCounts[o.id]=0; });
-      forfeitVotes.forEach(p=>{ if(voteCounts[p.match_id]!==undefined) voteCounts[p.match_id]++; });
-      const maxVotes = Math.max(...Object.values(voteCounts), 1);
-
       if(currentGroup.forfeit_poll_ended){
+        const totalVotes = forfeitVotes.length;
         const winner = currentGroup.forfeit_poll_winner || '—';
         forfeitEl.innerHTML = `
           <div style="text-align:center;padding:.5rem 0 .25rem;">
@@ -3640,28 +3698,8 @@ async function loadHome(){
             <div style="font-size:1.25rem;font-weight:700;line-height:1.3;">${winner}</div>
             <div style="font-size:.72rem;color:var(--text-muted);margin-top:.4rem;">${totalVotes} vote${totalVotes!==1?'s':''}</div>
           </div>`;
-      } else if(!hasVoted && currentPlayer){
-        forfeitEl.innerHTML = activeForfeitOpts.map(o=>`
-          <div class="forfeit-option" onclick="castForfeitVote('${o.id}')">
-            <div class="forfeit-option-emoji">${o.emoji}</div>
-            <div class="forfeit-option-label">${o.label}</div>
-          </div>`).join('');
       } else {
-        const resultsHtml = activeForfeitOpts.map(o=>{
-          const count = voteCounts[o.id];
-          const pct = totalVotes>0 ? Math.round(count/totalVotes*100) : 0;
-          const isLeading = count === maxVotes && count > 0;
-          const isMyVote = myVote === o.id;
-          return `<div class="forfeit-result${isLeading?' fv-leading':''}${isMyVote?' fv-my-vote':''}">
-            <div class="forfeit-result-meta">
-              <div class="forfeit-result-name">${o.emoji} ${o.label}</div>
-              <div class="forfeit-result-count">${pct}%</div>
-            </div>
-            <div class="forfeit-result-bar-wrap"><div class="forfeit-result-bar" style="width:${pct}%"></div></div>
-          </div>`;
-        }).join('');
-        const changeBtn = currentPlayer ? `<div style="margin-top:.75rem;text-align:center;"><button class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;" onclick="castForfeitVote('')">Change vote</button></div>` : '';
-        forfeitEl.innerHTML = resultsHtml + changeBtn;
+        renderVoteSection(forfeitEl, forfeitVotes, getForfeitOptions(), forfeitLocked, 'castForfeitVote');
       }
     }
 
@@ -5388,6 +5426,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.6</div>
 </body>
 </html>
