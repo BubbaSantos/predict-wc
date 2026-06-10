@@ -596,7 +596,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 }
 
 /* ── GOD MODE ── */
-.god-screen{position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;display:none;}
+.god-screen{position:fixed;inset:0;background:var(--bg);z-index:9000;overflow-y:auto;display:none;}
 .god-screen.show{display:block;}
 .god-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid #a855f720;}
 .god-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:.08em;color:#a855f7;}
@@ -4147,8 +4147,18 @@ if(currentGroup&&currentPlayer){
 
 
 
-// ── TEST/ADMIN ACCESS (single click) ─────────────────
-function versionClick(e){ if(e&&e.shiftKey){ showGodMode(); return; } activateTestMode(); }
+// ── TEST/ADMIN ACCESS ────────────────────────────────
+let _versionClickCount = 0, _versionClickTimer = null;
+function versionClick(e){
+  _versionClickCount++;
+  clearTimeout(_versionClickTimer);
+  _versionClickTimer = setTimeout(()=>{
+    const n = _versionClickCount;
+    _versionClickCount = 0;
+    if(n >= 3){ showGodMode(); }
+    else { activateTestMode(); }
+  }, 400);
+}
 
 function activateTestMode(){
   // If already in app, show admin access prompt instead
@@ -4244,17 +4254,19 @@ function unlockGodUI(){
 }
 
 function checkGodPass(){
-  const val = document.getElementById('god-pass-input')?.value;
+  const input = document.getElementById('god-pass-input');
   const errEl = document.getElementById('god-pass-err');
+  const val = (input?.value||'').trim();
   if(val === GODMODE_PASSWORD){
     _godUnlocked = true;
-    document.getElementById('god-pass-input').value='';
+    input.value='';
+    errEl.style.display='none';
     unlockGodUI();
   } else {
-    errEl.textContent='Wrong password.';
+    errEl.textContent = val ? 'Wrong password.' : 'Enter the master password.';
     errEl.style.display='block';
-    document.getElementById('god-pass-input').value='';
-    setTimeout(()=>{errEl.style.display='none';},2000);
+    input.value='';
+    input.focus();
   }
 }
 
