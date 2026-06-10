@@ -705,7 +705,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.5</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1811,8 +1811,10 @@ const WIZ_TOTAL = 4;
 
 function showSetupWizard(){
   _wizStep = 1;
-  document.getElementById('screen-setup').classList.add('show');
-  document.getElementById('screen-landing').style.display='none';
+  const _ss = document.getElementById('screen-setup');
+  _ss.classList.add('show');
+  _ss.style.display = 'flex'; // force display in case CSS class doesn't apply
+  // Don't hide landing — wizard is position:fixed over it; landing hides in enterApp()
   // Populate forfeit options editor
   const opts = typeof FORFEIT_OPTIONS !== 'undefined' ? FORFEIT_OPTIONS : [{emoji:'✂️',label:'Gets a haircut'},{emoji:'🌶️',label:'Eats a chilli'},{emoji:'🐔',label:'Does a forfeit dance'},{emoji:'🥶',label:'Ice bucket challenge'}];
   const foe = document.getElementById('wiz-forfeit-options');
@@ -1834,8 +1836,10 @@ function showSetupWizard(){
 }
 
 function exitSetupWizard(){
-  document.getElementById('screen-setup').classList.remove('show');
-  document.getElementById('screen-landing').style.display='';
+  const _ss = document.getElementById('screen-setup');
+  _ss.classList.remove('show');
+  _ss.style.display = '';
+  // landing was never hidden — no restore needed
 }
 
 function wizUpdateProgress(){
@@ -2017,12 +2021,15 @@ async function setupGoLive(){
     currentPlayer = {id:created[0].id, name:created[0].name, group_id:created[0].group_id, is_admin: true};
 
     saveSession();
-    document.getElementById('screen-setup').classList.remove('show');
+    const _ssEl = document.getElementById('screen-setup');
+    _ssEl.classList.remove('show');
+    _ssEl.style.display = '';
     enterApp();
     setTimeout(()=>showGroupInfo(currentGroup, false), 80);
   }catch(e){
-    document.getElementById('screen-setup').classList.add('show');
-    document.getElementById('screen-landing').style.display='none';
+    const _ss = document.getElementById('screen-setup');
+    _ss.classList.add('show');
+    _ss.style.display = 'flex';
     errEl.textContent = 'Error: '+e.message;
     goliveBtn.textContent = '🚀 Go Live';
     goliveBtn.disabled = false;
@@ -3057,6 +3064,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.13.6',date:'10 Jun 2026',notes:['Fix blank page when clicking Create Group — force wizard visible with direct style.display (bypasses CSS class system); stop hiding landing behind wizard (redundant since wizard is position:fixed over it)']},
   {v:'1.13.5',date:'10 Jun 2026',notes:['Fix blank page on group creation — enter app directly after wizard, then show group info overlay on top (eliminates all blank-screen window)']},
   {v:'1.10.7',date:'10 Jun 2026',notes:['Lock enforced in cast functions — votes truly blocked server-side when locked','Minimal single-line chip collapse after voting']},
   {v:'1.10.6',date:'10 Jun 2026',notes:['Variable option count (2–4) for both vote settings cards','Compact tiebreak-style collapse once player has voted — shows chosen option with Change button']},
@@ -5621,6 +5629,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.6</div>
 </body>
 </html>
