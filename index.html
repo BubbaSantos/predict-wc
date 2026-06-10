@@ -634,6 +634,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="field"><label>Tagline <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input id="c-tagline" type="text" placeholder="e.g. May the best predictor win" maxlength="60" /></div>
       <div class="field"><label>Group Key <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(shared with players)</span></label><input id="c-key" type="text" placeholder="e.g. worldcup2026" maxlength="20" autocomplete="off" /></div>
       <div class="field"><label>Admin Password</label><input id="c-adminpw" type="password" placeholder="Something only you know" maxlength="30" /></div>
+      <div class="field"><label>Your Name <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(as a player)</span></label><input id="c-player-name" type="text" placeholder="e.g. John Smith" maxlength="40" /></div>
+      <div class="field"><label>Your PIN</label>
+        <div class="pin-row" id="c-player-pin-row">
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr0" oninput="pinNext(this,'cr1','c-player-pin-row')" />
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr1" oninput="pinNext(this,'cr2','c-player-pin-row')" />
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr2" oninput="pinNext(this,'cr3','c-player-pin-row')" />
+          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr3" oninput="pinDone('c-player-pin-row')" />
+        </div>
+      </div>
       <div id="create-error" class="form-error"></div>
       <button class="btn" onclick="createGroup()">Create Group →</button>
     </div>
@@ -1370,6 +1379,8 @@ function loadSession(){
     if(g) currentGroup  = JSON.parse(g);
     if(p) currentPlayer = JSON.parse(p);
     if(a) isAdmin = a==='1';
+    // Also restore from player record in case localStorage flag is missing
+    if(currentPlayer?.is_admin) isAdmin = true;
   } catch(e){}
 }
 
@@ -1389,14 +1400,18 @@ function hideFlow(name){
 
 // ── CREATE GROUP ─────────────────────────
 async function createGroup(){
-  const name    = document.getElementById('c-name').value.trim();
-  const tagline = document.getElementById('c-tagline').value.trim();
-  const key     = document.getElementById('c-key').value.trim().toLowerCase();
-  const adminpw = document.getElementById('c-adminpw').value.trim();
-  const errEl   = document.getElementById('create-error');
+  const name       = document.getElementById('c-name').value.trim();
+  const tagline    = document.getElementById('c-tagline').value.trim();
+  const key        = document.getElementById('c-key').value.trim().toLowerCase();
+  const adminpw    = document.getElementById('c-adminpw').value.trim();
+  const playerName = document.getElementById('c-player-name').value.trim();
+  const playerPin  = getPinValue('c-player-pin-row');
+  const errEl      = document.getElementById('create-error');
 
   if(!name||!key||!adminpw){showErr(errEl,'Please fill in all required fields.');return;}
   if(key.length<3){showErr(errEl,'Group key must be at least 3 characters.');return;}
+  if(!playerName){showErr(errEl,'Enter your name as a player.');return;}
+  if(playerPin.length!==4){showErr(errEl,'Choose a 4-digit PIN to log in as a player.');return;}
 
   // Check key not taken
   try {
@@ -1410,8 +1425,13 @@ async function createGroup(){
 
     currentGroup = grp[0];
     isAdmin = true;
-    // Create admin as a player too with pin '0000'
-    currentPlayer = null;
+
+    // Create a player record for the admin so they can participate
+    const created = await sb('players?select=*',{method:'POST',prefer:'return=representation',headers:{'Prefer':'return=representation'},body:{
+      group_id: currentGroup.id, name: playerName, pin: playerPin, is_admin: true
+    }});
+    currentPlayer = {id:created[0].id, name:created[0].name, group_id:created[0].group_id, is_admin: true};
+
     saveSession();
     hideFlow('create');
     enterApp();
@@ -1484,15 +1504,15 @@ async function loginPlayer(){
     }
 
     // Find player
-    const players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin`);
+    const players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin`);
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
     const player = players[0];
     if(player.pin!==pin){showErr(errEl,'Wrong PIN. Try again.');return;}
 
-    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id};
+    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false};
 
-    // Anyone who logs in with the admin password gets admin access
-    isAdmin = (currentGroup.admin_password === pin);
+    // Admin if they have the is_admin flag on their player record, or know the group password
+    isAdmin = !!(player.is_admin) || (currentGroup.admin_password === pin);
 
     saveSession();
     hideFlow('join');
@@ -3248,7 +3268,7 @@ async function loadPlayersPanel(){
   loadGraceRequests();
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -3257,7 +3277,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,is_admin:p.is_admin||false};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -3269,7 +3289,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}</span></div>
+          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts${p.pay_choice ? ' · '+(p.pay_choice==='money'?'💸 Paying in':'😄 Fun only'):''}</div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
@@ -3281,6 +3301,10 @@ async function loadPlayersPanel(){
             ${tbm[id] ? `<button class="player-options-item" onclick="unlockTiebreak('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔓 Unlock Tie-Break</button>` : ''}
             <button class="player-options-item" onclick="showRenameInMenu('${id}','${p.name.replace(/'/g,"\\'")}')">✏️ Rename</button>
             <button class="player-options-item" onclick="resetPlayerPin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔑 Reset PIN</button>
+            ${p.is_admin
+              ? `<button class="player-options-item" onclick="revokeAdmin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">👑 Revoke Admin</button>`
+              : `<button class="player-options-item" onclick="grantAdmin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">👑 Make Admin</button>`
+            }
             <hr class="player-options-divider">
             <button class="player-options-item danger" onclick="removePlayer('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🗑️ Remove Player</button>
           </div>
@@ -3525,6 +3549,26 @@ async function removePlayer(playerId,name){
         sb(`players?id=eq.${playerId}`,{method:'DELETE',prefer:'return=minimal'}),
       ]);
       flash(name+' removed','success');
+      loadPlayersPanel();
+    }catch(e){flash('Error: '+e.message,'error');}
+  });
+}
+
+async function grantAdmin(playerId, name){
+  showConfirm('👑','Make Admin','Give '+name+' admin access? They\'ll be able to manage results, players, and settings, and will see the Admin tab when they next log in.','Make Admin', async ()=>{
+    try{
+      await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{is_admin:true}});
+      flash(name+' is now an admin','success');
+      loadPlayersPanel();
+    }catch(e){flash('Error: '+e.message,'error');}
+  });
+}
+
+async function revokeAdmin(playerId, name){
+  showConfirm('👑','Revoke Admin','Remove admin access from '+name+'? They will no longer see the Admin tab.','Revoke', async ()=>{
+    try{
+      await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{is_admin:false}});
+      flash(name+' is no longer an admin','success');
       loadPlayersPanel();
     }catch(e){flash('Error: '+e.message,'error');}
   });
