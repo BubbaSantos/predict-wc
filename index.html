@@ -705,7 +705,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.2</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5474,45 +5474,47 @@ function showAdminAccessPrompt(){
   modal.innerHTML = '<div class="pred-modal" style="max-width:320px;">'
     +'<div class="pred-modal-header">'
     +'<div class="pred-modal-title">🔐 Admin Access</div>'
-    +'<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button>'
+    +'<button class="modal-close" id="admin-access-close">✕</button>'
     +'</div>'
-    +'<input type="password" id="admin-access-input" class="config-input" placeholder="Admin password" style="margin-bottom:.75rem;" onkeydown="if(event.key===\'Enter\')checkAdminAccess()" />'
-    +'<button class="btn" onclick="checkAdminAccess()">Enter Admin</button>'
+    +'<input type="password" id="admin-access-input" class="config-input" placeholder="Admin password" style="margin-bottom:.75rem;" autocomplete="current-password" />'
+    +'<button class="btn" id="admin-access-btn" style="touch-action:manipulation;">Enter Admin</button>'
     +'<div id="admin-access-err" style="font-size:.78rem;color:var(--accent2);margin-top:.5rem;display:none;"></div>'
     +'</div>';
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
-  setTimeout(()=>document.getElementById('admin-access-input')?.focus(),50);
-}
-
-function checkAdminAccess(){
-  const entered = document.getElementById('admin-access-input')?.value;
-  const errEl = document.getElementById('admin-access-err');
-  if(entered === ''){
-    _adminBlankAttempts++;
-    if(_adminBlankAttempts >= 5){
-      _adminBlankAttempts = 0;
-      document.querySelector('.modal-overlay')?.remove();
-      showGodMode();
+  const inp = modal.querySelector('#admin-access-input');
+  const errEl = modal.querySelector('#admin-access-err');
+  modal.querySelector('#admin-access-close').addEventListener('click',()=>modal.remove());
+  function doCheck(){
+    const entered = inp.value || '';
+    if(entered === ''){
+      _adminBlankAttempts++;
+      if(_adminBlankAttempts >= 5){
+        _adminBlankAttempts = 0;
+        modal.remove();
+        showGodMode();
+        return;
+      }
+      errEl.textContent='Wrong password.'; errEl.style.display='block';
       return;
     }
-    if(errEl){errEl.textContent='Wrong password.';errEl.style.display='block';}
-    return;
+    _adminBlankAttempts = 0;
+    if(!currentGroup){ errEl.textContent='No group loaded.'; errEl.style.display='block'; return; }
+    if(entered === currentGroup.admin_password){
+      isAdmin = true;
+      saveSession();
+      modal.remove();
+      document.getElementById('nav-admin').style.display = 'inline-block';
+      showView('admin');
+      flash('Admin mode unlocked','success');
+    } else {
+      errEl.textContent='Wrong password.'; errEl.style.display='block';
+      inp.value='';
+    }
   }
-  _adminBlankAttempts = 0;
-  if(!currentGroup){ if(errEl){errEl.textContent='No group loaded.';errEl.style.display='block';} return; }
-  if(entered === currentGroup.admin_password){
-    isAdmin = true;
-    saveSession();
-    document.querySelector('.modal-overlay')?.remove();
-    // Show admin tab
-    document.getElementById('nav-admin').style.display = 'inline-block';
-    showView('admin');
-    flash('Admin mode unlocked','success');
-  } else {
-    if(errEl){errEl.textContent='Wrong password.';errEl.style.display='block';}
-    document.getElementById('admin-access-input').value='';
-  }
+  modal.querySelector('#admin-access-btn').addEventListener('click', doCheck);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') doCheck(); });
+  setTimeout(()=>inp.focus(), 50);
 }
 
 // ── GOD MODE ─────────────────────────────
@@ -5655,6 +5657,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.2</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.14.3</div>
 </body>
 </html>
