@@ -694,7 +694,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.6</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3036,6 +3036,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.10.7',date:'10 Jun 2026',notes:['Lock enforced in cast functions — votes truly blocked server-side when locked','Minimal single-line chip collapse after voting']},
   {v:'1.10.6',date:'10 Jun 2026',notes:['Variable option count (2–4) for both vote settings cards','Compact tiebreak-style collapse once player has voted — shows chosen option with Change button']},
   {v:'1.10.5',date:'10 Jun 2026',notes:['Paid Places Vote admin settings — enable/disable toggle, separate votes-locked toggle, custom question text, and editable options']},
   {v:'1.10.4',date:'10 Jun 2026',notes:['Forfeit banner on leaderboard — shows leading vote or locked-in winner below the pot display']},
@@ -3438,19 +3439,13 @@ function renderVoteSection(containerEl, allVotes, options, votesLocked, castFnNa
         <div class="forfeit-option-label">${o.label}</div>
       </div>`).join('');
   } else if(hasVoted && currentPlayer){
-    // Voted: compact tiebreak-style summary
+    // Voted: minimal single-line chip
     const myOpt = options.find(o=>o.id===myVote) || {emoji:'?',label:'Unknown'};
     const rightSide = votesLocked
-      ? `<span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent2);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);padding:.2rem .55rem;border-radius:20px;letter-spacing:.06em;white-space:nowrap;">🔒 LOCKED</span>`
-      : `<button class="btn-ghost" style="font-size:.72rem;padding:.25rem .65rem;" onclick="${castFnName}('')">Change</button>`;
-    containerEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:.1rem 0;">
-      <div style="display:flex;align-items:center;gap:.6rem;">
-        <span style="font-size:1.4rem;line-height:1;">${myOpt.emoji}</span>
-        <div>
-          <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;font-family:'DM Mono',monospace;">Your vote · ${totalVotes} total</div>
-          <div style="font-size:.9rem;font-weight:600;margin-top:.1rem;">${myOpt.label}</div>
-        </div>
-      </div>
+      ? `<span style="font-size:.65rem;color:var(--accent2);white-space:nowrap;flex-shrink:0;">🔒 locked</span>`
+      : `<button class="btn-ghost" style="font-size:.7rem;padding:.2rem .55rem;flex-shrink:0;" onclick="${castFnName}('')">↺ change</button>`;
+    containerEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;background:var(--surface2);border-radius:7px;padding:.45rem .7rem;">
+      <span style="font-size:.82rem;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${myOpt.emoji} ${myOpt.label}</span>
       ${rightSide}
     </div>`;
   } else {
@@ -3483,6 +3478,7 @@ async function _doCastVote(optionId, options){
 }
 async function castForfeitVote(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(currentGroup.votes_locked===true){flash('Votes are locked','error');loadHome();return;}
   const el=document.getElementById('home-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -3490,6 +3486,7 @@ async function castForfeitVote(optionId){
 }
 async function castForfeitVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(currentGroup.votes_locked===true){flash('Votes are locked','error');loadPredictVotes();return;}
   const el=document.getElementById('predict-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -3497,6 +3494,7 @@ async function castForfeitVotePredict(optionId){
 }
 async function castPaidPlacesVote(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(currentGroup.paidplaces_votes_locked===true){flash('Votes are locked','error');loadHome();return;}
   const el=document.getElementById('home-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -3504,6 +3502,7 @@ async function castPaidPlacesVote(optionId){
 }
 async function castPaidPlacesVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(currentGroup.paidplaces_votes_locked===true){flash('Votes are locked','error');loadPredictVotes();return;}
   const el=document.getElementById('predict-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
   try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
@@ -5426,6 +5425,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.6</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.7</div>
 </body>
 </html>
