@@ -594,6 +594,32 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .lb-row{grid-template-columns:2.5rem 1fr auto;}
   .team-name{font-size:.78rem;}
 }
+
+/* ── GOD MODE ── */
+.god-screen{position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;display:none;}
+.god-screen.show{display:block;}
+.god-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid #a855f720;}
+.god-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:.08em;color:#a855f7;}
+.god-subtitle{font-size:.65rem;letter-spacing:.18em;color:var(--text-muted);text-transform:uppercase;margin-top:.1rem;}
+.god-gate{background:var(--surface);border:1px solid #a855f730;border-radius:14px;padding:2rem;max-width:360px;margin:4rem auto;text-align:center;}
+.god-group-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:.65rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;transition:border-color .15s;}
+.god-group-row:hover{border-color:#a855f740;}
+.god-group-name{font-weight:600;font-size:.95rem;}
+.god-group-meta{font-size:.72rem;color:var(--text-muted);margin-top:.25rem;}
+.god-group-key{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text-muted);font-weight:400;margin-left:.35rem;}
+.god-actions{display:flex;gap:.4rem;flex-shrink:0;}
+.god-enter-btn{background:none;border:1px solid #a855f750;color:#a855f7;font-size:.78rem;font-weight:600;padding:.4rem .85rem;border-radius:7px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.god-enter-btn:hover{background:#a855f715;border-color:#a855f7;}
+.god-del-btn{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.78rem;padding:.4rem .65rem;border-radius:7px;cursor:pointer;transition:all .15s;}
+.god-del-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+.god-create-panel{background:var(--surface);border:1px solid #a855f730;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;display:none;}
+.god-create-panel.open{display:block;}
+.god-create-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.75rem;}
+.god-btn{background:#a855f7;color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:700;padding:.6rem 1.25rem;border-radius:8px;cursor:pointer;transition:all .15s;letter-spacing:.03em;}
+.god-btn:hover{filter:brightness(1.12);}
+.god-shadow-badge{position:fixed;bottom:.4rem;left:.6rem;font-size:.6rem;color:#a855f7;opacity:.6;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;display:none;}
+.god-shadow-badge.show{display:block;}
+@media(max-width:480px){.god-create-grid{grid-template-columns:1fr;}.god-actions{flex-direction:column;}}
 </style>
 </head>
 <body>
@@ -603,7 +629,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.8</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.8.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1136,6 +1162,59 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   </div><!-- /container -->
 </div><!-- /screen-app -->
 
+<!-- GOD MODE SCREEN -->
+<div id="screen-godmode" class="god-screen">
+  <div style="max-width:700px;margin:0 auto;padding:2rem 1.25rem;">
+    <div class="god-header">
+      <div>
+        <div class="god-title">⚡ God Mode</div>
+        <div class="god-subtitle">Master Admin Console</div>
+      </div>
+      <button class="btn-ghost" onclick="exitGodMode()" style="width:auto;">✕ Exit</button>
+    </div>
+
+    <!-- Password gate -->
+    <div id="god-gate" class="god-gate">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">🔒</div>
+      <div style="font-size:1rem;font-weight:600;margin-bottom:1.5rem;">Master Password</div>
+      <input type="password" id="god-pass-input" class="config-input" placeholder="Enter master password" style="margin-bottom:.75rem;border-color:#a855f740;" onkeydown="if(event.key==='Enter')checkGodPass()" />
+      <button class="god-btn" onclick="checkGodPass()" style="width:100%;">Unlock ⚡</button>
+      <div id="god-pass-err" style="font-size:.78rem;color:var(--accent2);margin-top:.75rem;display:none;"></div>
+    </div>
+
+    <!-- Unlocked content -->
+    <div id="god-unlocked" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem;">
+        <div style="font-size:.82rem;color:var(--text-muted);">All groups</div>
+        <div style="display:flex;gap:.5rem;">
+          <button class="sync-refresh" onclick="loadGodGroups()">↻ Refresh</button>
+          <button class="god-btn" onclick="toggleGodCreateForm()" style="padding:.45rem 1rem;font-size:.8rem;">+ Add Group</button>
+        </div>
+      </div>
+
+      <!-- Quick create form -->
+      <div id="god-create-panel" class="god-create-panel">
+        <div style="font-size:.82rem;font-weight:600;color:#a855f7;margin-bottom:1rem;letter-spacing:.04em;text-transform:uppercase;">New Group</div>
+        <div class="god-create-grid">
+          <div class="field" style="margin:0;"><label>Group Name</label><input id="god-c-name" type="text" placeholder="e.g. World Cup Office" maxlength="40" /></div>
+          <div class="field" style="margin:0;"><label>Group Key</label><input id="god-c-key" type="text" placeholder="e.g. wc-office" maxlength="20" autocomplete="off" /></div>
+          <div class="field" style="margin:0;"><label>Tagline <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input id="god-c-tagline" type="text" placeholder="e.g. May the best win" maxlength="60" /></div>
+          <div class="field" style="margin:0;"><label>Admin Password</label><input id="god-c-adminpw" type="text" placeholder="Group admin password" maxlength="30" /></div>
+        </div>
+        <div id="god-create-err" class="form-error"></div>
+        <div style="display:flex;gap:.5rem;margin-top:.25rem;">
+          <button class="god-btn" onclick="godCreateGroup()">Create Group</button>
+          <button class="btn-ghost" onclick="toggleGodCreateForm()" style="width:auto;">Cancel</button>
+        </div>
+      </div>
+
+      <div id="god-groups-list"><div class="loading">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- God mode shadow indicator (bottom-left when shadow-admining a group) -->
+<div id="god-shadow-badge" class="god-shadow-badge" onclick="returnToGodMode()" title="Return to God Mode">⚡ god mode</div>
 
 <!-- CONFIRM MODAL -->
 <div id="confirm-overlay" class="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
@@ -1156,6 +1235,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 // ════════════════════════════════════════
 //  CONFIG
 // ════════════════════════════════════════
+const GODMODE_PASSWORD = 'predictor-god-2026'; // change this to something private
 const SUPABASE_URL = 'https://ulaourrszsruverylrxo.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsYW91cnJzenNydXZlcnlscnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MDk3NDIsImV4cCI6MjA5NjQ4NTc0Mn0.SVZghCamKJ42abd7L2oQqDUheE5oqz8a_f2SA-SCrVE';
 const FDORG_KEY   = '08714f5114a4402c8f6d737574b934a2';
@@ -4068,7 +4148,7 @@ if(currentGroup&&currentPlayer){
 
 
 // ── TEST/ADMIN ACCESS (single click) ─────────────────
-function versionClick(){ activateTestMode(); }
+function versionClick(e){ if(e&&e.shiftKey){ showGodMode(); return; } activateTestMode(); }
 
 function activateTestMode(){
   // If already in app, show admin access prompt instead
@@ -4141,12 +4221,145 @@ function checkAdminAccess(){
   }
 }
 
+// ── GOD MODE ─────────────────────────────
+let _godUnlocked = false;
+let _inGodSession = false;
+
+function showGodMode(){
+  document.getElementById('screen-godmode').classList.add('show');
+  document.getElementById('god-gate').style.display='block';
+  document.getElementById('god-unlocked').style.display='none';
+  if(_godUnlocked){ unlockGodUI(); }
+  else { setTimeout(()=>document.getElementById('god-pass-input')?.focus(),80); }
+}
+
+function exitGodMode(){
+  document.getElementById('screen-godmode').classList.remove('show');
+}
+
+function unlockGodUI(){
+  document.getElementById('god-gate').style.display='none';
+  document.getElementById('god-unlocked').style.display='block';
+  loadGodGroups();
+}
+
+function checkGodPass(){
+  const val = document.getElementById('god-pass-input')?.value;
+  const errEl = document.getElementById('god-pass-err');
+  if(val === GODMODE_PASSWORD){
+    _godUnlocked = true;
+    document.getElementById('god-pass-input').value='';
+    unlockGodUI();
+  } else {
+    errEl.textContent='Wrong password.';
+    errEl.style.display='block';
+    document.getElementById('god-pass-input').value='';
+    setTimeout(()=>{errEl.style.display='none';},2000);
+  }
+}
+
+async function loadGodGroups(){
+  const el = document.getElementById('god-groups-list');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  try{
+    const [groups, players] = await Promise.all([
+      sb('groups?select=id,name,tagline,key,created_at&order=created_at.desc'),
+      sb('players?select=id,group_id'),
+    ]);
+    const countMap={};
+    (players||[]).forEach(p=>{ countMap[p.group_id]=(countMap[p.group_id]||0)+1; });
+    if(!groups||!groups.length){ el.innerHTML='<div class="empty">No groups yet.</div>'; return; }
+    el.innerHTML=groups.map(g=>`
+      <div class="god-group-row">
+        <div style="min-width:0;">
+          <div class="god-group-name">${g.name}<span class="god-group-key">${g.key}</span></div>
+          ${g.tagline?`<div style="font-size:.78rem;color:var(--text-muted);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g.tagline}</div>`:''}
+          <div class="god-group-meta">${countMap[g.id]||0} player${(countMap[g.id]||0)===1?'':'s'} · created ${new Date(g.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </div>
+        <div class="god-actions">
+          <button class="god-enter-btn" onclick="godEnterGroup('${g.id}')">⚡ Enter</button>
+          <button class="god-del-btn" onclick="godDeleteGroup('${g.id}','${g.name.replace(/'/g,"\\'")}')">🗑️</button>
+        </div>
+      </div>`).join('');
+  }catch(e){ el.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`; }
+}
+
+async function godEnterGroup(groupId){
+  try{
+    const grps = await sb('groups?id=eq.'+groupId+'&select=*');
+    if(!grps||!grps.length){ flash('Group not found','error'); return; }
+    currentGroup = grps[0];
+    currentPlayer = null;
+    isAdmin = true;
+    _inGodSession = true;
+    saveSession();
+    exitGodMode();
+    enterApp();
+    document.getElementById('god-shadow-badge').classList.add('show');
+    flash('⚡ Shadow admin — '+currentGroup.name,'success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+function returnToGodMode(){
+  // Leave the current group session and go back to god mode
+  currentGroup=null; currentPlayer=null; isAdmin=false; _inGodSession=false;
+  localStorage.removeItem('wc26_group');
+  localStorage.removeItem('wc26_player');
+  localStorage.removeItem('wc26_isAdmin');
+  document.getElementById('screen-app').style.display='none';
+  document.getElementById('screen-landing').style.display='block';
+  document.getElementById('god-shadow-badge').classList.remove('show');
+  showGodMode();
+}
+
+async function godDeleteGroup(groupId, name){
+  showConfirm('🗑️','Delete Group','Permanently delete "'+name+'" and ALL its data — players, predictions, results, everything? This cannot be undone.','Delete Everything', async()=>{
+    try{
+      await Promise.all([
+        sb('grace_requests?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
+        sb('results?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
+        sb('predictions?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
+        sb('tiebreaks?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
+      ]);
+      await sb('players?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'});
+      await sb('groups?id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'});
+      flash('"'+name+'" deleted','success');
+      loadGodGroups();
+    }catch(e){ flash('Error: '+e.message,'error'); }
+  });
+}
+
+function toggleGodCreateForm(){
+  const panel = document.getElementById('god-create-panel');
+  const open = panel.classList.toggle('open');
+  if(open) document.getElementById('god-c-name').focus();
+}
+
+async function godCreateGroup(){
+  const name    = document.getElementById('god-c-name').value.trim();
+  const key     = document.getElementById('god-c-key').value.trim().toLowerCase();
+  const tagline = document.getElementById('god-c-tagline').value.trim();
+  const adminpw = document.getElementById('god-c-adminpw').value.trim();
+  const errEl   = document.getElementById('god-create-err');
+  if(!name||!key||!adminpw){ showErr(errEl,'Group name, key, and admin password are required.'); return; }
+  if(key.length<3){ showErr(errEl,'Key must be at least 3 characters.'); return; }
+  try{
+    const existing = await sb('groups?key=eq.'+encodeURIComponent(key)+'&select=id');
+    if(existing&&existing.length){ showErr(errEl,'That key is already taken.'); return; }
+    await sb('groups',{method:'POST',prefer:'return=minimal',body:{name,tagline,key,admin_password:adminpw,accent:'#f59e0b',emoji:'⚽'}});
+    flash('"'+name+'" created','success');
+    ['god-c-name','god-c-key','god-c-tagline','god-c-adminpw'].forEach(id=>{document.getElementById(id).value='';});
+    document.getElementById('god-create-panel').classList.remove('open');
+    loadGodGroups();
+  }catch(e){ showErr(errEl,'Error: '+e.message); }
+}
+
 // Patch sb to no-op in test mode
 const _sbOrig = window.sb || null;
 
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick()">v1.8.8</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.8.8</div>
 </body>
 </html>
