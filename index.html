@@ -710,7 +710,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.0</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3590,7 +3590,7 @@ function renderVoteSection(containerEl, allVotes, options, votesLocked, castFnNa
     // Voted: minimal single-line chip
     const myOpt = options.find(o=>o.id===myVote) || {emoji:'?',label:'Unknown'};
     const rightSide = votesLocked
-      ? `<span style="font-size:.65rem;color:var(--accent2);white-space:nowrap;flex-shrink:0;">🔒 locked</span>`
+      ? `<span class="voted-badge" style="flex-shrink:0;">✓ Voted</span>`
       : `<button class="btn-ghost" style="font-size:.7rem;padding:.2rem .55rem;flex-shrink:0;" onclick="${castFnName}('')">↺ change</button>`;
     containerEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;background:var(--surface2);border-radius:7px;padding:.45rem .7rem;">
       <span style="font-size:.82rem;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${myOpt.emoji} ${myOpt.label}</span>
@@ -5799,6 +5799,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.0</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.1</div>
 </body>
 </html>
