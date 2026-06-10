@@ -694,7 +694,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.3</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1016,6 +1016,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div style="font-size:1.8rem;color:var(--group-accent);line-height:1;" id="lb-pot-amount">£0</div>
       </div>
       <div id="lb-pot-breakdown" style="display:none;margin-bottom:1.25rem;"></div>
+      <div id="lb-forfeit-banner" style="display:none;margin-bottom:1rem;"></div>
       <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:1.25rem;">Tap any player to see their predictions.</p>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
     </div>
@@ -2587,6 +2588,7 @@ let _pendingSaveAll = false;
 let _lbScores = {};
 let _lbPayMap = {};
 let _lbTiebreaks = {};
+let _lbForfeitVotes = [];
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -2961,6 +2963,7 @@ async function loadLeaderboard(){
       }
     } else if(filterBtns){ filterBtns.style.display = 'none'; }
     _lbScores = scores;
+    _lbForfeitVotes = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
     renderLeaderboard();
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
@@ -2989,6 +2992,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.10.4',date:'10 Jun 2026',notes:['Forfeit banner on leaderboard — shows leading vote or locked-in winner below the pot display']},
   {v:'1.10.3',date:'10 Jun 2026',notes:['Versioning scheme (Major.Minor.Patch) documented in code','Votes lock admin toggle — prevent players from changing votes once cast','Forfeit + Paid Places vote sections on Predict page','New Paid Places group vote (how many places paid out)','Fix create group blank screen (POST + separate SELECT by key)']},
   {v:'1.10.2',date:'10 Jun 2026',notes:['Admin Controls: remove View Full Group Info button from controls tab']},
   {v:'1.10.1',date:'10 Jun 2026',notes:['Adopt proper semver (Major.Minor.Patch); existing version numbers preserved']},
@@ -4646,6 +4650,39 @@ function renderLeaderboard(){
     if(potBreakdown) potBreakdown.style.display='none';
   }
 
+  // Forfeit banner
+  const forfeitBanner = document.getElementById('lb-forfeit-banner');
+  if(forfeitBanner){
+    const pollEnabled = currentGroup.forfeit_poll_enabled !== false;
+    if(!pollEnabled || !forfeitEnabled){
+      forfeitBanner.style.display='none';
+    } else if(currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner){
+      const totalVotes = _lbForfeitVotes.length;
+      forfeitBanner.style.display='block';
+      forfeitBanner.innerHTML=`<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+        <div><div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.15rem;">🔒 Forfeit · Poll Closed</div><div style="font-weight:600;font-size:.92rem;">${currentGroup.forfeit_poll_winner}</div></div>
+        <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;">${totalVotes} vote${totalVotes!==1?'s':''}</div>
+      </div>`;
+    } else {
+      const opts = getForfeitOptions();
+      const counts = {};
+      opts.forEach(o=>{counts[o.id]=0;});
+      _lbForfeitVotes.forEach(v=>{if(counts[v.match_id]!==undefined)counts[v.match_id]++;});
+      const totalVotes = _lbForfeitVotes.length;
+      let leader = null, maxCount = 0;
+      opts.forEach(o=>{if(counts[o.id]>maxCount){maxCount=counts[o.id];leader=o;}});
+      if(leader && maxCount > 0){
+        forfeitBanner.style.display='block';
+        forfeitBanner.innerHTML=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+          <div><div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.15rem;">😬 Forfeit · Leading</div><div style="font-weight:600;font-size:.92rem;">${leader.emoji} ${leader.label}</div></div>
+          <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;">${maxCount}/${totalVotes} vote${totalVotes!==1?'s':''}</div>
+        </div>`;
+      } else {
+        forfeitBanner.style.display='none';
+      }
+    }
+  }
+
   let entries = Object.entries(_lbScores||{});
   if(_lbFilter === 'money') entries = entries.filter(([name])=>_lbPayMap[name]==='money');
   else if(_lbFilter === 'fun') entries = entries.filter(([name])=>_lbPayMap[name]==='fun');
@@ -5244,6 +5281,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.3</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.10.4</div>
 </body>
 </html>
