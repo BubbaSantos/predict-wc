@@ -705,12 +705,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.8</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.9</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
     <div class="landing-cards">
-      <div class="landing-card" onclick="showSetupWizard()">
+      <div class="landing-card" onclick="showFlow('create')">
         <div class="landing-card-icon">🏆</div>
         <div class="landing-card-title">Create Group</div>
         <div class="landing-card-desc">Start a new competition and become the admin</div>
@@ -3064,6 +3064,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.13.9',date:'10 Jun 2026',notes:['Bypass wizard for Create Group — use simple modal while wizard blank-page bug is investigated separately']},
   {v:'1.13.7',date:'10 Jun 2026',notes:['Fix Create Group — restore landing hide + force wizard style.display=flex (belt-and-suspenders to guarantee wizard shows regardless of CSS class state)']},
   {v:'1.13.6',date:'10 Jun 2026',notes:['Fix blank page when clicking Create Group — force wizard visible with direct style.display (bypasses CSS class system); stop hiding landing behind wizard (redundant since wizard is position:fixed over it)']},
   {v:'1.13.5',date:'10 Jun 2026',notes:['Fix blank page on group creation — enter app directly after wizard, then show group info overlay on top (eliminates all blank-screen window)']},
@@ -5630,6 +5631,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.8</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.13.9</div>
 </body>
 </html>
