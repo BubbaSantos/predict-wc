@@ -629,7 +629,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.3</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1128,19 +1128,34 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         </div>
         <div class="status-card">
           <h3>Forfeit Poll</h3>
-          <div class="toggle-row" style="margin-bottom:1rem;">
+          <div class="toggle-row" style="margin-bottom:.75rem;">
             <div>
-              <div class="toggle-label">Show Forfeit Poll</div>
-              <div class="toggle-desc">Display the forfeit vote on the home page</div>
+              <div class="toggle-label">Forfeit Badge</div>
+              <div class="toggle-desc">Show forfeit badge on the leaderboard</div>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="forfeit-enabled-toggle">
               <span class="toggle-slider"></span>
             </label>
           </div>
+          <div class="toggle-row" style="margin-bottom:1rem;">
+            <div>
+              <div class="toggle-label">Show Poll</div>
+              <div class="toggle-desc">Display the forfeit vote on the home page</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="forfeit-poll-enabled-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="forfeit-poll-status" style="margin-bottom:.85rem;"></div>
           <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">Options</div>
           <div id="forfeit-options-editor"></div>
-          <button class="sync-refresh" style="margin-top:.85rem;" onclick="saveForfeitSettings()">Save Forfeit Settings</button>
+          <div style="display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap;">
+            <button class="sync-refresh" onclick="saveForfeitSettings()">Save Settings</button>
+            <button id="forfeit-end-poll-btn" class="view-preds-btn" onclick="endForfeitPoll()">🔒 End Poll</button>
+            <button id="forfeit-reopen-poll-btn" class="view-preds-btn" onclick="reopenForfeitPoll()" style="display:none;">🔓 Reopen Poll</button>
+          </div>
         </div>
         <div class="status-card" style="border-color:rgba(239,68,68,.2);">
           <h3 style="color:var(--accent2);">⚠️ Danger Zone</h3>
@@ -2349,6 +2364,7 @@ const FORFEIT_OPTIONS = [
 ];
 const FORFEIT_IDS = new Set(FORFEIT_OPTIONS.map(o=>o.id));
 const CHANGELOG = [
+  {v:'1.9.4',date:'10 Jun 2026',notes:['Separate toggles for forfeit badge (leaderboard) and forfeit poll (home page)','End Poll button locks in winning option; Reopen Poll resets it','Closed poll shows winner on home page forfeit card','Forfeit badge on leaderboard shows winning poll option when poll is ended']},
   {v:'1.5.6',date:'09 Jun 2026',notes:['Admin can toggle forfeit poll on/off and customise all 4 options','Full tiebreaker logic for In the Money and Forfeit badges (top scorer → goal tally → correct results)','Admin overrides for In the Money and Forfeit labels','Hide Predicted toggle on predict page','Admin changelog tab']},
   {v:'1.5.5',date:'09 Jun 2026',notes:['Moved forfeit poll below standings on home page','Reduced forfeit option card size']},
   {v:'1.5.4',date:'09 Jun 2026',notes:['Added forfeit vote section to home page with 4 options','Votes stored using existing predictions infrastructure — no schema changes']},
@@ -2390,6 +2406,22 @@ function loadForfeitSettings(){
   const tog=document.getElementById('forfeit-enabled-toggle');
   if(!tog) return;
   tog.checked = currentGroup.forfeit_enabled !== false;
+  const pollTog=document.getElementById('forfeit-poll-enabled-toggle');
+  if(pollTog) pollTog.checked = currentGroup.forfeit_poll_enabled !== false;
+  const statusEl=document.getElementById('forfeit-poll-status');
+  const endBtn=document.getElementById('forfeit-end-poll-btn');
+  const reopenBtn=document.getElementById('forfeit-reopen-poll-btn');
+  if(statusEl){
+    if(currentGroup.forfeit_poll_ended){
+      statusEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:.5rem .75rem;font-size:.8rem;"><span style="font-weight:600;">Poll Closed</span> · Winner: <strong>${currentGroup.forfeit_poll_winner||'—'}</strong></div>`;
+      if(endBtn) endBtn.style.display='none';
+      if(reopenBtn) reopenBtn.style.display='';
+    } else {
+      statusEl.innerHTML=`<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:.5rem .75rem;font-size:.8rem;color:var(--text-muted);"><span style="font-weight:600;color:#22c55e;">● Active</span> — poll is open for voting</div>`;
+      if(endBtn) endBtn.style.display='';
+      if(reopenBtn) reopenBtn.style.display='none';
+    }
+  }
   const editor=document.getElementById('forfeit-options-editor');
   if(!editor) return;
   const opts=getForfeitOptions();
@@ -2403,16 +2435,50 @@ function loadForfeitSettings(){
 async function saveForfeitSettings(){
   if(!currentGroup) return;
   const enabled=document.getElementById('forfeit-enabled-toggle')?.checked ?? true;
+  const pollEnabled=document.getElementById('forfeit-poll-enabled-toggle')?.checked ?? true;
   const options=[0,1,2,3].map(i=>({
     emoji:(document.getElementById('fe-emoji-'+i)?.value.trim())||FORFEIT_OPTIONS[i].emoji,
     label:(document.getElementById('fe-label-'+i)?.value.trim())||FORFEIT_OPTIONS[i].label,
   }));
   try{
-    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{forfeit_enabled:enabled,forfeit_options:options}});
-    currentGroup={...currentGroup,forfeit_enabled:enabled,forfeit_options:options};
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{forfeit_enabled:enabled,forfeit_poll_enabled:pollEnabled,forfeit_options:options}});
+    currentGroup={...currentGroup,forfeit_enabled:enabled,forfeit_poll_enabled:pollEnabled,forfeit_options:options};
     saveSession();
     flash('Forfeit settings saved!','success');
   }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
+async function endForfeitPoll(){
+  if(!currentGroup) return;
+  showConfirm('🔒','End Forfeit Poll','Lock in the current winner and close voting. Players will see the result but can no longer vote.','End Poll', async ()=>{
+    try{
+      const votes=await sb('predictions?group_id=eq.'+currentGroup.id+'&select=match_id,player_id');
+      const forfeitVotes=(votes||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
+      const opts=getForfeitOptions();
+      const counts={};
+      opts.forEach(o=>{counts[o.id]=0;});
+      forfeitVotes.forEach(v=>{if(counts[v.match_id]!==undefined)counts[v.match_id]++;});
+      let winner=null,maxCount=-1;
+      opts.forEach(o=>{if(counts[o.id]>maxCount){maxCount=counts[o.id];winner=o;}});
+      const winnerText=winner?`${winner.emoji} ${winner.label}`:'—';
+      await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{forfeit_poll_ended:true,forfeit_poll_winner:winnerText}});
+      currentGroup={...currentGroup,forfeit_poll_ended:true,forfeit_poll_winner:winnerText};
+      saveSession();
+      loadForfeitSettings();
+      flash('Poll ended! Winner: '+winnerText,'success');
+    }catch(e){flash('Failed: '+e.message,'error');}
+  });
+}
+
+async function reopenForfeitPoll(){
+  if(!currentGroup) return;
+  try{
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{forfeit_poll_ended:false,forfeit_poll_winner:null}});
+    currentGroup={...currentGroup,forfeit_poll_ended:false,forfeit_poll_winner:null};
+    saveSession();
+    loadForfeitSettings();
+    flash('Poll reopened!','success');
+  }catch(e){flash('Failed: '+e.message,'error');}
 }
 
 async function saveTiebreakerSettings(){
@@ -2709,29 +2775,34 @@ async function loadHome(){
     }
 
     // Forfeit vote section
-    const forfeitEnabled = currentGroup.forfeit_enabled !== false;
+    const forfeitPollEnabled = currentGroup.forfeit_poll_enabled !== false;
     const forfeitCard = document.getElementById('home-forfeit-card');
-    if(forfeitCard) forfeitCard.style.display = forfeitEnabled ? 'block' : 'none';
+    if(forfeitCard) forfeitCard.style.display = forfeitPollEnabled ? 'block' : 'none';
     const activeForfeitOpts = getForfeitOptions();
-    if(forfeitEl && forfeitEnabled){
+    if(forfeitEl && forfeitPollEnabled){
       const myVote = forfeitVotes.find(p=>p.player_id===currentPlayer?.id)?.match_id || null;
       const hasVoted = !!myVote;
       const totalVotes = forfeitVotes.length;
-      // Count votes per option
       const voteCounts = {};
       FORFEIT_OPTIONS.forEach(o=>{ voteCounts[o.id]=0; });
       forfeitVotes.forEach(p=>{ if(voteCounts[p.match_id]!==undefined) voteCounts[p.match_id]++; });
       const maxVotes = Math.max(...Object.values(voteCounts), 1);
 
-      if(!hasVoted && currentPlayer){
-        // Show voting options
+      if(currentGroup.forfeit_poll_ended){
+        const winner = currentGroup.forfeit_poll_winner || '—';
+        forfeitEl.innerHTML = `
+          <div style="text-align:center;padding:.5rem 0 .25rem;">
+            <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">Poll Closed · The group voted</div>
+            <div style="font-size:1.25rem;font-weight:700;line-height:1.3;">${winner}</div>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:.4rem;">${totalVotes} vote${totalVotes!==1?'s':''}</div>
+          </div>`;
+      } else if(!hasVoted && currentPlayer){
         forfeitEl.innerHTML = activeForfeitOpts.map(o=>`
           <div class="forfeit-option" onclick="castForfeitVote('${o.id}')">
             <div class="forfeit-option-emoji">${o.emoji}</div>
             <div class="forfeit-option-label">${o.label}</div>
           </div>`).join('');
       } else {
-        // Show results
         const resultsHtml = activeForfeitOpts.map(o=>{
           const count = voteCounts[o.id];
           const pct = totalVotes>0 ? Math.round(count/totalVotes*100) : 0;
@@ -3864,7 +3935,8 @@ function renderLeaderboard(){
       if(prize>0) prizeText = ' · £'+prize.toFixed(prize%1===0?0:2);
     }
     const rowClass = i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row';
-    const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
+    const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
+    const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit'+forfeitWinner+'</span>' : '';
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+(i+1)+'</div>'
       +'<div><div class="lb-name">'+name+payBadge+statusBadge+'</div><div class="lb-breakdown">'+s.played+' of '+totalFix+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
@@ -4439,6 +4511,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.3</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.9.4</div>
 </body>
 </html>
