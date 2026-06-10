@@ -949,7 +949,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button class="admin-tab" onclick="switchAdminTab('fixtures')">➕ Fixtures</button>
         <button class="admin-tab" onclick="switchAdminTab('branding')">🎨 Branding</button>
         <button class="admin-tab" onclick="switchAdminTab('controls')">⚙️ Controls</button>
-        <button class="admin-tab" onclick="switchAdminTab('changelog')">📋 Changelog</button>
+        <button id="admin-tab-changelog" class="admin-tab" onclick="switchAdminTab('changelog')" style="display:none;">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
         <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Results sync automatically every 5 minutes. Override manually below.</p>
@@ -4308,6 +4308,7 @@ async function godEnterGroup(groupId){
     exitGodMode();
     enterApp();
     document.getElementById('god-shadow-badge').classList.add('show');
+    document.getElementById('admin-tab-changelog').style.display='';
     flash('⚡ Shadow admin — '+currentGroup.name,'success');
   }catch(e){ flash('Error: '+e.message,'error'); }
 }
@@ -4321,6 +4322,7 @@ function returnToGodMode(){
   document.getElementById('screen-app').style.display='none';
   document.getElementById('screen-landing').style.display='block';
   document.getElementById('god-shadow-badge').classList.remove('show');
+  document.getElementById('admin-tab-changelog').style.display='none';
   showGodMode();
 }
 
