@@ -685,8 +685,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .sharecard-row-val{font-weight:700;}
 .sharecard-row-muted{color:var(--text-muted);font-weight:400;}
 .sharecard-url{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text-muted);margin-top:1.1rem;word-break:break-all;}
-/* Admin controls sub-section dividers */
-.admin-section-divider{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:.6rem .25rem .1rem;margin-top:.1rem;font-weight:700;}
+/* Admin controls sub-tabs */
+.controls-sub-tabs{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1.1rem;}
+.controls-sub-tab{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;font-weight:600;padding:.35rem .75rem;border-radius:7px;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.controls-sub-tab.active{background:var(--group-accent);border-color:var(--group-accent);color:#fff;}
 /* Compact predict page tiebreak */
 .tb-compact-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.7rem 1rem;margin-bottom:.85rem;}
 .tb-compact-inputs{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.45rem;}
@@ -701,7 +703,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.11.0</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.12.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -965,13 +967,13 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       </div>
       <!-- Group Votes (compact cards, hideable via Extras) -->
       <div class="home-card" id="predict-forfeit-card" style="margin-bottom:.6rem;">
-        <div class="home-card-title">Last Place Forfeit Vote</div>
-        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">What should the loser have to do?</div>
+        <div class="home-card-title" id="predict-forfeit-title">Last Place Forfeit Vote</div>
+        <div class="predict-vote-desc" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">What should the loser have to do?</div>
         <div id="predict-forfeit"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
       <div class="home-card" id="predict-paidplaces-card" style="margin-bottom:.6rem;">
-        <div class="home-card-title">Paid Places Vote</div>
-        <div id="predict-paidplaces-question" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
+        <div class="home-card-title" id="predict-paidplaces-title">Paid Places Vote</div>
+        <div class="predict-vote-desc" id="predict-paidplaces-question" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
         <div id="predict-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
@@ -1090,16 +1092,16 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         </div>
       </div>
       <div id="admin-panel-controls" class="admin-panel">
-
-        <!-- Predictions lock — top of page -->
-        <div class="status-card">
-          <div class="toggle-row">
-            <div><div class="toggle-label" id="comp-status-label">Predictions Open</div><div class="toggle-desc" id="comp-status-desc">Players can submit predictions</div></div>
-            <label class="toggle-switch"><input type="checkbox" id="comp-open-toggle" checked onchange="toggleCompStatus()"><span class="toggle-slider"></span></label>
-          </div>
+        <div class="controls-sub-tabs">
+          <button class="controls-sub-tab active" onclick="switchControlsSubTab('group')">Group</button>
+          <button class="controls-sub-tab" onclick="switchControlsSubTab('polls')">Polls &amp; Entry</button>
+          <button class="controls-sub-tab" onclick="switchControlsSubTab('display')">Display</button>
+          <button class="controls-sub-tab" onclick="switchControlsSubTab('data')">Data</button>
+          <button class="controls-sub-tab" onclick="switchControlsSubTab('tools')">Tools</button>
+          <button class="controls-sub-tab" onclick="switchControlsSubTab('danger')">Danger</button>
         </div>
 
-        <div class="admin-section-divider">Group</div>
+        <div id="ctrl-section-group">
         <div class="status-card">
           <h3>Group Details</h3>
           <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.85rem;">Your shareable group info — send to friends so they can join.</div>
@@ -1107,9 +1109,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             <button class="view-preds-btn" onclick="showShareCard()">📸 Share Card (screenshot this)</button>
             <button class="view-preds-btn" style="background:var(--surface2);" onclick="copyToClipboard(window.location.href.split('?')[0].split('#')[0],this,'Copied!')">🔗 Copy Join URL</button>
           </div>
-        </div>
+        </div><!-- /ctrl-section-group -->
 
-        <div class="admin-section-divider">Polls &amp; Entry</div>
+        <div id="ctrl-section-polls" style="display:none;">
+        <div class="status-card">
+          <div class="toggle-row">
+            <div><div class="toggle-label" id="comp-status-label">Predictions Open</div><div class="toggle-desc" id="comp-status-desc">Players can submit predictions</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="comp-open-toggle" checked onchange="toggleCompStatus()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
         <div class="status-card">
           <h3>Entry &amp; Prizes</h3>
           <div class="toggle-row" style="margin-bottom:.75rem;">
@@ -1206,16 +1214,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
               <span class="toggle-slider"></span>
             </label>
           </div>
-          <div class="toggle-row" style="margin-bottom:1rem;">
-            <div>
-              <div class="toggle-label" id="paidplaces-lock-label">Votes Open</div>
-              <div class="toggle-desc" id="paidplaces-lock-desc">Players can cast and change their vote</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="paidplaces-locked-toggle" onchange="updatePaidPlacesLockLabel()">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+          <div id="paidplaces-poll-status" style="margin-bottom:.85rem;"></div>
           <div style="margin-bottom:.85rem;">
             <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem;">Question</label>
             <input id="paidplaces-question-input" type="text" class="config-input" maxlength="100" placeholder="How many places should be paid out?" />
@@ -1229,10 +1228,26 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             </div>
           </div>
           <div id="paidplaces-options-editor"></div>
-          <button class="sync-refresh" style="margin-top:.85rem;" onclick="savePaidPlacesSettings()">Save Settings</button>
+          <div class="toggle-row" style="margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border);">
+            <div>
+              <div class="toggle-label" id="paidplaces-lock-label">Votes Open</div>
+              <div class="toggle-desc" id="paidplaces-lock-desc">Players can cast and change their vote</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="paidplaces-locked-toggle" onchange="updatePaidPlacesLockLabel()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap;">
+            <button class="sync-refresh" onclick="savePaidPlacesSettings()">Save Settings</button>
+            <button id="paidplaces-end-poll-btn" class="view-preds-btn" onclick="endPaidPlacesPoll()">🔒 End Poll</button>
+            <button id="paidplaces-reopen-poll-btn" class="view-preds-btn" onclick="reopenPaidPlacesPoll()" style="display:none;">🔓 Reopen Poll</button>
+          </div>
         </div>
 
-        <div class="admin-section-divider">Display</div>
+        </div><!-- /ctrl-section-polls -->
+
+        <div id="ctrl-section-display" style="display:none;">
         <div class="status-card">
           <h3>Leaderboard Views</h3>
           <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Choose which filter tabs players can see. At least one must be ticked.</div>
@@ -1274,7 +1289,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <button class="sync-refresh" style="margin-top:.85rem;" onclick="saveTickerSettings()">Save Ticker</button>
         </div>
 
-        <div class="admin-section-divider">Data</div>
+        </div><!-- /ctrl-section-display -->
+
+        <div id="ctrl-section-data" style="display:none;">
         <div class="status-card">
           <h3>Tiebreaker Data</h3>
           <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Used to break ties on the leaderboard. Leave blank if the tournament isn't finished.</div>
@@ -1302,14 +1319,17 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <button class="sync-refresh" onclick="saveTiebreakerSettings()">Save Tiebreaker Settings</button>
         </div>
 
-        <div class="admin-section-divider">Tools</div>
+        </div><!-- /ctrl-section-data -->
+
+        <div id="ctrl-section-tools" style="display:none;">
         <div class="status-card">
           <h3>Export</h3>
           <button class="view-preds-btn" onclick="exportLeaderboardCSV()" style="margin-right:.5rem;">📥 Leaderboard CSV</button>
           <button class="view-preds-btn" onclick="exportAllPredictionsCSV()">📥 All Predictions CSV</button>
         </div>
+        </div><!-- /ctrl-section-tools -->
 
-        <div class="admin-section-divider">Danger</div>
+        <div id="ctrl-section-danger" style="display:none;">
         <div class="status-card" style="border-color:rgba(239,68,68,.2);">
           <h3 style="color:var(--accent2);">⚠️ Danger Zone</h3>
           <div style="display:flex;flex-direction:column;gap:.75rem;">
@@ -1327,6 +1347,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             </div>
           </div>
         </div>
+        </div><!-- /ctrl-section-danger -->
       </div>
       <div id="admin-panel-changelog" class="admin-panel">
         <div id="changelog-content"></div>
@@ -2925,7 +2946,7 @@ function lockTiebreakWithValues(scorer, goals){
     +'<span style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--group-accent);">Tie-Break</span>'
     +'<span style="font-size:.88rem;font-weight:600;color:var(--text);">'+scorer+' &nbsp;·&nbsp; <span style="color:var(--group-accent);">'+(goals||'0')+' goals</span></span>'
     +'</div>'
-    +'<span class="voted-badge">✓ Voted</span>'
+    +'<span style="font-family:\'DM Mono\',monospace;font-size:.62rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);padding:.2rem .55rem;border-radius:20px;letter-spacing:.06em;white-space:nowrap;">🔒 Locked</span>'
     +'</div>';
 }
 
@@ -3575,8 +3596,24 @@ async function loadPredictVotes(){
   const allIds=[...FORFEIT_IDS,...PAIDPLACES_IDS].join(',');
   try{
     const votes=await sb(`predictions?group_id=eq.${currentGroup.id}&match_id=in.(${allIds})&select=player_id,match_id`);
-    if(forfeitEl&&forfeitEnabled) renderVoteSection(forfeitEl,(votes||[]).filter(p=>FORFEIT_IDS.has(p.match_id)),getForfeitOptions(),forfeitLocked,'castForfeitVotePredict');
-    if(ppEl&&ppPollEnabled) renderVoteSection(ppEl,(votes||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id)),getPaidPlacesOptions(),ppLocked,'castPaidPlacesVotePredict');
+    const forfeitVotesFiltered = (votes||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
+    const ppVotesFiltered = (votes||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id));
+    if(forfeitEl&&forfeitEnabled){
+      renderVoteSection(forfeitEl,forfeitVotesFiltered,getForfeitOptions(),forfeitLocked,'castForfeitVotePredict');
+      const myForfeitVote = forfeitVotesFiltered.some(p=>p.player_id===currentPlayer?.id);
+      const fTitle = document.getElementById('predict-forfeit-title');
+      const fDesc = forfeitCard?.querySelector('.predict-vote-desc');
+      if(fTitle) fTitle.innerHTML = 'Last Place Forfeit Vote' + (myForfeitVote ? ' <span class="voted-badge">✓ Voted</span>' : '');
+      if(fDesc) fDesc.style.display = myForfeitVote ? 'none' : '';
+    }
+    if(ppEl&&ppPollEnabled){
+      renderVoteSection(ppEl,ppVotesFiltered,getPaidPlacesOptions(),ppLocked,'castPaidPlacesVotePredict');
+      const myPPVote = ppVotesFiltered.some(p=>p.player_id===currentPlayer?.id);
+      const ppTitle = document.getElementById('predict-paidplaces-title');
+      const ppDesc = ppCard?.querySelector('.predict-vote-desc');
+      if(ppTitle) ppTitle.innerHTML = getPaidPlacesQuestion() + (myPPVote ? ' <span class="voted-badge">✓ Voted</span>' : '');
+      if(ppDesc) ppDesc.style.display = myPPVote ? 'none' : '';
+    }
   }catch(e){
     if(forfeitEl) forfeitEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">⚠️ '+e.message+'</div>';
     if(ppEl) ppEl.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">⚠️ '+e.message+'</div>';
@@ -4286,6 +4323,70 @@ function checkAdminPass(){
   }
 }
 
+function switchControlsSubTab(name){
+  const sections = ['group','polls','display','data','tools','danger'];
+  sections.forEach(s=>{
+    const el = document.getElementById('ctrl-section-'+s);
+    if(el) el.style.display = s===name ? '' : 'none';
+  });
+  document.querySelectorAll('.controls-sub-tab').forEach((b,i)=>{
+    b.classList.toggle('active', sections[i]===name);
+  });
+  if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();}
+  if(name==='display'){loadLbViewSettings();loadTickerSettings();}
+  if(name==='data'){loadTiebreakerSettings();}
+}
+
+function loadPaidPlacesPollStatus(){
+  const statusEl = document.getElementById('paidplaces-poll-status');
+  const endBtn = document.getElementById('paidplaces-end-poll-btn');
+  const reopenBtn = document.getElementById('paidplaces-reopen-poll-btn');
+  if(!statusEl) return;
+  const ended = currentGroup && currentGroup.paidplaces_poll_ended;
+  if(ended){
+    statusEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:.5rem .75rem;font-size:.8rem;"><span style="font-weight:600;">Poll Closed</span> · Winner: <strong>${currentGroup.paidplaces_poll_winner||'—'}</strong></div>`;
+    if(endBtn) endBtn.style.display='none';
+    if(reopenBtn) reopenBtn.style.display='';
+  } else {
+    statusEl.innerHTML=`<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:.5rem .75rem;font-size:.8rem;color:var(--text-muted);"><span style="font-weight:600;color:#22c55e;">● Active</span> — poll is open for voting</div>`;
+    if(endBtn) endBtn.style.display='';
+    if(reopenBtn) reopenBtn.style.display='none';
+  }
+}
+
+async function endPaidPlacesPoll(){
+  if(!currentGroup) return;
+  showConfirm('🔒','End Paid Places Poll','Lock in the current winner and close voting.','End Poll', async ()=>{
+    try{
+      const votes=await sb('predictions?group_id=eq.'+currentGroup.id+'&select=match_id,player_id');
+      const ppVotes=(votes||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id));
+      const opts=getPaidPlacesOptions();
+      const counts={};
+      opts.forEach(o=>{counts[o.id]=0;});
+      ppVotes.forEach(v=>{if(counts[v.match_id]!==undefined)counts[v.match_id]++;});
+      let winner=null,maxCount=-1;
+      opts.forEach(o=>{if(counts[o.id]>maxCount){maxCount=counts[o.id];winner=o;}});
+      const winnerText=winner?`${winner.emoji} ${winner.label}`:'—';
+      await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{paidplaces_poll_ended:true,paidplaces_poll_winner:winnerText}});
+      currentGroup={...currentGroup,paidplaces_poll_ended:true,paidplaces_poll_winner:winnerText};
+      saveSession();
+      loadPaidPlacesPollStatus();
+      flash('Poll ended! Winner: '+winnerText,'success');
+    }catch(e){flash('Failed: '+e.message,'error');}
+  });
+}
+
+async function reopenPaidPlacesPoll(){
+  if(!currentGroup) return;
+  try{
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{paidplaces_poll_ended:false,paidplaces_poll_winner:null}});
+    currentGroup={...currentGroup,paidplaces_poll_ended:false,paidplaces_poll_winner:null};
+    saveSession();
+    loadPaidPlacesPollStatus();
+    flash('Poll reopened!','success');
+  }catch(e){flash('Failed: '+e.message,'error');}
+}
+
 function switchAdminTab(name){
   document.querySelectorAll('.admin-tab').forEach((b,i)=>{
     const tabs=['results','players','fixtures','branding','controls','changelog'];
@@ -4296,7 +4397,7 @@ function switchAdminTab(name){
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
-  if(name==='controls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadTiebreakerSettings();loadLbViewSettings();loadTickerSettings();}
+  if(name==='controls'){switchControlsSubTab('group');}
   if(name==='changelog')renderChangelog();
 }
 
@@ -4725,7 +4826,7 @@ function renderPayChoiceCard(){
       +'<span style="font-size:.9rem;font-weight:600;">'+(choice==='money'?'Playing for money':'Playing for fun')+'</span>'
       +(fee&&choice==='money'?'<span style="font-size:.75rem;color:var(--text-muted);"> · '+fee+'</span>':'')
       +'</div>'
-      +'<span class="voted-badge">✓ Voted</span>'
+      +'<span style="font-size:.62rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);padding:.2rem .55rem;border-radius:20px;">🔒 Locked</span>'
       +'</div>'
       +'</div>';
   } else {
@@ -5474,6 +5575,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.11.0</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.12.0</div>
 </body>
 </html>
