@@ -782,7 +782,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1003,9 +1003,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="rules-full">
         <h3>🏁 Tie-Break</h3>
         <ul>
-          <li>Highest total points wins 🥇. Second wins runner-up 🥈</li>
-          <li><strong>Tie-break 1:</strong> correct top scorer + goal tally</li>
-          <li><strong>Tie-break 2:</strong> most correct results overall</li>
+          <li><strong>Tie-break 1:</strong> Most correct results — whoever predicted the correct outcome (win/draw/loss) in the most matches wins</li>
+          <li><strong>Tie-break 2:</strong> Top scorer prediction — whoever predicted the player who scored the most goals in the tournament wins. If neither player predicted the same top scorer, whoever's chosen player scored the most goals overall wins</li>
         </ul>
       </div>
     </div>
@@ -3365,21 +3364,7 @@ function getPaidPlacesQuestion(){
 function lbCompare(a, b){
   const [,sa]= a, [,sb]= b;
   if(sb.total !== sa.total) return sb.total - sa.total;
-  const atsRaw = (currentGroup&&currentGroup.actual_top_scorer||'').trim();
-  if(atsRaw){
-    const aliases = atsRaw.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-    const tbA=_lbTiebreaks[sa.playerId]||{}, tbB=_lbTiebreaks[sb.playerId]||{};
-    const aC=aliases.includes((tbA.top_scorer||'').trim().toLowerCase());
-    const bC=aliases.includes((tbB.top_scorer||'').trim().toLowerCase());
-    if(aC!==bC) return bC?1:-1;
-  }
-  const atg=currentGroup&&currentGroup.actual_top_goals;
-  if(atg!==null&&atg!==undefined&&atg!==''){
-    const tbA=_lbTiebreaks[sa.playerId]||{}, tbB=_lbTiebreaks[sb.playerId]||{};
-    const aD=tbA.goals!=null?Math.abs(+tbA.goals-+atg):9999, bD=tbB.goals!=null?Math.abs(+tbB.goals-+atg):9999;
-    if(aD!==bD) return aD-bD;
-  }
-  return sb.result-sa.result;
+  return sb.result - sa.result;
 }
 
 function _renderForfeitOptionsRows(count, opts){
@@ -6214,6 +6199,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.7</div>
 </body>
 </html>
