@@ -115,6 +115,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .result-badge{font-size:.7rem;background:rgba(16,185,129,.1);color:var(--green);padding:.2rem .5rem;border-radius:4px;border:1px solid rgba(16,185,129,.2);}
 .pts-badge{font-size:.7rem;padding:.15rem .4rem;border-radius:4px;background:rgba(245,158,11,.15);color:var(--group-accent);border:1px solid rgba(245,158,11,.2);}
 .pts-badge.green{background:rgba(16,185,129,.15);color:var(--green);border-color:rgba(16,185,129,.2);}
+.live-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#ef4444;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);padding:.15rem .45rem;border-radius:4px;}
+.live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
+.match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
 .save-all-wrap{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 40%);padding:2rem 0 1rem;text-align:center;}
 .btn-save-all{background:var(--green);color:#000;border:none;font-size:.9rem;font-weight:700;padding:.75rem 2rem;border-radius:8px;cursor:pointer;letter-spacing:.04em;transition:all .15s;}
 .btn-save-all:hover{background:#34d399;transform:translateY(-1px);}
@@ -713,7 +716,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1279,6 +1282,16 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
               <input type="checkbox" id="tiebreak-required-toggle" onchange="saveTiebreakRequired()">
               <span class="toggle-slider"></span>
             </label>
+          </div>
+          <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);">
+            <div class="toggle-label" style="margin-bottom:.2rem;">Extras Visibility</div>
+            <div class="toggle-desc" style="margin-bottom:.55rem;">Choose which sections appear in the Extras panel</div>
+            <div style="display:flex;flex-direction:column;gap:.4rem;">
+              <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" id="extras-show-tiebreak" onchange="saveExtrasConfig()"> Top Scorer</label>
+              <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" id="extras-show-paychoice" onchange="saveExtrasConfig()"> Pay Choice</label>
+              <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" id="extras-show-forfeit" onchange="saveExtrasConfig()"> Forfeit Vote</label>
+              <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" id="extras-show-paidplaces" onchange="saveExtrasConfig()"> Paid Places Vote</label>
+            </div>
           </div>
         </div>
         <div class="status-card">
@@ -2510,11 +2523,20 @@ function startCountdown(){
 
     if(live.length){
       card.style.display='block';
-      if(label) label.innerHTML='🔴 Live Now';
+      if(label) label.innerHTML='<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;vertical-align:middle;margin-right:.35rem;"></span>Live Now';
       if(label) label.style.color='#ef4444';
-      el.innerHTML = live.map(f=>`<div style="font-size:.9rem;font-weight:600;color:var(--text);white-space:nowrap;">${f.hf} ${f.home} <span style="color:var(--text-muted);">vs</span> ${f.af} ${f.away}</div>`).join('');
+      el.innerHTML = live.map(f=>{
+        const r = results[f.id];
+        const hasScore = r && r.home !== null && r.away !== null;
+        const p = predictions[f.id];
+        const hasPred = p && p.home !== '' && p.home !== null && p.away !== '' && p.away !== null;
+        return `<div style="text-align:center;">
+          <div style="font-size:.88rem;font-weight:700;color:var(--text);">${f.hf} ${f.home}&nbsp;<span style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:900;color:${hasScore?'#ef4444':'var(--text-muted)'};">${hasScore?`${r.home}–${r.away}`:'–'}</span>&nbsp;${f.away} ${f.af}</div>
+          ${hasPred?`<div style="font-size:.62rem;color:var(--text-muted);margin-top:.2rem;">You predicted ${p.home}–${p.away}</div>`:''}
+        </div>`;
+      }).join('');
       el.style.flexDirection='column';
-      el.style.gap='.35rem';
+      el.style.gap='.5rem';
       if(sub) sub.textContent='';
       return;
     }
@@ -2873,6 +2895,8 @@ async function loadPredictions(){
     renderPayChoiceCard();
     loadPredictVotes();
 
+    // Apply per-item admin visibility before toggling
+    applyExtrasConfig();
     // Apply group default for extras visibility; never auto-hide if player hasn't set tiebreak
     const shouldShow = (currentGroup && currentGroup.predict_extras_shown === true) || !_tiebreakDone;
     if(_extrasHidden === shouldShow) toggleExtras();
@@ -2905,6 +2929,8 @@ function renderPredictCard(f,pred,res){
   const kicked = isMatchLocked(f);
   const hasResult=(res&&res.home!==null&&res.away!==null)||kicked;
   const isFilled=pred.home!==''&&pred.away!=='';
+  const koTime = getMatchKickoff(f);
+  const isLive = kicked && !res && koTime && Date.now() >= koTime.getTime() && Date.now() < koTime.getTime() + 130*60*1000;
   let ptsBadge='';
   if(hasResult&&isFilled&&res){
     const pts=calcPoints(+pred.home,+pred.away,res.home,res.away);
@@ -2917,15 +2943,21 @@ function renderPredictCard(f,pred,res){
   const grpLabel=f.isKnockout?(f.group||'KO'):`Grp ${f.group}`;
   const metaStr=(()=>{
     if(f.isKnockout) return koKickoff(f);
-    const ko = getMatchKickoff(f);
-    if(ko){
-      const bstDate = ko.toLocaleDateString('en-GB',{timeZone:'Europe/London',day:'2-digit',month:'2-digit',year:'numeric'});
-      const bstTime = ko.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'});
+    if(koTime){
+      const bstDate = koTime.toLocaleDateString('en-GB',{timeZone:'Europe/London',day:'2-digit',month:'2-digit',year:'numeric'});
+      const bstTime = koTime.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'});
       return `${bstDate} · ${bstTime} BST · ${f.venue}`;
     }
     return `${formatDate(f.date)} · ${f.venue}`;
   })();
-  return `<div class="match-card ${isFilled?'saved':''} ${hasResult?'locked':''}" data-predicted="${isFilled}">
+  const statusBadge = isLive
+    ? '<span class="live-badge"><span class="live-dot"></span>Live</span>'
+    : hasResult
+      ? '<span style="font-size:.65rem;color:var(--text-muted);opacity:.5;">🔒 Locked</span>'
+      : !kicked
+        ? `<span id="cd-${f.id}" style="font-size:.6rem;color:rgba(239,68,68,.6);">locks in …</span>`
+        : '';
+  return `<div class="match-card ${isFilled?'saved':''} ${hasResult?'locked':''} ${isLive?'is-live':''}" data-predicted="${isFilled}">
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
       <div style="display:flex;align-items:center;gap:.4rem;">
@@ -2938,7 +2970,7 @@ function renderPredictCard(f,pred,res){
     <div class="match-meta">
       <span class="match-info"><span class="group-tag">${grpLabel}</span> · ${metaStr}</span>
       <div style="display:flex;align-items:center;gap:.5rem;">
-        ${hasResult?'<span style="font-size:.65rem;color:var(--text-muted);opacity:.5;">🔒 Locked</span>':(!kicked?`<span id="cd-${f.id}" style="font-size:.6rem;color:rgba(239,68,68,.6);">locks in …</span>`:'')}        <span id="saved-${f.id}" style="display:none;font-size:.72rem;color:var(--green);">✓ Saved</span>
+        ${statusBadge}        <span id="saved-${f.id}" style="display:none;font-size:.72rem;color:var(--green);">✓ Saved</span>
       </div>
     </div>
   </div>`;
@@ -3366,9 +3398,11 @@ async function reopenEntryPeriod(){
 
 let _extrasHidden = false;
 let _tiebreakDone = false;
+const _adminHiddenExtras = new Set();
 function toggleExtras(){
   _extrasHidden = !_extrasHidden;
   ['pay-choice-card','tiebreak-section','predict-forfeit-card','predict-paidplaces-card'].forEach(id=>{
+    if(_adminHiddenExtras.has(id)) return;
     const el = document.getElementById(id);
     if(!el) return;
     if(_extrasHidden){
@@ -3380,6 +3414,18 @@ function toggleExtras(){
   });
   const btn = document.getElementById('extras-toggle-btn');
   if(btn) btn.textContent = _extrasHidden ? '⚡ Show Extras' : '⚡ Extras';
+}
+function applyExtrasConfig(){
+  const cfg = (currentGroup && currentGroup.extras_config) || {};
+  [['tiebreak-section', cfg.tiebreak], ['pay-choice-card', cfg.pay_choice],
+   ['predict-forfeit-card', cfg.forfeit], ['predict-paidplaces-card', cfg.paid_places]
+  ].forEach(([id, show])=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const visible = show !== false;
+    if(!visible){ _adminHiddenExtras.add(id); el.style.display='none'; }
+    else { _adminHiddenExtras.delete(id); }
+  });
 }
 
 // ── TIEBREAK GATE ────────────────────────────────────────────────
@@ -3482,6 +3528,30 @@ async function saveExtrasDefault(){
     currentGroup={...currentGroup,predict_extras_shown:shown};
     saveSession();
     flash('Extras default '+(shown?'on':'off'),'success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+function loadExtrasConfig(){
+  const cfg = (currentGroup && currentGroup.extras_config) || {};
+  const g = id=>document.getElementById(id);
+  if(g('extras-show-tiebreak'))  g('extras-show-tiebreak').checked  = cfg.tiebreak   !== false;
+  if(g('extras-show-paychoice')) g('extras-show-paychoice').checked = cfg.pay_choice !== false;
+  if(g('extras-show-forfeit'))   g('extras-show-forfeit').checked   = cfg.forfeit    !== false;
+  if(g('extras-show-paidplaces'))g('extras-show-paidplaces').checked= cfg.paid_places!== false;
+}
+async function saveExtrasConfig(){
+  if(!currentGroup) return;
+  const g = id=>document.getElementById(id);
+  const cfg = {
+    tiebreak:   g('extras-show-tiebreak')?.checked  ?? true,
+    pay_choice: g('extras-show-paychoice')?.checked ?? true,
+    forfeit:    g('extras-show-forfeit')?.checked   ?? true,
+    paid_places:g('extras-show-paidplaces')?.checked?? true,
+  };
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{extras_config:cfg}});
+    currentGroup={...currentGroup,extras_config:cfg};
+    saveSession();
+    flash('Extras visibility saved','success');
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
@@ -4018,6 +4088,9 @@ async function loadHome(){
     const gamePreds       = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
 
     const rm = {}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
+    // Keep global results/predictions fresh for the countdown card
+    (allResults||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score});
+    if(currentPlayer){ (gamePreds||[]).filter(p=>p.player_id===currentPlayer.id).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score}); }
     const pm = {}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
 
     // Total pot
@@ -4721,7 +4794,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -5950,6 +6023,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.4</div>
 </body>
 </html>
