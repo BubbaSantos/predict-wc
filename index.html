@@ -195,13 +195,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .match-stat-teams{color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .match-stat-count{color:var(--text-muted);font-size:.72rem;text-align:right;white-space:nowrap;}
 .match-stat-pct{font-family:'DM Mono',monospace;font-size:.72rem;text-align:right;white-space:nowrap;}
-.hmc-next .hmc-flag{font-size:1.3rem;}
-.hmc-next .hmc-score.vs{font-size:.85rem;}
-.hmc-next .hmc-tname{font-size:.65rem;}
-.hmc-next .hmc-cd{gap:.45rem;}
-.hmc-next .hmc-cd-num{font-size:1.05rem;}
-.hmc-next .hmc-cd-lbl{font-size:.5rem;}
-.hmc-next .hmc-pred,.hmc-next .hmc-meta{font-size:.65rem;margin-top:.2rem;}
 .home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
@@ -786,7 +779,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2593,7 +2586,7 @@ function renderMatchCardBody(){
       if(html) html += '<hr class="hmc-sep">';
       const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
       const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
-      html += `<div class="hmc-label">Next Up</div><div class="hmc-next"><div style="font-size:.62rem;color:var(--text-muted);text-align:center;margin-bottom:.25rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.5rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_nextGameStaticHtml+`</div>`;
+      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_nextGameStaticHtml;
     }
   } else if(!html){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -6188,6 +6181,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.2</div>
 </body>
 </html>
