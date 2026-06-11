@@ -499,9 +499,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   /* Match card saved border glow */
   .match-card.saved { box-shadow: 0 0 0 1px rgba(16,185,129,.2); }
 
-  /* Grace banner */
-  .grace-banner { animation: slideDown .3s ease; }
-
   /* Players popup list items */
   .pred-modal div[style*="border-bottom"] { transition: background .1s; }
   .pred-modal div[style*="border-bottom"]:hover { background: var(--surface2); }
@@ -716,7 +713,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.1</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -961,7 +958,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="page-header">
         <div class="page-title">Predictions</div>
       </div>
-      <div id="grace-banner-wrap"></div>
       <div id="pay-choice-card" style="display:none;"></div>
       <div class="predict-extra-card" id="tiebreak-section">
         <div class="predict-extra-title">🏆 Tie-Break — top scorer</div>
@@ -1043,7 +1039,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <p style="font-size:.78rem;color:var(--text-muted);">Manage competition participants.</p>
           <button class="sync-refresh" onclick="loadPlayersPanel()">↻ Refresh</button>
         </div>
-        <div id="admin-grace-requests"></div>
         <div id="admin-players-list"><div class="loading">Loading…</div></div>
       </div>
       <div id="admin-panel-fixtures" class="admin-panel">
@@ -2438,20 +2433,13 @@ async function registerPlayer(){
     const created = await sb('players?select=*',{method:'POST',prefer:'return=representation',headers:{'Prefer':'return=representation'},body:{
       group_id:groupId, name, pin
     }});
-    const needsGrace = isTiebreakDeadlinePassed();
-    currentPlayer = {id:created[0].id,name:created[0].name,group_id:created[0].group_id,graceRequested:false,gracePending:needsGrace};
+    currentPlayer = {id:created[0].id,name:created[0].name,group_id:created[0].group_id};
     isAdmin = false;
     saveSession();
     saveLastLogin(currentGroup.key, name);
     hideFlow('join');
     enterApp();
-
-    if(needsGrace){
-      flash('Welcome '+name+'! The tie-break deadline has passed — your request for a grace period has been sent to the admin.','success');
-      try{ await sb('grace_requests',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:created[0].id,player_name:name,status:'pending'}}); }catch(e){}
-    } else {
-      flash('Welcome, '+name+'!','success');
-    }
+    flash('Welcome, '+name+'!','success');
   } catch(e){showErr(errEl,'Error: '+e.message);}
 }
 
@@ -2873,21 +2861,6 @@ async function loadPredictions(){
       else lockTiebreak();
       _tiebreakDone = true;
     }
-    // Grace period banner
-    const graceBanner = document.getElementById('grace-banner-wrap');
-    if(graceBanner){
-      if(currentPlayer&&currentPlayer.gracePending){
-        graceBanner.innerHTML='<div class="grace-banner">⏳ <strong>Grace Period Requested</strong> — Your request to submit a tie-break after the deadline has been sent to the admin. You will be notified once approved.</div>';
-      } else if(currentPlayer&&currentPlayer.graceApproved){
-        graceBanner.innerHTML='<div class="grace-banner" style="border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);">✅ <strong>Grace Period Approved</strong> — You can submit your tie-break prediction.</div>';
-        // Un-lock tiebreak
-        document.getElementById('tiebreak-scorer').disabled=false;
-        document.getElementById('tiebreak-goals').disabled=false;
-        document.getElementById('tiebreak-save-wrap').style.display='block';
-        document.getElementById('tiebreak-locked-badge').style.display='none';
-        document.getElementById('tiebreak-locked-msg').style.display='none';
-      } else { graceBanner.innerHTML=''; }
-    }
     renderFixtures(list,false);
     if(compactMode) list.classList.add('compact');
     startMatchCountdowns();
@@ -2900,8 +2873,8 @@ async function loadPredictions(){
     renderPayChoiceCard();
     loadPredictVotes();
 
-    // Apply group default for extras visibility
-    const shouldShow = currentGroup && currentGroup.predict_extras_shown === true;
+    // Apply group default for extras visibility; never auto-hide if player hasn't set tiebreak
+    const shouldShow = (currentGroup && currentGroup.predict_extras_shown === true) || !_tiebreakDone;
     if(_extrasHidden === shouldShow) toggleExtras();
 
   }catch(e){list.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
@@ -4917,8 +4890,6 @@ async function loadPlayersPanel(){
   if(!currentGroup)return;
   const el=document.getElementById('admin-players-list');
   el.innerHTML='<div class="loading">Loading…</div>';
-  // Load grace requests
-  loadGraceRequests();
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin`),
@@ -5012,44 +4983,6 @@ async function confirmPinReset(playerId, name){
 }
 
 
-async function loadGraceRequests(){
-  const el = document.getElementById('admin-grace-requests');
-  if(!el||!currentGroup) return;
-  try{
-    const reqs = await sb('grace_requests?group_id=eq.'+currentGroup.id+'&status=eq.pending&select=id,player_name,player_id');
-    if(!reqs||!reqs.length){ el.innerHTML=''; return; }
-    let html = '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;">';
-    html += '<div style="font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;">⏳ Grace Period Requests</div>';
-    reqs.forEach(r=>{
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid rgba(245,158,11,.1);">';
-      html += '<span style="font-size:.85rem;font-weight:600;">'+r.player_name+'</span>';
-      html += '<div style="display:flex;gap:.5rem;">';
-      html += '<button class="view-preds-btn" style="border-color:rgba(16,185,129,.4);color:var(--green);" onclick="approveGrace(this)" data-id="'+r.id+'" data-pid="'+r.player_id+'" data-name="'+r.player_name+'">✓ Approve</button>';
-      html += '<button class="remove-player-btn" onclick="denyGrace(this)" data-id="'+r.id+'" data-name="'+r.player_name+'">✕ Deny</button>';
-      html += '</div></div>';
-    });
-    html += '</div>';
-    el.innerHTML = html;
-  }catch(e){ el.innerHTML=''; }
-}
-
-async function approveGrace(el){
-  const reqId=el.dataset.id, name=el.dataset.name;
-  try{
-    await sb('grace_requests?id=eq.'+reqId,{method:'PATCH',prefer:'return=minimal',body:{status:'approved'}});
-    flash(name+"'s grace period approved",'success');
-    loadGraceRequests();
-  }catch(e){ flash('Error: '+e.message,'error'); }
-}
-
-async function denyGrace(el){
-  const reqId=el.dataset.id, name=el.dataset.name;
-  try{
-    await sb('grace_requests?id=eq.'+reqId,{method:'PATCH',prefer:'return=minimal',body:{status:'denied'}});
-    flash(name+"'s grace period denied",'success');
-    loadGraceRequests();
-  }catch(e){ flash('Error: '+e.message,'error'); }
-}
 
 
 function renamePlayer(el){ const playerId=el.dataset.id, currentName=el.dataset.name; _doRenamePlayer(playerId,currentName); }
@@ -5974,7 +5907,6 @@ async function godDeleteGroup(groupId, name){
   showConfirm('🗑️','Delete Group','Permanently delete "'+name+'" and ALL its data — players, predictions, results, everything? This cannot be undone.','Delete Everything', async()=>{
     try{
       await Promise.all([
-        sb('grace_requests?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
         sb('results?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
         sb('predictions?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
         sb('tiebreaks?group_id=eq.'+groupId,{method:'DELETE',prefer:'return=minimal'}),
@@ -6018,6 +5950,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.2</div>
 </body>
 </html>
