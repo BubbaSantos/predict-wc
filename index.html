@@ -706,7 +706,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.2</div>
+<div style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1240,6 +1240,14 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             <button id="paidplaces-end-poll-btn" class="view-preds-btn" onclick="endPaidPlacesPoll()">🔒 End Poll</button>
             <button id="paidplaces-reopen-poll-btn" class="view-preds-btn" onclick="reopenPaidPlacesPoll()" style="display:none;">🔓 Reopen Poll</button>
           </div>
+        </div>
+
+        <div class="status-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;">
+            <h3 style="margin:0;">Current Votes</h3>
+            <button class="sync-refresh" onclick="loadPollVoteBreakdown()" style="padding:.3rem .65rem;font-size:.75rem;">↻ Refresh</button>
+          </div>
+          <div id="poll-vote-breakdown"><div class="loading">Loading…</div></div>
         </div>
 
         </div><!-- /ctrl-section-polls -->
@@ -3086,6 +3094,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.15.6',date:'11 Jun 2026',notes:['Admin Polls & Entry tab — Current Votes section shows live vote breakdown for Forfeit and Paid Places polls, with per-option bar, count, and list of who voted for each option']},
   {v:'1.14.1',date:'10 Jun 2026',notes:['Remove wizard from Create Group — use simple modal instead; money mode, forfeit and polls all off by default, turned on in admin settings']},
   {v:'1.13.7',date:'10 Jun 2026',notes:['Fix Create Group — restore landing hide + force wizard style.display=flex (belt-and-suspenders to guarantee wizard shows regardless of CSS class state)']},
   {v:'1.13.6',date:'10 Jun 2026',notes:['Fix blank page when clicking Create Group — force wizard visible with direct style.display (bypasses CSS class system); stop hiding landing behind wizard (redundant since wizard is position:fixed over it)']},
@@ -3485,6 +3494,62 @@ async function savePaidPlacesSettings(){
     updatePaidPlacesLockLabel();
     flash('Paid places vote settings saved!','success');
   }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
+// ── VOTE BREAKDOWN (admin polls tab) ─────────
+async function loadPollVoteBreakdown(){
+  const el=document.getElementById('poll-vote-breakdown');
+  if(!el||!currentGroup) return;
+  el.innerHTML='<div class="loading">Loading…</div>';
+  try{
+    const allIds=[...FORFEIT_IDS,...PAIDPLACES_IDS].join(',');
+    const [votes,players]=await Promise.all([
+      sb(`predictions?group_id=eq.${currentGroup.id}&match_id=in.(${allIds})&select=player_id,match_id`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
+    ]);
+    const nameMap={};
+    (players||[]).forEach(p=>{nameMap[p.id]=p.nickname||p.name;});
+
+    function renderPollBreakdown(pollLabel, opts, ids){
+      const pollVotes=(votes||[]).filter(v=>ids.has(v.match_id));
+      const byOpt={};
+      opts.forEach(o=>{byOpt[o.id]=[];});
+      pollVotes.forEach(v=>{if(byOpt[v.match_id]!==undefined) byOpt[v.match_id].push(nameMap[v.player_id]||'Unknown');});
+      const total=pollVotes.length;
+      const rows=opts.map(o=>{
+        const voters=byOpt[o.id]||[];
+        const pct=total?Math.round(voters.length/total*100):0;
+        return `<div style="margin-bottom:.6rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.2rem;">
+            <div style="font-size:.82rem;font-weight:600;">${o.emoji} ${o.label}</div>
+            <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;margin-left:.5rem;">${voters.length} vote${voters.length!==1?'s':''}</div>
+          </div>
+          <div style="background:var(--border);border-radius:4px;height:5px;margin-bottom:.3rem;overflow:hidden;">
+            <div style="background:var(--group-accent);height:100%;width:${pct}%;border-radius:4px;transition:width .3s;"></div>
+          </div>
+          ${voters.length?`<div style="font-size:.72rem;color:var(--text-muted);">${voters.join(', ')}</div>`:'<div style="font-size:.72rem;color:var(--text-muted);font-style:italic;">No votes yet</div>'}
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:1rem;">
+        <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">${pollLabel} · ${total} vote${total!==1?'s':''} total</div>
+        ${rows}
+      </div>`;
+    }
+
+    const forfeitOpts=getForfeitOptions();
+    const ppOpts=getPaidPlacesOptions();
+    const forfeitEnabled=currentGroup.forfeit_enabled!==false && currentGroup.forfeit_poll_enabled!==false;
+    const ppEnabled=currentGroup.paidplaces_poll_enabled!==false;
+
+    let html='';
+    if(forfeitEnabled) html+=renderPollBreakdown('Forfeit Poll',forfeitOpts,FORFEIT_IDS);
+    else html+=`<div style="font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;padding:.5rem .75rem;background:var(--surface2);border-radius:6px;">Forfeit Poll is disabled</div>`;
+    if(html&&forfeitEnabled&&ppEnabled) html+=`<div style="border-top:1px solid var(--border);margin-bottom:1rem;"></div>`;
+    if(ppEnabled) html+=renderPollBreakdown('Paid Places Vote',ppOpts,PAIDPLACES_IDS);
+    else html+=`<div style="font-size:.8rem;color:var(--text-muted);padding:.5rem .75rem;background:var(--surface2);border-radius:6px;">Paid Places Vote is disabled</div>`;
+
+    el.innerHTML=html||'<div class="empty">No polls active.</div>';
+  }catch(e){el.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
 function renderTicker(){
@@ -4405,7 +4470,7 @@ function switchControlsSubTab(name){
   document.querySelectorAll('.controls-sub-tab').forEach((b,i)=>{
     b.classList.toggle('active', sections[i]===name);
   });
-  if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();}
+  if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
   if(name==='display'){loadLbViewSettings();loadTickerSettings();}
   if(name==='data'){loadTiebreakerSettings();}
 }
@@ -5671,6 +5736,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.5</div>
+<div id="ver-btn" style="position:fixed;bottom:.4rem;right:.6rem;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.6</div>
 </body>
 </html>
