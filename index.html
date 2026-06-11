@@ -763,7 +763,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1069,7 +1069,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="page-header"><div class="page-title">Admin</div></div>
       <div id="admin-unlocked">
       <div class="sync-bar">
-        <span style="font-size:.72rem;color:var(--text-muted);">Run <code style="background:var(--surface2);padding:.1rem .35rem;border-radius:4px;font-size:.7rem;">node sync.js</code> to auto-import results</span>
+        <span style="font-size:.72rem;color:var(--text-muted);">Auto-syncing every 5 min · or enter scores manually below</span>
       </div>
       <div class="admin-tabs">
         <button class="admin-tab active" onclick="switchAdminTab('results')">⚽ Results</button>
@@ -1080,7 +1080,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button id="admin-tab-changelog" class="admin-tab" onclick="switchAdminTab('changelog')" style="display:none;">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
-        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Enter scores manually below, or run <code style="background:var(--surface2);padding:.1rem .3rem;border-radius:4px;">node sync.js</code> in the project folder to import from football-data.org.</p>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Results update automatically within 5 minutes of a match finishing. You can also enter or override scores manually below.</p>
         <div id="admin-fixtures-list"><div class="loading">Loading…</div></div>
       </div>
       <div id="admin-panel-players" class="admin-panel">
@@ -6172,6 +6172,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.7</div>
 </body>
 </html>
