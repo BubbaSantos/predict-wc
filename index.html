@@ -782,7 +782,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.7</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -975,9 +975,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <table style="width:100%;border-collapse:collapse;">
             <thead><tr><th style="font-size:.7rem;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase;padding:.4rem .5rem;text-align:left;border-bottom:1px solid var(--border);">Outcome</th><th style="font-size:.7rem;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase;padding:.4rem .5rem;text-align:left;border-bottom:1px solid var(--border);">Pts</th></tr></thead>
             <tbody>
-              <tr><td style="font-size:.85rem;padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text-dim);">Exact scoreline</td><td style="padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);"><span class="pts-big">5</span></td></tr>
-              <tr><td style="font-size:.85rem;padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text-dim);">Correct result only</td><td style="padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);"><span class="pts-big">3</span></td></tr>
-              <tr><td style="font-size:.85rem;padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text-dim);">Exact score + correct result</td><td style="padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);"><span class="pts-big" style="color:var(--green)">8</span></td></tr>
+              <tr><td style="font-size:.85rem;padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text-dim);">Exact scoreline</td><td style="padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);"><span class="pts-big" style="color:var(--green)">8</span></td></tr>
+              <tr><td style="font-size:.85rem;padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text-dim);">Correct result, wrong score</td><td style="padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);"><span class="pts-big">3</span></td></tr>
               <tr><td style="font-size:.85rem;padding:.5rem;color:var(--text-dim);">Wrong result</td><td style="padding:.5rem;"><span class="pts-big" style="color:var(--text-muted)">0</span></td></tr>
             </tbody>
           </table>
@@ -6199,6 +6198,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.7</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.8</div>
 </body>
 </html>
