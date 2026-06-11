@@ -782,7 +782,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.9</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -889,7 +889,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:.3rem .4rem;border-radius:5px;font-size:.85rem;line-height:1;align-items:center;gap:.25rem;vertical-align:middle;"><span style="vertical-align:middle;">☰</span> <span style="font-size:.75rem;font-weight:600;letter-spacing:.04em;vertical-align:middle;">Menu</span></button>
     <nav id="main-nav">
       <button id="nav-home" class="active" onclick="showView('home')">Home</button>
-      <button id="nav-rules" onclick="showView('rules')">Rules</button>
       <button id="nav-predict" onclick="showView('predict')">Predict</button>
       <button id="nav-leaderboard" onclick="showView('leaderboard')">Leaderboard</button>
       <button id="nav-admin" onclick="showView('admin')" style="display:none;">Admin</button>
@@ -967,47 +966,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     </div>
 
     <!-- RULES -->
-    <div id="view-rules" class="view">
-      <div class="page-header"><div class="page-title">Rules & Scoring</div></div>
-      <div class="rules-grid">
-        <div class="rules-card">
-          <h3>🏆 Points System</h3>
-          <table style="width:100%;border-collapse:collapse;">
-            <thead><tr><th style="font-size:.7rem;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase;padding:.4rem .5rem;text-align:left;border-bottom:1px solid var(--border);">Outcome</th><th style="font-size:.7rem;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase;padding:.4rem .5rem;text-align:left;border-bottom:1px solid var(--border);">Pts</th></tr></thead>
-            <tbody>
-              <tr><td style="font-size:.85rem;padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text-dim);">Exact scoreline</td><td style="padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);"><span class="pts-big" style="color:var(--green)">8</span></td></tr>
-              <tr><td style="font-size:.85rem;padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text-dim);">Correct result, wrong score</td><td style="padding:.5rem;border-bottom:1px solid rgba(30,45,69,.5);"><span class="pts-big">3</span></td></tr>
-              <tr><td style="font-size:.85rem;padding:.5rem;color:var(--text-dim);">Wrong result</td><td style="padding:.5rem;"><span class="pts-big" style="color:var(--text-muted)">0</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="rules-card">
-          <h3>📋 Examples</h3>
-          <ul>
-            <li>Predict <strong>2–1</strong>, result <strong>2–1</strong> → <strong style="color:var(--green)">8 pts</strong></li>
-            <li>Predict <strong>2–0</strong>, result <strong>1–0</strong> → <strong style="color:var(--group-accent)">3 pts</strong></li>
-            <li>Predict <strong>1–0</strong>, result <strong>0–1</strong> → <strong style="color:var(--text-muted)">0 pts</strong></li>
-            <li>Knockouts: <strong>90 mins only</strong></li>
-          </ul>
-        </div>
-      </div>
-      <div class="rules-full">
-        <h3>📝 Predictions</h3>
-        <ul>
-          <li>Submit predictions <strong>before kick-off</strong> — late entries not accepted</li>
-          <li>Predictions can be changed any time <strong>before kick-off</strong></li>
-          <li>Knockout fixtures appear automatically once teams are confirmed</li>
-        </ul>
-      </div>
-      <div class="rules-full">
-        <h3>🏁 Tie-Break</h3>
-        <ul>
-          <li><strong>Tie-break 1:</strong> Most correct results — whoever predicted the correct outcome (win/draw/loss) in the most matches wins</li>
-          <li><strong>Tie-break 2:</strong> Top scorer prediction — whoever predicted the player who scored the most goals in the tournament wins. If neither player predicted the same top scorer, whoever's chosen player scored the most goals overall wins</li>
-        </ul>
-      </div>
-    </div>
-
     <!-- PREDICT -->
     <div id="view-predict" class="view">
       <div class="page-header">
@@ -1069,6 +1027,17 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:1.25rem;">Tap any player to see their predictions.</p>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin-top:1.25rem;">
+        <div style="font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">🏆 Points System</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:.5rem;">
+          <tbody>
+            <tr><td style="font-size:.82rem;padding:.4rem .5rem;border-bottom:1px solid var(--border);color:var(--text-dim);">Exact scoreline</td><td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);text-align:right;"><span class="pts-big" style="color:var(--green);font-size:1rem;">8</span></td></tr>
+            <tr><td style="font-size:.82rem;padding:.4rem .5rem;border-bottom:1px solid var(--border);color:var(--text-dim);">Correct result, wrong score</td><td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);text-align:right;"><span class="pts-big" style="font-size:1rem;">3</span></td></tr>
+            <tr><td style="font-size:.82rem;padding:.4rem .5rem;color:var(--text-dim);">Wrong result</td><td style="padding:.4rem .5rem;text-align:right;"><span class="pts-big" style="color:var(--text-muted);font-size:1rem;">0</span></td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:.75rem;color:var(--text-muted);line-height:1.6;">e.g. Predict <strong style="color:var(--text);">2–1</strong>, result <strong style="color:var(--text);">2–1</strong> → <strong style="color:var(--green);">8 pts</strong> &nbsp;·&nbsp; Predict <strong style="color:var(--text);">2–0</strong>, result <strong style="color:var(--text);">1–0</strong> → <strong style="color:var(--group-accent);">3 pts</strong></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin-top:.75rem;">
         <div style="font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">🏁 Tie-Break</div>
         <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;"><strong>1.</strong> Most correct results — whoever predicted the correct outcome (win/draw/loss) in the most matches wins</div>
         <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;margin-top:.35rem;"><strong>2.</strong> Top scorer prediction — whoever predicted the tournament's top scorer wins. If neither did, whoever's chosen player scored the most goals overall wins</div>
@@ -6203,6 +6172,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.9</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.0</div>
 </body>
 </html>
