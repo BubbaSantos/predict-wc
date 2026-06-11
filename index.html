@@ -254,6 +254,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .colour-swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s;}
 .colour-swatch.selected{border-color:#fff;transform:scale(1.15);}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;}
+.home-card-sort-row{display:flex;align-items:center;gap:.6rem;padding:.4rem .55rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);user-select:none;}
+.home-card-sort-row.dragging{opacity:.35;}
+.home-card-sort-row.drag-over{border-color:var(--group-accent,#818cf8);box-shadow:0 0 0 1px var(--group-accent,#818cf8);}
+.sort-handle{cursor:grab;color:var(--text-muted);font-size:1.05rem;line-height:1;padding:0 .1rem;flex-shrink:0;}
+.sort-handle:active{cursor:grabbing;}
+.sort-label{flex:1;font-size:.85rem;}
 .toggle-label{font-size:.9rem;font-weight:600;}
 .toggle-desc{font-size:.78rem;color:var(--text-muted);margin-top:.2rem;}
 .toggle-switch{position:relative;width:44px;height:24px;cursor:pointer;}
@@ -706,7 +712,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.2</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1281,6 +1287,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             </label>
           </div>
           <button class="sync-refresh" onclick="saveLbViewSettings()">Save Leaderboard Views</button>
+        </div>
+        <div class="status-card">
+          <h3>Home Page Cards</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">Drag to reorder · toggle to show or hide. Forfeit and Paid Places visibility is set in the Polls &amp; Entry tab.</div>
+          <div id="home-cards-sortable" style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.85rem;"></div>
+          <button class="sync-refresh" onclick="saveHomeCardSettings()">Save Home Cards</button>
         </div>
         <div class="status-card">
           <h3>News Ticker</h3>
@@ -3110,7 +3122,34 @@ const PAIDPLACES_OPTIONS = [
 ];
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
+const HOME_CARD_DEFS = [
+  {key:'hero',      id:'group-hero-block',    label:'Group Hero',         toggleId:'home-show-hero-toggle',      flag:'home_show_hero'},
+  {key:'countdown', id:'home-countdown-card', label:'Countdown',          toggleId:'home-show-countdown-toggle', flag:'home_show_countdown'},
+  {key:'next',      id:'home-next-card',       label:'My Next Prediction', toggleId:'home-show-next-toggle',      flag:'home_show_next'},
+  {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
+  {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
+  {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
+  {key:'stats',     id:'home-stats-card',     label:'Match Stats',        toggleId:'home-show-stats-toggle',     flag:'home_show_stats'},
+];
+function getHomeCardOrder(){
+  const stored = currentGroup?.home_card_order;
+  const def = HOME_CARD_DEFS.map(c=>c.key);
+  if(!stored) return def;
+  const arr = typeof stored==='string' ? stored.split(',') : stored;
+  const valid = arr.filter(k=>HOME_CARD_DEFS.some(c=>c.key===k));
+  const missing = def.filter(k=>!valid.includes(k));
+  return [...valid,...missing];
+}
+function applyHomeCardOrder(){
+  const homeView = document.getElementById('view-home');
+  if(!homeView || !currentGroup) return;
+  getHomeCardOrder().forEach(key=>{
+    const def = HOME_CARD_DEFS.find(c=>c.key===key);
+    if(def){ const el=document.getElementById(def.id); if(el) homeView.appendChild(el); }
+  });
+}
 const CHANGELOG = [
+  {v:'1.16.3',date:'11 Jun 2026',notes:['Admin Display tab — Home Page Cards section: drag to reorder cards; toggle to show/hide each card']},
   {v:'1.16.2',date:'11 Jun 2026',notes:['Home page vote cards show full results bar chart with percentages after voting; predict page keeps compact chip']},
   {v:'1.16.1',date:'11 Jun 2026',notes:["Player predictions modal shows their top scorer tiebreak at the top; shows 'not submitted' if they haven't entered one"]},
   {v:'1.16.0',date:'11 Jun 2026',notes:['Vote cards show ↺ Change on home and predict page when votes unlocked; button wraps to next line if label is too long to fit']},
@@ -3442,6 +3481,61 @@ async function saveTickerSettings(){
     saveSession();
     renderTicker();
     flash('Ticker saved!','success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
+function loadHomeCardSettings(){
+  const g = currentGroup || {};
+  const container = document.getElementById('home-cards-sortable');
+  if(!container) return;
+  container.innerHTML = '';
+  getHomeCardOrder().forEach(key=>{
+    const def = HOME_CARD_DEFS.find(c=>c.key===key);
+    if(!def) return;
+    const isOn = def.flag ? g[def.flag] !== false : null;
+    const row = document.createElement('div');
+    row.className = 'home-card-sort-row';
+    row.draggable = true;
+    row.dataset.key = key;
+    row.innerHTML = `<span class="sort-handle" title="Drag to reorder">⠿</span><span class="sort-label">${def.label}</span>`
+      + (def.toggleId
+          ? `<label class="toggle-switch"><input type="checkbox" id="${def.toggleId}"${isOn?' checked':''}><span class="toggle-slider"></span></label>`
+          : `<span style="font-size:.65rem;color:var(--text-muted);">Polls tab</span>`);
+    container.appendChild(row);
+  });
+  initHomeCardSortable();
+}
+function initHomeCardSortable(){
+  const container = document.getElementById('home-cards-sortable');
+  if(!container) return;
+  let dragEl = null;
+  container.querySelectorAll('.home-card-sort-row').forEach(row=>{
+    row.addEventListener('dragstart', e=>{ dragEl=row; row.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+    row.addEventListener('dragend',   ()=>{ dragEl=null; container.querySelectorAll('.home-card-sort-row').forEach(r=>r.classList.remove('dragging','drag-over')); });
+    row.addEventListener('dragover',  e=>{ e.preventDefault(); if(!dragEl||dragEl===row) return;
+      const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+      container.querySelectorAll('.home-card-sort-row').forEach(r=>r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+      container.insertBefore(dragEl, e.clientY < mid ? row : row.nextSibling);
+    });
+    row.addEventListener('dragleave', ()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',      e=>{ e.preventDefault(); row.classList.remove('drag-over'); });
+  });
+}
+async function saveHomeCardSettings(){
+  if(!currentGroup) return;
+  const container = document.getElementById('home-cards-sortable');
+  const order = container
+    ? [...container.querySelectorAll('.home-card-sort-row')].map(r=>r.dataset.key).join(',')
+    : getHomeCardOrder().join(',');
+  const body = {home_card_order: order};
+  HOME_CARD_DEFS.forEach(def=>{ if(def.flag){ const el=document.getElementById(def.toggleId); if(el) body[def.flag]=el.checked; } });
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body});
+    currentGroup={...currentGroup,...body};
+    saveSession();
+    loadHome();
+    flash('Home cards saved!','success');
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
@@ -4014,7 +4108,18 @@ async function loadHome(){
     if(nextEl) nextEl.innerHTML = errHtml;
     if(statsEl) statsEl.innerHTML = errHtml;
   }
+  applyHomeCardOrder();
   startCountdown();
+  // Apply home card visibility toggles (after startCountdown so we can override countdown display)
+  HOME_CARD_DEFS.forEach(def=>{
+    if(!def.flag) return;
+    const el = document.getElementById(def.id);
+    if(!el) return;
+    const show = currentGroup[def.flag] !== false;
+    if(!show) el.style.display = 'none';
+    else if(def.key !== 'countdown') el.style.display = '';
+    // countdown display left to startCountdown() when shown
+  });
 }
 
 // ── PROFILE MENU (robust wiring) ──────────────────────
@@ -4517,7 +4622,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadTickerSettings();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadTickerSettings();loadHomeCardSettings();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -5787,6 +5892,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.3</div>
 </body>
 </html>
