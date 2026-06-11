@@ -257,7 +257,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .home-card-sort-row{display:flex;align-items:center;gap:.6rem;padding:.4rem .55rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);user-select:none;}
 .home-card-sort-row.dragging{opacity:.35;}
 .home-card-sort-row.drag-over{border-color:var(--group-accent,#818cf8);box-shadow:0 0 0 1px var(--group-accent,#818cf8);}
-.sort-handle{cursor:grab;color:var(--text-muted);font-size:1.05rem;line-height:1;padding:0 .1rem;flex-shrink:0;}
+.sort-handle{cursor:grab;color:var(--text-muted);font-size:1.05rem;line-height:1;padding:0 .1rem;flex-shrink:0;touch-action:none;}
 .sort-handle:active{cursor:grabbing;}
 .sort-label{flex:1;font-size:.85rem;}
 .toggle-label{font-size:.9rem;font-weight:600;}
@@ -716,7 +716,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.4</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3162,6 +3162,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.16.5',date:'11 Jun 2026',notes:['Fix home card drag-to-reorder on mobile — replaced HTML5 drag API (desktop-only) with pointer events (touch + mouse)']},
   {v:'1.16.4',date:'11 Jun 2026',notes:['Share card shows total prize pot (💰) when money mode is on — reveals after player data loads']},
   {v:'1.16.3',date:'11 Jun 2026',notes:['Admin Display tab — Home Page Cards section: drag to reorder cards; toggle to show/hide each card']},
   {v:'1.16.2',date:'11 Jun 2026',notes:['Home page vote cards show full results bar chart with percentages after voting; predict page keeps compact chip']},
@@ -3509,7 +3510,6 @@ function loadHomeCardSettings(){
     const isOn = def.flag ? g[def.flag] !== false : null;
     const row = document.createElement('div');
     row.className = 'home-card-sort-row';
-    row.draggable = true;
     row.dataset.key = key;
     row.innerHTML = `<span class="sort-handle" title="Drag to reorder">⠿</span><span class="sort-label">${def.label}</span>`
       + (def.toggleId
@@ -3522,18 +3522,54 @@ function loadHomeCardSettings(){
 function initHomeCardSortable(){
   const container = document.getElementById('home-cards-sortable');
   if(!container) return;
-  let dragEl = null;
-  container.querySelectorAll('.home-card-sort-row').forEach(row=>{
-    row.addEventListener('dragstart', e=>{ dragEl=row; row.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
-    row.addEventListener('dragend',   ()=>{ dragEl=null; container.querySelectorAll('.home-card-sort-row').forEach(r=>r.classList.remove('dragging','drag-over')); });
-    row.addEventListener('dragover',  e=>{ e.preventDefault(); if(!dragEl||dragEl===row) return;
-      const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
-      container.querySelectorAll('.home-card-sort-row').forEach(r=>r.classList.remove('drag-over'));
-      row.classList.add('drag-over');
-      container.insertBefore(dragEl, e.clientY < mid ? row : row.nextSibling);
-    });
-    row.addEventListener('dragleave', ()=>row.classList.remove('drag-over'));
-    row.addEventListener('drop',      e=>{ e.preventDefault(); row.classList.remove('drag-over'); });
+  let dragEl=null, ghost=null, indicator=null, ghostOffY=0;
+
+  container.addEventListener('pointerdown', e=>{
+    const handle = e.target.closest('.sort-handle');
+    if(!handle) return;
+    e.preventDefault();
+    dragEl = handle.closest('.home-card-sort-row');
+    if(!dragEl) return;
+    const rect = dragEl.getBoundingClientRect();
+    ghostOffY = e.clientY - rect.top;
+    dragEl.classList.add('dragging');
+    ghost = document.createElement('div');
+    ghost.className = 'home-card-sort-row';
+    ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${e.clientY-ghostOffY}px;width:${rect.width}px;pointer-events:none;z-index:9999;opacity:.88;box-shadow:0 6px 20px rgba(0,0,0,.3);border-color:var(--group-accent);margin:0;`;
+    ghost.innerHTML = dragEl.innerHTML;
+    document.body.appendChild(ghost);
+    indicator = document.createElement('div');
+    indicator.style.cssText = 'height:3px;background:var(--group-accent);border-radius:2px;margin:.1rem 0;';
+    container.setPointerCapture(e.pointerId);
+  }, {passive:false});
+
+  container.addEventListener('pointermove', e=>{
+    if(!ghost||!dragEl) return;
+    e.preventDefault();
+    ghost.style.top = (e.clientY - ghostOffY) + 'px';
+    if(indicator.parentNode) indicator.remove();
+    const rows = [...container.querySelectorAll('.home-card-sort-row')].filter(r=>r!==dragEl);
+    let placed = false;
+    for(const row of rows){
+      const r = row.getBoundingClientRect();
+      if(e.clientY < r.top + r.height/2){ row.before(indicator); placed=true; break; }
+    }
+    if(!placed) container.appendChild(indicator);
+  }, {passive:false});
+
+  container.addEventListener('pointerup', ()=>{
+    if(!ghost||!dragEl) return;
+    ghost.remove(); ghost=null;
+    dragEl.classList.remove('dragging');
+    if(indicator && indicator.parentNode){ indicator.before(dragEl); indicator.remove(); }
+    indicator=null; dragEl=null;
+  });
+
+  container.addEventListener('pointercancel', ()=>{
+    if(ghost){ghost.remove();ghost=null;}
+    if(indicator&&indicator.parentNode)indicator.remove();
+    indicator=null;
+    if(dragEl){dragEl.classList.remove('dragging');dragEl=null;}
   });
 }
 async function saveHomeCardSettings(){
@@ -5906,6 +5942,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.4</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.5</div>
 </body>
 </html>
