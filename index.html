@@ -706,7 +706,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1253,6 +1253,19 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         </div><!-- /ctrl-section-polls -->
 
         <div id="ctrl-section-display" style="display:none;">
+        <div class="status-card">
+          <h3>Predict Page</h3>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Show Extras by Default</div>
+              <div class="toggle-desc">Tiebreak, vote cards and pay choice shown when players open the predict page</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="extras-default-toggle" onchange="saveExtrasDefault()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
         <div class="status-card">
           <h3>Leaderboard Views</h3>
           <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Choose which filter tabs players can see. At least one must be ticked.</div>
@@ -2851,6 +2864,10 @@ async function loadPredictions(){
     renderPayChoiceCard();
     loadPredictVotes();
 
+    // Apply group default for extras visibility
+    const shouldShow = currentGroup && currentGroup.predict_extras_shown === true;
+    if(_extrasHidden === shouldShow) toggleExtras();
+
   }catch(e){list.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
@@ -3094,6 +3111,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.15.8',date:'11 Jun 2026',notes:['Admin Display tab — toggle to show/hide Extras (tiebreak, vote cards, pay choice) by default on the predict page']},
   {v:'1.15.6',date:'11 Jun 2026',notes:['Admin Polls & Entry tab — Current Votes section shows live vote breakdown for Forfeit and Paid Places polls, with per-option bar, count, and list of who voted for each option']},
   {v:'1.14.1',date:'10 Jun 2026',notes:['Remove wizard from Create Group — use simple modal instead; money mode, forfeit and polls all off by default, turned on in admin settings']},
   {v:'1.13.7',date:'10 Jun 2026',notes:['Fix Create Group — restore landing hide + force wizard style.display=flex (belt-and-suspenders to guarantee wizard shows regardless of CSS class state)']},
@@ -3347,6 +3365,21 @@ function getLbViews(){
   const stored=currentGroup&&currentGroup.lb_views;
   if(stored&&typeof stored==='string') return stored.split(',').map(s=>s.trim()).filter(Boolean);
   return ['all','money','fun'];
+}
+
+function loadExtrasDefault(){
+  const tog = document.getElementById('extras-default-toggle');
+  if(tog) tog.checked = currentGroup && currentGroup.predict_extras_shown === true;
+}
+async function saveExtrasDefault(){
+  if(!currentGroup) return;
+  const shown = document.getElementById('extras-default-toggle')?.checked ?? false;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{predict_extras_shown:shown}});
+    currentGroup={...currentGroup,predict_extras_shown:shown};
+    saveSession();
+    flash('Extras default '+(shown?'on':'off'),'success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
 function loadLbViewSettings(){
@@ -4471,7 +4504,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
-  if(name==='display'){loadLbViewSettings();loadTickerSettings();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadTickerSettings();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -5736,6 +5769,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.15.8</div>
 </body>
 </html>
