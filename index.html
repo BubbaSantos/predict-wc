@@ -779,7 +779,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4248,10 +4248,17 @@ async function loadHome(){
     const myIdx = sorted.findIndex(([name])=>name===myDisplayName);
     const itmName = (currentGroup.itm_override||'').trim() || sorted[0]?.[0];
     const forfeitName = (currentGroup.forfeit_override||'').trim() || (sorted.length>1?sorted[sorted.length-1]?.[0]:null);
+    const miniRanks = [];
+    for(let i=0;i<sorted.length;i++){
+      if(i===0||lbCompare(sorted[i],sorted[i-1])!==0) miniRanks.push(i+1);
+      else miniRanks.push(miniRanks[i-1]);
+    }
+    const miniRankCounts = {};
+    miniRanks.forEach(r=>{miniRankCounts[r]=(miniRankCounts[r]||0)+1;});
 
     // Mini leaderboard HTML
-    const rankClasses = ['mlb-gold','mlb-silver','mlb-bronze'];
-    const medals = ['🥇','🥈','🥉'];
+    const rankMedals = {1:'🥇',2:'🥈',3:'🥉'};
+    const rankCls = {1:'mlb-gold',2:'mlb-silver',3:'mlb-bronze'};
     let lbHtml = '';
     if(!sorted.length){
       lbHtml = '<div style="font-size:.8rem;color:var(--text-muted);">No scores yet.</div>';
@@ -4260,8 +4267,11 @@ async function loadHome(){
         const isYou = name===myDisplayName;
         const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
         const mBadge = mIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':mIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
-        lbHtml += `<div class="mini-lb-row ${rankClasses[i]}">
-          <div class="mini-lb-rank">${medals[i]}</div>
+        const r = miniRanks[i];
+        const medal = rankMedals[r] || (miniRankCounts[r]>1?'='+r:String(r));
+        const cls = rankCls[r] || '';
+        lbHtml += `<div class="mini-lb-row ${cls}">
+          <div class="mini-lb-rank">${medal}</div>
           <div class="mini-lb-name">${name}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}</div>
           <div class="mini-lb-pts">${s.total} pts</div>
         </div>`;
@@ -4271,8 +4281,10 @@ async function loadHome(){
         lbHtml += '<hr class="home-divider">';
         const myIsItm = myName===itmName, myIsForfeit = myName===forfeitName&&sorted.length>1;
         const myBadge = myIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':myIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
+        const myR = miniRanks[myIdx];
+        const myRankDisplay = miniRankCounts[myR]>1?'='+myR:String(myR);
         lbHtml += `<div class="mini-lb-row mlb-you">
-          <div class="mini-lb-rank">${myIdx+1}</div>
+          <div class="mini-lb-rank">${myRankDisplay}</div>
           <div class="mini-lb-name">${myName} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}</div>
           <div class="mini-lb-pts">${myS.total} pts</div>
         </div>`;
@@ -5570,23 +5582,31 @@ function renderLeaderboard(){
 
   const lastIdx = sorted.length - 1;
   const forfeitName = (currentGroup.forfeit_override||'').trim() || sorted[lastIdx]?.[0];
+  const ranks = [];
+  for(let i=0;i<sorted.length;i++){
+    if(i===0||lbCompare(sorted[i],sorted[i-1])!==0) ranks.push(i+1);
+    else ranks.push(ranks[i-1]);
+  }
+  const rankCounts = {};
+  ranks.forEach(r=>{rankCounts[r]=(rankCounts[r]||0)+1;});
   lb.innerHTML = sorted.map(([name,s],i)=>{
     const pid = s.playerId||'';
     const dn = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     const payBadge = _lbPayMap[name]==='money' ? '<span style="font-size:.65rem;margin-left:.3rem;">💸</span>' : (_lbPayMap[name]==='fun' ? '<span style="font-size:.65rem;margin-left:.3rem;">😄</span>' : '');
-    const isItm = i < paidPlaces;
+    const isItm = ranks[i] <= paidPlaces;
     const isForfeit = forfeitEnabled && name===forfeitName && sorted.length>1 && !isItm;
     let prizeText = '';
     if(isItm && pot > 0){
-      const pct = placePercs[i]||0;
+      const pct = placePercs[ranks[i]-1]||0;
       const prize = pot*pct/100;
       if(prize>0) prizeText = ' · £'+prize.toFixed(prize%1===0?0:2);
     }
-    const rowClass = i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row';
+    const rowClass = ranks[i]===1 ? 'lb-row lb-gold' : ranks[i]===2 ? 'lb-row lb-silver' : ranks[i]===3 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row';
     const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
     const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit'+forfeitWinner+'</span>' : '';
+    const rankDisplay = rankCounts[ranks[i]]>1 ? '='+ranks[i] : ''+ranks[i];
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
-      +'<div class="lb-rank">'+(i+1)+'</div>'
+      +'<div class="lb-rank">'+rankDisplay+'</div>'
       +'<div><div class="lb-name">'+name+payBadge+statusBadge+'</div><div class="lb-breakdown">'+s.played+' of '+totalFix+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
       +'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>'
       +'</div>';
@@ -6181,6 +6201,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.4</div>
 </body>
 </html>
