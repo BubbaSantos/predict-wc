@@ -174,6 +174,22 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .home-next-date{font-size:.72rem;color:var(--text-muted);}
 .home-next-pred{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--group-accent);}
 .home-next-nopred{font-size:.75rem;color:var(--text-muted);font-style:italic;}
+.hmc-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.55rem;}
+.hmc-label.live{color:#ef4444;}
+.hmc-sep{border:none;border-top:1px solid var(--border);margin:.85rem 0;}
+.hmc-teams{display:flex;align-items:center;gap:.5rem;}
+.hmc-team{display:flex;flex-direction:column;align-items:center;gap:.18rem;flex:1;min-width:0;}
+.hmc-flag{font-size:1.75rem;line-height:1;}
+.hmc-tname{font-size:.7rem;font-weight:600;text-align:center;color:var(--text);}
+.hmc-score{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:900;color:var(--text);text-align:center;flex-shrink:0;min-width:3.5rem;}
+.hmc-score.live{color:#ef4444;}
+.hmc-score.vs{font-size:1rem;font-weight:700;color:var(--text-muted);}
+.hmc-meta{font-size:.68rem;color:var(--text-muted);text-align:center;margin-top:.35rem;}
+.hmc-pred{font-size:.7rem;font-weight:600;color:var(--group-accent);text-align:center;margin-top:.3rem;}
+.hmc-cd{display:flex;justify-content:center;gap:.65rem;margin-top:.65rem;}
+.hmc-cd-unit{text-align:center;}
+.hmc-cd-num{font-size:1.4rem;font-weight:900;font-family:'DM Mono',monospace;color:#ef4444;line-height:1;}
+.hmc-cd-lbl{font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-top:.1rem;}
 .match-stat-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid rgba(30,45,69,.5);font-size:.78rem;}
 .match-stat-row:last-child{border-bottom:none;}
 .match-stat-teams{color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -763,7 +779,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.7</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -913,18 +929,11 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         </div>
       </div>
 
-      <!-- Countdown -->
-      <div id="home-countdown-card" style="display:none;text-align:center;padding:1.25rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:1.25rem;">
-        <div id="home-countdown-label" style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;"></div>
-        <div id="home-countdown" style="display:flex;justify-content:center;gap:1rem;"></div>
-        <div id="home-countdown-sub" style="font-size:.65rem;color:var(--text-muted);margin-top:.6rem;"></div>
-      </div>
-
-      <!-- Next Upcoming Game -->
+      <!-- Match Card: last result + next game + countdown -->
       <div class="home-card" id="home-next-card">
-        <div class="home-card-title">My Next Prediction</div>
-        <div id="home-next-game"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
-        <div class="home-cta" style="margin-top:.75rem;">
+        <div id="hmc-body"></div>
+        <div id="hmc-progress" style="font-size:.7rem;color:var(--text-muted);margin-top:.65rem;text-align:center;"></div>
+        <div class="home-cta" style="margin-top:.7rem;">
           <button id="home-predict-btn" class="home-cta-btn primary" onclick="showView('predict')">All Predictions</button>
         </div>
       </div>
@@ -1855,6 +1864,9 @@ let results        = {};
 let knockoutFixtures = [];
 let autoSyncInterval = null;
 let compactMode    = false;
+let _lastResultHtml = '';
+let _nextGameStaticHtml = '';
+let _nextUpcoming = null;
 
 // ── SUPABASE ─────────────────────────────
 async function sb(path, opts={}){
@@ -2545,74 +2557,53 @@ function enterApp(){
   startHeartbeat();
 }
 
+function renderMatchCardBody(){
+  const el = document.getElementById('hmc-body');
+  if(!el) return;
+  const now = Date.now();
+  const LIVE_WIN = 130*60*1000;
+  const fixtures = allFixtures();
+  const liveGames = fixtures.filter(f=>{
+    const ko = getMatchKickoff(f);
+    return ko && now >= ko.getTime() && now < ko.getTime()+LIVE_WIN;
+  });
+  let html = '';
+  if(liveGames.length){
+    html += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
+    liveGames.forEach(f=>{
+      const r = results[f.id];
+      const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
+      const p = predictions[f.id];
+      const hasPred = p&&p.home!==''&&p.home!==null;
+      html += `<div class="hmc-teams">
+        <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
+        <div class="hmc-score live">${score}</div>
+        <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
+      </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}`;
+    });
+  } else if(_lastResultHtml){
+    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml;
+  }
+  if(_nextUpcoming){
+    const diff = _nextUpcoming.ko.getTime()-now;
+    if(diff>0){
+      if(html) html += '<hr class="hmc-sep">';
+      html += `<div class="hmc-label">Next Up</div>`+_nextGameStaticHtml;
+      const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+      const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
+      html += `<div class="hmc-cd">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;
+    }
+  } else if(!html){
+    html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
+  }
+  el.innerHTML = html;
+}
+
 let _countdownInterval = null;
 function startCountdown(){
   clearInterval(_countdownInterval);
-  const card  = document.getElementById('home-countdown-card');
-  const label = document.getElementById('home-countdown-label');
-  const el    = document.getElementById('home-countdown');
-  const sub   = document.getElementById('home-countdown-sub');
-  if(!card || !el) return;
-
-  const unit = (n,l) => `<div style="min-width:3rem;"><div style="font-size:2rem;font-weight:900;color:#ef4444;font-family:'DM Mono',monospace;line-height:1;">${String(n).padStart(2,'0')}</div><div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-top:.15rem;">${l}</div></div>`;
-
-  function tick(){
-    const now = Date.now();
-    const fixtures = allFixtures();
-    const LIVE_WINDOW = 130 * 60 * 1000; // 130 min live window
-
-    // Games currently live
-    const live = fixtures.filter(f=>{
-      const ko = getMatchKickoff(f);
-      return ko && now >= ko.getTime() && now < ko.getTime() + LIVE_WINDOW;
-    });
-
-    if(live.length){
-      card.style.display='block';
-      if(label) label.innerHTML='<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;vertical-align:middle;margin-right:.35rem;"></span>Live Now';
-      if(label) label.style.color='#ef4444';
-      el.innerHTML = live.map(f=>{
-        const r = results[f.id];
-        const hasScore = r && r.home !== null && r.away !== null;
-        const scoreDisp = hasScore ? `${r.home}–${r.away}` : '0–0';
-        const p = predictions[f.id];
-        const hasPred = p && p.home !== '' && p.home !== null && p.away !== '' && p.away !== null;
-        return `<div style="text-align:center;">
-          <div style="font-size:.88rem;font-weight:700;color:var(--text);">${f.hf} ${f.home}&nbsp;<span style="font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:900;color:#ef4444;">${scoreDisp}</span>&nbsp;${f.away} ${f.af}</div>
-          ${hasPred?`<div style="font-size:.62rem;color:var(--text-muted);margin-top:.2rem;">You predicted ${p.home}–${p.away}</div>`:''}
-        </div>`;
-      }).join('');
-      el.style.flexDirection='column';
-      el.style.gap='.5rem';
-      if(sub) sub.textContent='';
-      return;
-    }
-
-    // Reset flex direction for countdown mode
-    el.style.flexDirection='row';
-    el.style.gap='1rem';
-
-    // Next upcoming game
-    const upcoming = fixtures
-      .map(f=>({f, ko:getMatchKickoff(f)}))
-      .filter(({ko})=>ko && ko.getTime() > now)
-      .sort((a,b)=>a.ko-b.ko)[0];
-
-    if(!upcoming){ card.style.display='none'; clearInterval(_countdownInterval); return; }
-
-    const diff = upcoming.ko.getTime() - now;
-    card.style.display='block';
-    if(label){ label.textContent = upcoming.ko.getTime() === FIRST_MATCH_UTC.getTime() ? 'Tournament kicks off in' : 'Next game in'; label.style.color=''; }
-    const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
-    el.innerHTML = unit(d,'days')+unit(h,'hrs')+unit(m,'min')+unit(s,'sec');
-    const f=upcoming.f;
-    const koDate = upcoming.ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-    const koTime = upcoming.ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    if(sub) sub.textContent=`${f.hf} ${f.home} vs ${f.away} ${f.af} · ${koDate}, ${koTime}`;
-  }
-
-  tick();
-  _countdownInterval = setInterval(tick, 1000);
+  renderMatchCardBody();
+  _countdownInterval = setInterval(renderMatchCardBody,1000);
 }
 
 let _heartbeatInterval = null;
@@ -3295,8 +3286,7 @@ const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const HOME_CARD_DEFS = [
   {key:'hero',      id:'group-hero-block',    label:'Group Hero',         toggleId:'home-show-hero-toggle',      flag:'home_show_hero'},
-  {key:'countdown', id:'home-countdown-card', label:'Countdown',          toggleId:'home-show-countdown-toggle', flag:'home_show_countdown'},
-  {key:'next',      id:'home-next-card',       label:'My Next Prediction', toggleId:'home-show-next-toggle',      flag:'home_show_next'},
+  {key:'next',      id:'home-next-card',       label:'Match Card',         toggleId:'home-show-next-toggle',      flag:'home_show_next'},
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
@@ -4296,55 +4286,66 @@ async function loadHome(){
     }
     if(lbEl) lbEl.innerHTML = lbHtml;
 
-    // Next upcoming game
+    // Build next game + last result data for merged match card
     const now = new Date();
     const myPredMap = {};
     gamePreds.forEach(p=>{ if(p.player_id===currentPlayer?.id) myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
 
-    const upcoming = allFixtures()
-      .filter(f=>!rm[f.id])
-      .map(f=>({f, ko:getMatchKickoff(f)}))
-      .filter(({ko})=>ko && ko>now)
-      .sort((a,b)=>a.ko-b.ko);
-
     const totalFixtures = allFixtures().length;
     const myPredCount = Object.keys(myPredMap).length;
-    const progressHtml = `<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.75rem;">You've predicted <strong style="color:var(--text-dim);">${myPredCount}</strong> of <strong style="color:var(--text-dim);">${totalFixtures}</strong> games</div>`;
 
-    let nextHtml = '';
-    if(!upcoming.length){
-      nextHtml = progressHtml + '<div style="font-size:.82rem;color:var(--text-muted);">No upcoming fixtures.</div>';
-    } else {
-      const {f, ko} = upcoming[0];
-      const pred = myPredMap[f.id];
-      const dateStr = ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-      const timeStr = ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      const predHtml = pred
-        ? `<div class="home-next-pred">You predicted ${pred.h}–${pred.a}</div>`
-        : `<div class="home-next-nopred">Not predicted yet</div>`;
-      nextHtml = progressHtml + `<div class="home-next-match">
-        <div>
-          <div class="home-next-teams">${f.hf} ${f.home} <span style="color:var(--text-muted);">v</span> ${f.away} ${f.af}</div>
-          <div class="home-next-date">${dateStr} · ${timeStr} · ${f.venue||''}</div>
-        </div>
-        ${predHtml}
-      </div>`;
-    }
-    if(nextEl) nextEl.innerHTML = nextHtml;
-
-    // Start Here button for new players
-    const predictBtn = document.getElementById('home-predict-btn');
-    if(predictBtn){
-      if(myPredCount === 0){
-        predictBtn.textContent = '⚽ Start Here';
-        predictBtn.classList.add('start-here');
-        predictBtn.classList.remove('primary');
-      } else {
-        predictBtn.textContent = 'All Predictions';
-        predictBtn.classList.remove('start-here');
-        predictBtn.classList.add('primary');
+    // Last completed match
+    const lastCompleted = allFixtures()
+      .filter(f=>rm[f.id]&&rm[f.id].home_score!==null&&rm[f.id].home_score!==undefined)
+      .map(f=>({f,ko:getMatchKickoff(f)}))
+      .filter(({ko})=>ko)
+      .sort((a,b)=>b.ko-a.ko)[0];
+    if(lastCompleted){
+      const {f}=lastCompleted, r=rm[f.id], pred=myPredMap[f.id];
+      let predHtml='';
+      if(pred){
+        const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
+        const ptsLabel=pts===8?'+8 ⭐':pts===5?'+5 pts':pts===3?'+3 pts':'0 pts';
+        predHtml=`<div class="hmc-pred">You predicted ${pred.h}–${pred.a} · ${ptsLabel}</div>`;
       }
+      _lastResultHtml=`<div class="hmc-teams">
+        <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
+        <div class="hmc-score">${r.home_score}–${r.away_score}</div>
+        <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
+      </div>${predHtml}`;
+    } else { _lastResultHtml=''; }
+
+    // Next upcoming match
+    _nextUpcoming = allFixtures()
+      .filter(f=>!rm[f.id])
+      .map(f=>({f,ko:getMatchKickoff(f)}))
+      .filter(({ko})=>ko&&ko>now)
+      .sort((a,b)=>a.ko-b.ko)[0]||null;
+    if(_nextUpcoming){
+      const {f,ko}=_nextUpcoming, pred=myPredMap[f.id];
+      const dateStr=ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/London'});
+      const timeStr=ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+      const predHtml=pred
+        ?`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div>`
+        :`<div class="hmc-meta" style="font-style:italic;">Not predicted yet — <span style="cursor:pointer;text-decoration:underline;color:var(--group-accent);" onclick="showView('predict')">predict now</span></div>`;
+      _nextGameStaticHtml=`<div class="hmc-teams">
+        <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
+        <div class="hmc-score vs">vs</div>
+        <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
+      </div>
+      <div class="hmc-meta">${dateStr} · ${timeStr}${f.venue?' · '+f.venue:''}</div>
+      ${predHtml}`;
+    } else { _nextGameStaticHtml=''; }
+
+    // Progress + predict button
+    const progEl=document.getElementById('hmc-progress');
+    if(progEl) progEl.textContent=`${myPredCount} of ${totalFixtures} games predicted`;
+    const predictBtn=document.getElementById('home-predict-btn');
+    if(predictBtn){
+      if(myPredCount===0){predictBtn.textContent='⚽ Start Here';predictBtn.classList.add('start-here');predictBtn.classList.remove('primary');}
+      else{predictBtn.textContent='All Predictions';predictBtn.classList.remove('start-here');predictBtn.classList.add('primary');}
     }
+    renderMatchCardBody();
 
     // Paid places vote section
     const ppPollEnabled = currentGroup.paidplaces_poll_enabled !== false;
@@ -6172,6 +6173,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.7</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.8</div>
 </body>
 </html>
