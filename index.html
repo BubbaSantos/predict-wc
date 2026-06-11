@@ -716,7 +716,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.0</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2933,14 +2933,14 @@ function renderPredictCard(f,pred,res){
   const hasResult=(res&&res.home!==null&&res.away!==null)||kicked;
   const isFilled=pred.home!==''&&pred.away!=='';
   let ptsBadge='';
-  if(hasResult&&isFilled){
+  if(hasResult&&isFilled&&res){
     const pts=calcPoints(+pred.home,+pred.away,res.home,res.away);
     if(pts===8)ptsBadge=`<span class="pts-badge green">+8 ⭐</span>`;
     else if(pts===5)ptsBadge=`<span class="pts-badge green">+5</span>`;
     else if(pts===3)ptsBadge=`<span class="pts-badge">+3</span>`;
     else ptsBadge=`<span class="pts-badge" style="opacity:.4">0</span>`;
   }
-  const resStr=hasResult?`<span class="result-badge">${res.home}–${res.away}</span>`:'';
+  const resStr=(res&&res.home!==null&&res.away!==null)?`<span class="result-badge">${res.home}–${res.away}</span>`:'';
   const grpLabel=f.isKnockout?(f.group||'KO'):`Grp ${f.group}`;
   const metaStr=(()=>{
     if(f.isKnockout) return koKickoff(f);
@@ -3174,6 +3174,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.17.1',date:'11 Jun 2026',notes:['Fix predict page crash when match has kicked off but result not yet entered — res.home guard on pts badge and result badge']},
   {v:'1.17.0',date:'11 Jun 2026',notes:['Admin toggle: require top scorer before predictions & votes — players who haven\'t picked see a prompt; doesn\'t affect those who already have']},
   {v:'1.16.5',date:'11 Jun 2026',notes:['Fix home card drag-to-reorder on mobile — replaced HTML5 drag API (desktop-only) with pointer events (touch + mouse)']},
   {v:'1.16.4',date:'11 Jun 2026',notes:['Share card shows total prize pot (💰) when money mode is on — reveals after player data loads']},
@@ -6017,6 +6018,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.1</div>
 </body>
 </html>
