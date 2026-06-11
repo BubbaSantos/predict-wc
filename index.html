@@ -779,7 +779,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.0</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2584,10 +2584,9 @@ function renderMatchCardBody(){
     const diff = _nextUpcoming.ko.getTime()-now;
     if(diff>0){
       if(html) html += '<hr class="hmc-sep">';
-      html += `<div class="hmc-label">Next Up</div>`+_nextGameStaticHtml;
       const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
       const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
-      html += `<div class="hmc-cd">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;
+      html += `<div class="hmc-label">Next Up</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_nextGameStaticHtml;
     }
   } else if(!html){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -4300,10 +4299,10 @@ async function loadHome(){
       let predHtml='';
       if(pred){
         const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
-        const pts8=pts===8, pts5=pts>=5, pts3=pts>=3;
         const ptsNum=pts===8?8:pts===5?5:pts===3?3:0;
         const ptsStar=pts===8?' ⭐':'';
-        predHtml=`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received ${ptsNum}${ptsStar}</div>`;
+        const ptsColor=ptsNum===0?'#ef4444':ptsNum===3?'#f59e0b':'#22c55e';
+        predHtml=`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta" style="color:${ptsColor};font-weight:700;">Points received ${ptsNum}${ptsStar}</div>`;
       }
       _lastResultHtml=`<div class="hmc-teams">
         <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
@@ -6182,6 +6181,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.19.1</div>
 </body>
 </html>
