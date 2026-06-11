@@ -763,7 +763,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.5</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1069,8 +1069,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="page-header"><div class="page-title">Admin</div></div>
       <div id="admin-unlocked">
       <div class="sync-bar">
-        <span><span class="sync-dot" id="sync-dot"></span><span id="sync-status-text">Ready</span></span>
-        <button class="sync-refresh" onclick="adminFetchResults()">↻ Fetch Results Now</button>
+        <span style="font-size:.72rem;color:var(--text-muted);">Run <code style="background:var(--surface2);padding:.1rem .35rem;border-radius:4px;font-size:.7rem;">node sync.js</code> to auto-import results</span>
       </div>
       <div class="admin-tabs">
         <button class="admin-tab active" onclick="switchAdminTab('results')">⚽ Results</button>
@@ -1081,7 +1080,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button id="admin-tab-changelog" class="admin-tab" onclick="switchAdminTab('changelog')" style="display:none;">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
-        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Results sync from football-data.org every 5 minutes. Enter or override scores manually below.</p>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Enter scores manually below, or run <code style="background:var(--surface2);padding:.1rem .3rem;border-radius:4px;">node sync.js</code> in the project folder to import from football-data.org.</p>
         <div id="admin-fixtures-list"><div class="loading">Loading…</div></div>
       </div>
       <div id="admin-panel-players" class="admin-panel">
@@ -2682,7 +2681,7 @@ function showView(name){ closeMenu();
   if(name==='leaderboard') loadLeaderboard();
   if(name==='admin'){
     if(!isAdmin){ showView('home'); flash('Triple-click the version number to access admin','error'); return; }
-    loadAdminFixtures(); startAutoSync();
+    loadAdminFixtures();
   }
 }
 
@@ -4865,12 +4864,10 @@ function toggleCompact(){
 }
 
 // ── FOOTBALL-DATA.ORG ─────────────────────
-// Proxied through Supabase Edge Function (fdproxy) to avoid CORS restriction.
-// football-data.org only allows CORS from localhost; direct browser calls are blocked.
+// Note: football-data.org blocks CORS from browsers — direct fetch will fail.
+// Use `node sync.js` from the project folder to sync results server-side instead.
 async function fdFetch(path){
-  const r=await fetch(`${SUPABASE_URL}/functions/v1/fdproxy${path}`,{
-    headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
-  });
+  const r=await fetch(FD_BASE+path,{headers:{'X-Auth-Token':FDORG_KEY}});
   if(!r.ok)throw new Error('FD '+r.status);
   return r.json();
 }
@@ -4930,7 +4927,6 @@ function checkAdminPass(){
     document.getElementById('admin-gate').style.display='none';
     document.getElementById('admin-unlocked').style.display='block';
     loadAdminFixtures();
-    startAutoSync();
   } else {
     flash('Wrong password','error');
     document.getElementById('admin-pass-input').value='';
@@ -6176,6 +6172,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.6</div>
 </body>
 </html>
