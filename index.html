@@ -92,8 +92,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact-toggle{font-family:'DM Mono',monospace;background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.75rem;font-weight:600;padding:.3rem .65rem;border-radius:5px;cursor:pointer;transition:all .15s;}
 .compact-toggle:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .matchday-group{margin-bottom:2.5rem;}
-.matchday-label{font-size:.65rem;letter-spacing:.15em;color:var(--text-muted);text-transform:uppercase;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);}
-.match-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;margin-bottom:.5rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.75rem;transition:border-color .15s;}
+.matchday-label{font-size:1.2rem;font-weight:800;color:var(--text);margin:1.25rem 0 .6rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.45rem;}
+.match-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.9rem 1rem;margin-bottom:.65rem;transition:border-color .15s;}
 .match-card:hover{border-color:rgba(245,158,11,.2);}
 .match-card.locked{opacity:.65;} .match-card.saved{border-color:rgba(16,185,129,.25);}
 #fixtures-list.hide-predicted .match-card[data-predicted="true"]{display:none;}
@@ -119,6 +119,31 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
 .match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
 .match-card.is-updating{border-color:rgba(245,158,11,.35) !important;}
+/* ── New predict card layout ──────────────────────── */
+.today-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;}
+.matchday-label.dim{color:var(--text-muted);font-size:1.05rem;}
+.mc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;}
+.mc-ko{font-size:.68rem;font-weight:700;letter-spacing:.05em;color:var(--text-muted);text-transform:uppercase;}
+.mc-header-right{display:flex;align-items:center;gap:.4rem;}
+.mc-body{display:flex;align-items:center;gap:.1rem;}
+.mc-team{display:flex;flex-direction:column;align-items:center;gap:.3rem;flex:1;min-width:0;padding:0 .25rem;}
+.mc-flag{font-size:2.5rem;line-height:1.1;}
+.mc-name{font-size:.74rem;font-weight:600;text-align:center;color:var(--text);line-height:1.3;}
+.mc-center{display:flex;flex-direction:column;align-items:center;gap:.28rem;flex-shrink:0;}
+.mc-adj-row{display:flex;gap:.45rem;}
+.mc-adj{width:2.6rem;height:2.2rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:1.15rem;font-weight:700;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;transition:background .1s,transform .1s;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+.mc-adj:active{background:var(--border);transform:scale(.92);}
+.mc-score-row{display:flex;align-items:center;gap:.4rem;}
+.mc-sinput{width:2.8rem;height:2.8rem;text-align:center;font-size:1.45rem;font-weight:800;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;outline:none;-moz-appearance:textfield;transition:border-color .15s;}
+.mc-sinput::-webkit-outer-spin-button,.mc-sinput::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.mc-sinput:focus{border-color:var(--group-accent);}
+.mc-sinput.filled{color:var(--group-accent);}
+.mc-check{width:1.6rem;height:1.6rem;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--text-muted);flex-shrink:0;}
+.mc-check.done{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.35);color:var(--green);}
+.mc-locked-pred{display:flex;align-items:center;gap:.45rem;}
+.mc-lscore{font-size:1.65rem;font-weight:800;font-family:'DM Mono',monospace;color:var(--text-muted);min-width:1.8rem;text-align:center;}
+.mc-lsep{font-size:1rem;color:var(--border);}
+.mc-result-row{display:flex;flex-direction:column;align-items:center;gap:.2rem;margin-top:.2rem;}
 .save-all-wrap{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 40%);padding:2rem 0 1rem;text-align:center;}
 .btn-save-all{background:var(--green);color:#000;border:none;font-size:.9rem;font-weight:700;padding:.75rem 2rem;border-radius:8px;cursor:pointer;letter-spacing:.04em;transition:all .15s;}
 .btn-save-all:hover{background:#34d399;transform:translateY(-1px);}
@@ -717,7 +742,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2906,20 +2931,54 @@ async function loadPredictions(){
   }catch(e){list.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
+function getMatchDateKey(f){
+  const ko = getMatchKickoff(f);
+  if(!ko) return 'zz-tbd';
+  return ko.toLocaleDateString('en-CA',{timeZone:'Europe/London'}); // YYYY-MM-DD for sorting
+}
+function getMatchDateLabel(f){
+  const ko = getMatchKickoff(f);
+  if(!ko) return 'TBD';
+  const nowStr = new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+  const foStr  = ko.toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+  const [ny,nm,nd] = nowStr.split('-').map(Number);
+  const [fy,fm,fd] = foStr.split('-').map(Number);
+  const diff = Math.round((new Date(fy,fm-1,fd) - new Date(ny,nm-1,nd)) / 86400000);
+  if(diff === 0) return 'Today';
+  if(diff === 1) return 'Tomorrow';
+  return ko.toLocaleDateString('en-GB',{timeZone:'Europe/London',weekday:'long',day:'numeric',month:'long'});
+}
+
 function renderFixtures(container,forAdmin=false){
-  const grouped={};
+  const grouped={}, keyMap={};
   allFixtures().forEach(f=>{
-    const key=f.isKnockout?(f.group||'Knockout'):`Matchday ${f.matchday}`;
-    if(!grouped[key]) grouped[key]=[];
+    let key, label;
+    if(forAdmin){
+      key = f.isKnockout?(f.group||'Knockout'):`Matchday ${f.matchday}`;
+      label = key;
+    } else {
+      key = getMatchDateKey(f);
+      label = getMatchDateLabel(f);
+    }
+    if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
     grouped[key].push(f);
   });
-  const koOrder=['Round of 32','Round of 16','Quarter-Final','Semi-Final','3rd Place Play-off','Final'];
-  const gKeys=Object.keys(grouped).filter(k=>k.startsWith('Matchday')).sort();
-  const kKeys=Object.keys(grouped).filter(k=>!k.startsWith('Matchday')).sort((a,b)=>koOrder.indexOf(a)-koOrder.indexOf(b));
+  let keys;
+  if(forAdmin){
+    const koOrder=['Round of 32','Round of 16','Quarter-Final','Semi-Final','3rd Place Play-off','Final'];
+    const gKeys=Object.keys(grouped).filter(k=>k.startsWith('Matchday')).sort();
+    const kKeys=Object.keys(grouped).filter(k=>!k.startsWith('Matchday')).sort((a,b)=>koOrder.indexOf(a)-koOrder.indexOf(b));
+    keys=[...gKeys,...kKeys];
+  } else {
+    keys=Object.keys(grouped).sort();
+  }
   let html='';
-  [...gKeys,...kKeys].forEach(day=>{
-    html+=`<div class="matchday-group"><div class="matchday-label">${day}</div>`;
-    grouped[day].forEach(f=>{
+  keys.forEach(key=>{
+    const label=keyMap[key];
+    const isToday=label==='Today';
+    const isFuture=label!=='Today'&&label!=='Tomorrow'&&label!=='TBD';
+    html+=`<div class="matchday-group"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${label}</div>`;
+    grouped[key].forEach(f=>{
       html+=forAdmin?renderAdminCard(f,results[f.id]):renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
     });
     html+=`</div>`;
@@ -2927,67 +2986,125 @@ function renderFixtures(container,forAdmin=false){
   container.innerHTML=html||'<div class="empty">No fixtures yet.</div>';
 }
 
+
+function adjScore(inputId, delta){
+  const input = document.getElementById(inputId);
+  if(!input||input.disabled) return;
+  if(tbGate(input)) return;
+  const cur = input.value==='' ? 0 : Math.max(0,parseInt(input.value)||0);
+  input.value = Math.max(0, cur+delta);
+  input.dispatchEvent(new Event('input'));
+}
+
 function renderPredictCard(f,pred,res){
   const kicked = isMatchLocked(f);
-  const hasResult=(res&&res.home!==null&&res.away!==null)||kicked;
-  const isFilled=pred.home!==''&&pred.away!=='';
+  const isFilled = pred.home!==''&&pred.away!=='';
   const koTime = getMatchKickoff(f);
   const koMs = koTime ? koTime.getTime() : null;
   const now = Date.now();
-  const LIVE_WIN = 130 * 60 * 1000;
-  const isLive = !!(koMs && now >= koMs && now < koMs + LIVE_WIN);
+  const LIVE_WIN = 130*60*1000;
+  const isLive = !!(koMs && now>=koMs && now<koMs+LIVE_WIN);
   const isUpdating = !isLive && kicked && !res;
-  const hasActualScore = res && res.home !== null && res.away !== null;
+  const hasActualScore = res && res.home!==null && res.away!==null;
+
+  const koStr = koTime
+    ? koTime.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'})
+    : (f.isKnockout ? koKickoff(f) : '—');
+
   let ptsBadge='';
   if(hasActualScore&&isFilled){
     const pts=calcPoints(+pred.home,+pred.away,res.home,res.away);
-    if(pts===8)ptsBadge=`<span class="pts-badge green">+8 ⭐</span>`;
-    else if(pts===5)ptsBadge=`<span class="pts-badge green">+5</span>`;
-    else if(pts===3)ptsBadge=`<span class="pts-badge">+3</span>`;
-    else ptsBadge=`<span class="pts-badge" style="opacity:.4">0</span>`;
+    if(pts===8) ptsBadge='<span class="pts-badge green">+8 ⭐</span>';
+    else if(pts===5) ptsBadge='<span class="pts-badge green">+5</span>';
+    else if(pts===3) ptsBadge='<span class="pts-badge">+3</span>';
+    else ptsBadge='<span class="pts-badge" style="opacity:.4">0</span>';
   }
+
   const resStr = hasActualScore
     ? `<span class="result-badge">${res.home}–${res.away}</span>`
     : isLive
       ? `<span class="result-badge" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#ef4444;">0–0</span>`
       : '';
-  const grpLabel=f.isKnockout?(f.group||'KO'):`Grp ${f.group}`;
-  const metaStr=(()=>{
-    if(f.isKnockout) return koKickoff(f);
-    if(koTime){
-      const bstDate = koTime.toLocaleDateString('en-GB',{timeZone:'Europe/London',day:'2-digit',month:'2-digit',year:'numeric'});
-      const bstTime = koTime.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'});
-      return `${bstDate} · ${bstTime} BST · ${f.venue}`;
-    }
-    return `${formatDate(f.date)} · ${f.venue}`;
-  })();
+
   const statusBadge = isLive
     ? '<span class="live-badge"><span class="live-dot"></span>Live</span>'
     : isUpdating
       ? '<span class="live-badge" style="color:rgba(245,158,11,.9);background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);">⏱ Updating</span>'
-      : hasResult
-        ? '<span style="font-size:.65rem;color:var(--text-muted);opacity:.5;">🔒 Locked</span>'
-        : !kicked
-          ? `<span id="cd-${f.id}" style="font-size:.6rem;color:rgba(239,68,68,.6);">locks in …</span>`
-          : '';
-  return `<div class="match-card ${isFilled?'saved':''} ${hasResult?'locked':''} ${isLive?'is-live':''} ${isUpdating?'is-updating':''}" data-predicted="${isFilled}">
-    <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
-      <div style="display:flex;align-items:center;gap:.4rem;">
-        <input class="score-input ${pred.home!==''?'filled':''}" type="number" min="0" max="99" id="h-${f.id}" value="${pred.home}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} ${!hasResult?'onfocus="tbGate(this)"':''} oninput="scoreInput(this,'a-'+this.id.slice(2))" data-match-id="${f.id}" />
-        <span class="score-sep">–</span>
-        <input class="score-input ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} ${!hasResult?'onfocus="tbGate(this)"':''} oninput="scoreInput(this,null)" data-match-id="${f.id}" />
-      </div>${ptsBadge}${resStr?`<div style="text-align:center;">${resStr}</div>`:''}
-    </div>
-    <div class="team away"><span class="team-name">${f.away}</span><span class="team-flag">${f.af}</span></div>
-    <div class="match-meta">
-      <span class="match-info"><span class="group-tag">${grpLabel}</span> · ${metaStr}</span>
-      <div style="display:flex;align-items:center;gap:.5rem;">
-        ${statusBadge}        <span id="saved-${f.id}" style="display:none;font-size:.72rem;color:var(--green);">✓ Saved</span>
+      : '';
+
+  const cardClass = ['match-card', isFilled?'saved':'', kicked?'locked':'', isLive?'is-live':'', isUpdating?'is-updating':''].filter(Boolean).join(' ');
+
+  if(!kicked){
+    const checkClass = isFilled ? 'mc-check done' : 'mc-check';
+    return `<div class="${cardClass}" data-predicted="${isFilled}">
+      <div class="mc-header">
+        <span class="mc-ko">KO ${koStr}</span>
+        <span class="mc-header-right">
+          <span id="cd-${f.id}" class="match-countdown" style="font-size:.6rem;color:rgba(239,68,68,.6);"></span>
+          <span id="saved-${f.id}" style="display:none;font-size:.7rem;color:var(--green);">✓ Saved</span>
+        </span>
       </div>
-    </div>
-  </div>`;
+      <div class="mc-body">
+        <div class="mc-team">
+          <div class="mc-flag">${f.hf}</div>
+          <div class="mc-name">${f.home}</div>
+        </div>
+        <div class="mc-center">
+          <div class="mc-adj-row">
+            <button class="mc-adj" onclick="adjScore('h-${f.id}',1)" tabindex="-1">+</button>
+            <button class="mc-adj" onclick="adjScore('a-${f.id}',1)" tabindex="-1">+</button>
+          </div>
+          <div class="mc-score-row">
+            <input class="mc-sinput ${pred.home!==''?'filled':''}" type="number" min="0" max="99" id="h-${f.id}" value="${pred.home}" placeholder="–" inputmode="numeric" pattern="[0-9]*" onfocus="tbGate(this)" oninput="scoreInput(this,'a-${f.id}')" data-match-id="${f.id}" />
+            <div class="${checkClass}">✓</div>
+            <input class="mc-sinput ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" onfocus="tbGate(this)" oninput="scoreInput(this,null)" data-match-id="${f.id}" />
+          </div>
+          <div class="mc-adj-row">
+            <button class="mc-adj" onclick="adjScore('h-${f.id}',-1)" tabindex="-1">−</button>
+            <button class="mc-adj" onclick="adjScore('a-${f.id}',-1)" tabindex="-1">−</button>
+          </div>
+        </div>
+        <div class="mc-team away">
+          <div class="mc-flag">${f.af}</div>
+          <div class="mc-name">${f.away}</div>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    const ph = pred.home!=='' ? pred.home : '–';
+    const pa = pred.away!=='' ? pred.away : '–';
+    const lockIcon = statusBadge || '<span style="font-size:.65rem;color:var(--text-muted);opacity:.45;">🔒</span>';
+    return `<div class="${cardClass}" data-predicted="${isFilled}">
+      <div class="mc-header">
+        <span class="mc-ko">KO ${koStr}</span>
+        ${lockIcon}
+      </div>
+      <div class="mc-body">
+        <div class="mc-team">
+          <div class="mc-flag">${f.hf}</div>
+          <div class="mc-name">${f.home}</div>
+        </div>
+        <div class="mc-center">
+          <div class="mc-locked-pred">
+            <span class="mc-lscore">${ph}</span>
+            <span class="mc-lsep">–</span>
+            <span class="mc-lscore">${pa}</span>
+          </div>
+          <div class="mc-result-row">
+            ${resStr}${ptsBadge}
+          </div>
+          <input type="hidden" id="h-${f.id}" value="${pred.home}" data-match-id="${f.id}" disabled />
+          <input type="hidden" id="a-${f.id}" value="${pred.away}" data-match-id="${f.id}" disabled />
+        </div>
+        <div class="mc-team away">
+          <div class="mc-flag">${f.af}</div>
+          <div class="mc-name">${f.away}</div>
+        </div>
+      </div>
+    </div>`;
+  }
 }
+
 
 function renderAdminCard(f,res){
   const h=res?res.home:'', a=res?res.away:'';
@@ -6036,6 +6153,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.0</div>
 </body>
 </html>
