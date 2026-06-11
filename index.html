@@ -138,8 +138,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .mc-sinput::-webkit-outer-spin-button,.mc-sinput::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .mc-sinput:focus{border-color:var(--group-accent);}
 .mc-sinput.filled{color:var(--group-accent);}
-.mc-check{width:1.6rem;height:1.6rem;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--text-muted);flex-shrink:0;}
+.mc-check{width:1.6rem;height:1.6rem;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--text-muted);flex-shrink:0;position:relative;}
 .mc-check.done{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.35);color:var(--green);}
+@keyframes savedPop{0%{opacity:0;transform:translateX(-50%) translateY(2px);}15%{opacity:1;transform:translateX(-50%) translateY(-4px);}75%{opacity:1;transform:translateX(-50%) translateY(-4px);}100%{opacity:0;transform:translateX(-50%) translateY(-10px);}}
+.mc-saved-pop{position:absolute;bottom:calc(100% + 3px);left:50%;font-size:.6rem;font-weight:800;color:var(--green);white-space:nowrap;pointer-events:none;letter-spacing:.04em;animation:savedPop 1.6s ease forwards;}
 .mc-locked-pred{display:flex;align-items:center;gap:.45rem;}
 .mc-lscore{font-size:1.4rem;font-weight:800;font-family:'DM Mono',monospace;color:var(--text-muted);min-width:1.6rem;text-align:center;}
 .mc-lsep{font-size:1rem;color:var(--border);}
@@ -761,7 +763,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3060,7 +3062,6 @@ function renderPredictCard(f,pred,res){
         <span class="mc-ko">KO ${koStr}</span>
         <span class="mc-header-right">
           <span id="cd-${f.id}" class="match-countdown" style="font-size:.6rem;color:rgba(239,68,68,.6);"></span>
-          <span id="saved-${f.id}" style="display:none;font-size:.7rem;color:var(--green);">✓ Saved</span>
         </span>
       </div>
       <div class="mc-body">
@@ -3071,7 +3072,7 @@ function renderPredictCard(f,pred,res){
         <div class="mc-center">
           <div class="mc-score-row">
             <input class="mc-sinput ${pred.home!==''?'filled':''}" type="number" min="0" max="99" id="h-${f.id}" value="${pred.home}" placeholder="–" inputmode="numeric" pattern="[0-9]*" onfocus="tbGate(this)" oninput="scoreInput(this,'a-${f.id}')" data-match-id="${f.id}" />
-            <div class="${checkClass}">✓</div>
+            <div class="${checkClass}" id="chk-${f.id}">✓</div>
             <input class="mc-sinput ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" onfocus="tbGate(this)" oninput="scoreInput(this,null)" data-match-id="${f.id}" />
           </div>
         </div>
@@ -4748,9 +4749,16 @@ async function autoSaveIfComplete(matchId){
     document.getElementById('a-'+matchId)?.classList.add('filled');
     const card = document.getElementById('h-'+matchId)?.closest('.match-card');
     if(card) card.classList.add('saved');
-    // Show ✓ Saved indicator briefly
-    const savedEl = document.getElementById('saved-'+matchId);
-    if(savedEl){ savedEl.style.display='inline'; setTimeout(()=>savedEl.style.display='none', 2000); }
+    // Turn checkmark green and pop "Saved" above it
+    const chk = document.getElementById('chk-'+matchId);
+    if(chk){
+      chk.classList.add('done');
+      const pop = document.createElement('span');
+      pop.className = 'mc-saved-pop';
+      pop.textContent = 'Saved';
+      chk.appendChild(pop);
+      setTimeout(()=>pop.remove(), 1700);
+    }
   }catch(e){ console.warn('auto-save failed',matchId,e); }
 }
 
@@ -6164,6 +6172,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.4</div>
 </body>
 </html>
