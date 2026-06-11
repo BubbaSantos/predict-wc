@@ -716,7 +716,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.5</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1272,6 +1272,16 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="extras-default-toggle" onchange="saveExtrasDefault()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row" style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);">
+            <div>
+              <div class="toggle-label">Require Top Scorer</div>
+              <div class="toggle-desc">Players must pick their top goalscorer prediction before they can input scores or cast votes — a prompt will guide them if they haven't</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="tiebreak-required-toggle" onchange="saveTiebreakRequired()">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -2861,6 +2871,7 @@ async function loadPredictions(){
       // If elements don't exist, pass values directly to lockTiebreak
       if(!scorerEl) lockTiebreakWithValues(tb[0].top_scorer||'', tb[0].goals||'');
       else lockTiebreak();
+      _tiebreakDone = true;
     }
     // Grace period banner
     const graceBanner = document.getElementById('grace-banner-wrap');
@@ -2945,9 +2956,9 @@ function renderPredictCard(f,pred,res){
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
       <div style="display:flex;align-items:center;gap:.4rem;">
-        <input class="score-input ${pred.home!==''?'filled':''}" type="number" min="0" max="99" id="h-${f.id}" value="${pred.home}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} oninput="scoreInput(this,'a-'+this.id.slice(2))" data-match-id="${f.id}" />
+        <input class="score-input ${pred.home!==''?'filled':''}" type="number" min="0" max="99" id="h-${f.id}" value="${pred.home}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} ${!hasResult?'onfocus="tbGate(this)"':''} oninput="scoreInput(this,'a-'+this.id.slice(2))" data-match-id="${f.id}" />
         <span class="score-sep">–</span>
-        <input class="score-input ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} oninput="scoreInput(this,null)" data-match-id="${f.id}" />
+        <input class="score-input ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" ${hasResult?'disabled':''} ${!hasResult?'onfocus="tbGate(this)"':''} oninput="scoreInput(this,null)" data-match-id="${f.id}" />
       </div>${ptsBadge}
     </div>
     <div class="team away"><span class="team-name">${f.away}</span><span class="team-flag">${f.af}</span></div>
@@ -3056,6 +3067,7 @@ async function saveTiebreak(scorer,goals){
   try{
     await sb('tiebreaks?group_id=eq.'+currentGroup.id+'&player_id=eq.'+currentPlayer.id,{method:'DELETE',prefer:'return=minimal'});
     await sb('tiebreaks',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,top_scorer:scorer,goals:goals?+goals:null}});
+    _tiebreakDone = true;
     lockTiebreak();
     flash('Tie-break locked in!','success');
   }catch(e){flash('Error: '+e.message,'error');}
@@ -3162,6 +3174,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.17.0',date:'11 Jun 2026',notes:['Admin toggle: require top scorer before predictions & votes — players who haven\'t picked see a prompt; doesn\'t affect those who already have']},
   {v:'1.16.5',date:'11 Jun 2026',notes:['Fix home card drag-to-reorder on mobile — replaced HTML5 drag API (desktop-only) with pointer events (touch + mouse)']},
   {v:'1.16.4',date:'11 Jun 2026',notes:['Share card shows total prize pot (💰) when money mode is on — reveals after player data loads']},
   {v:'1.16.3',date:'11 Jun 2026',notes:['Admin Display tab — Home Page Cards section: drag to reorder cards; toggle to show/hide each card']},
@@ -3378,6 +3391,7 @@ async function reopenEntryPeriod(){
 }
 
 let _extrasHidden = false;
+let _tiebreakDone = false;
 function toggleExtras(){
   _extrasHidden = !_extrasHidden;
   ['pay-choice-card','tiebreak-section','predict-forfeit-card','predict-paidplaces-card'].forEach(id=>{
@@ -3392,6 +3406,63 @@ function toggleExtras(){
   });
   const btn = document.getElementById('extras-toggle-btn');
   if(btn) btn.textContent = _extrasHidden ? '⚡ Show Extras' : '⚡ Extras';
+}
+
+// ── TIEBREAK GATE ────────────────────────────────────────────────
+function tbGate(el, fromHome){
+  if(!currentGroup || currentGroup.tiebreak_required !== true) return false;
+  if(_tiebreakDone) return false;
+  if(el) requestAnimationFrame(()=>{ try{el.blur();}catch(e){} });
+  _showTbGateModal(fromHome);
+  return true;
+}
+
+function _showTbGateModal(fromHome){
+  if(document.getElementById('tb-gate-modal')) return;
+  const ov = document.createElement('div');
+  ov.id = 'tb-gate-modal';
+  ov.className = 'modal-overlay';
+  ov.style.zIndex = '9800';
+  ov.innerHTML = `<div class="modal" style="max-width:340px;text-align:center;">
+    <div style="font-size:2.4rem;line-height:1;margin-bottom:.65rem;">⚽</div>
+    <div class="modal-title" style="margin-bottom:.6rem;">Pick Your Top Scorer First</div>
+    <div style="font-size:.84rem;color:var(--text-muted);line-height:1.55;margin-bottom:1.35rem;">You haven't predicted a top goalscorer yet.<br>This is used to break ties if players finish level on points — pick yours before making predictions.</div>
+    <button class="btn" onclick="document.getElementById('tb-gate-modal').remove();_goToTiebreak(${fromHome?'true':'false'});">Pick My Top Scorer →</button>
+    <button class="btn-ghost" style="margin-top:.5rem;" onclick="document.getElementById('tb-gate-modal').remove()">Skip for now</button>
+  </div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function _goToTiebreak(fromHome){
+  const goScroll = ()=>{
+    if(_extrasHidden) toggleExtras();
+    const section = document.getElementById('tiebreak-section');
+    if(section) section.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>{ document.getElementById('tiebreak-scorer')?.focus(); }, 400);
+  };
+  if(fromHome || !document.getElementById('view-predict')?.classList.contains('active')){
+    showView('predict');
+    setTimeout(goScroll, 600);
+  } else {
+    goScroll();
+  }
+}
+
+function loadTiebreakRequired(){
+  const tog = document.getElementById('tiebreak-required-toggle');
+  if(tog) tog.checked = currentGroup && currentGroup.tiebreak_required === true;
+}
+
+async function saveTiebreakRequired(){
+  if(!currentGroup) return;
+  const required = document.getElementById('tiebreak-required-toggle')?.checked ?? false;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{tiebreak_required:required}});
+    currentGroup={...currentGroup,tiebreak_required:required};
+    saveSession();
+    flash('Top scorer gate '+(required?'enabled':'disabled'),'success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
 async function saveTiebreakerSettings(){
@@ -3845,6 +3916,7 @@ async function _doCastVote(optionId, options){
 }
 async function castForfeitVote(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(optionId && tbGate(null,true)) return;
   if(currentGroup.votes_locked===true && !optionId){flash('Your vote is locked in','error');loadHome();return;}
   const el=document.getElementById('home-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
@@ -3853,6 +3925,7 @@ async function castForfeitVote(optionId){
 }
 async function castForfeitVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(optionId && tbGate()) return;
   if(currentGroup.votes_locked===true && !optionId){flash('Your vote is locked in','error');loadPredictVotes();return;}
   const el=document.getElementById('predict-forfeit');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
@@ -3861,6 +3934,7 @@ async function castForfeitVotePredict(optionId){
 }
 async function castPaidPlacesVote(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(optionId && tbGate(null,true)) return;
   if(currentGroup.paidplaces_votes_locked===true && !optionId){flash('Your vote is locked in','error');loadHome();return;}
   const el=document.getElementById('home-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
@@ -3869,6 +3943,7 @@ async function castPaidPlacesVote(optionId){
 }
 async function castPaidPlacesVotePredict(optionId){
   if(!currentPlayer||!currentGroup)return;
+  if(optionId && tbGate()) return;
   if(currentGroup.paidplaces_votes_locked===true && !optionId){flash('Your vote is locked in','error');loadPredictVotes();return;}
   const el=document.getElementById('predict-paidplaces');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);">Saving…</div>';
@@ -4672,7 +4747,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadTickerSettings();loadHomeCardSettings();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -5942,6 +6017,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.17.0</div>
 </body>
 </html>
