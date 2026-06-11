@@ -779,7 +779,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.8</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.9</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -961,11 +961,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="home-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
-      <!-- Match Stats -->
-      <div class="home-card" id="home-stats-card">
-        <div class="home-card-title">Match Stats</div>
-        <div id="home-match-stats"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
-      </div>
+      <div id="home-stats-card" style="display:none;"><div id="home-match-stats"></div></div>
     </div>
 
     <!-- RULES -->
@@ -1865,6 +1861,7 @@ let knockoutFixtures = [];
 let autoSyncInterval = null;
 let compactMode    = false;
 let _lastResultHtml = '';
+let _lastMatchStatsHtml = '';
 let _nextGameStaticHtml = '';
 let _nextUpcoming = null;
 
@@ -2582,7 +2579,7 @@ function renderMatchCardBody(){
       </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}`;
     });
   } else if(_lastResultHtml){
-    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml;
+    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml+_lastMatchStatsHtml;
   }
   if(_nextUpcoming){
     const diff = _nextUpcoming.ko.getTime()-now;
@@ -3290,7 +3287,6 @@ const HOME_CARD_DEFS = [
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
-  {key:'stats',     id:'home-stats-card',     label:'Match Stats',        toggleId:'home-show-stats-toggle',     flag:'home_show_stats'},
 ];
 function getHomeCardOrder(){
   const stored = currentGroup?.home_card_order;
@@ -4314,6 +4310,21 @@ async function loadHome(){
         <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
       </div>${predHtml}`;
     } else { _lastResultHtml=''; }
+
+    // Stats for last completed match
+    if(lastCompleted){
+      const lastF=lastCompleted.f, lastR=rm[lastF.id];
+      const mPreds=(gamePreds||[]).filter(p=>p.match_id===lastF.id);
+      const n=mPreds.length;
+      if(n>0){
+        const correct=mPreds.filter(p=>calcPoints(p.home_score,p.away_score,lastR.home_score,lastR.away_score)>=3).length;
+        const exact=mPreds.filter(p=>calcPoints(p.home_score,p.away_score,lastR.home_score,lastR.away_score)>=5).length;
+        const pctR=Math.round(correct/n*100), pctE=Math.round(exact/n*100);
+        _lastMatchStatsHtml=`<div style="font-size:.67rem;color:var(--text-muted);margin-top:.55rem;text-align:center;line-height:1.8;">
+          <span style="color:${pctR>=50?'var(--green)':'var(--text-muted)'};">${pctR}%</span> predicted the correct result &nbsp;·&nbsp; <span style="color:${pctE>=30?'var(--group-accent)':'var(--text-muted)'};">${pctE}%</span> got the exact score
+        </div>`;
+      } else { _lastMatchStatsHtml=''; }
+    } else { _lastMatchStatsHtml=''; }
 
     // Next upcoming match
     _nextUpcoming = allFixtures()
@@ -6173,6 +6184,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.8</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.9</div>
 </body>
 </html>
