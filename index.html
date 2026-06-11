@@ -782,7 +782,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1025,19 +1025,23 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div id="lb-pot-breakdown" style="display:none;margin-bottom:1.25rem;"></div>
       <div id="lb-forfeit-banner" style="display:none;margin-bottom:1rem;"></div>
       <div style="margin-bottom:.75rem;">
-        <button onclick="toggleLbRules()" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:.35rem;color:var(--text-muted);font-size:.75rem;font-weight:600;" id="lb-rules-toggle">
-          <span id="lb-rules-chevron" style="font-size:.65rem;transition:transform .2s;">▶</span> Rules &amp; Scoring
+        <button onclick="toggleLbRules()" id="lb-rules-toggle" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-size:.82rem;font-weight:600;">
+          <span>📋 Rules &amp; Scoring</span>
+          <span id="lb-rules-chevron" style="font-size:.7rem;color:var(--text-muted);transition:transform .2s;">▼</span>
         </button>
-        <div id="lb-rules-body" style="display:none;margin-top:.65rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;">
+        <div id="lb-rules-body" style="display:none;margin-top:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;">
           <div style="font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">🏆 Points System</div>
-          <table style="width:100%;border-collapse:collapse;margin-bottom:.75rem;">
+          <table style="width:100%;border-collapse:collapse;">
             <tbody>
               <tr><td style="font-size:.82rem;padding:.4rem .5rem;border-bottom:1px solid var(--border);color:var(--text-dim);">Exact scoreline</td><td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);text-align:right;"><span class="pts-big" style="color:var(--green);font-size:1rem;">8</span></td></tr>
               <tr><td style="font-size:.82rem;padding:.4rem .5rem;border-bottom:1px solid var(--border);color:var(--text-dim);">Correct result, wrong score</td><td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);text-align:right;"><span class="pts-big" style="font-size:1rem;">3</span></td></tr>
               <tr><td style="font-size:.82rem;padding:.4rem .5rem;color:var(--text-dim);">Wrong result</td><td style="padding:.4rem .5rem;text-align:right;"><span class="pts-big" style="color:var(--text-muted);font-size:1rem;">0</span></td></tr>
             </tbody>
           </table>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Knockout matches are judged on 90 mins only — extra time and penalties don't count.</div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:.85rem 0;">
+          <div style="font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem;">⏱ Knockouts</div>
+          <div style="font-size:.78rem;color:var(--text-dim);line-height:1.6;">Judged on 90 mins only — extra time and penalties don't count.</div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:.85rem 0;">
           <div style="font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">🏁 Tie-Break</div>
           <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;"><strong>1.</strong> Most correct results — whoever predicted the correct outcome (win/draw/loss) in the most matches wins</div>
           <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;margin-top:.35rem;"><strong>2.</strong> Top scorer prediction — whoever predicted the tournament's top scorer wins. If neither did, whoever's chosen player scored the most goals overall wins</div>
@@ -5465,7 +5469,7 @@ function toggleLbRules(){
   if(!body) return;
   const open = body.style.display === 'none';
   body.style.display = open ? 'block' : 'none';
-  if(chevron) chevron.style.transform = open ? 'rotate(90deg)' : '';
+  if(chevron) chevron.style.transform = open ? 'rotate(180deg)' : '';
 }
 function toggleLbJointRanks(){
   _lbJointRanks = !_lbJointRanks;
@@ -6182,6 +6186,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.4</div>
 </body>
 </html>
