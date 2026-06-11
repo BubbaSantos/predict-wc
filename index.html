@@ -706,7 +706,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.0</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3111,6 +3111,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const CHANGELOG = [
+  {v:'1.16.1',date:'11 Jun 2026',notes:["Player predictions modal shows their top scorer tiebreak at the top; shows 'not submitted' if they haven't entered one"]},
   {v:'1.16.0',date:'11 Jun 2026',notes:['Vote cards show ↺ Change on home and predict page when votes unlocked; button wraps to next line if label is too long to fit']},
   {v:'1.15.9',date:'11 Jun 2026',notes:['Predict page vote cards show ↺ Change button instead of ✓ Voted badge when votes are unlocked']},
   {v:'1.15.8',date:'11 Jun 2026',notes:['Admin Display tab — toggle to show/hide Extras (tiebreak, vote cards, pay choice) by default on the predict page']},
@@ -5197,9 +5198,10 @@ function lbRowClick(el){ viewPlayerPredictions(el.dataset.pid, el.dataset.pname)
 
 async function viewPlayerPredictions(playerId,name){
   try{
-    const [preds,res]=await Promise.all([
+    const [preds,res,tbs]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}&select=match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}&select=top_scorer,goals`),
     ]);
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const predMap={}; (preds||[]).forEach(p=>predMap[p.match_id]={h:p.home_score,a:p.away_score});
@@ -5213,9 +5215,13 @@ async function viewPlayerPredictions(playerId,name){
       const resTxt=r?` <span style="color:var(--text-muted);font-size:.7rem;">(${r.home_score}–${r.away_score})</span>`:'';
       return `<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span></div>`;
     }).filter(Boolean).join('');
+    const tb=tbs&&tbs[0];
+    const tbHtml=tb&&tb.top_scorer
+      ?`<div style="display:flex;align-items:center;gap:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;">⚽ <span style="color:var(--text-muted);">Top scorer:</span>&nbsp;<strong>${tb.top_scorer}</strong>${tb.goals!=null?`<span style="color:var(--text-muted);margin-left:.25rem;">(${tb.goals} goals)</span>`:''}</div>`
+      :`<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">⚽ Top scorer: <em>not submitted</em></div>`;
     const modal=document.createElement('div');
     modal.className='modal-overlay';
-    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${name}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${rows||'<div class="empty">No predictions yet.</div>'}</div>`;
+    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${name}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${tbHtml}${rows||'<div class="empty">No predictions yet.</div>'}</div>`;
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
     document.body.appendChild(modal);
   }catch(e){flash('Error: '+e.message,'error');}
@@ -5777,6 +5783,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.16.1</div>
 </body>
 </html>
