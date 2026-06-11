@@ -763,7 +763,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.4</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1081,7 +1081,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button id="admin-tab-changelog" class="admin-tab" onclick="switchAdminTab('changelog')" style="display:none;">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
-        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Results sync automatically every 5 minutes. Override manually below.</p>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Results sync from football-data.org every 5 minutes. Enter or override scores manually below.</p>
         <div id="admin-fixtures-list"><div class="loading">Loading…</div></div>
       </div>
       <div id="admin-panel-players" class="admin-panel">
@@ -4865,8 +4865,12 @@ function toggleCompact(){
 }
 
 // ── FOOTBALL-DATA.ORG ─────────────────────
+// Proxied through Supabase Edge Function (fdproxy) to avoid CORS restriction.
+// football-data.org only allows CORS from localhost; direct browser calls are blocked.
 async function fdFetch(path){
-  const r=await fetch(FD_BASE+path,{headers:{'X-Auth-Token':FDORG_KEY}});
+  const r=await fetch(`${SUPABASE_URL}/functions/v1/fdproxy${path}`,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+  });
   if(!r.ok)throw new Error('FD '+r.status);
   return r.json();
 }
@@ -6172,6 +6176,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.4</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.18.5</div>
 </body>
 </html>
