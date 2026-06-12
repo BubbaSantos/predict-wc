@@ -969,9 +969,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       </div>
 
       <!-- Match Card: last result + next game + countdown -->
-      <div class="home-card" id="home-next-card">
+      <div class="home-card" id="home-next-card" onclick="togglePicksView()" style="cursor:pointer;">
         <div id="hmc-body"></div>
-        <div class="home-cta" style="margin-top:.7rem;">
+        <div class="home-cta" style="margin-top:.7rem;" onclick="event.stopPropagation()">
           <button id="home-predict-btn" class="home-cta-btn primary" onclick="showView('predict')">My Predictions</button>
         </div>
       </div>
@@ -2655,9 +2655,7 @@ function renderMatchCardBody(){
     return ko && now >= ko.getTime() && now < ko.getTime()+LIVE_WIN;
   });
   let html = '';
-  const picksToggleBtn = (hasAny) => hasAny
-    ? `<button onclick="togglePicksView()" style="font-family:'DM Mono',monospace;background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.6rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;cursor:pointer;margin-top:.3rem;letter-spacing:.04em;">${_picksViewMode==='grouped'?'👤 By name':'📊 Grouped'}</button>`
-    : '';
+  const picksHint = `<div style="font-size:.55rem;color:var(--text-muted);opacity:.4;text-align:center;margin-top:.3rem;letter-spacing:.04em;">tap to ${_picksViewMode==='grouped'?'view by name':'view grouped'}</div>`;
   if(liveGames.length){
     html += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
     liveGames.forEach(f=>{
@@ -2671,12 +2669,12 @@ function renderMatchCardBody(){
         <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
         <div class="hmc-score live">${score}</div>
         <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${picks}${picksToggleBtn(hasAnyPicks)}`;
+      </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${picks}${hasAnyPicks?picksHint:''}`;
     });
   } else if(_lastResultHtml){
     const lastPicks = _picksViewMode==='grouped' ? _lastResultPicksGrouped : namedPicksHtml(_lastResultMatchId,'result');
     const hasLastPicks = !!(_lastResultPicksGrouped||(_matchPredsMap[_lastResultMatchId]?.length));
-    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml+lastPicks+picksToggleBtn(hasLastPicks)+_lastMatchStatsHtml;
+    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml+lastPicks+(hasLastPicks?picksHint:'')+_lastMatchStatsHtml;
   }
   if(_nextUpcoming){
     const diff = _nextUpcoming.ko.getTime()-now;
@@ -2687,7 +2685,7 @@ function renderMatchCardBody(){
       const nextId = _nextUpcoming.f.id;
       const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,'upcoming');
       const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_nextGameStaticHtml+nextPicks+picksToggleBtn(hasNextPicks);
+      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_nextGameStaticHtml+nextPicks+(hasNextPicks?picksHint:'');
     }
   } else if(!html){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -2704,7 +2702,8 @@ function namedPicksHtml(mid, mode){
     const isMe = currentPlayer && p.playerId === currentPlayer.id;
     let color = isMe ? 'var(--group-accent)' : null;
     if(mode==='live' && res && res.home!=null){
-      if(res.home > p.predHome || res.away > p.predAway) color='#ef4444';
+      if(res.home===p.predHome && res.away===p.predAway) color='#22c55e';
+      else if(res.home > p.predHome || res.away > p.predAway) color='#ef4444';
     } else if(mode==='result' && res && res.home!=null){
       const pts=calcPoints(p.predHome,p.predAway,res.home,res.away);
       color = pts>=8 ? '#22c55e' : pts>=3 ? 'var(--group-accent)' : '#ef4444';
