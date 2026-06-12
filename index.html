@@ -2699,8 +2699,7 @@ function namedPicksHtml(mid, mode){
   if(!preds || !preds.length) return '';
   const res = results[mid];
   const parts = preds.map(p => {
-    const isMe = currentPlayer && p.playerId === currentPlayer.id;
-    let color = isMe ? 'var(--group-accent)' : null;
+    let color = null;
     if(mode==='live' && res && res.home!=null){
       if(res.home===p.predHome && res.away===p.predAway) color='#22c55e';
       else if(res.home > p.predHome || res.away > p.predAway) color='#ef4444';
