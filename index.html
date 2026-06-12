@@ -703,7 +703,27 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .god-btn:hover{filter:brightness(1.12);}
 .god-shadow-badge{position:fixed;bottom:.4rem;left:.6rem;font-size:.6rem;color:#a855f7;opacity:.6;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;display:none;}
 .god-shadow-badge.show{display:block;}
-@media(max-width:480px){.god-create-grid{grid-template-columns:1fr;}.god-actions{flex-direction:column;}}
+.god-tabs{display:flex;gap:.4rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border);padding-bottom:.75rem;}
+.god-tab{background:none;border:1px solid transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;padding:.4rem .9rem;border-radius:7px;cursor:pointer;transition:all .15s;}
+.god-tab.active{background:#a855f715;border-color:#a855f750;color:#a855f7;}
+.god-res-day{font-size:.72rem;font-weight:700;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin:.9rem 0 .4rem;padding-bottom:.3rem;border-bottom:1px solid var(--border);}
+.god-res-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:.35rem;}
+.god-res-teams{flex:1;display:flex;align-items:center;gap:.4rem;font-size:.82rem;min-width:0;}
+.god-res-team{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.god-res-team.away{text-align:right;}
+.god-res-sep{color:var(--text-muted);font-size:.75rem;flex-shrink:0;}
+.god-res-inputs{display:flex;align-items:center;gap:.3rem;flex-shrink:0;}
+.god-res-input{width:2rem;height:2rem;text-align:center;font-size:.9rem;font-family:'DM Mono',monospace;font-weight:700;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);-moz-appearance:textfield;}
+.god-res-input::-webkit-outer-spin-button,.god-res-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.god-res-input.filled{border-color:#a855f750;background:#a855f708;}
+.god-res-dash{color:var(--text-muted);font-size:.8rem;}
+.god-res-save{background:#a855f7;color:#fff;border:none;font-size:.72rem;font-weight:700;padding:.35rem .65rem;border-radius:6px;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.god-res-save:hover{filter:brightness(1.15);}
+.god-res-save.saved{background:var(--green);}
+.god-res-clear{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;padding:.35rem .5rem;border-radius:6px;cursor:pointer;flex-shrink:0;}
+.god-res-clear:hover{border-color:var(--accent2);color:var(--accent2);}
+@media(max-width:480px){.god-create-grid{grid-template-columns:1fr;}.god-actions{flex-direction:column;}
+.god-res-team{max-width:5rem;}.god-res-row{gap:.35rem;padding:.45rem .5rem;}}
 /* ── SETUP WIZARD ─────────────────────── */
 .setup-screen{position:fixed;inset:0;background:var(--bg);z-index:9600;overflow-y:auto;display:none;flex-direction:column;min-height:100dvh;}
 .setup-screen.show{display:flex;}
@@ -793,7 +813,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.2</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1495,31 +1515,47 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 
     <!-- Unlocked content -->
     <div id="god-unlocked" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem;">
-        <div style="font-size:.82rem;color:var(--text-muted);">All groups</div>
-        <div style="display:flex;gap:.5rem;">
-          <button class="sync-refresh" onclick="loadGodGroups()">↻ Refresh</button>
-          <button class="god-btn" onclick="toggleGodCreateForm()" style="padding:.45rem 1rem;font-size:.8rem;">+ Add Group</button>
-        </div>
+      <!-- Tabs -->
+      <div class="god-tabs">
+        <button class="god-tab active" id="god-tab-groups" onclick="switchGodTab('groups')">Groups</button>
+        <button class="god-tab" id="god-tab-results" onclick="switchGodTab('results')">Results</button>
       </div>
 
-      <!-- Quick create form -->
-      <div id="god-create-panel" class="god-create-panel">
-        <div style="font-size:.82rem;font-weight:600;color:#a855f7;margin-bottom:1rem;letter-spacing:.04em;text-transform:uppercase;">New Group</div>
-        <div class="god-create-grid">
-          <div class="field" style="margin:0;"><label>Group Name</label><input id="god-c-name" type="text" placeholder="e.g. World Cup Office" maxlength="40" /></div>
-          <div class="field" style="margin:0;"><label>Group Key</label><input id="god-c-key" type="text" placeholder="e.g. wc-office" maxlength="20" autocomplete="off" /></div>
-          <div class="field" style="margin:0;"><label>Tagline <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input id="god-c-tagline" type="text" placeholder="e.g. May the best win" maxlength="60" /></div>
-          <div class="field" style="margin:0;"><label>Admin Password</label><input id="god-c-adminpw" type="text" placeholder="Group admin password" maxlength="30" /></div>
+      <!-- Groups panel -->
+      <div id="god-panel-groups">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem;">
+          <div style="font-size:.82rem;color:var(--text-muted);">All groups</div>
+          <div style="display:flex;gap:.5rem;">
+            <button class="sync-refresh" onclick="loadGodGroups()">↻ Refresh</button>
+            <button class="god-btn" onclick="toggleGodCreateForm()" style="padding:.45rem 1rem;font-size:.8rem;">+ Add Group</button>
+          </div>
         </div>
-        <div id="god-create-err" class="form-error"></div>
-        <div style="display:flex;gap:.5rem;margin-top:.25rem;">
-          <button class="god-btn" onclick="godCreateGroup()">Create Group</button>
-          <button class="btn-ghost" onclick="toggleGodCreateForm()" style="width:auto;">Cancel</button>
+        <!-- Quick create form -->
+        <div id="god-create-panel" class="god-create-panel">
+          <div style="font-size:.82rem;font-weight:600;color:#a855f7;margin-bottom:1rem;letter-spacing:.04em;text-transform:uppercase;">New Group</div>
+          <div class="god-create-grid">
+            <div class="field" style="margin:0;"><label>Group Name</label><input id="god-c-name" type="text" placeholder="e.g. World Cup Office" maxlength="40" /></div>
+            <div class="field" style="margin:0;"><label>Group Key</label><input id="god-c-key" type="text" placeholder="e.g. wc-office" maxlength="20" autocomplete="off" /></div>
+            <div class="field" style="margin:0;"><label>Tagline <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input id="god-c-tagline" type="text" placeholder="e.g. May the best win" maxlength="60" /></div>
+            <div class="field" style="margin:0;"><label>Admin Password</label><input id="god-c-adminpw" type="text" placeholder="Group admin password" maxlength="30" /></div>
+          </div>
+          <div id="god-create-err" class="form-error"></div>
+          <div style="display:flex;gap:.5rem;margin-top:.25rem;">
+            <button class="god-btn" onclick="godCreateGroup()">Create Group</button>
+            <button class="btn-ghost" onclick="toggleGodCreateForm()" style="width:auto;">Cancel</button>
+          </div>
         </div>
+        <div id="god-groups-list"><div class="loading">Loading…</div></div>
       </div>
 
-      <div id="god-groups-list"><div class="loading">Loading…</div></div>
+      <!-- Results panel -->
+      <div id="god-panel-results" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;">
+          <div style="font-size:.82rem;color:var(--text-muted);">Applied to all groups</div>
+          <button class="sync-refresh" onclick="loadGodResults()">↻ Refresh</button>
+        </div>
+        <div id="god-results-list"><div class="loading">Loading…</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -6180,6 +6216,80 @@ async function loadGodGroups(){
   }catch(e){ el.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`; }
 }
 
+function switchGodTab(name){
+  ['groups','results'].forEach(t=>{
+    document.getElementById('god-panel-'+t).style.display = t===name ? 'block' : 'none';
+    document.getElementById('god-tab-'+t).classList.toggle('active', t===name);
+  });
+  if(name==='results') loadGodResults();
+}
+
+async function loadGodResults(){
+  const el = document.getElementById('god-results-list');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  try{
+    const allResults = await sb('results?select=match_id,home_score,away_score');
+    const resMap={};
+    (allResults||[]).forEach(r=>{ if(!(r.match_id in resMap)) resMap[r.match_id]={home:r.home_score,away:r.away_score}; });
+    const fixtures = allFixtures();
+    const byDate={};
+    fixtures.forEach(f=>{ (byDate[f.date]=byDate[f.date]||[]).push(f); });
+    const days = Object.keys(byDate).sort();
+    el.innerHTML = days.map(d=>{
+      const label = new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+      const rows = byDate[d].map(f=>{
+        const r = resMap[f.id];
+        const hv = r!=null ? r.home : '';
+        const av = r!=null ? r.away : '';
+        const filled = r!=null ? 'filled' : '';
+        return `<div class="god-res-row" id="gres-row-${f.id}">
+          <div class="god-res-teams">
+            <span class="god-res-team">${f.hf} ${f.home}</span>
+            <span class="god-res-sep">vs</span>
+            <span class="god-res-team away">${f.away} ${f.af}</span>
+          </div>
+          <div class="god-res-inputs">
+            <input class="god-res-input ${filled}" id="grh-${f.id}" type="number" min="0" max="99" inputmode="numeric" value="${hv}" placeholder="–" oninput="this.classList.toggle('filled',this.value!=='')" />
+            <span class="god-res-dash">–</span>
+            <input class="god-res-input ${filled}" id="gra-${f.id}" type="number" min="0" max="99" inputmode="numeric" value="${av}" placeholder="–" oninput="this.classList.toggle('filled',this.value!=='')" />
+          </div>
+          <button class="god-res-save" id="gres-btn-${f.id}" onclick="saveGodResult('${f.id}')">Save</button>
+          ${r!=null?`<button class="god-res-clear" onclick="clearGodResult('${f.id}')">✕</button>`:`<span style="width:1.8rem"></span>`}
+        </div>`;
+      }).join('');
+      return `<div class="god-res-day">${label}</div>${rows}`;
+    }).join('');
+  }catch(e){ el.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`; }
+}
+
+async function saveGodResult(matchId){
+  const h = document.getElementById('grh-'+matchId)?.value;
+  const a = document.getElementById('gra-'+matchId)?.value;
+  if(h===''||h===null||h===undefined||a===''||a===null||a===undefined){ flash('Enter both scores','error'); return; }
+  const btn = document.getElementById('gres-btn-'+matchId);
+  if(btn){ btn.textContent='…'; btn.disabled=true; }
+  try{
+    const groups = await sb('groups?select=id');
+    if(!groups||!groups.length) throw new Error('No groups found');
+    await sb(`results?match_id=eq.${matchId}`,{method:'DELETE',prefer:'return=minimal'});
+    const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a}));
+    await sb('results',{method:'POST',prefer:'return=minimal',body:rows});
+    if(btn){ btn.textContent='Saved'; btn.classList.add('saved'); setTimeout(()=>{ btn.textContent='Save'; btn.classList.remove('saved'); btn.disabled=false; },2000); }
+    // Refresh row to show clear button
+    loadGodResults();
+  }catch(e){
+    flash('Error: '+e.message,'error');
+    if(btn){ btn.textContent='Save'; btn.disabled=false; }
+  }
+}
+
+async function clearGodResult(matchId){
+  try{
+    await sb(`results?match_id=eq.${matchId}`,{method:'DELETE',prefer:'return=minimal'});
+    loadGodResults();
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
 async function godEnterGroup(groupId){
   try{
     const grps = await sb('groups?id=eq.'+groupId+'&select=*');
@@ -6257,6 +6367,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.3</div>
 </body>
 </html>
