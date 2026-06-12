@@ -818,7 +818,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.2</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4241,6 +4241,26 @@ async function castForfeitVotePredict(optionId){
   try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadPredictVotes();
 }
+async function castForfeitVoteLb(optionId){
+  if(!currentPlayer||!currentGroup) return;
+  const banner=document.getElementById('lb-forfeit-banner');
+  if(banner) banner.innerHTML='<div style="padding:.7rem 1rem;font-size:.82rem;color:var(--text-muted);">Saving…</div>';
+  try{ await _doCastVote(optionId,FORFEIT_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
+  loadLeaderboard();
+}
+function showLbForfeitOptions(){
+  const opts=getForfeitOptions();
+  const banner=document.getElementById('lb-forfeit-banner');
+  if(!banner) return;
+  banner.style.display='block';
+  banner.innerHTML=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:.7rem 1rem;">
+    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.5rem;">😬 Vote for the forfeit</div>
+    ${opts.map(o=>`<div class="forfeit-option" onclick="castForfeitVoteLb('${o.id}')">
+      <div class="forfeit-option-emoji">${o.emoji}</div>
+      <div class="forfeit-option-label">${o.label}</div>
+    </div>`).join('')}
+  </div>`;
+}
 async function castPaidPlacesVote(optionId){
   if(!currentPlayer||!currentGroup)return;
   if(optionId && tbGate(null,true)) return;
@@ -5729,13 +5749,24 @@ function renderLeaderboard(){
       let maxCount = 0;
       opts.forEach(o=>{if(counts[o.id]>maxCount) maxCount=counts[o.id];});
       const leaders = opts.filter(o=>counts[o.id]===maxCount && maxCount>0);
+      const myLbVote = currentPlayer ? _lbForfeitVotes.find(v=>v.player_id===currentPlayer.id) : null;
+      const canVote = currentPlayer && !myLbVote && !currentGroup.votes_locked;
       if(leaders.length > 0){
         const isTied = leaders.length > 1;
         const leaderText = leaders.map(l=>`${l.emoji} ${l.label}`).join('<br>');
         forfeitBanner.style.display='block';
         forfeitBanner.innerHTML=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
           <div><div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.15rem;">😬 Forfeit · ${isTied?'Tied':'Leading'}</div><div style="font-weight:600;font-size:.92rem;">${leaderText}</div></div>
-          <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;">${maxCount}/${totalVotes} vote${totalVotes!==1?'s':''}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;">
+            <span style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;">${maxCount}/${totalVotes} vote${totalVotes!==1?'s':''}</span>
+            ${canVote?`<button class="btn-ghost" style="font-size:.7rem;padding:.2rem .55rem;" onclick="showLbForfeitOptions()">Vote</button>`:''}
+          </div>
+        </div>`;
+      } else if(canVote){
+        forfeitBanner.style.display='block';
+        forfeitBanner.innerHTML=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+          <div style="font-size:.72rem;color:var(--text-muted);">😬 Forfeit poll is open</div>
+          <button class="btn-ghost" style="font-size:.7rem;padding:.2rem .55rem;" onclick="showLbForfeitOptions()">Vote</button>
         </div>`;
       } else {
         forfeitBanner.style.display='none';
@@ -6451,6 +6482,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.3</div>
 </body>
 </html>
