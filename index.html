@@ -815,7 +815,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.5</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5722,12 +5722,15 @@ function renderLeaderboard(){
       opts.forEach(o=>{counts[o.id]=0;});
       _lbForfeitVotes.forEach(v=>{if(counts[v.match_id]!==undefined)counts[v.match_id]++;});
       const totalVotes = _lbForfeitVotes.length;
-      let leader = null, maxCount = 0;
-      opts.forEach(o=>{if(counts[o.id]>maxCount){maxCount=counts[o.id];leader=o;}});
-      if(leader && maxCount > 0){
+      let maxCount = 0;
+      opts.forEach(o=>{if(counts[o.id]>maxCount) maxCount=counts[o.id];});
+      const leaders = opts.filter(o=>counts[o.id]===maxCount && maxCount>0);
+      if(leaders.length > 0){
+        const isTied = leaders.length > 1;
+        const leaderText = leaders.map(l=>`${l.emoji} ${l.label}`).join(' &nbsp;·&nbsp; ');
         forfeitBanner.style.display='block';
         forfeitBanner.innerHTML=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
-          <div><div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.15rem;">😬 Forfeit · Leading</div><div style="font-weight:600;font-size:.92rem;">${leader.emoji} ${leader.label}</div></div>
+          <div><div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.15rem;">😬 Forfeit · ${isTied?'Tied':'Leading'}</div><div style="font-weight:600;font-size:.92rem;">${leaderText}</div></div>
           <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;">${maxCount}/${totalVotes} vote${totalVotes!==1?'s':''}</div>
         </div>`;
       } else {
@@ -6444,6 +6447,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.6</div>
 </body>
 </html>
