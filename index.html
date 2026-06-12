@@ -814,7 +814,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.7</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1902,7 +1902,7 @@ let predictions    = {};
 let results        = {};
 let knockoutFixtures = [];
 let autoSyncInterval = null;
-let compactMode    = false;
+let compactMode    = localStorage.getItem('wc26_compact')==='1';
 let _lastResultHtml = '';
 let _lastMatchStatsHtml = '';
 let _nextGameStaticHtml = '';
@@ -2998,6 +2998,8 @@ async function loadPredictions(){
     }
     renderFixtures(list,false);
     if(compactMode) list.classList.add('compact');
+    const compactBtn=document.getElementById('compact-btn');
+    if(compactBtn) compactBtn.textContent=compactMode?'⊞ Full':'⊟ Compact';
     updatePredictTotalPts();
     startMatchCountdowns();
     startTiebreakCountdown();
@@ -4981,6 +4983,7 @@ function closeMenu(){
 
 function toggleCompact(){
   compactMode=!compactMode;
+  localStorage.setItem('wc26_compact', compactMode?'1':'0');
   const list=document.getElementById('fixtures-list');
   const btn=document.getElementById('compact-btn');
   if(list)list.classList.toggle('compact',compactMode);
@@ -6398,6 +6401,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.7</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.8</div>
 </body>
 </html>
