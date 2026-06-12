@@ -373,7 +373,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-flag{font-size:1rem;}
 .compact .mc-name{font-size:.64rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:4.2rem;}
 /* Score area tighter */
-.compact .mc-center{gap:0;}
+.compact .mc-center{gap:0;flex:0 0 3.8rem;overflow:hidden;}
 .compact .mc-score-row{gap:.22rem;}
 .compact .mc-sinput{width:1.75rem;height:1.75rem;font-size:.9rem;border-radius:6px;}
 .compact .mc-check{width:1.1rem;height:1.1rem;font-size:.5rem;}
@@ -382,8 +382,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-lscore{font-size:1.1rem;min-width:1.2rem;}
 .compact .mc-result-row{flex-direction:row;gap:.2rem;margin-top:.1rem;}
 .compact .mc-actual-score{font-size:1.1rem;text-align:center;width:100%;}
-.compact .mc-pred-under{display:none;}
-.compact .mc-center{width:3.8rem;}
+.compact .mc-pred-under{font-size:.55rem;text-align:center;white-space:nowrap;width:100%;}
 .compact .mc-header-right .pts-badge{position:absolute;top:.15rem;right:.25rem;font-size:.58rem;padding:.1rem .28rem;}
 .compact .pts-star{display:none;}
 
@@ -814,7 +813,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.8</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.9</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3157,7 +3156,7 @@ function renderPredictCard(f,pred,res){
     const lockIcon = statusBadge || '<span style="font-size:.65rem;color:var(--text-muted);opacity:.45;">🔒</span>';
     let centerHtml;
     if(hasActualScore){
-      const predText = isFilled ? `you predicted ${ph}–${pa}` : 'not predicted';
+      const predText = isFilled ? (compactMode ? `↑ ${ph}–${pa}` : `you predicted ${ph}–${pa}`) : 'not predicted';
       centerHtml = `
           <div class="mc-actual-score">${res.home}–${res.away}</div>
           <div class="mc-pred-under">${predText}</div>`;
@@ -6401,6 +6400,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.8</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.9</div>
 </body>
 </html>
