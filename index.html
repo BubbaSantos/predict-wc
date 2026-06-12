@@ -5842,12 +5842,13 @@ function renderLeaderboard(){
   if(!sorted.length){ lb.innerHTML='<div class="empty">No players in this category yet.</div>'; return; }
 
   const lastIdx = sorted.length - 1;
-  const forfeitName = (currentGroup.forfeit_override||'').trim() || sorted[lastIdx]?.[0];
+  const forfeitOverrideName = (currentGroup.forfeit_override||'').trim();
   const ranks = [];
   for(let i=0;i<sorted.length;i++){
     if(i===0||lbCompare(sorted[i],sorted[i-1])!==0) ranks.push(i+1);
     else ranks.push(ranks[i-1]);
   }
+  const lastRank = ranks[lastIdx];
   const rankCounts = {};
   ranks.forEach(r=>{rankCounts[r]=(rankCounts[r]||0)+1;});
   lb.innerHTML = sorted.map(([name,s],i)=>{
@@ -5855,7 +5856,8 @@ function renderLeaderboard(){
     const dn = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     const payBadge = _lbPayMap[name]==='money' ? '<span style="font-size:.65rem;margin-left:.3rem;">💸</span>' : (_lbPayMap[name]==='fun' ? '<span style="font-size:.65rem;margin-left:.3rem;">😄</span>' : '');
     const isItm = _lbJointRanks ? ranks[i] <= paidPlaces : i < paidPlaces;
-    const isForfeit = forfeitEnabled && name===forfeitName && sorted.length>1 && !isItm;
+    const isLast = sorted.length > 1 && (_lbJointRanks ? ranks[i] === lastRank : i === lastIdx);
+    const isForfeit = forfeitEnabled && !isItm && (forfeitOverrideName ? name===forfeitOverrideName : isLast);
     let prizeText = '';
     if(isItm && pot > 0){
       const pct = _lbJointRanks ? (placePercs[ranks[i]-1]||0) : (placePercs[i]||0);
@@ -5863,8 +5865,8 @@ function renderLeaderboard(){
       if(prize>0) prizeText = ' · £'+prize.toFixed(prize%1===0?0:2);
     }
     const rowClass = _lbJointRanks
-      ? (ranks[i]===1 ? 'lb-row lb-gold' : ranks[i]===2 ? 'lb-row lb-silver' : ranks[i]===3 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row')
-      : (i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : (i===lastIdx && sorted.length>1) ? 'lb-row lb-last' : 'lb-row');
+      ? (ranks[i]===1 ? 'lb-row lb-gold' : ranks[i]===2 ? 'lb-row lb-silver' : ranks[i]===3 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row')
+      : (i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row');
     const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
     const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit'+forfeitWinner+'</span>' : '';
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
