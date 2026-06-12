@@ -115,6 +115,13 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .result-badge{font-size:.7rem;background:rgba(16,185,129,.1);color:var(--green);padding:.2rem .5rem;border-radius:4px;border:1px solid rgba(16,185,129,.2);}
 .pts-badge{font-size:.7rem;padding:.15rem .4rem;border-radius:4px;background:rgba(245,158,11,.15);color:var(--group-accent);border:1px solid rgba(245,158,11,.2);}
 .pts-badge.green{background:rgba(16,185,129,.15);color:var(--green);border-color:rgba(16,185,129,.2);}
+.mc-actual-score{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:800;color:var(--text);}
+.mc-pred-under{font-size:.6rem;color:var(--text-muted);margin-top:.1rem;text-align:center;}
+.predict-total-pts{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:900;color:var(--group-accent);line-height:1;text-align:right;}
+.predict-pts-label{font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted);text-align:right;}
+.predict-toggle-bar{display:flex;align-items:center;justify-content:space-between;padding:.55rem .85rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:.4rem;cursor:pointer;font-size:.85rem;font-weight:600;transition:border-color .15s;user-select:none;-webkit-user-select:none;}
+.predict-toggle-bar:hover{border-color:rgba(245,158,11,.35);}
+#fixtures-list.hide-finished .match-card[data-finished="true"]{display:none;}
 .live-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#ef4444;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);padding:.15rem .45rem;border-radius:4px;}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
 .match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
@@ -374,6 +381,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-locked-pred{gap:.3rem;}
 .compact .mc-lscore{font-size:1.1rem;min-width:1.2rem;}
 .compact .mc-result-row{flex-direction:row;gap:.2rem;margin-top:.1rem;}
+.compact .mc-actual-score{font-size:1.1rem;}
+.compact .mc-pred-under{font-size:.55rem;}
 
 
 
@@ -888,9 +897,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     </div>
     <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:.3rem .4rem;border-radius:5px;font-size:.85rem;line-height:1;align-items:center;gap:.25rem;vertical-align:middle;"><span style="vertical-align:middle;">☰</span> <span style="font-size:.75rem;font-weight:600;letter-spacing:.04em;vertical-align:middle;">Menu</span></button>
     <nav id="main-nav">
-      <button id="nav-home" class="active" onclick="showView('home')">Home</button>
-      <button id="nav-predict" onclick="showView('predict')">Predict</button>
-      <button id="nav-leaderboard" onclick="showView('leaderboard')">Leaderboard</button>
+      <button id="nav-home" class="active" onclick="navTo('home')">Home</button>
+      <button id="nav-predict" onclick="navTo('predict')">Predict</button>
+      <button id="nav-leaderboard" onclick="navTo('leaderboard')">Leaderboard</button>
       <button id="nav-admin" onclick="showView('admin')" style="display:none;">Admin</button>
     </nav>
     <div class="header-user" style="position:relative;">
@@ -970,6 +979,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <div id="view-predict" class="view">
       <div class="page-header">
         <div class="page-title">Predictions</div>
+        <div id="predict-total-pts-wrap" style="display:none;">
+          <div class="predict-total-pts" id="predict-pts-num">0</div>
+          <div class="predict-pts-label">points</div>
+        </div>
       </div>
       <div id="pay-choice-card" style="display:none;"></div>
       <div class="predict-extra-card" id="tiebreak-section">
@@ -995,8 +1008,17 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="predict-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
+      <div id="predict-toggle-wrap" style="margin-bottom:.6rem;">
+        <div class="predict-toggle-bar" onclick="toggleShowPredicted()">
+          <span>Show Predicted Matches</span>
+          <label class="toggle-switch" onclick="event.stopPropagation()"><input type="checkbox" id="toggle-show-predicted" checked onclick="toggleShowPredicted()" /><span class="toggle-slider"></span></label>
+        </div>
+        <div id="predict-toggle-finished-wrap" class="predict-toggle-bar" onclick="toggleShowFinished()">
+          <span>Show Finished Matches</span>
+          <label class="toggle-switch" onclick="event.stopPropagation()"><input type="checkbox" id="toggle-show-finished" checked onclick="toggleShowFinished()" /><span class="toggle-slider"></span></label>
+        </div>
+      </div>
       <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
-        <button class="compact-toggle" id="hide-pred-btn" onclick="toggleHidePredicted()">👁 Hide Done</button>
         <button class="compact-toggle" onclick="showPlayersPopup()" id="players-popup-btn">👥 Players</button>
         <button class="compact-toggle" id="compact-btn" onclick="toggleCompact()">⊟ Compact</button>
         <button class="compact-toggle" id="extras-toggle-btn" onclick="toggleExtras()">⚡ Extras</button>
@@ -2530,7 +2552,9 @@ function enterApp(){
   } else {
     document.getElementById('h-player-chip').innerHTML='<strong>Admin</strong>';
   }
-  showView('home');
+  const navTarget = localStorage.getItem('wc26_nav_target');
+  if(navTarget){ localStorage.removeItem('wc26_nav_target'); showView(navTarget); }
+  else{ showView('home'); }
   startCountdown();
   startHeartbeat();
 }
@@ -2637,6 +2661,10 @@ function leaveGroup(){
 }
 
 // ── VIEW SWITCHING ────────────────────────
+function navTo(name){
+  localStorage.setItem('wc26_nav_target',name);
+  window.location.reload();
+}
 function showView(name){ closeMenu();
 
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -2901,6 +2929,7 @@ async function loadPredictions(){
     }
     renderFixtures(list,false);
     if(compactMode) list.classList.add('compact');
+    updatePredictTotalPts();
     startMatchCountdowns();
     startTiebreakCountdown();
     // Update header chip with fresh pay choice
@@ -3022,10 +3051,11 @@ function renderPredictCard(f,pred,res){
       : '';
 
   const cardClass = ['match-card', isFilled?'saved':'', kicked?'locked':'', isLive?'is-live':'', isUpdating?'is-updating':''].filter(Boolean).join(' ');
+  const dataFinished = hasActualScore ? 'true' : 'false';
 
   if(!kicked){
     const checkClass = isFilled ? 'mc-check done' : 'mc-check';
-    return `<div class="${cardClass}" data-predicted="${isFilled}">
+    return `<div class="${cardClass}" data-predicted="${isFilled}" data-finished="${dataFinished}">
       <div class="mc-header">
         <span class="mc-ko">KO ${koStr}</span>
         <span class="mc-header-right">
@@ -3054,25 +3084,32 @@ function renderPredictCard(f,pred,res){
     const ph = pred.home!=='' ? pred.home : '–';
     const pa = pred.away!=='' ? pred.away : '–';
     const lockIcon = statusBadge || '<span style="font-size:.65rem;color:var(--text-muted);opacity:.45;">🔒</span>';
-    return `<div class="${cardClass}" data-predicted="${isFilled}">
+    let centerHtml;
+    if(hasActualScore){
+      const predText = isFilled ? `you predicted ${ph}–${pa}` : 'not predicted';
+      centerHtml = `
+          <div class="mc-actual-score">${res.home}–${res.away}</div>
+          <div class="mc-pred-under">${predText}</div>`;
+    } else {
+      centerHtml = `
+          <div class="mc-locked-pred">
+            <span class="mc-lscore">${ph}</span>
+            <span class="mc-lsep">–</span>
+            <span class="mc-lscore">${pa}</span>
+          </div>
+          ${resStr ? `<div class="mc-result-row">${resStr}</div>` : ''}`;
+    }
+    return `<div class="${cardClass}" data-predicted="${isFilled}" data-finished="${dataFinished}">
       <div class="mc-header">
         <span class="mc-ko">KO ${koStr}</span>
-        ${lockIcon}
+        <span class="mc-header-right">${ptsBadge}${lockIcon}</span>
       </div>
       <div class="mc-body">
         <div class="mc-team">
           <div class="mc-flag">${f.hf}</div>
           <div class="mc-name">${f.home}</div>
         </div>
-        <div class="mc-center">
-          <div class="mc-locked-pred">
-            <span class="mc-lscore">${ph}</span>
-            <span class="mc-lsep">–</span>
-            <span class="mc-lscore">${pa}</span>
-          </div>
-          <div class="mc-result-row">
-            ${resStr}${ptsBadge}
-          </div>
+        <div class="mc-center">${centerHtml}
           <input type="hidden" id="h-${f.id}" value="${pred.home}" data-match-id="${f.id}" disabled />
           <input type="hidden" id="a-${f.id}" value="${pred.away}" data-match-id="${f.id}" disabled />
         </div>
@@ -3985,13 +4022,40 @@ function renderChangelog(){
     +CHANGELOG.map(c=>`<div class="cl-entry"><span class="cl-ver">v${c.v}</span><span class="cl-date">${c.date}</span><ul class="cl-notes">${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>`).join('');
 }
 
-let _hidePredicted=false;
-function toggleHidePredicted(){
-  _hidePredicted=!_hidePredicted;
+let _showPredicted=true;
+let _showFinished=true;
+
+function toggleShowPredicted(){
+  _showPredicted=!_showPredicted;
+  const cb=document.getElementById('toggle-show-predicted');
+  if(cb) cb.checked=_showPredicted;
   const list=document.getElementById('fixtures-list');
-  const btn=document.getElementById('hide-pred-btn');
-  if(list) list.classList.toggle('hide-predicted',_hidePredicted);
-  if(btn) btn.textContent=_hidePredicted?'👁 Show Done':'👁 Hide Done';
+  if(list) list.classList.toggle('hide-predicted',!_showPredicted);
+  const finWrap=document.getElementById('predict-toggle-finished-wrap');
+  if(finWrap) finWrap.style.display=_showPredicted?'flex':'none';
+}
+
+function toggleShowFinished(){
+  _showFinished=!_showFinished;
+  const cb=document.getElementById('toggle-show-finished');
+  if(cb) cb.checked=_showFinished;
+  const list=document.getElementById('fixtures-list');
+  if(list) list.classList.toggle('hide-finished',!_showFinished);
+}
+
+function updatePredictTotalPts(){
+  let total=0;
+  Object.keys(predictions).forEach(mid=>{
+    const pred=predictions[mid];
+    const res=results[mid];
+    if(res&&res.home!==null&&res.home!==undefined&&pred.home!==''&&pred.away!==''){
+      total+=calcPoints(+pred.home,+pred.away,res.home,res.away);
+    }
+  });
+  const wrap=document.getElementById('predict-total-pts-wrap');
+  const num=document.getElementById('predict-pts-num');
+  if(wrap) wrap.style.display='block';
+  if(num) num.textContent=total;
 }
 
 // ── VOTE RENDERING ───────────────────────
