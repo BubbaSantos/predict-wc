@@ -815,7 +815,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1783,6 +1783,42 @@ const THEMES = {
     preview:['#0a0602','#140c03','#f97316'],
     vars:{'--bg':'#0a0602','--surface':'#140c03','--surface2':'#1e1204','--border':'#3a2008','--text':'#fef3e2','--text-muted':'#7a5530','--text-dim':'#c49060','--gold':'#fb923c','--silver':'#c49060','--bronze':'#ea580c','--header-bg':'rgba(10,6,2,.93)'},
     bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(249,115,22,.1) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(234,88,12,.05) 0%,transparent 50%)'
+  },
+  carbon:{
+    label:'Carbon', desc:'Pure black, ice blue',
+    preview:['#05080f','#0c1020','#60a5fa'],
+    vars:{'--bg':'#05080f','--surface':'#0c1020','--surface2':'#141828','--border':'#1c2540','--text':'#dce8fa','--text-muted':'#445070','--text-dim':'#8898b8','--gold':'#fbbf24','--silver':'#8898b8','--bronze':'#d97706','--header-bg':'rgba(5,8,15,.92)'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(59,130,246,.09) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(6,182,212,.05) 0%,transparent 50%)'
+  },
+  pitch:{
+    label:'Pitch', desc:'Pure black, hot pink',
+    preview:['#080508','#100910','#ec4899'],
+    vars:{'--bg':'#080508','--surface':'#100910','--surface2':'#180e18','--border':'#261526','--text':'#fae8f5','--text-muted':'#704270','--text-dim':'#c888be','--gold':'#fbbf24','--silver':'#c888be','--bronze':'#f97316','--header-bg':'rgba(8,5,8,.92)'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(236,72,153,.09) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(219,39,119,.05) 0%,transparent 50%)'
+  },
+  smoke:{
+    label:'Smoke', desc:'Pure black & grey, no tint',
+    preview:['#080808','#111111','#b0b0b0'],
+    vars:{'--bg':'#080808','--surface':'#111111','--surface2':'#1a1a1a','--border':'#2a2a2a','--text':'#eeeeee','--text-muted':'#606060','--text-dim':'#a0a0a0','--gold':'#d4a020','--silver':'#b0b0b0','--bronze':'#a06030','--header-bg':'rgba(8,8,8,.93)'},
+    bodyGradient:'none'
+  },
+  paper:{
+    label:'Paper', desc:'White with navy blue',
+    preview:['#f4f6ff','#ffffff','#1e40af'],
+    vars:{'--bg':'#f4f6ff','--surface':'#ffffff','--surface2':'#edf0fb','--border':'#d0d6f0','--text':'#0a0f2a','--text-muted':'#6070a0','--text-dim':'#304080','--gold':'#d97706','--silver':'#607090','--bronze':'#92400e','--header-bg':'rgba(244,246,255,.95)'},
+    bodyGradient:'none'
+  },
+  blush:{
+    label:'Blush', desc:'White with rose pink',
+    preview:['#fff5f8','#ffffff','#e11d48'],
+    vars:{'--bg':'#fff5f8','--surface':'#ffffff','--surface2':'#fde8ef','--border':'#f0ccd8','--text':'#200810','--text-muted':'#8a5060','--text-dim':'#602030','--gold':'#d97706','--silver':'#906070','--bronze':'#92400e','--header-bg':'rgba(255,245,248,.95)'},
+    bodyGradient:'none'
+  },
+  chalk:{
+    label:'Chalk', desc:'White with emerald green',
+    preview:['#f3fbf6','#ffffff','#059669'],
+    vars:{'--bg':'#f3fbf6','--surface':'#ffffff','--surface2':'#e6f7ed','--border':'#c4e8d4','--text':'#071814','--text-muted':'#486a58','--text-dim':'#1a4a34','--gold':'#d97706','--silver':'#487860','--bronze':'#92400e','--header-bg':'rgba(243,251,246,.95)'},
+    bodyGradient:'none'
   },
 };
 
@@ -6413,6 +6449,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.4</div>
 </body>
 </html>
