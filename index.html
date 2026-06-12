@@ -815,7 +815,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.9</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3303,12 +3303,11 @@ function confirmSaveTiebreak(){
 function lockTiebreakWithValues(scorer, goals){
   const section = document.getElementById('tiebreak-section');
   if(!section) return;
-  section.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;">'
+  section.innerHTML = '<div style="border-top:1px solid var(--border);padding-top:.65rem;">'
     +'<div style="display:flex;align-items:center;gap:.5rem;">'
-    +'<span style="font-size:.68rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted);">🏆 Tie-Break</span>'
+    +'<span style="font-size:.68rem;color:var(--text-muted);">Top scorer:</span>'
     +'<span style="font-size:.88rem;font-weight:600;color:var(--text);">'+scorer+' &nbsp;·&nbsp; <span style="color:var(--group-accent);">'+(goals||'0')+' goals</span></span>'
     +'</div>'
-    +'<span style="font-family:\'DM Mono\',monospace;font-size:.62rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);padding:.2rem .55rem;border-radius:20px;letter-spacing:.06em;white-space:nowrap;">🔒 Locked</span>'
     +'</div>';
 }
 
@@ -6447,6 +6446,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.9</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.0</div>
 </body>
 </html>
