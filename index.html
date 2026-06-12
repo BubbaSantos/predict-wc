@@ -193,6 +193,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-score.vs{font-size:1rem;font-weight:700;color:var(--text-muted);}
 .hmc-meta{font-size:.68rem;color:var(--text-muted);text-align:center;margin-top:.35rem;}
 .hmc-pred{font-size:.7rem;font-weight:600;color:var(--group-accent);text-align:center;margin-top:.3rem;}
+.hmc-others{font-size:.63rem;color:var(--text-muted);text-align:center;margin-top:.28rem;line-height:1.6;}
 .hmc-cd{display:flex;justify-content:center;gap:.65rem;margin-top:.65rem;}
 .hmc-cd-unit{text-align:center;}
 .hmc-cd-num{font-size:1.4rem;font-weight:900;font-family:'DM Mono',monospace;color:#ef4444;line-height:1;}
@@ -814,7 +815,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.1</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4404,6 +4405,17 @@ async function loadHome(){
     const totalFixtures = allFixtures().length;
     const myPredCount = Object.keys(myPredMap).length;
 
+    // Helper: build "group picks: X–Y ×N · …" summary for a match
+    const predSummary = mid => {
+      const ps=(gamePreds||[]).filter(p=>p.match_id===mid&&p.home_score!=null&&p.away_score!=null);
+      if(!ps.length) return '';
+      const ct={};
+      ps.forEach(p=>{const k=`${p.home_score}–${p.away_score}`;ct[k]=(ct[k]||0)+1;});
+      const parts=Object.entries(ct).sort((a,b)=>b[1]-a[1])
+        .map(([sc,n])=>`${sc}<span style="opacity:.55"> ×${n}</span>`).join(' &nbsp;·&nbsp; ');
+      return `<div class="hmc-others">Group picks: ${parts}</div>`;
+    };
+
     // Last completed match
     const lastCompleted = allFixtures()
       .filter(f=>rm[f.id]&&rm[f.id].home_score!==null&&rm[f.id].home_score!==undefined)
@@ -4424,7 +4436,7 @@ async function loadHome(){
         <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
         <div class="hmc-score">${r.home_score}–${r.away_score}</div>
         <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>${predHtml}`;
+      </div>${predHtml}${predSummary(f.id)}`;
     } else { _lastResultHtml=''; }
 
     // Stats for last completed match
@@ -4460,7 +4472,7 @@ async function loadHome(){
         <div class="hmc-score vs">vs</div>
         <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
       </div>
-      ${predHtml}`;
+      ${predHtml}${predSummary(f.id)}`;
     } else { _nextGameStaticHtml=''; }
 
     // Predict button
@@ -6401,6 +6413,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.2</div>
 </body>
 </html>
