@@ -117,6 +117,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .pts-badge.green{background:rgba(16,185,129,.15);color:var(--green);border-color:rgba(16,185,129,.2);}
 .mc-actual-score{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:800;color:var(--text);}
 .mc-pred-under{font-size:.6rem;color:var(--text-muted);margin-top:.1rem;text-align:center;}
+.mc-pts-above{font-size:.62rem;color:var(--text-muted);text-align:center;white-space:nowrap;margin-bottom:.05rem;}
+.mc-header-right .pts-badge{display:none;}
 .predict-total-pts{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:900;color:var(--group-accent);line-height:1;text-align:right;}
 .predict-pts-label{font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted);text-align:right;}
 .predict-toggle-bar{display:flex;align-items:center;justify-content:space-between;padding:.55rem .85rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:.4rem;cursor:pointer;font-size:.85rem;font-weight:600;transition:border-color .15s;user-select:none;-webkit-user-select:none;}
@@ -374,18 +376,19 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-flag{font-size:1rem;flex-shrink:0;}
 .compact .mc-name{font-size:.64rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 /* Score area tighter */
-.compact .mc-center{gap:0;flex:0 0 5.2rem;overflow:hidden;height:2.6rem;justify-content:center;}
-.compact .mc-score-row{gap:.22rem;}
+.compact .mc-center{gap:0;flex:0 0 5.2rem;overflow:hidden;height:2.8rem;justify-content:flex-start;}
+.compact .mc-score-row{gap:.22rem;margin-top:.42rem;}
 .compact .mc-sinput{width:1.75rem;height:1.75rem;font-size:.9rem;border-radius:6px;}
 .compact .mc-check{width:1.1rem;height:1.1rem;font-size:.5rem;}
 /* Locked card */
-.compact .mc-locked-pred{gap:0;}
+.compact .mc-locked-pred{gap:0;margin-top:.6rem;}
 .compact .mc-lscore{font-size:1.1rem;min-width:0;}
 .compact .mc-lsep{font-size:1.1rem;}
 .compact .mc-result-row{flex-direction:row;gap:.2rem;margin-top:.1rem;}
-.compact .mc-actual-score{font-size:1.1rem;text-align:center;width:100%;}
+.compact .mc-actual-score{font-size:1.1rem;text-align:center;width:100%;margin-top:.58rem;}
 .compact .mc-pred-under{font-size:.55rem;text-align:center;white-space:nowrap;width:100%;}
-.compact .mc-header-right .pts-badge{position:absolute;top:.15rem;right:.25rem;font-size:.58rem;padding:.1rem .28rem;}
+.compact .mc-header-right .pts-badge{display:inline;position:absolute;top:.15rem;right:.25rem;font-size:.58rem;padding:.1rem .28rem;}
+.compact .mc-pts-above{display:none;}
 .compact .pts-star{display:none;}
 
 
@@ -815,7 +818,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.1</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3133,13 +3136,15 @@ function renderPredictCard(f,pred,res){
     ? koTime.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'})
     : (f.isKnockout ? koKickoff(f) : '—');
 
-  let ptsBadge='';
+  let ptsBadge='', ptsAbove='';
   if(hasActualScore&&isFilled){
     const pts=calcPoints(+pred.home,+pred.away,res.home,res.away);
-    if(pts===8) ptsBadge='<span class="pts-badge green">+8 <span class="pts-star">⭐</span></span>';
-    else if(pts===5) ptsBadge='<span class="pts-badge green">+5</span>';
-    else if(pts===3) ptsBadge='<span class="pts-badge">+3</span>';
-    else ptsBadge='<span class="pts-badge" style="background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.25);">0</span>';
+    let ptsColor, ptsVal;
+    if(pts===8){ptsBadge='<span class="pts-badge green">+8 <span class="pts-star">⭐</span></span>';ptsColor='#22c55e';ptsVal='+8';}
+    else if(pts===5){ptsBadge='<span class="pts-badge green">+5</span>';ptsColor='#22c55e';ptsVal='+5';}
+    else if(pts===3){ptsBadge='<span class="pts-badge">+3</span>';ptsColor='#f59e0b';ptsVal='+3';}
+    else{ptsBadge='<span class="pts-badge" style="background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.25);">0</span>';ptsColor='#ef4444';ptsVal='0';}
+    ptsAbove=`<div class="mc-pts-above">Points Received <span style="color:${ptsColor};font-weight:700;">${ptsVal}</span></div>`;
   }
 
   const resStr = hasActualScore
@@ -3191,7 +3196,7 @@ function renderPredictCard(f,pred,res){
     let centerHtml;
     if(hasActualScore){
       const predText = isFilled ? `you predicted ${ph}–${pa}` : 'not predicted';
-      centerHtml = `
+      centerHtml = `${ptsAbove}
           <div class="mc-actual-score">${res.home}–${res.away}</div>
           <div class="mc-pred-under">${predText}</div>`;
     } else {
@@ -6446,6 +6451,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.2</div>
 </body>
 </html>
