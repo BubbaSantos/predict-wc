@@ -86,11 +86,24 @@ const FIXTURES = [
 function norm(s) {
   if (!s) return '';
   return s.toLowerCase()
-    .replace(/ü/g,'u').replace(/ç/g,'c').replace(/é/g,'e').replace(/ô/g,'o')
-    .replace("côte d'ivoire",'ivory coast').replace('cabo verde','cape verde')
+    .replace(/ü/g,'u').replace(/ç/g,'c').replace(/é/g,'e').replace(/ô/g,'o').replace(/ñ/g,'n')
+    // football-data.org name variants
+    .replace("côte d'ivoire",'ivory coast')
+    .replace('cabo verde','cape verde')
     .replace('democratic republic of congo','dr congo')
+    .replace('dr. congo','dr congo')
     .replace('bosnia & herz.','bosnia and herzegovina')
     .replace('bosnia and herzegovina','bosnia and herzegovina')
+    .replace('korea republic','south korea')
+    .replace('republic of korea','south korea')
+    .replace('united states','usa')
+    .replace('united states of america','usa')
+    .replace('türkiye','turkiye')
+    .replace('turkey','turkiye')
+    .replace('curacao','curacao')
+    .replace('czech republic','czechia')
+    .replace('iran (islamic republic of)','iran')
+    .replace('new zealand','new zealand')
     .replace(/\s+/g,' ').trim();
 }
 
@@ -125,24 +138,30 @@ async function main() {
   const fdRes = await fetch(`${FD_BASE}/competitions/${FD_COMP}/matches?season=2026`, {
     headers: { 'X-Auth-Token': FDORG_KEY },
   });
-  if (!fdRes.ok) throw new Error(`FD API error: ${fdRes.status}`);
+  if (!fdRes.ok) {
+    const body = await fdRes.text();
+    throw new Error(`FD API error ${fdRes.status}: ${body}`);
+  }
   const data = await fdRes.json();
-  const finished = (data.matches || []).filter(m => m.status === 'FINISHED');
-  console.log(`  Found ${finished.length} finished matches`);
+  const allMatches = data.matches || [];
+  const finished = allMatches.filter(m => m.status === 'FINISHED');
+  console.log(`  Total matches from API: ${allMatches.length}, finished: ${finished.length}`);
 
   // Build map of matchId -> score for finished group stage matches
   const scoreMap = {};
+  const unmatched = [];
   for (const m of finished) {
     const h = m.score?.fullTime?.home, a = m.score?.fullTime?.away;
     if (h == null || a == null) continue;
     const fix = findFixture(m.homeTeam?.name, m.awayTeam?.name);
     if (!fix) {
-      // Knockout — will use the ko_ id assigned dynamically; skip for now
+      unmatched.push(`${m.homeTeam?.name} vs ${m.awayTeam?.name}`);
       continue;
     }
     scoreMap[fix.id] = { home: h, away: a };
   }
   console.log(`  Mapped ${Object.keys(scoreMap).length} group stage results`);
+  if (unmatched.length) console.log(`  Unmatched (likely knockouts): ${unmatched.join(' | ')}`);
 
   // Fetch all groups
   const groups = await sb('groups?select=id,name');
