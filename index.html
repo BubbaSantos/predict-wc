@@ -793,7 +793,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.7</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -899,9 +899,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     </div>
     <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:.3rem .4rem;border-radius:5px;font-size:.85rem;line-height:1;align-items:center;gap:.25rem;vertical-align:middle;"><span style="vertical-align:middle;">☰</span> <span style="font-size:.75rem;font-weight:600;letter-spacing:.04em;vertical-align:middle;">Menu</span></button>
     <nav id="main-nav">
-      <button id="nav-home" class="active" onclick="showView('home')">Home</button>
-      <button id="nav-predict" onclick="showView('predict')">Predict</button>
-      <button id="nav-leaderboard" onclick="showView('leaderboard')">Leaderboard</button>
+      <button id="nav-home" class="active" onclick="navTo('home')">Home</button>
+      <button id="nav-predict" onclick="navTo('predict')">Predict</button>
+      <button id="nav-leaderboard" onclick="navTo('leaderboard')">Leaderboard</button>
       <button id="nav-admin" onclick="showView('admin')" style="display:none;">Admin</button>
     </nav>
     <div class="header-user" style="position:relative;">
@@ -2555,9 +2555,7 @@ function enterApp(){
   } else {
     document.getElementById('h-player-chip').innerHTML='<strong>Admin</strong>';
   }
-  const navTarget = localStorage.getItem('wc26_nav_target');
-  if(navTarget){ localStorage.removeItem('wc26_nav_target'); showView(navTarget); }
-  else{ showView('home'); }
+  showView('home');
   startCountdown();
   startHeartbeat();
 }
@@ -2675,7 +2673,6 @@ function showView(name){ closeMenu();
   document.getElementById('view-'+name).classList.add('active');
   const nb=document.getElementById('nav-'+name);
   if(nb) nb.classList.add('active');
-  refreshGroup();
   if(name==='home'){ loadHome(); startCountdown(); }
   if(name==='predict') loadPredictions();
   if(name==='leaderboard') loadLeaderboard();
@@ -6019,6 +6016,9 @@ if(currentGroup&&currentPlayer){
 } else if(currentGroup&&isAdmin){
   enterApp();
 }
+// If a nav-reload sent us here, jump to the intended page now that the app is ready
+const _navTarget = localStorage.getItem('wc26_nav_target');
+if(_navTarget){ localStorage.removeItem('wc26_nav_target'); showView(_navTarget); }
 // Hide loader once fonts/scripts are ready
 
 
@@ -6254,6 +6254,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.7</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.8</div>
 </body>
 </html>
