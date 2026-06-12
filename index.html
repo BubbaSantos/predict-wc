@@ -93,7 +93,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact-toggle:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .matchday-group{margin-bottom:1.5rem;}
 .matchday-label{font-size:1.1rem;font-weight:800;color:var(--text);margin:.9rem 0 .4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem;}
-.match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .85rem;margin-bottom:.5rem;transition:border-color .15s;}
+.match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .85rem;margin-bottom:.5rem;transition:border-color .15s;position:relative;}
 .match-card:hover{border-color:rgba(245,158,11,.2);}
 .match-card.locked{opacity:.65;} .match-card.saved{border-color:rgba(16,185,129,.25);}
 #fixtures-list.hide-predicted .match-card[data-predicted="true"]{display:none;}
@@ -383,6 +383,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-result-row{flex-direction:row;gap:.2rem;margin-top:.1rem;}
 .compact .mc-actual-score{font-size:1.1rem;}
 .compact .mc-pred-under{font-size:.55rem;}
+.compact .mc-header-right .pts-badge{position:absolute;top:.3rem;right:.55rem;}
 
 
 
@@ -791,7 +792,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.5</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -6250,6 +6251,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.6</div>
 </body>
 </html>
