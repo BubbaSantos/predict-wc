@@ -2698,18 +2698,22 @@ function namedPicksHtml(mid, mode){
   const preds = _matchPredsMap[mid];
   if(!preds || !preds.length) return '';
   const res = results[mid];
-  const parts = preds.map(p => {
-    let color = null;
+  const scored = preds.map(p => {
+    let color = null, order = 3;
     if(mode==='live' && res && res.home!=null){
-      if(res.home===p.predHome && res.away===p.predAway) color='#22c55e';
-      else if(res.home > p.predHome || res.away > p.predAway) color='#ef4444';
+      if(res.home===p.predHome && res.away===p.predAway){ color='#22c55e'; order=0; }
+      else if(res.home > p.predHome || res.away > p.predAway){ color='#ef4444'; order=2; }
     } else if(mode==='result' && res && res.home!=null){
       const pts=calcPoints(p.predHome,p.predAway,res.home,res.away);
-      color = pts>=8 ? '#22c55e' : pts>=3 ? 'var(--group-accent)' : '#ef4444';
+      if(pts>=8){ color='#22c55e'; order=0; }
+      else if(pts>=3){ color='var(--group-accent)'; order=1; }
+      else { color='#ef4444'; order=2; }
     }
     const nameHtml = color ? `<span style="color:${color}">${p.display}</span>` : p.display;
-    return `${nameHtml}: ${p.predHome}–${p.predAway}`;
-  }).join(' &nbsp;·&nbsp; ');
+    return { html:`${nameHtml}: ${p.predHome}–${p.predAway}`, order };
+  });
+  scored.sort((a,b)=>a.order-b.order);
+  const parts = scored.map(s=>s.html).join(' &nbsp;·&nbsp; ');
   return `<div class="hmc-others">${parts}</div>`;
 }
 
