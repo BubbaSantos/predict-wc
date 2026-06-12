@@ -2714,8 +2714,7 @@ function namedPicksHtml(mid, mode){
     return { html:`${nameHtml}: ${p.predHome}–${p.predAway}`, order };
   });
   scored.sort((a,b)=>a.order-b.order);
-  const parts = scored.map(s=>s.html).join(' &nbsp;·&nbsp; ');
-  return `<div class="hmc-others">${parts}</div>`;
+  return scored.map(s=>`<div class="hmc-others" style="margin-top:.18rem;">${s.html}</div>`).join('');
 }
 
 function togglePicksView(){
