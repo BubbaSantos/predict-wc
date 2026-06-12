@@ -381,8 +381,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-locked-pred{gap:.3rem;}
 .compact .mc-lscore{font-size:1.1rem;min-width:1.2rem;}
 .compact .mc-result-row{flex-direction:row;gap:.2rem;margin-top:.1rem;}
-.compact .mc-actual-score{font-size:1.1rem;}
-.compact .mc-pred-under{font-size:.55rem;}
+.compact .mc-actual-score{font-size:1.1rem;text-align:center;width:100%;}
+.compact .mc-pred-under{display:none;}
+.compact .mc-center{width:3.8rem;}
 .compact .mc-header-right .pts-badge{position:absolute;top:.15rem;right:.25rem;font-size:.58rem;padding:.1rem .28rem;}
 .compact .pts-star{display:none;}
 
@@ -813,7 +814,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -6397,6 +6398,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.7</div>
 </body>
 </html>
