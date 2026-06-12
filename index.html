@@ -793,7 +793,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.1</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -914,6 +914,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button class="profile-menu-item" onclick="showNicknameModal();closeProfileMenu()">✏️ Change Nickname</button>
         <button class="profile-menu-item" onclick="showChangePinModal();closeProfileMenu()">🔑 Change PIN</button>
         <button class="profile-menu-item" onclick="showMyPredictions();closeProfileMenu()">📊 My Predictions</button>
+        <button id="profile-god-btn" class="profile-menu-item" style="display:none;" onclick="showGodMode();closeProfileMenu()">⚡ God Mode</button>
         <div style="border-top:1px solid var(--border);margin:.25rem 0;"></div>
         <button class="profile-menu-item" onclick="leaveGroup();closeProfileMenu()" style="color:var(--accent2);">👋 Log Out</button>
       </div>
@@ -4525,6 +4526,10 @@ function closeProfileMenu(){
   const menu = document.getElementById('profile-menu');
   if(menu) menu.style.display='none';
 }
+function updateGodModeMenuItem(){
+  const btn = document.getElementById('profile-god-btn');
+  if(btn) btn.style.display = _godUnlocked ? 'block' : 'none';
+}
 
 function updatePayChoiceMenuItem(){
   const el = document.getElementById('profile-pay-item');
@@ -6008,11 +6013,13 @@ initTheme();
 initProfileMenu();
 // Restore session
 loadSession();
+if(localStorage.getItem('wc26_god_unlocked')==='1') _godUnlocked = true;
 if(currentGroup&&currentPlayer){
   enterApp();
 } else if(currentGroup&&isAdmin){
   enterApp();
 }
+updateGodModeMenuItem();
 // Hide loader once fonts/scripts are ready
 
 
@@ -6134,6 +6141,8 @@ function checkGodPass(){
   const val = (input?.value||'').trim();
   if(val === GODMODE_PASSWORD){
     _godUnlocked = true;
+    localStorage.setItem('wc26_god_unlocked','1');
+    updateGodModeMenuItem();
     input.value='';
     errEl.style.display='none';
     unlockGodUI();
@@ -6248,6 +6257,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.21.2</div>
 </body>
 </html>
