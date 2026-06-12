@@ -378,8 +378,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-sinput{width:1.75rem;height:1.75rem;font-size:.9rem;border-radius:6px;}
 .compact .mc-check{width:1.1rem;height:1.1rem;font-size:.5rem;}
 /* Locked card */
-.compact .mc-locked-pred{gap:.3rem;}
-.compact .mc-lscore{font-size:1.1rem;min-width:1.2rem;}
+.compact .mc-locked-pred{gap:0;}
+.compact .mc-lscore{font-size:1.1rem;min-width:0;}
+.compact .mc-lsep{font-size:1.1rem;}
 .compact .mc-result-row{flex-direction:row;gap:.2rem;margin-top:.1rem;}
 .compact .mc-actual-score{font-size:1.1rem;text-align:center;width:100%;}
 .compact .mc-pred-under{font-size:.55rem;text-align:center;white-space:nowrap;width:100%;}
@@ -813,7 +814,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.0</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3156,7 +3157,7 @@ function renderPredictCard(f,pred,res){
     const lockIcon = statusBadge || '<span style="font-size:.65rem;color:var(--text-muted);opacity:.45;">🔒</span>';
     let centerHtml;
     if(hasActualScore){
-      const predText = isFilled ? (compactMode ? `↑ ${ph}–${pa}` : `you predicted ${ph}–${pa}`) : 'not predicted';
+      const predText = isFilled ? `you predicted ${ph}–${pa}` : 'not predicted';
       centerHtml = `
           <div class="mc-actual-score">${res.home}–${res.away}</div>
           <div class="mc-pred-under">${predText}</div>`;
@@ -6400,6 +6401,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.22.1</div>
 </body>
 </html>
