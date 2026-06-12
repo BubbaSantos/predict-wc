@@ -384,6 +384,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-actual-score{font-size:1.1rem;}
 .compact .mc-pred-under{font-size:.55rem;}
 .compact .mc-header-right .pts-badge{position:absolute;top:.3rem;right:.55rem;}
+.compact .pts-star{display:none;}
 
 
 
@@ -792,7 +793,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1872,6 +1873,7 @@ let _nextUpcoming = null;
 // ── SUPABASE ─────────────────────────────
 async function sb(path, opts={}){
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{
+    cache:'no-store',
     headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,
       'Content-Type':'application/json','Prefer':opts.prefer||'return=minimal',...(opts.headers||{})},
     method:opts.method||'GET',
@@ -2673,6 +2675,7 @@ function showView(name){ closeMenu();
   document.getElementById('view-'+name).classList.add('active');
   const nb=document.getElementById('nav-'+name);
   if(nb) nb.classList.add('active');
+  refreshGroup();
   if(name==='home'){ loadHome(); startCountdown(); }
   if(name==='predict') loadPredictions();
   if(name==='leaderboard') loadLeaderboard();
@@ -3033,7 +3036,7 @@ function renderPredictCard(f,pred,res){
   let ptsBadge='';
   if(hasActualScore&&isFilled){
     const pts=calcPoints(+pred.home,+pred.away,res.home,res.away);
-    if(pts===8) ptsBadge='<span class="pts-badge green">+8 ⭐</span>';
+    if(pts===8) ptsBadge='<span class="pts-badge green">+8 <span class="pts-star">⭐</span></span>';
     else if(pts===5) ptsBadge='<span class="pts-badge green">+5</span>';
     else if(pts===3) ptsBadge='<span class="pts-badge">+3</span>';
     else ptsBadge='<span class="pts-badge" style="opacity:.4">0</span>';
@@ -6251,6 +6254,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.20.7</div>
 </body>
 </html>
