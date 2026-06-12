@@ -2699,10 +2699,11 @@ function namedPicksHtml(mid, mode){
   if(!preds || !preds.length) return '';
   const res = results[mid];
   const scored = preds.map(p => {
-    let color = null, order = 3;
+    let color = null, order = 2;
     if(mode==='live' && res && res.home!=null){
       if(res.home===p.predHome && res.away===p.predAway){ color='#22c55e'; order=0; }
-      else if(res.home > p.predHome || res.away > p.predAway){ color='#ef4444'; order=2; }
+      else if(res.home > p.predHome || res.away > p.predAway){ color='#ef4444'; order=3; }
+      // else still possible: order=2, no color
     } else if(mode==='result' && res && res.home!=null){
       const pts=calcPoints(p.predHome,p.predAway,res.home,res.away);
       if(pts>=8){ color='#22c55e'; order=0; }
