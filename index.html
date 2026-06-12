@@ -1946,6 +1946,7 @@ let _lastResultHtml = '';
 let _lastMatchStatsHtml = '';
 let _nextGameStaticHtml = '';
 let _nextUpcoming = null;
+let _livePicksMap = {};
 
 // ── SUPABASE ─────────────────────────────
 async function sb(path, opts={}){
@@ -2661,7 +2662,7 @@ function renderMatchCardBody(){
         <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
         <div class="hmc-score live">${score}</div>
         <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}`;
+      </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${_livePicksMap[f.id]||''}`;
     });
   } else if(_lastResultHtml){
     html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml+_lastMatchStatsHtml;
@@ -4471,6 +4472,10 @@ async function loadHome(){
         .map(([sc,n])=>`${sc}<span style="opacity:.55"> ×${n}</span>`).join(' &nbsp;·&nbsp; ');
       return `<div class="hmc-others">Group picks: ${parts}</div>`;
     };
+
+    // Pre-build group picks for all fixtures so renderMatchCardBody can use them for live games
+    _livePicksMap = {};
+    allFixtures().forEach(f=>{ _livePicksMap[f.id] = predSummary(f.id); });
 
     // Last completed match
     const lastCompleted = allFixtures()
