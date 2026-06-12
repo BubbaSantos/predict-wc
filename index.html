@@ -1947,6 +1947,10 @@ let _lastMatchStatsHtml = '';
 let _nextGameStaticHtml = '';
 let _nextUpcoming = null;
 let _livePicksMap = {};
+let _liveNamePicksMap = {};
+let _lastResultPicksGrouped = '';
+let _lastResultPicksNamed = '';
+let _picksViewMode = 'grouped';
 
 // ── SUPABASE ─────────────────────────────
 async function sb(path, opts={}){
@@ -2651,6 +2655,9 @@ function renderMatchCardBody(){
     return ko && now >= ko.getTime() && now < ko.getTime()+LIVE_WIN;
   });
   let html = '';
+  const picksToggleBtn = (hasAny) => hasAny
+    ? `<button onclick="togglePicksView()" style="font-family:'DM Mono',monospace;background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.6rem;font-weight:600;padding:.15rem .45rem;border-radius:4px;cursor:pointer;margin-top:.3rem;letter-spacing:.04em;">${_picksViewMode==='grouped'?'👤 By name':'📊 Grouped'}</button>`
+    : '';
   if(liveGames.length){
     html += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
     liveGames.forEach(f=>{
@@ -2658,14 +2665,18 @@ function renderMatchCardBody(){
       const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
       const p = predictions[f.id];
       const hasPred = p&&p.home!==''&&p.home!==null;
+      const picks = _picksViewMode==='grouped' ? (_livePicksMap[f.id]||'') : (_liveNamePicksMap[f.id]||'');
+      const hasAnyPicks = !!((_livePicksMap[f.id]||_liveNamePicksMap[f.id]));
       html += `<div class="hmc-teams">
         <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
         <div class="hmc-score live">${score}</div>
         <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${_livePicksMap[f.id]||''}`;
+      </div>${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${picks}${picksToggleBtn(hasAnyPicks)}`;
     });
   } else if(_lastResultHtml){
-    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml+_lastMatchStatsHtml;
+    const lastPicks = _picksViewMode==='grouped' ? _lastResultPicksGrouped : _lastResultPicksNamed;
+    const hasLastPicks = !!(_lastResultPicksGrouped||_lastResultPicksNamed);
+    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml+lastPicks+picksToggleBtn(hasLastPicks)+_lastMatchStatsHtml;
   }
   if(_nextUpcoming){
     const diff = _nextUpcoming.ko.getTime()-now;
@@ -2679,6 +2690,11 @@ function renderMatchCardBody(){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
   }
   el.innerHTML = html;
+}
+
+function togglePicksView(){
+  _picksViewMode = _picksViewMode==='grouped' ? 'named' : 'grouped';
+  renderMatchCardBody();
 }
 
 let _countdownInterval = null;
@@ -4462,7 +4478,7 @@ async function loadHome(){
     const totalFixtures = allFixtures().length;
     const myPredCount = Object.keys(myPredMap).length;
 
-    // Helper: build "group picks: X–Y ×N · …" summary for a match
+    // Helper: grouped "Group picks: X–Y ×N · …"
     const predSummary = mid => {
       const ps=(gamePreds||[]).filter(p=>p.match_id===mid&&p.home_score!=null&&p.away_score!=null);
       if(!ps.length) return '';
@@ -4473,9 +4489,26 @@ async function loadHome(){
       return `<div class="hmc-others">Group picks: ${parts}</div>`;
     };
 
-    // Pre-build group picks for all fixtures so renderMatchCardBody can use them for live games
+    // Helper: named "Name: X–Y · Name: X–Y · …"
+    const namedSummary = mid => {
+      const ps=(gamePreds||[]).filter(p=>p.match_id===mid&&p.home_score!=null&&p.away_score!=null);
+      if(!ps.length) return '';
+      const parts=ps.map(p=>{
+        const display=(pm[p.player_id]?.display||pm[p.player_id]?.name||'?');
+        const isMe = currentPlayer && p.player_id===currentPlayer.id;
+        const nameHtml = isMe ? `<span style="color:var(--group-accent)">${display}</span>` : display;
+        return `${nameHtml}: ${p.home_score}–${p.away_score}`;
+      }).join(' &nbsp;·&nbsp; ');
+      return `<div class="hmc-others">${parts}</div>`;
+    };
+
+    // Pre-build both pick views for all fixtures so renderMatchCardBody can use them
     _livePicksMap = {};
-    allFixtures().forEach(f=>{ _livePicksMap[f.id] = predSummary(f.id); });
+    _liveNamePicksMap = {};
+    allFixtures().forEach(f=>{
+      _livePicksMap[f.id] = predSummary(f.id);
+      _liveNamePicksMap[f.id] = namedSummary(f.id);
+    });
 
     // Last completed match
     const lastCompleted = allFixtures()
@@ -4497,8 +4530,10 @@ async function loadHome(){
         <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
         <div class="hmc-score">${r.home_score}–${r.away_score}</div>
         <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>${predHtml}${predSummary(f.id)}`;
-    } else { _lastResultHtml=''; }
+      </div>${predHtml}`;
+      _lastResultPicksGrouped = predSummary(f.id);
+      _lastResultPicksNamed = namedSummary(f.id);
+    } else { _lastResultHtml=''; _lastResultPicksGrouped=''; _lastResultPicksNamed=''; }
 
     // Stats for last completed match
     if(lastCompleted){
