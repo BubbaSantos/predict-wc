@@ -193,15 +193,14 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-team{display:flex;flex-direction:column;align-items:center;gap:.18rem;flex:1;min-width:0;}
 .hmc-flag{font-size:1.75rem;line-height:1;}
 .hmc-tname{font-size:.7rem;font-weight:600;text-align:center;color:var(--text);}
-.hmc-score{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:900;color:var(--text);text-align:center;flex-shrink:0;min-width:3.5rem;}
+.hmc-score{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:900;color:var(--text);text-align:center;flex-shrink:0;min-width:3.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .hmc-score.live{color:#ef4444;}
 .hmc-score.vs{font-size:1rem;font-weight:700;color:var(--text-muted);}
 .hmc-meta{font-size:.68rem;color:var(--text-muted);text-align:center;margin-top:.35rem;}
 .hmc-pred{font-size:.7rem;font-weight:600;color:var(--group-accent);text-align:center;margin-top:.3rem;}
 .hmc-others{font-size:.63rem;color:var(--text-muted);text-align:center;margin-top:.28rem;line-height:1.6;}
-.hmc-pred-pct{display:flex;align-items:center;font-size:.6rem;color:var(--text-muted);margin:.25rem 0 .1rem;opacity:.7;}
-.hmc-pred-pct-team{flex:1;text-align:center;}
-.hmc-pred-pct-draw{flex-shrink:0;min-width:3.5rem;text-align:center;}
+.hmc-pct{font-size:.6rem;color:var(--text-muted);opacity:.7;margin-top:.1rem;}
+.hmc-pct-draw{font-size:.6rem;color:var(--text-muted);opacity:.7;margin-top:.1rem;}
 .hmc-cd{display:flex;justify-content:center;gap:.85rem;margin-top:.65rem;}
 .hmc-cd-unit{text-align:center;}
 .hmc-cd-num{font-size:2rem;font-weight:900;font-family:'DM Mono',monospace;color:#ef4444;line-height:1;}
@@ -827,7 +826,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.9</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1988,6 +1987,7 @@ let autoSyncInterval = null;
 let compactMode    = localStorage.getItem('wc26_compact')==='1';
 let _lastResultHtml = '';
 let _lastResultPredHtml = '';
+let _lastResultF = null;
 let _lastMatchStatsHtml = '';
 let _nextGameStaticHtml = '';
 let _nextGamePredHtml = '';
@@ -2726,16 +2726,13 @@ function renderMatchCardBody(){
       const hasPred = p&&p.home!==''&&p.home!==null;
       const picks = _picksViewMode==='grouped' ? (_livePicksMap[f.id]||'') : namedPicksHtml(f.id,'live');
       const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
-      html += `<div class="hmc-teams">
-        <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
-        <div class="hmc-score live">${score}</div>
-        <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>${predPercentHtml(f.id)}${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${picks}${hasAnyPicks?picksHint:''}`;
+      html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+picks+(hasAnyPicks?picksHint:'');
     });
-  } else if(_lastResultHtml){
+  } else if(_lastResultF){
+    const r=results[_lastResultMatchId];
     const lastPicks = _picksViewMode==='grouped' ? _lastResultPicksGrouped : namedPicksHtml(_lastResultMatchId,'result');
     const hasLastPicks = !!(_lastResultPicksGrouped||(_matchPredsMap[_lastResultMatchId]?.length));
-    html += `<div class="hmc-label">Last Result</div>`+_lastResultHtml+predPercentHtml(_lastResultMatchId)+_lastResultPredHtml+lastPicks+(hasLastPicks?picksHint:'')+_lastMatchStatsHtml;
+    html += `<div class="hmc-label">Last Result</div>`+_pctTeamsHtml(_lastResultF,'',`${r.home_score}–${r.away_score}`,_lastResultMatchId)+_lastResultPredHtml+lastPicks+(hasLastPicks?picksHint:'')+_lastMatchStatsHtml;
   }
   if(_nextUpcoming){
     const diff = _nextUpcoming.ko.getTime()-now;
@@ -2746,7 +2743,7 @@ function renderMatchCardBody(){
       const nextId = _nextUpcoming.f.id;
       const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,'upcoming');
       const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_nextGameStaticHtml+predPercentHtml(nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'');
+      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_pctTeamsHtml(_nextUpcoming.f,'vs','vs',nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'');
     }
   } else if(!html){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -2754,15 +2751,25 @@ function renderMatchCardBody(){
   el.innerHTML = html;
 }
 
-function predPercentHtml(mid){
+function _predPcts(mid){
   const preds=_matchPredsMap[mid];
-  if(!preds||!preds.length) return '';
-  const total=preds.length;
-  const hw=preds.filter(p=>p.predHome>p.predAway).length;
-  const dw=preds.filter(p=>p.predHome===p.predAway).length;
-  const aw=preds.filter(p=>p.predHome<p.predAway).length;
-  const hp=Math.round(hw/total*100), dp=Math.round(dw/total*100), ap=Math.round(aw/total*100);
-  return `<div class="hmc-pred-pct"><span class="hmc-pred-pct-team">${hp}%</span><span class="hmc-pred-pct-draw">${dp}% draw</span><span class="hmc-pred-pct-team">${ap}%</span></div>`;
+  if(!preds||!preds.length) return null;
+  const t=preds.length;
+  const hp=Math.round(preds.filter(p=>p.predHome>p.predAway).length/t*100);
+  const dp=Math.round(preds.filter(p=>p.predHome===p.predAway).length/t*100);
+  const ap=Math.round(preds.filter(p=>p.predHome<p.predAway).length/t*100);
+  return {hp,dp,ap};
+}
+function _pctTeamsHtml(f, scoreClass, scoreContent, mid){
+  const pct=_predPcts(mid);
+  const hpHtml=pct?`<div class="hmc-pct">${pct.hp}%</div>`:'';
+  const dpHtml=pct?`<div class="hmc-pct-draw">${pct.dp}% draw</div>`:'';
+  const apHtml=pct?`<div class="hmc-pct">${pct.ap}%</div>`:'';
+  return `<div class="hmc-teams">
+    <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div>${hpHtml}</div>
+    <div class="hmc-score ${scoreClass}"><span>${scoreContent}</span>${dpHtml}</div>
+    <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div>${apHtml}</div>
+  </div>`;
 }
 
 function namedPicksHtml(mid, mode){
@@ -3646,6 +3653,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.29.0',date:'14 Jun 2026',notes:['Fix: prediction percentages embedded inside team columns for perfect centering; draw % stacked under score']},
   {v:'1.28.9',date:'14 Jun 2026',notes:['Fix: prediction percentages centered under each team column; percentages now appear above "You predicted" on all cards']},
   {v:'1.28.8',date:'14 Jun 2026',notes:['Home match card: prediction split percentages (home / draw / away) shown below team names for live, last result and next up']},
   {v:'1.28.7',date:'14 Jun 2026',notes:['Previous Matches heading at top of predict page; live games stay in main list until 130-min window closes']},
@@ -4762,15 +4770,12 @@ async function loadHome(){
         const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'#f59e0b':'#22c55e';
         predHtml=`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received <span style="color:${ptsColor};font-weight:700;">${ptsDisplay}</span></div>`;
       }
-      _lastResultHtml=`<div class="hmc-teams">
-        <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
-        <div class="hmc-score">${r.home_score}–${r.away_score}</div>
-        <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>`;
+      _lastResultHtml='';
+      _lastResultF = f;
       _lastResultPredHtml = predHtml;
       _lastResultPicksGrouped = predSummary(f.id);
       _lastResultMatchId = f.id;
-    } else { _lastResultHtml=''; _lastResultPredHtml=''; _lastResultPicksGrouped=''; _lastResultMatchId=null; }
+    } else { _lastResultHtml=''; _lastResultF=null; _lastResultPredHtml=''; _lastResultPicksGrouped=''; _lastResultMatchId=null; }
 
     // Stats for last completed match
     if(lastCompleted){
@@ -4800,11 +4805,7 @@ async function loadHome(){
       const predHtml=pred
         ?`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div>`
         :`<div class="hmc-meta" style="font-style:italic;">Not predicted yet — <span style="cursor:pointer;text-decoration:underline;color:var(--group-accent);" onclick="showView('predict')">predict now</span></div>`;
-      _nextGameStaticHtml=`<div class="hmc-teams">
-        <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
-        <div class="hmc-score vs">vs</div>
-        <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
-      </div>`;
+      _nextGameStaticHtml='';
       _nextGamePredHtml = predHtml;
     } else { _nextGameStaticHtml=''; _nextGamePredHtml=''; }
 
@@ -7017,6 +7018,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.9</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.0</div>
 </body>
 </html>
