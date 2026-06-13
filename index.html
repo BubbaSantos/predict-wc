@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.2</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5194,7 +5194,12 @@ function showPlayerThemeModal(){
       <div class="pred-modal-title">Appearance</div>
       <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
     </div>
-    <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:1rem;letter-spacing:.04em;">Personal — only affects you on this device.</div>
+    <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:1.1rem;letter-spacing:.04em;">Personal — only affects you on this device.</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Mode</div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+      <button id="ptm-dark-btn" onclick="playerModePick(false,this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${!document.body.classList.contains('light')?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">🌙 Dark</button>
+      <button id="ptm-light-btn" onclick="playerModePick(true,this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${document.body.classList.contains('light')?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">☀️ Light</button>
+    </div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">Accent Colour</div>
@@ -5203,6 +5208,16 @@ function showPlayerThemeModal(){
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
+}
+
+function playerModePick(isLight, el){
+  if(isLight) document.body.classList.add('light'); else document.body.classList.remove('light');
+  localStorage.setItem('wc26_theme', isLight ? 'light' : 'dark');
+  updateThemeBtn(isLight);
+  applyBranding();
+  const wrap = el.parentElement;
+  wrap.querySelector('#ptm-dark-btn').style.borderColor = !isLight ? 'var(--group-accent)' : 'var(--border)';
+  wrap.querySelector('#ptm-light-btn').style.borderColor = isLight ? 'var(--group-accent)' : 'var(--border)';
 }
 
 function playerThemePick(id, el){
@@ -6752,6 +6767,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.3</div>
 </body>
 </html>
