@@ -5960,17 +5960,12 @@ async function viewPlayerPredictions(playerId,name){
     ]);
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const predMap={}; (preds||[]).forEach(p=>predMap[p.match_id]={h:p.home_score,a:p.away_score});
-    let totalPts=0,statExact=0,statResult=0,statWrong=0;
+    let totalPts=0;
     const rows=allFixtures().map(f=>{
       const p=predMap[f.id],r=rm[f.id];
       if(!p)return'';
       const pts=r?calcPoints(p.h,p.a,r.home_score,r.away_score):null;
-      if(pts!==null){
-        totalPts+=pts;
-        if(pts>=5)statExact++;
-        else if(pts>=3)statResult++;
-        else if(pts===0)statWrong++;
-      }
+      if(pts!==null) totalPts+=pts;
       const ptsTxt=pts===null?'<span style="color:var(--text-muted)">—</span>':pts===8?'<span style="color:var(--green)">+8⭐</span>':pts===5?'<span style="color:var(--green)">+5</span>':pts===3?'<span style="color:var(--group-accent)">+3</span>':'<span style="color:var(--text-muted)">0</span>';
       const resTxt=r?` <span style="color:var(--text-muted);font-size:.7rem;">(${r.home_score}–${r.away_score})</span>`:'';
       return `<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span></div>`;
@@ -5984,12 +5979,7 @@ async function viewPlayerPredictions(playerId,name){
     if(sh.perfect)streakParts.push(`💎 ×${sh.perfect}`);
     if(sh.hot)streakParts.push(`🔥 ×${sh.hot}`);
     if(sh.cold)streakParts.push(`💩 ×${sh.cold}`);
-    const statsHtml=`<div style="display:flex;gap:1rem;flex-wrap:wrap;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;margin-bottom:.75rem;font-size:.82rem;">
-      <span>⭐ <strong>${statExact}</strong> <span style="color:var(--text-muted);">correct scores</span></span>
-      <span>✅ <strong>${statResult}</strong> <span style="color:var(--text-muted);">correct results</span></span>
-      <span>❌ <strong>${statWrong}</strong> <span style="color:var(--text-muted);">wrong</span></span>
-    </div>`
-    +(streakParts.length?`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .85rem;margin-bottom:.75rem;font-size:.85rem;display:flex;gap:1.25rem;flex-wrap:wrap;">${streakParts.map(s=>`<span style="font-weight:600;">${s}</span>`).join('')}</div>`:'');
+    const statsHtml=streakParts.length?`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .85rem;margin-bottom:.75rem;font-size:.85rem;display:flex;gap:1.25rem;flex-wrap:wrap;">${streakParts.map(s=>`<span style="font-weight:600;">${s}</span>`).join('')}</div>`:'';
     const modal=document.createElement('div');
     modal.className='modal-overlay';
     modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${name}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${rows||'<div class="empty">No predictions yet.</div>'}</div>`;
