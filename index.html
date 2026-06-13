@@ -1723,6 +1723,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 //  CONFIG
 // ════════════════════════════════════════
 const GODMODE_PASSWORD = 'predictor-god-2026'; // change this to something private
+const SESSION_VERSION = 2; // bump to force all players to re-login
 const SUPABASE_URL = 'https://ulaourrszsruverylrxo.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsYW91cnJzenNydXZlcnlscnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MDk3NDIsImV4cCI6MjA5NjQ4NTc0Mn0.SVZghCamKJ42abd7L2oQqDUheE5oqz8a_f2SA-SCrVE';
 const FDORG_KEY   = '08714f5114a4402c8f6d737574b934a2';
@@ -2021,9 +2022,16 @@ function saveSession(){
   localStorage.setItem('wc26_group', JSON.stringify(currentGroup));
   localStorage.setItem('wc26_player', JSON.stringify(currentPlayer));
   localStorage.setItem('wc26_isAdmin', isAdmin?'1':'0');
+  localStorage.setItem('wc26_sv', String(SESSION_VERSION));
 }
 function loadSession(){
   try {
+    const sv = parseInt(localStorage.getItem('wc26_sv')||'0',10);
+    if(sv < SESSION_VERSION){
+      // Stale session — clear and force re-login
+      ['wc26_group','wc26_player','wc26_isAdmin','wc26_sv','wc26_god_unlocked'].forEach(k=>localStorage.removeItem(k));
+      return;
+    }
     const g = localStorage.getItem('wc26_group');
     const p = localStorage.getItem('wc26_player');
     const a = localStorage.getItem('wc26_isAdmin');
