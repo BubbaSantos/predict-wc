@@ -131,6 +131,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 /* ── New predict card layout ──────────────────────── */
 .today-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;}
 .matchday-label.dim{color:var(--text-muted);font-size:1.05rem;}
+.matchday-label.finished-heading{cursor:pointer;color:var(--text-muted);font-size:1.05rem;justify-content:space-between;}
+.matchday-label.finished-heading:hover{color:var(--text);}
+.finished-chevron{font-size:1.2rem;font-weight:400;line-height:1;}
 .mc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem;}
 .mc-ko{font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--text-muted);text-transform:uppercase;}
 .mc-header-right{display:flex;align-items:center;gap:.4rem;}
@@ -1041,16 +1044,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="predict-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
-      <div id="predict-toggle-wrap" style="margin-bottom:.6rem;">
-        <div class="predict-toggle-bar" onclick="toggleShowPredicted()">
-          <span>Show Predicted Matches</span>
-          <label class="toggle-switch" onclick="event.stopPropagation()"><input type="checkbox" id="toggle-show-predicted" checked onclick="toggleShowPredicted()" /><span class="toggle-slider"></span></label>
-        </div>
-        <div id="predict-toggle-finished-wrap" class="predict-toggle-bar" onclick="toggleShowFinished()">
-          <span>Show Finished Matches</span>
-          <label class="toggle-switch" onclick="event.stopPropagation()"><input type="checkbox" id="toggle-show-finished" checked onclick="toggleShowFinished()" /><span class="toggle-slider"></span></label>
-        </div>
-      </div>
+
       <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
         <button class="compact-toggle" id="compact-btn" onclick="toggleCompact()">⊟ Compact</button>
       </div>
@@ -3219,17 +3213,26 @@ function getMatchDateLabel(f){
 
 function renderFixtures(container,forAdmin=false){
   const grouped={}, keyMap={};
+  const finishedFixtures=[];
   allFixtures().forEach(f=>{
     let key, label;
     if(forAdmin){
       key = f.isKnockout?(f.group||'Knockout'):`Matchday ${f.matchday}`;
       label = key;
+      if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
+      grouped[key].push(f);
     } else {
-      key = getMatchDateKey(f);
-      label = getMatchDateLabel(f);
+      const res=results[f.id];
+      const isFinished=res&&res.home!==null&&res.away!==null;
+      if(isFinished){
+        finishedFixtures.push(f);
+      } else {
+        key = getMatchDateKey(f);
+        label = getMatchDateLabel(f);
+        if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
+        grouped[key].push(f);
+      }
     }
-    if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
-    grouped[key].push(f);
   });
   let keys;
   if(forAdmin){
@@ -3251,6 +3254,13 @@ function renderFixtures(container,forAdmin=false){
     });
     html+=`</div>`;
   });
+  if(!forAdmin&&finishedFixtures.length){
+    html+=`<div class="matchday-group"><div class="matchday-label finished-heading" onclick="toggleFinishedSection()">Finished Matches<span class="finished-chevron" id="finished-chevron">›</span></div><div id="finished-matches-list" style="display:none;">`;
+    finishedFixtures.forEach(f=>{
+      html+=renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
+    });
+    html+=`</div></div>`;
+  }
   container.innerHTML=html||'<div class="empty">No fixtures yet.</div>';
 }
 
@@ -4357,25 +4367,13 @@ function renderChangelog(){
     +CHANGELOG.map(c=>`<div class="cl-entry"><span class="cl-ver">v${c.v}</span><span class="cl-date">${c.date}</span><ul class="cl-notes">${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>`).join('');
 }
 
-let _showPredicted=true;
-let _showFinished=true;
-
-function toggleShowPredicted(){
-  _showPredicted=!_showPredicted;
-  const cb=document.getElementById('toggle-show-predicted');
-  if(cb) cb.checked=_showPredicted;
-  const list=document.getElementById('fixtures-list');
-  if(list) list.classList.toggle('hide-predicted',!_showPredicted);
-  const finWrap=document.getElementById('predict-toggle-finished-wrap');
-  if(finWrap) finWrap.style.display=_showPredicted?'flex':'none';
-}
-
-function toggleShowFinished(){
-  _showFinished=!_showFinished;
-  const cb=document.getElementById('toggle-show-finished');
-  if(cb) cb.checked=_showFinished;
-  const list=document.getElementById('fixtures-list');
-  if(list) list.classList.toggle('hide-finished',!_showFinished);
+function toggleFinishedSection(){
+  const list=document.getElementById('finished-matches-list');
+  const chevron=document.getElementById('finished-chevron');
+  if(!list) return;
+  const open=list.style.display!=='none';
+  list.style.display=open?'none':'';
+  if(chevron) chevron.textContent=open?'›':'⌄';
 }
 
 function updatePredictTotalPts(){
