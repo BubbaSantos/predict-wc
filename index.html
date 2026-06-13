@@ -250,6 +250,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .lb-badge{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:.15rem .45rem;border-radius:4px;margin-left:.4rem;vertical-align:middle;}
 .lb-badge-money{background:rgba(34,197,94,.18);color:#16a34a;}
 .lb-badge-forfeit{background:rgba(239,68,68,.18);color:#dc2626;}
+.lb-badge-hot{background:rgba(249,115,22,.18);color:#f97316;border-color:rgba(249,115,22,.3);}
+.lb-badge-perfect{background:rgba(125,211,252,.13);color:#38bdf8;border-color:rgba(125,211,252,.28);}
+.lb-badge-cold{background:rgba(180,83,9,.18);color:#b45309;border-color:rgba(180,83,9,.3);}
 .lb-name{font-weight:600;font-size:.95rem;}
 .lb-breakdown{font-size:.72rem;color:var(--text-muted);margin-top:.15rem;}
 .lb-points{font-family:'DM Mono',monospace;font-size:2rem;color:var(--group-accent);line-height:1;}
@@ -818,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.12</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.24.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1095,6 +1098,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;"><strong>1.</strong> Most correct results — whoever predicted the correct outcome (win/draw/loss) in the most matches wins</div>
           <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;margin-top:.35rem;"><strong>2.</strong> Top scorer prediction — whoever predicted the tournament's top scorer wins. If neither did, whoever's chosen player scored the most goals overall wins</div>
         </div>
+      </div>
+      <div style="margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;display:flex;flex-wrap:wrap;gap:.35rem .75rem;align-items:center;">
+        <span style="font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);flex-basis:100%;">Streak Key</span>
+        <span style="font-size:.72rem;color:var(--text-dim);">🔥 <span class="lb-badge lb-badge-hot">Hot Streak</span> 3 correct results in a row</span>
+        <span style="font-size:.72rem;color:var(--text-dim);">💎 <span class="lb-badge lb-badge-perfect">Perfect Run</span> 3 exact scores in a row</span>
+        <span style="font-size:.72rem;color:var(--text-dim);">💩 <span class="lb-badge lb-badge-cold">Shite Streak</span> 3 wrong results in a row</span>
       </div>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
     </div>
@@ -2964,6 +2973,7 @@ let _lbJointRanks = false;
 let _pendingSaveId = null;
 let _pendingSaveAll = false;
 let _lbScores = {};
+let _lbStreaks = {};
 let _lbPayMap = {};
 let _lbTiebreaks = {};
 let _lbForfeitVotes = [];
@@ -3377,6 +3387,34 @@ async function saveTiebreak(scorer,goals){
 }
 
 // ── LEADERBOARD ───────────────────────────
+function calcPlayerStreaks(gamePreds, rm){
+  const orderedCompleted = allFixtures()
+    .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
+    .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  const playerMatchPts={};
+  (gamePreds||[]).forEach(p=>{
+    const res=rm[p.match_id]; if(!res||res.home_score==null) return;
+    if(!playerMatchPts[p.player_id]) playerMatchPts[p.player_id]={};
+    playerMatchPts[p.player_id][p.match_id]=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+  });
+  const streaks={};
+  Object.entries(playerMatchPts).forEach(([pid,matchPts])=>{
+    const last3=orderedCompleted.filter(f=>matchPts[f.id]!==undefined).slice(-3).map(f=>matchPts[f.id]);
+    if(last3.length<3){streaks[pid]={};return;}
+    streaks[pid]={perfect:last3.every(p=>p>=5),hot:last3.every(p=>p>=3),cold:last3.every(p=>p===0)};
+  });
+  return streaks;
+}
+
+function streakBadgeHtml(streak,small){
+  if(!streak) return '';
+  const s=small?'font-size:.5rem;padding:.08rem .25rem;':'font-size:.55rem;padding:.1rem .3rem;';
+  if(streak.perfect) return `<span class="lb-badge lb-badge-perfect" style="${s}">💎 Perfect</span>`;
+  if(streak.hot) return `<span class="lb-badge lb-badge-hot" style="${s}">🔥 Hot</span>`;
+  if(streak.cold) return `<span class="lb-badge lb-badge-cold" style="${s}">💩 Shite</span>`;
+  return '';
+}
+
 async function loadLeaderboard(){
   if(!currentGroup)return;
   const lb=document.getElementById('leaderboard-list');
@@ -3392,7 +3430,8 @@ async function loadLeaderboard(){
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     _lbTiebreaks={}; (allTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
     const scores={};
-    (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id)).forEach(p=>{
+    const lbGamePreds=(allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
+    lbGamePreds.forEach(p=>{
       const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
       if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0,playerId:p.player_id};
       scores[name].played++;
@@ -3401,6 +3440,12 @@ async function loadLeaderboard(){
       if(pts===8){scores[name].exact++;scores[name].result++;scores[name].total+=8;}
       else if(pts===5){scores[name].exact++;scores[name].total+=5;}
       else if(pts===3){scores[name].result++;scores[name].total+=3;}
+    });
+    const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
+    _lbStreaks={};
+    Object.entries(playerStreaks).forEach(([pid,s])=>{
+      const pdata=pm[pid]; const name=(pdata&&(pdata.display||pdata.name))||'Unknown';
+      _lbStreaks[name]=s;
     });
     // Build pay map display->choice
     _lbPayMap={};
@@ -4422,6 +4467,11 @@ async function loadHome(){
     if(currentPlayer){ (gamePreds||[]).filter(p=>p.player_id===currentPlayer.id).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score}); }
     const pm = {}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
 
+    // Compute streaks for mini-lb badges
+    const homePlayerStreaks = calcPlayerStreaks(gamePreds, rm);
+    _lbStreaks = {};
+    Object.entries(homePlayerStreaks).forEach(([pid,s])=>{ const pdata=pm[pid]; _lbStreaks[(pdata?.display||pdata?.name)||'Unknown']=s; });
+
     // Total pot
     const potEl = document.getElementById('gh-pot');
     const potAmtEl = document.getElementById('gh-pot-amount');
@@ -4471,12 +4521,13 @@ async function loadHome(){
         const isYou = name===myDisplayName;
         const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
         const mBadge = mIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':mIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
+        const mStreakBadge = streakBadgeHtml(_lbStreaks[name], true);
         const r = miniRanks[i];
         const medal = rankMedals[r] || (miniRankCounts[r]>1?'='+r:String(r));
         const cls = rankCls[r] || '';
         lbHtml += `<div class="mini-lb-row ${cls}">
           <div class="mini-lb-rank">${medal}</div>
-          <div class="mini-lb-name">${name}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}</div>
+          <div class="mini-lb-name">${name}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}${mStreakBadge}</div>
           <div class="mini-lb-pts">${s.total} pts</div>
         </div>`;
       });
@@ -4485,11 +4536,12 @@ async function loadHome(){
         lbHtml += '<hr class="home-divider">';
         const myIsItm = myName===itmName, myIsForfeit = myName===forfeitName&&sorted.length>1;
         const myBadge = myIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':myIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
+        const myStreakBadge = streakBadgeHtml(_lbStreaks[myName], true);
         const myR = miniRanks[myIdx];
         const myRankDisplay = miniRankCounts[myR]>1?'='+myR:String(myR);
         lbHtml += `<div class="mini-lb-row mlb-you">
           <div class="mini-lb-rank">${myRankDisplay}</div>
-          <div class="mini-lb-name">${myName} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}</div>
+          <div class="mini-lb-name">${myName} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}${myStreakBadge}</div>
           <div class="mini-lb-pts">${myS.total} pts</div>
         </div>`;
       }
@@ -5869,10 +5921,11 @@ function renderLeaderboard(){
       : (i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row');
     const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
     const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit'+forfeitWinner+'</span>' : '';
+    const streakBadge = streakBadgeHtml(_lbStreaks[name]);
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+rankDisplay+'</div>'
-      +'<div><div class="lb-name">'+name+payBadge+statusBadge+'</div><div class="lb-breakdown">'+s.played+' of '+totalFix+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
+      +'<div><div class="lb-name">'+name+payBadge+statusBadge+streakBadge+'</div><div class="lb-breakdown">'+s.played+' of '+totalFix+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
       +'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>'
       +'</div>';
   }).join('');
@@ -6544,6 +6597,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.23.12</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.24.0</div>
 </body>
 </html>
