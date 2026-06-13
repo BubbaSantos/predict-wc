@@ -824,7 +824,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3213,7 +3213,8 @@ function getMatchDateLabel(f){
 
 function renderFixtures(container,forAdmin=false){
   const grouped={}, keyMap={};
-  const finishedFixtures=[];
+  const prevFixtures=[];
+  const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
   allFixtures().forEach(f=>{
     let key, label;
     if(forAdmin){
@@ -3222,12 +3223,11 @@ function renderFixtures(container,forAdmin=false){
       if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
       grouped[key].push(f);
     } else {
-      const res=results[f.id];
-      const isFinished=res&&res.home!==null&&res.away!==null;
-      if(isFinished){
-        finishedFixtures.push(f);
+      const dateKey=getMatchDateKey(f);
+      if(dateKey!=='zz-tbd'&&dateKey<todayKey){
+        prevFixtures.push(f);
       } else {
-        key = getMatchDateKey(f);
+        key = dateKey;
         label = getMatchDateLabel(f);
         if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
         grouped[key].push(f);
@@ -3254,9 +3254,9 @@ function renderFixtures(container,forAdmin=false){
     });
     html+=`</div>`;
   });
-  if(!forAdmin&&finishedFixtures.length){
-    html+=`<div class="matchday-group"><div class="matchday-label finished-heading" onclick="toggleFinishedSection()">Finished Matches<span class="finished-chevron" id="finished-chevron">›</span></div><div id="finished-matches-list" style="display:none;">`;
-    finishedFixtures.forEach(f=>{
+  if(!forAdmin&&prevFixtures.length){
+    html+=`<div class="matchday-group"><div class="matchday-label finished-heading" onclick="toggleFinishedSection()">Previous Matches<span class="finished-chevron" id="finished-chevron">›</span></div><div id="finished-matches-list" style="display:none;">`;
+    prevFixtures.forEach(f=>{
       html+=renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
     });
     html+=`</div></div>`;
@@ -3625,6 +3625,9 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.28.6',date:'14 Jun 2026',notes:['Previous matches collapsed under a clickable heading on predict page; removed show predicted/finished toggles']},
+  {v:'1.28.5',date:'14 Jun 2026',notes:['Predict page: finished matches grouped under collapsible heading, hidden by default; removed Show Predicted and Show Finished toggles']},
+  {v:'1.28.4',date:'14 Jun 2026',notes:['Home match card: named picks view shown by default instead of grouped tally']},
   {v:'1.28.3',date:'13 Jun 2026',notes:['Danger actions (Reset Results, Reset Predictions, Master Reset, Remove Player) now require the admin password before proceeding']},
   {v:'1.28.2',date:'13 Jun 2026',notes:['PIN entry: pressing backspace on an empty digit field now moves back to the previous field automatically']},
   {v:'1.28.1',date:'13 Jun 2026',notes:['Missing prediction on a completed game now breaks any active streak (previously skipped over)']},
@@ -6989,6 +6992,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.6</div>
 </body>
 </html>
