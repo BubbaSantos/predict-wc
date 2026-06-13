@@ -828,7 +828,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3655,6 +3655,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.29.4',date:'14 Jun 2026',notes:['Fix: God Mode button now visible when god_unlocked or in a shadow session (was requiring currentPlayer which is null in shadow sessions)']},
   {v:'1.29.3',date:'14 Jun 2026',notes:['God Mode: "Exit God Mode" button always visible when in a shadow session; exits back to your own profile on the home screen']},
   {v:'1.29.2',date:'14 Jun 2026',notes:['Fix: all three percentages (home / draw / away) rendered in a single row, aligned under their respective columns']},
   {v:'1.29.1',date:'14 Jun 2026',notes:['Fix: draw % moved out of score column (was inheriting bold/large font); home/away % stay inside team divs']},
@@ -4952,7 +4953,7 @@ function closeProfileMenu(){
 function updateGodModeMenuItem(){
   const btn = document.getElementById('profile-god-btn');
   if(!btn) return;
-  const hasAccess = currentPlayer && (currentPlayer.is_admin || currentPlayer.god_mode || _godUnlocked);
+  const hasAccess = _godUnlocked || _inGodSession || (currentPlayer && (currentPlayer.is_admin || currentPlayer.god_mode));
   btn.style.display = hasAccess ? '' : 'none';
 }
 
@@ -7035,6 +7036,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.4</div>
 </body>
 </html>
