@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.27.0</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2600,10 +2600,15 @@ async function loginPlayer(){
       // Admin login via pin field — unlikely but handle it
     }
 
-    // Find player by original name, falling back to nickname
+    // Find player by login name, then nickname, then previous names
     let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
     if(!players||!players.length){
       players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
+    }
+    if(!players||!players.length){
+      // Check previous_names array (for players whose login name was changed)
+      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,previous_names`).catch(()=>[]);
+      players = (all||[]).filter(p=>(p.previous_names||[]).some(n=>n.toLowerCase()===name.toLowerCase()));
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
     const player = players[0];
@@ -3581,6 +3586,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.28.0',date:'13 Jun 2026',notes:['"Rename" in admin Players panel now sets the display nickname only — login name is unchanged','New "Fix Login Name" option in admin Players panel to restore a player\'s original login name','Old login names kept as aliases: once fixed, both old and new name are accepted at login','Login now also checks previous_names so renamed players can still get in']},
   {v:'1.27.0',date:'13 Jun 2026',notes:['God Mode restricted: only players explicitly granted access (or admins) see the God Mode button','Admin can grant/revoke God Mode per player via Players panel — requires master password to grant','Players with God Mode access bypass the password gate entirely','⚡ badge shown next to God Mode players in the admin Players panel']},
   {v:'1.26.5',date:'13 Jun 2026',notes:['PIN entry shows numpad on mobile (inputmode numeric)','Forfeit badge on leaderboard row now just says "Forfeit"']},
   {v:'1.26.4',date:'13 Jun 2026',notes:['Ticker banner and font made smaller','Streak history: +1 badge per game after the third consecutive (not per block of 3)','Dark/light mode toggle added to player Appearance modal']},
@@ -5643,7 +5649,8 @@ async function loadPlayersPanel(){
             <button class="player-options-item" onclick="viewPlayerPredictions('${id}','${(p.nickname||p.name).replace(/'/g,"\\'")}');closePlayerMenus()">📊 View Predictions</button>
             <button class="player-options-item" onclick="showPayChoiceSubmenu(this,'${id}')" style="justify-content:space-between;"><span>${p.pay_choice==='money'?'💸 Money':p.pay_choice==='fun'?'😄 Fun':'💰 Pay Choice'}</span><span style="color:var(--text-muted);font-size:.7rem;">▶</span></button>
             ${tbm[id] ? `<button class="player-options-item" onclick="unlockTiebreak('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔓 Unlock Tie-Break</button>` : ''}
-            <button class="player-options-item" onclick="showRenameInMenu('${id}','${p.name.replace(/'/g,"\\'")}')">✏️ Rename</button>
+            <button class="player-options-item" onclick="showRenameInMenu('${id}','${p.name.replace(/'/g,"\\'")}','${(p.nickname||'').replace(/'/g,"\\'")}');closePlayerMenus()">✏️ Set Nickname</button>
+            <button class="player-options-item" onclick="fixLoginName('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔧 Fix Login Name</button>
             <button class="player-options-item" onclick="resetPlayerPin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔑 Reset PIN</button>
             ${p.is_admin
               ? `<button class="player-options-item" onclick="revokeAdmin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">👑 Revoke Admin</button>`
@@ -5709,21 +5716,21 @@ async function confirmPinReset(playerId, name){
 
 
 
-function renamePlayer(el){ const playerId=el.dataset.id, currentName=el.dataset.name; _doRenamePlayer(playerId,currentName); }
-function _doRenamePlayer(playerId, currentName){
+function renamePlayer(el){ const playerId=el.dataset.id, currentName=el.dataset.name; _doRenamePlayer(playerId,currentName,''); }
+function _doRenamePlayer(playerId, loginName, currentNickname){
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `<div class="pred-modal" style="max-width:340px;">
     <div class="pred-modal-header">
-      <div class="pred-modal-title">Rename Player</div>
+      <div class="pred-modal-title">Set Nickname</div>
       <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
     </div>
-    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Current name: <strong>${currentName}</strong></p>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Login name: <strong>${loginName}</strong><br>Nickname overrides how their name appears in the app. Leave blank to use their login name.</p>
     <div class="field">
-      <label>New Name</label>
-      <input type="text" id="rename-input" class="config-input" value="${currentName}" maxlength="40" />
+      <label>Nickname (display name)</label>
+      <input type="text" id="rename-input" class="config-input" value="${currentNickname}" placeholder="Leave blank to clear" maxlength="40" />
     </div>
-    <button class="btn" style="margin-top:.75rem;" id="rename-confirm-btn">Save Name</button>
+    <button class="btn" style="margin-top:.75rem;" id="rename-confirm-btn">Save Nickname</button>
   </div>`;
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
@@ -5734,16 +5741,53 @@ function _doRenamePlayer(playerId, currentName){
 }
 
 async function confirmRename(playerId){
-  const newName = document.getElementById('rename-input')?.value.trim();
-  if(!newName){ flash('Enter a name','error'); return; }
+  const newNickname = document.getElementById('rename-input')?.value.trim();
   if(!currentGroup) return;
   try{
-    // Check name not already taken
-    const existing = await sb('players?group_id=eq.'+currentGroup.id+'&name=eq.'+encodeURIComponent(newName)+'&id=neq.'+playerId+'&select=id');
-    if(existing&&existing.length){ flash('That name is already taken','error'); return; }
-    await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{name:newName}});
+    await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{nickname:newNickname||null}});
     document.querySelector('.modal-overlay')?.remove();
-    flash('Name updated to '+newName,'success');
+    flash(newNickname ? 'Nickname set to '+newNickname : 'Nickname cleared','success');
+    loadPlayersPanel();
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+function fixLoginName(playerId, currentLoginName){
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:340px;">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title">🔧 Fix Login Name</div>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Current login name: <strong>${currentLoginName}</strong><br>The old name will still be accepted at login after you change this.</p>
+    <div class="field">
+      <label>Restore login name to</label>
+      <input type="text" id="fix-login-input" class="config-input" value="${currentLoginName}" maxlength="40" />
+    </div>
+    <button class="btn" style="margin-top:.75rem;" id="fix-login-confirm-btn">Save</button>
+  </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+  const inp = document.getElementById('fix-login-input');
+  inp.focus(); inp.select();
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') confirmFixLogin(playerId, currentLoginName); });
+  document.getElementById('fix-login-confirm-btn').onclick = ()=>confirmFixLogin(playerId, currentLoginName);
+}
+
+async function confirmFixLogin(playerId, oldLoginName){
+  const newName = document.getElementById('fix-login-input')?.value.trim();
+  if(!newName){ flash('Enter a name','error'); return; }
+  if(newName === oldLoginName){ document.querySelector('.modal-overlay')?.remove(); return; }
+  try{
+    const existing = await sb('players?group_id=eq.'+currentGroup.id+'&name=eq.'+encodeURIComponent(newName)+'&id=neq.'+playerId+'&select=id');
+    if(existing&&existing.length){ flash('That login name is already taken','error'); return; }
+    // Fetch current previous_names and append the old login name
+    const pr = await sb('players?id=eq.'+playerId+'&select=previous_names').catch(()=>[]);
+    const prev = ((pr&&pr[0]&&pr[0].previous_names)||[]);
+    if(!prev.includes(oldLoginName)) prev.push(oldLoginName);
+    await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{name:newName,previous_names:prev}});
+    document.querySelector('.modal-overlay')?.remove();
+    flash('Login name changed to "'+newName+'". "'+oldLoginName+'" will also still work.','success');
     loadPlayersPanel();
   }catch(e){ flash('Error: '+e.message,'error'); }
 }
@@ -5782,11 +5826,9 @@ document.addEventListener('touchstart', function(e){
   }
 }, {passive:true});
 
-function showRenameInMenu(id, name){
+function showRenameInMenu(id, loginName, nickname){
   closePlayerMenus();
-  // Find the element and call rename
-  const fakeEl = {dataset:{id,name}};
-  renamePlayer(fakeEl);
+  _doRenamePlayer(id, loginName, nickname||'');
 }
 
 async function unlockTiebreak(playerId, name){
@@ -6875,6 +6917,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.27.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.0</div>
 </body>
 </html>
