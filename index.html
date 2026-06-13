@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.25.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.25.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1831,10 +1831,11 @@ const THEMES = {
     vars:{'--bg':'#f3fbf6','--surface':'#ffffff','--surface2':'#e6f7ed','--border':'#c4e8d4','--text':'#071814','--text-muted':'#486a58','--text-dim':'#1a4a34','--gold':'#d97706','--silver':'#487860','--bronze':'#92400e','--header-bg':'rgba(243,251,246,.95)'},
     bodyGradient:'none'
   },
-  retrodark:{
-    label:'Retro Dark', desc:'Vintage programme, dark leather',
+  retro:{
+    label:'Retro', desc:'Vintage football programme',
     preview:['#1A1510','#241E17','#D44E2A'],
     vars:{'--bg':'#1A1510','--surface':'#241E17','--surface2':'#2E261C','--border':'#4A3E30','--text':'#EDE8DC','--text-muted':'#8A7E6A','--text-dim':'#C4B89A','--gold':'#B8973A','--silver':'#8A7E6A','--bronze':'#C47A3A','--header-bg':'rgba(26,21,16,.97)'},
+    lightVars:{'--bg':'#EDE8DC','--surface':'#FFFFFF','--surface2':'#F5F0E8','--border':'#C8BFB0','--text':'#1A1510','--text-muted':'#8A7E6A','--text-dim':'#5A5040','--bronze':'#7A4A20','--header-bg':'rgba(237,232,220,.97)'},
     bodyGradient:'none',
     extraCss:`
       .match-card,.home-card,.tie-break-section,.predict-toggle-bar,.group-hero{border-radius:3px!important;}
@@ -1844,41 +1845,14 @@ const THEMES = {
       .save-btn,.btn-ghost,.pts-badge,.group-tag,.user-chip{border-radius:2px!important;}
       .lb-badge{border-radius:2px!important;}
       .btn:not(.btn-ghost){background:#D44E2A!important;border-color:#B83A1A!important;color:#fff!important;border-radius:3px!important;letter-spacing:.06em!important;}
-      .matchday-label{text-transform:uppercase!important;letter-spacing:.14em!important;font-size:.75rem!important;font-weight:800!important;padding-bottom:.5rem!important;border-bottom:1.5px solid rgba(237,232,220,.2)!important;margin-bottom:.65rem!important;}
+      .matchday-label{text-transform:uppercase!important;letter-spacing:.14em!important;font-size:.75rem!important;font-weight:800!important;padding-bottom:.5rem!important;border-bottom:1.5px solid color-mix(in srgb,var(--text) 30%,transparent)!important;margin-bottom:.65rem!important;}
       .matchday-label.dim{font-size:.72rem!important;}
-      .page-header{border-bottom:2px solid rgba(237,232,220,.15)!important;}
-      header{border-bottom:2px solid rgba(237,232,220,.08)!important;}
+      .page-header{border-bottom:2px solid color-mix(in srgb,var(--text) 22%,transparent)!important;}
+      header{border-bottom:2px solid color-mix(in srgb,var(--text) 12%,transparent)!important;}
       .home-card-title{letter-spacing:.18em!important;font-weight:800!important;}
       .mc-ko{letter-spacing:.16em!important;font-weight:800!important;}
       .match-info{letter-spacing:.05em!important;}
-      nav button.active{background:rgba(237,232,220,.08)!important;border-radius:2px!important;}
-      .lb-breakdown{letter-spacing:.03em!important;}
-      .predict-toggle-bar{font-weight:700!important;letter-spacing:.06em!important;text-transform:uppercase!important;font-size:.75rem!important;}
-      .mc-check{border-radius:2px!important;}
-      .match-card.predicted{border-left:3px solid #D44E2A!important;}
-    `
-  },
-  retro:{
-    label:'Retro Light', desc:'Vintage football programme',
-    preview:['#EDE8DC','#FFFFFF','#D44E2A'],
-    vars:{'--bg':'#EDE8DC','--surface':'#FFFFFF','--surface2':'#F5F0E8','--border':'#C8BFB0','--text':'#1A1510','--text-muted':'#8A7E6A','--text-dim':'#5A5040','--gold':'#B8973A','--silver':'#8A7E6A','--bronze':'#7A4A20','--header-bg':'rgba(237,232,220,.97)'},
-    bodyGradient:'none',
-    extraCss:`
-      .match-card,.home-card,.tie-break-section,.predict-toggle-bar,.group-hero{border-radius:3px!important;}
-      .lb-row,.lb-row.lb-gold,.lb-row.lb-silver,.lb-row.lb-bronze,.lb-row.lb-last{border-radius:3px!important;}
-      .modal,.pred-modal,.landing-card,.pay-modal{border-radius:4px!important;}
-      .mc-adj,.mc-sinput,.score-input,.field input,.field select,.config-input,.compact-toggle{border-radius:3px!important;}
-      .save-btn,.btn-ghost,.pts-badge,.group-tag,.user-chip{border-radius:2px!important;}
-      .lb-badge{border-radius:2px!important;}
-      .btn:not(.btn-ghost){background:#D44E2A!important;border-color:#B83A1A!important;color:#fff!important;border-radius:3px!important;letter-spacing:.06em!important;}
-      .matchday-label{text-transform:uppercase!important;letter-spacing:.14em!important;font-size:.75rem!important;font-weight:800!important;padding-bottom:.5rem!important;border-bottom:1.5px solid rgba(26,21,16,.35)!important;margin-bottom:.65rem!important;}
-      .matchday-label.dim{font-size:.72rem!important;}
-      .page-header{border-bottom:2px solid rgba(26,21,16,.25)!important;}
-      header{border-bottom:2px solid rgba(26,21,16,.12)!important;}
-      .home-card-title{letter-spacing:.18em!important;font-weight:800!important;color:rgba(26,21,16,.55)!important;}
-      .mc-ko{letter-spacing:.16em!important;font-weight:800!important;}
-      .match-info{letter-spacing:.05em!important;}
-      nav button.active{background:rgba(26,21,16,.08)!important;border-radius:2px!important;}
+      nav button.active{background:color-mix(in srgb,var(--text) 8%,transparent)!important;border-radius:2px!important;}
       .lb-breakdown{letter-spacing:.03em!important;}
       .predict-toggle-bar{font-weight:700!important;letter-spacing:.06em!important;text-transform:uppercase!important;font-size:.75rem!important;}
       .mc-check{border-radius:2px!important;}
@@ -2842,7 +2816,9 @@ function stopResultsPoller(){
 function applyTheme(themeId){
   const t = THEMES[themeId] || THEMES.dark;
   const root = document.documentElement;
-  Object.entries(t.vars).forEach(([k,v])=>root.style.setProperty(k,v));
+  const isLight = document.body.classList.contains('light');
+  const vars = (isLight && t.lightVars) ? {...t.vars,...t.lightVars} : t.vars;
+  Object.entries(vars).forEach(([k,v])=>root.style.setProperty(k,v));
   document.body.style.backgroundImage = t.bodyGradient==='none' ? 'none' : t.bodyGradient;
   let extraEl = document.getElementById('theme-extra-css');
   if(t.extraCss){
@@ -6353,6 +6329,7 @@ function toggleTheme(){
   const isLight = document.body.classList.toggle('light');
   localStorage.setItem('wc26_theme', isLight ? 'light' : 'dark');
   updateThemeBtn(isLight);
+  applyBranding();
 }
 
 function updateThemeBtn(isLight){
@@ -6692,6 +6669,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.25.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.25.7</div>
 </body>
 </html>
