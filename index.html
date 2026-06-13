@@ -715,8 +715,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .god-create-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.75rem;}
 .god-btn{background:#a855f7;color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:700;padding:.6rem 1.25rem;border-radius:8px;cursor:pointer;transition:all .15s;letter-spacing:.03em;}
 .god-btn:hover{filter:brightness(1.12);}
-.god-shadow-badge{position:fixed;bottom:.4rem;left:.6rem;font-size:.6rem;color:#a855f7;opacity:.6;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;display:none;}
+.god-shadow-badge{position:fixed;bottom:1rem;right:1rem;font-size:.68rem;font-weight:700;color:#a855f7;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);border-radius:8px;padding:.35rem .75rem;z-index:100;cursor:pointer;user-select:none;display:none;letter-spacing:.03em;transition:background .15s;}
 .god-shadow-badge.show{display:block;}
+.god-shadow-badge:hover{background:rgba(168,85,247,.22);}
 .god-tabs{display:flex;gap:.4rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border);padding-bottom:.75rem;}
 .god-tab{background:none;border:1px solid transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;padding:.4rem .9rem;border-radius:7px;cursor:pointer;transition:all .15s;}
 .god-tab.active{background:#a855f715;border-color:#a855f750;color:#a855f7;}
@@ -827,7 +828,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.2</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1572,7 +1573,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 </div>
 
 <!-- God mode shadow indicator (bottom-left when shadow-admining a group) -->
-<div id="god-shadow-badge" class="god-shadow-badge" onclick="returnToGodMode()" title="Return to God Mode">⚡ god mode</div>
+<div id="god-shadow-badge" class="god-shadow-badge" onclick="exitGodModeToProfile()" title="Exit God Mode">⚡ Exit God Mode</div>
 
 <!-- ══ SETUP WIZARD ══ -->
 <div id="screen-setup" class="setup-screen">
@@ -1981,6 +1982,8 @@ let currentPlayer  = null; // {id, name, group_id}
 let isAdmin        = false;
 let _godUnlocked   = false;
 let _inGodSession  = false;
+let _godOriginalPlayer = null;
+let _godOriginalGroup  = null;
 let predictions    = {};
 let results        = {};
 let knockoutFixtures = [];
@@ -3652,6 +3655,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.29.3',date:'14 Jun 2026',notes:['God Mode: "Exit God Mode" button always visible when in a shadow session; exits back to your own profile on the home screen']},
   {v:'1.29.2',date:'14 Jun 2026',notes:['Fix: all three percentages (home / draw / away) rendered in a single row, aligned under their respective columns']},
   {v:'1.29.1',date:'14 Jun 2026',notes:['Fix: draw % moved out of score column (was inheriting bold/large font); home/away % stay inside team divs']},
   {v:'1.29.0',date:'14 Jun 2026',notes:['Fix: prediction percentages embedded inside team columns for perfect centering; draw % stacked under score']},
@@ -6946,6 +6950,8 @@ async function godEnterGroup(groupId){
   try{
     const grps = await sb('groups?id=eq.'+groupId+'&select=*');
     if(!grps||!grps.length){ flash('Group not found','error'); return; }
+    _godOriginalPlayer = currentPlayer;
+    _godOriginalGroup  = currentGroup;
     currentGroup = grps[0];
     currentPlayer = null;
     isAdmin = true;
@@ -6959,17 +6965,27 @@ async function godEnterGroup(groupId){
   }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
-function returnToGodMode(){
-  // Leave the current group session and go back to god mode
-  currentGroup=null; currentPlayer=null; isAdmin=false; _inGodSession=false;
-  localStorage.removeItem('wc26_group');
-  localStorage.removeItem('wc26_player');
-  localStorage.removeItem('wc26_isAdmin');
-  document.getElementById('screen-app').style.display='none';
-  document.getElementById('screen-landing').style.display='block';
+function exitGodModeToProfile(){
   document.getElementById('god-shadow-badge').classList.remove('show');
   document.getElementById('admin-tab-changelog').style.display='none';
-  showGodMode();
+  _inGodSession = false;
+  if(_godOriginalPlayer && _godOriginalGroup){
+    currentPlayer = _godOriginalPlayer;
+    currentGroup  = _godOriginalGroup;
+    isAdmin = _godOriginalPlayer.is_admin || false;
+    _godOriginalPlayer = null;
+    _godOriginalGroup  = null;
+    saveSession();
+    enterApp();
+  } else {
+    currentGroup=null; currentPlayer=null; isAdmin=false;
+    _godOriginalPlayer=null; _godOriginalGroup=null;
+    localStorage.removeItem('wc26_group');
+    localStorage.removeItem('wc26_player');
+    localStorage.removeItem('wc26_isAdmin');
+    document.getElementById('screen-app').style.display='none';
+    document.getElementById('screen-landing').style.display='block';
+  }
 }
 
 async function godDeleteGroup(groupId, name){
@@ -7019,6 +7035,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.3</div>
 </body>
 </html>
