@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.4</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.5</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -855,10 +855,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="field"><label>Your Name <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(as a player)</span></label><input id="c-player-name" type="text" placeholder="e.g. John Smith" maxlength="40" /></div>
       <div class="field"><label>Your PIN</label>
         <div class="pin-row" id="c-player-pin-row">
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr0" oninput="pinNext(this,'cr1','c-player-pin-row')" />
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr1" oninput="pinNext(this,'cr2','c-player-pin-row')" />
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr2" oninput="pinNext(this,'cr3','c-player-pin-row')" />
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="cr3" oninput="pinDone('c-player-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="cr0" oninput="pinNext(this,'cr1','c-player-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="cr1" oninput="pinNext(this,'cr2','c-player-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="cr2" oninput="pinNext(this,'cr3','c-player-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="cr3" oninput="pinDone('c-player-pin-row')" />
         </div>
       </div>
       <div id="create-error" class="form-error"></div>
@@ -886,10 +886,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div class="field"><label>Your Name</label><input id="j-login-name" type="text" placeholder="Your name" maxlength="40" onkeydown="if(event.key==='Enter')loginPlayer()" /></div>
         <div class="field"><label>Your 4-digit PIN</label>
           <div class="pin-row" id="j-login-pin-row">
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp0" oninput="pinNext(this,'jp1','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp1" oninput="pinNext(this,'jp2','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp2" oninput="pinNext(this,'jp3','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="jp3" oninput="pinDone('j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="jp0" oninput="pinNext(this,'jp1','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="jp1" oninput="pinNext(this,'jp2','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="jp2" oninput="pinNext(this,'jp3','j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="jp3" oninput="pinDone('j-login-pin-row')" onkeydown="if(event.key==='Enter')loginPlayer()" />
           </div>
         </div>
         <div id="join-error-2" class="form-error"></div>
@@ -901,10 +901,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div class="field"><label>Your Name</label><input id="j-reg-name" type="text" placeholder="e.g. John Smith" maxlength="40" /></div>
         <div class="field"><label>Choose a 4-digit PIN</label>
           <div class="pin-row" id="j-reg-pin-row">
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="rp0" oninput="pinNext(this,'rp1','j-reg-pin-row')" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="rp1" oninput="pinNext(this,'rp2','j-reg-pin-row')" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="rp2" oninput="pinNext(this,'rp3','j-reg-pin-row')" />
-            <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="rp3" oninput="pinDone('j-reg-pin-row')" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="rp0" oninput="pinNext(this,'rp1','j-reg-pin-row')" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="rp1" oninput="pinNext(this,'rp2','j-reg-pin-row')" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="rp2" oninput="pinNext(this,'rp3','j-reg-pin-row')" />
+            <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="rp3" oninput="pinDone('j-reg-pin-row')" />
           </div>
         </div>
         <div id="join-error-3" class="form-error"></div>
@@ -1599,10 +1599,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="field"><label>Your Name <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(as a player)</span></label><input id="wiz-player-name" type="text" placeholder="e.g. John Smith" maxlength="40" /></div>
       <div class="field"><label>Your PIN</label>
         <div class="pin-row" id="wiz-pin-row">
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp0" oninput="pinNext(this,'wp1','wiz-pin-row')" />
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp1" oninput="pinNext(this,'wp2','wiz-pin-row')" />
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp2" oninput="pinNext(this,'wp3','wiz-pin-row')" />
-          <input class="score-input pin-input" type="number" min="0" max="9" maxlength="1" id="wp3" oninput="pinDone('wiz-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="wp0" oninput="pinNext(this,'wp1','wiz-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="wp1" oninput="pinNext(this,'wp2','wiz-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="wp2" oninput="pinNext(this,'wp3','wiz-pin-row')" />
+          <input class="score-input pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="wp3" oninput="pinDone('wiz-pin-row')" />
         </div>
       </div>
     </div>
@@ -3573,6 +3573,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.26.5',date:'13 Jun 2026',notes:['PIN entry shows numpad on mobile (inputmode numeric)','Forfeit badge on leaderboard row now just says "Forfeit"']},
   {v:'1.26.4',date:'13 Jun 2026',notes:['Ticker banner and font made smaller','Streak history: +1 badge per game after the third consecutive (not per block of 3)','Dark/light mode toggle added to player Appearance modal']},
   {v:'1.26.2',date:'13 Jun 2026',notes:['Player Appearance modal: accent colour picker — tap to apply and save instantly, no save button']},
   {v:'1.26.1',date:'13 Jun 2026',notes:['Per-player theme picker in profile menu (🎨 Theme) — stored locally, does not affect other players\' view']},
@@ -6097,7 +6098,7 @@ function renderLeaderboard(){
       ? (ranks[i]===1 ? 'lb-row lb-gold' : ranks[i]===2 ? 'lb-row lb-silver' : ranks[i]===3 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row')
       : (i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row');
     const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
-    const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit'+forfeitWinner+'</span>' : '';
+    const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
     const streakBadge = streakBadgeHtml(_lbStreaks[name]);
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
@@ -6806,6 +6807,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.4</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.5</div>
 </body>
 </html>
