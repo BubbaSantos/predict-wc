@@ -199,8 +199,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-meta{font-size:.68rem;color:var(--text-muted);text-align:center;margin-top:.35rem;}
 .hmc-pred{font-size:.7rem;font-weight:600;color:var(--group-accent);text-align:center;margin-top:.3rem;}
 .hmc-others{font-size:.63rem;color:var(--text-muted);text-align:center;margin-top:.28rem;line-height:1.6;}
-.hmc-pct{font-size:.6rem;color:var(--text-muted);opacity:.7;margin-top:.1rem;}
-.hmc-pct-draw{font-size:.6rem;color:var(--text-muted);opacity:.7;text-align:center;margin:.05rem 0 .1rem;}
+.hmc-pred-pct{display:flex;align-items:center;gap:.5rem;font-size:.6rem;color:var(--text-muted);opacity:.7;margin-top:.1rem;}
+.hmc-pct{flex:1;min-width:0;text-align:center;}
+.hmc-pct-draw{flex-shrink:0;min-width:3.5rem;text-align:center;}
 .hmc-cd{display:flex;justify-content:center;gap:.85rem;margin-top:.65rem;}
 .hmc-cd-unit{text-align:center;}
 .hmc-cd-num{font-size:2rem;font-weight:900;font-family:'DM Mono',monospace;color:#ef4444;line-height:1;}
@@ -826,7 +827,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.1</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.2</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2762,14 +2763,12 @@ function _predPcts(mid){
 }
 function _pctTeamsHtml(f, scoreClass, scoreContent, mid){
   const pct=_predPcts(mid);
-  const hpHtml=pct?`<div class="hmc-pct">${pct.hp}%</div>`:'';
-  const dpHtml=pct?`<div class="hmc-pct-draw">${pct.dp}% draw</div>`:'';
-  const apHtml=pct?`<div class="hmc-pct">${pct.ap}%</div>`:'';
+  const pctRow=pct?`<div class="hmc-pred-pct"><span class="hmc-pct">${pct.hp}%</span><span class="hmc-pct-draw">${pct.dp}% draw</span><span class="hmc-pct">${pct.ap}%</span></div>`:'';
   return `<div class="hmc-teams">
-    <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div>${hpHtml}</div>
+    <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
     <div class="hmc-score ${scoreClass}">${scoreContent}</div>
-    <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div>${apHtml}</div>
-  </div>${dpHtml}`;
+    <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
+  </div>${pctRow}`;
 }
 
 function namedPicksHtml(mid, mode){
@@ -3653,6 +3652,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.29.2',date:'14 Jun 2026',notes:['Fix: all three percentages (home / draw / away) rendered in a single row, aligned under their respective columns']},
   {v:'1.29.1',date:'14 Jun 2026',notes:['Fix: draw % moved out of score column (was inheriting bold/large font); home/away % stay inside team divs']},
   {v:'1.29.0',date:'14 Jun 2026',notes:['Fix: prediction percentages embedded inside team columns for perfect centering; draw % stacked under score']},
   {v:'1.28.9',date:'14 Jun 2026',notes:['Fix: prediction percentages centered under each team column; percentages now appear above "You predicted" on all cards']},
@@ -7019,6 +7019,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.2</div>
 </body>
 </html>
