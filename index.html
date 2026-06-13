@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.0</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.1</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -942,6 +942,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <button class="profile-menu-item" onclick="showNicknameModal();closeProfileMenu()">✏️ Change Nickname</button>
         <button class="profile-menu-item" onclick="showChangePinModal();closeProfileMenu()">🔑 Change PIN</button>
         <button class="profile-menu-item" onclick="showMyPredictions();closeProfileMenu()">📊 My Predictions</button>
+        <button class="profile-menu-item" onclick="showPlayerThemeModal();closeProfileMenu()">🎨 Theme</button>
         <button id="profile-god-btn" class="profile-menu-item" onclick="showGodMode();closeProfileMenu()">⚡ God Mode</button>
         <div style="border-top:1px solid var(--border);margin:.25rem 0;"></div>
         <button class="profile-menu-item" onclick="leaveGroup();closeProfileMenu()" style="color:var(--accent2);">👋 Log Out</button>
@@ -2837,9 +2838,12 @@ function applyTheme(themeId){
   }
 }
 
+function getPlayerThemeKey(){ return currentPlayer ? `wc26_player_theme_${currentPlayer.id}` : null; }
+
 function applyBranding(){
   if(!currentGroup) return;
-  applyTheme(currentGroup.theme||'dark');
+  const playerTheme = getPlayerThemeKey() ? localStorage.getItem(getPlayerThemeKey()) : null;
+  applyTheme(playerTheme || currentGroup.theme||'dark');
   const accent = currentGroup.accent||'#f59e0b';
   document.documentElement.style.setProperty('--group-accent', accent);
   const emoji = currentGroup.emoji||'⚽';
@@ -5158,6 +5162,67 @@ async function showPlayersPopup(){
   }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
+function showPlayerThemeModal(){
+  const key = getPlayerThemeKey();
+  const current = (key && localStorage.getItem(key)) || currentGroup?.theme || 'dark';
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  const grid = Object.entries(THEMES).map(([id,t])=>{
+    const [bg,surface,accent] = t.preview;
+    const isActive = id===current;
+    return `<div onclick="selectPlayerTheme('${id}',this)" data-tid="${id}" style="cursor:pointer;border-radius:10px;border:2px solid ${isActive?'var(--group-accent)':'var(--border)'};padding:.65rem;background:var(--surface2);transition:border-color .15s;">
+      <div style="display:flex;gap:.3rem;margin-bottom:.5rem;">
+        <div style="flex:2;height:18px;border-radius:4px;background:${bg};border:1px solid rgba(128,128,128,.15);"></div>
+        <div style="flex:1;height:18px;border-radius:4px;background:${surface};border:1px solid rgba(128,128,128,.15);"></div>
+        <div style="width:18px;height:18px;border-radius:50%;background:${accent};flex-shrink:0;"></div>
+      </div>
+      <div style="font-size:.8rem;font-weight:600;color:var(--text);">${t.label}</div>
+      <div style="font-size:.65rem;color:var(--text-muted);">${t.desc}</div>
+    </div>`;
+  }).join('');
+  const hasOverride = key && localStorage.getItem(key);
+  modal.innerHTML=`<div class="pred-modal" style="max-width:520px;">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title">Your Theme</div>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Personal preference — only applies to you on this device.</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1rem;" id="player-theme-grid">${grid}</div>
+    ${hasOverride?`<button class="btn-ghost" style="font-size:.75rem;margin-bottom:.75rem;" onclick="clearPlayerTheme(this)">Reset to group default</button>`:''}
+    <button class="btn" onclick="savePlayerTheme()">Save</button>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  modal._selectedTheme = current;
+}
+
+function selectPlayerTheme(id, el){
+  const modal = el.closest('.modal-overlay');
+  modal._selectedTheme = id;
+  modal.querySelectorAll('[data-tid]').forEach(c=>{
+    c.style.borderColor = c.dataset.tid===id ? 'var(--group-accent)' : 'var(--border)';
+  });
+  applyTheme(id);
+}
+
+function savePlayerTheme(){
+  const modal = document.querySelector('.modal-overlay');
+  if(!modal||!modal._selectedTheme) return;
+  const key = getPlayerThemeKey();
+  if(key) localStorage.setItem(key, modal._selectedTheme);
+  applyBranding();
+  modal.remove();
+  flash('Theme saved!','success');
+}
+
+function clearPlayerTheme(btn){
+  const key = getPlayerThemeKey();
+  if(key) localStorage.removeItem(key);
+  applyBranding();
+  btn.closest('.modal-overlay').remove();
+  flash('Reset to group default','success');
+}
+
 function showNicknameModal(){
   if(!currentPlayer) return;
   const current = currentPlayer.nickname || '';
@@ -6677,6 +6742,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.1</div>
 </body>
 </html>
