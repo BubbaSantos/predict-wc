@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.2</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3615,6 +3615,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.28.3',date:'13 Jun 2026',notes:['Danger actions (Reset Results, Reset Predictions, Master Reset, Remove Player) now require the admin password before proceeding']},
   {v:'1.28.2',date:'13 Jun 2026',notes:['PIN entry: pressing backspace on an empty digit field now moves back to the previous field automatically']},
   {v:'1.28.1',date:'13 Jun 2026',notes:['Missing prediction on a completed game now breaks any active streak (previously skipped over)']},
   {v:'1.28.0',date:'13 Jun 2026',notes:['"Rename" in admin Players panel now sets the display nickname only — login name is unchanged','New "Fix Login Name" option in admin Players panel to restore a player\'s original login name','Old login names kept as aliases: once fixed, both old and new name are accepted at login','Login now also checks previous_names so renamed players can still get in']},
@@ -5924,16 +5925,18 @@ async function adminTogglePay(el){
   }catch(e){ flash('Error: '+e.message,'error'); }
 }
 async function removePlayer(playerId,name){
-  showConfirm('👤','Remove Player','Remove '+name+'? This deletes all their predictions and tie-break.','Remove',async()=>{
-    try{
-      await Promise.all([
-        sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}`,{method:'DELETE',prefer:'return=minimal'}),
-        sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}`,{method:'DELETE',prefer:'return=minimal'}),
-        sb(`players?id=eq.${playerId}`,{method:'DELETE',prefer:'return=minimal'}),
-      ]);
-      flash(name+' removed','success');
-      loadPlayersPanel();
-    }catch(e){flash('Error: '+e.message,'error');}
+  requireAdminPassword(()=>{
+    showConfirm('👤','Remove Player','Remove '+name+'? This deletes all their predictions and tie-break.','Remove',async()=>{
+      try{
+        await Promise.all([
+          sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}`,{method:'DELETE',prefer:'return=minimal'}),
+          sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}`,{method:'DELETE',prefer:'return=minimal'}),
+          sb(`players?id=eq.${playerId}`,{method:'DELETE',prefer:'return=minimal'}),
+        ]);
+        flash(name+' removed','success');
+        loadPlayersPanel();
+      }catch(e){flash('Error: '+e.message,'error');}
+    });
   });
 }
 
@@ -6543,13 +6546,51 @@ function downloadCSV(rows,filename){
 }
 
 // ── RESET ─────────────────────────────────
+let _adminGateCallback = null;
+function requireAdminPassword(onSuccess){
+  const existing = document.getElementById('admin-pass-gate-modal');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'admin-pass-gate-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:320px;">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title">🔐 Admin Password</div>
+      <button class="modal-close" onclick="document.getElementById('admin-pass-gate-modal').remove()">✕</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Enter the admin password to continue.</p>
+    <input type="password" id="admin-gate-input" class="config-input" placeholder="Admin password" style="margin-bottom:.75rem;" onkeydown="if(event.key==='Enter')checkAdminGate()"/>
+    <div id="admin-gate-err" style="color:var(--accent2);font-size:.78rem;margin-bottom:.75rem;display:none;"></div>
+    <button class="btn" onclick="checkAdminGate()">Continue</button>
+  </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+  _adminGateCallback = onSuccess;
+  setTimeout(()=>document.getElementById('admin-gate-input')?.focus(), 80);
+}
+function checkAdminGate(){
+  const input = document.getElementById('admin-gate-input');
+  const errEl = document.getElementById('admin-gate-err');
+  const val = (input?.value||'').trim();
+  if(val === currentGroup?.admin_password){
+    document.getElementById('admin-pass-gate-modal')?.remove();
+    if(_adminGateCallback){ _adminGateCallback(); _adminGateCallback=null; }
+  } else {
+    errEl.textContent = val ? 'Wrong password.' : 'Enter the admin password.';
+    errEl.style.display='block';
+    if(input){ input.value=''; input.focus(); }
+  }
+}
+
 function confirmReset(type){
-  const c={
-    results:{icon:'📋',title:'Reset All Results',body:'Delete all scores? The leaderboard resets to zero. Predictions are kept.',label:'Reset Results'},
-    predictions:{icon:'🗑️',title:'Reset All Predictions',body:'Wipe every player prediction? Cannot be undone.',label:'Reset Predictions'},
-    all:{icon:'💥',title:'Master Reset',body:'Delete everything — predictions, results, and tie-breaks. Cannot be undone.',label:'Yes, Reset Everything'},
-  }[type];
-  showConfirm(c.icon,c.title,c.body,c.label,()=>doReset(type));
+  requireAdminPassword(()=>{
+    const c={
+      results:{icon:'📋',title:'Reset All Results',body:'Delete all scores? The leaderboard resets to zero. Predictions are kept.',label:'Reset Results'},
+      predictions:{icon:'🗑️',title:'Reset All Predictions',body:'Wipe every player prediction? Cannot be undone.',label:'Reset Predictions'},
+      all:{icon:'💥',title:'Master Reset',body:'Delete everything — predictions, results, and tie-breaks. Cannot be undone.',label:'Yes, Reset Everything'},
+    }[type];
+    showConfirm(c.icon,c.title,c.body,c.label,()=>doReset(type));
+  });
 }
 async function doReset(type){
   if(!currentGroup)return;
@@ -6950,6 +6991,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.28.3</div>
 </body>
 </html>
