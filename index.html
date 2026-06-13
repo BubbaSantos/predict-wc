@@ -6079,9 +6079,9 @@ function calcSinglePlayerStreakHistory(predMap, rm){
   ordered.forEach(f=>{
     const p=predMap[f.id],r=rm[f.id];
     const pts=calcPoints(p.h,p.a,r.home_score,r.away_score);
-    if(pts>=5){pr++;if(pr%3===0)pc++;}else pr=0;
-    if(pts>=3){hr++;if(hr%3===0)hc++;}else hr=0;
-    if(pts===0){cr++;if(cr%3===0)cc++;}else cr=0;
+    if(pts>=5){pr++;if(pr>=3)pc++;}else pr=0;
+    if(pts>=3){hr++;if(hr>=3)hc++;}else hr=0;
+    if(pts===0){cr++;if(cr>=3)cc++;}else cr=0;
   });
   return{perfect:pc,hot:hc,cold:cc};
 }
