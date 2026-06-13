@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.3</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.4</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3573,6 +3573,45 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.26.4',date:'13 Jun 2026',notes:['Ticker banner and font made smaller','Streak history: +1 badge per game after the third consecutive (not per block of 3)','Dark/light mode toggle added to player Appearance modal']},
+  {v:'1.26.2',date:'13 Jun 2026',notes:['Player Appearance modal: accent colour picker — tap to apply and save instantly, no save button']},
+  {v:'1.26.1',date:'13 Jun 2026',notes:['Per-player theme picker in profile menu (🎨 Theme) — stored locally, does not affect other players\' view']},
+  {v:'1.26.0',date:'13 Jun 2026',notes:['All themes now adapt to the ☀️/🌙 toggle — every theme has a light and dark variant; standalone Light theme removed','Paper, Blush, Chalk given proper dark defaults']},
+  {v:'1.25.7',date:'13 Jun 2026',notes:['Retro theme consolidated to single entry adapting with light/dark toggle; Retro Dark removed as separate option']},
+  {v:'1.25.5',date:'13 Jun 2026',notes:['New Retro theme: vintage football programme aesthetic — warm cream/leather tones, square corners, editorial typography, coral red CTAs']},
+  {v:'1.25.4',date:'13 Jun 2026',notes:['Player predictions modal: ✅ and ❌ shown after the points number for +3 and 0 results']},
+  {v:'1.25.2',date:'13 Jun 2026',notes:['Player predictions modal: minimal stats row (⭐ exact · ✅ result · ❌ wrong) alongside historical streak badges']},
+  {v:'1.25.0',date:'13 Jun 2026',notes:['Login now accepts nickname as well as original name','Tap a name on the leaderboard to see their streak history: 💎×N 🔥×N 💩×N across all games']},
+  {v:'1.24.2',date:'13 Jun 2026',notes:['"Perfect Run" renamed to "Perfect Streak"; streak key reordered: Perfect above Hot']},
+  {v:'1.24.0',date:'13 Jun 2026',notes:['Streak badges on leaderboard and home standings — 🔥 Hot Streak (3 correct results in a row), 💎 Perfect Streak (3 exact scores), 💩 Shite Streak (3 wrong)','Streak key shown at top of leaderboard','Hot Streak uses red to distinguish it from the brown Shite badge']},
+  {v:'1.23.14',date:'12 Jun 2026',notes:['Joint last place: all players sharing last rank show the forfeit badge and red row highlight']},
+  {v:'1.23.13',date:'12 Jun 2026',notes:['Named picks: each name–score entry wrapped to prevent mid-entry line breaks']},
+  {v:'1.23.11',date:'12 Jun 2026',notes:['Named picks sorted: green (exact live score) → still possible → red (busted)']},
+  {v:'1.23.10',date:'12 Jun 2026',notes:['Named picks: removed amber highlight for own name — score colours take priority']},
+  {v:'1.23.9',date:'12 Jun 2026',notes:['Fix: group picks were showing twice on the Next Match card']},
+  {v:'1.23.8',date:'12 Jun 2026',notes:['Tap anywhere on the home match card to toggle grouped/named picks view','Green for players currently on the exact live score; faint hint text below picks']},
+  {v:'1.23.7',date:'12 Jun 2026',notes:['Named picks: red for busted predictions (a goal already past their predicted total)','Named/grouped picks shown on live, next and last result cards']},
+  {v:'1.23.6',date:'12 Jun 2026',notes:['Home match card: toggle between grouped picks tally and named picks view']},
+  {v:'1.23.5',date:'12 Jun 2026',notes:['Group picks summary (e.g. 2–1: ×3) shown on live games in home match card']},
+  {v:'1.23.3',date:'11 Jun 2026',notes:['Forfeit vote button on leaderboard for players who haven\'t voted yet']},
+  {v:'1.22.9',date:'11 Jun 2026',notes:['Larger countdown timer numbers on Next Up card']},
+  {v:'1.22.6',date:'11 Jun 2026',notes:['Leaderboard forfeit banner shows all tied leaders; tied options separated by line break']},
+  {v:'1.22.5',date:'11 Jun 2026',notes:['Predict page: minimal tiebreak section; removed Players/Extras toggle buttons']},
+  {v:'1.22.4',date:'11 Jun 2026',notes:['Six new themes: Carbon (ice blue), Pitch (hot pink), Smoke (pure grey), Paper (navy), Blush (rose), Chalk (emerald)']},
+  {v:'1.22.3',date:'11 Jun 2026',notes:['Predictions: red styling on 0-point result badge']},
+  {v:'1.22.2',date:'11 Jun 2026',notes:['Home cards: group prediction breakdown (e.g. 4 predicted 2–1) shown below "You predicted"']},
+  {v:'1.22.0',date:'11 Jun 2026',notes:['Compact mode fixes: score centering, team name overflow, "You predicted" line restored']},
+  {v:'1.21.8',date:'11 Jun 2026',notes:['Compact/full mode preference persists across pages and after logout']},
+  {v:'1.20.4',date:'12 Jun 2026',notes:['Rules & Scoring dropdown more prominent; separator lines between sections']},
+  {v:'1.20.3',date:'12 Jun 2026',notes:['Collapsible Rules & Scoring dropdown added to top of leaderboard page']},
+  {v:'1.20.2',date:'12 Jun 2026',notes:['Points card: note that knockout results are taken after 90 minutes']},
+  {v:'1.20.0',date:'12 Jun 2026',notes:['Points system and tiebreak rules moved to leaderboard page; Rules tab removed']},
+  {v:'1.19.0',date:'12 Jun 2026',notes:['Match card tweaks: points on own line, next-up meta removed, button renamed']},
+  {v:'1.18.9',date:'12 Jun 2026',notes:['Match stats shown as plain-English sentences inside the match card']},
+  {v:'1.18.8',date:'12 Jun 2026',notes:['Countdown and next prediction merged into a unified match card on the home page']},
+  {v:'1.18.6',date:'12 Jun 2026',notes:['Results sync via GitHub Actions (Node.js) — runs every 5 minutes automatically, no manual refresh needed']},
+  {v:'1.18.4',date:'12 Jun 2026',notes:['Compact mode: checkmark turns green on save with a "Saved" pop above it']},
+  {v:'1.18.3',date:'12 Jun 2026',notes:['Compact mode: single-row card with inline kickoff time, teams and score']},
   {v:'1.17.1',date:'11 Jun 2026',notes:['Fix predict page crash when match has kicked off but result not yet entered — res.home guard on pts badge and result badge']},
   {v:'1.17.0',date:'11 Jun 2026',notes:['Admin toggle: require top scorer before predictions & votes — players who haven\'t picked see a prompt; doesn\'t affect those who already have']},
   {v:'1.16.5',date:'11 Jun 2026',notes:['Fix home card drag-to-reorder on mobile — replaced HTML5 drag API (desktop-only) with pointer events (touch + mouse)']},
@@ -6767,6 +6806,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.3</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.4</div>
 </body>
 </html>
