@@ -821,7 +821,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.5</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.27.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2593,15 +2593,15 @@ async function loginPlayer(){
     }
 
     // Find player by original name, falling back to nickname
-    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin`);
+    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
     if(!players||!players.length){
-      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin`);
+      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
     const player = players[0];
     if(player.pin!==pin){showErr(errEl,'Wrong PIN. Try again.');return;}
 
-    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false};
+    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false,god_mode:player.god_mode||false};
 
     // Admin if they have the is_admin flag on their player record, or know the group password
     isAdmin = !!(player.is_admin) || (currentGroup.admin_password === pin);
@@ -3120,8 +3120,8 @@ async function loadPredictions(){
   list.innerHTML='<div class="loading">Loading…</div>';
   try{
     // Refresh player data to get latest pay_choice and nickname
-    const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice').catch(()=>null);
-    if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; saveSession(); }
+    const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice,god_mode,is_admin').catch(()=>null);
+    if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem(); saveSession(); }
 
     const [res,preds,tb]=await Promise.all([
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
@@ -3573,6 +3573,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.27.0',date:'13 Jun 2026',notes:['God Mode restricted: only players explicitly granted access (or admins) see the God Mode button','Admin can grant/revoke God Mode per player via Players panel — requires master password to grant','Players with God Mode access bypass the password gate entirely','⚡ badge shown next to God Mode players in the admin Players panel']},
   {v:'1.26.5',date:'13 Jun 2026',notes:['PIN entry shows numpad on mobile (inputmode numeric)','Forfeit badge on leaderboard row now just says "Forfeit"']},
   {v:'1.26.4',date:'13 Jun 2026',notes:['Ticker banner and font made smaller','Streak history: +1 badge per game after the third consecutive (not per block of 3)','Dark/light mode toggle added to player Appearance modal']},
   {v:'1.26.2',date:'13 Jun 2026',notes:['Player Appearance modal: accent colour picker — tap to apply and save instantly, no save button']},
@@ -4870,7 +4871,12 @@ function closeProfileMenu(){
   const menu = document.getElementById('profile-menu');
   if(menu) menu.style.display='none';
 }
-function updateGodModeMenuItem(){}
+function updateGodModeMenuItem(){
+  const btn = document.getElementById('profile-god-btn');
+  if(!btn) return;
+  const hasAccess = currentPlayer && (currentPlayer.is_admin || currentPlayer.god_mode || _godUnlocked);
+  btn.style.display = hasAccess ? '' : 'none';
+}
 
 function updatePayChoiceMenuItem(){
   const el = document.getElementById('profile-pay-item');
@@ -5598,7 +5604,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -5607,7 +5613,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,is_admin:p.is_admin||false};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,is_admin:p.is_admin||false,god_mode:p.god_mode||false};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -5619,7 +5625,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}</span></div>
+          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts${p.pay_choice ? ' · '+(p.pay_choice==='money'?'💸 Paying in':'😄 Fun only'):''}</div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
@@ -5634,6 +5640,10 @@ async function loadPlayersPanel(){
             ${p.is_admin
               ? `<button class="player-options-item" onclick="revokeAdmin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">👑 Revoke Admin</button>`
               : `<button class="player-options-item" onclick="grantAdmin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">👑 Make Admin</button>`
+            }
+            ${p.god_mode
+              ? `<button class="player-options-item" onclick="revokeGodMode('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">⚡ Revoke God Mode</button>`
+              : `<button class="player-options-item" onclick="grantGodMode('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">⚡ Grant God Mode</button>`
             }
             <hr class="player-options-divider">
             <button class="player-options-item danger" onclick="removePlayer('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🗑️ Remove Player</button>
@@ -5866,8 +5876,57 @@ async function revokeAdmin(playerId, name){
   });
 }
 
+function grantGodMode(playerId, name){
+  const existing = document.getElementById('god-grant-modal');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'god-grant-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:340px;">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title">⚡ Grant God Mode</div>
+      <button class="modal-close" onclick="document.getElementById('god-grant-modal').remove()">✕</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;">Enter the master password to grant <strong>${name}</strong> passwordless God Mode access.</p>
+    <input type="password" id="god-grant-pass" class="config-input" placeholder="Master password" style="margin-bottom:.75rem;" onkeydown="if(event.key==='Enter')confirmGodGrant('${playerId}','${name.replace(/'/g,"\\'")}')"/>
+    <div id="god-grant-err" style="color:var(--accent2);font-size:.78rem;margin-bottom:.75rem;display:none;"></div>
+    <button class="btn" onclick="confirmGodGrant('${playerId}','${name.replace(/'/g,"\\'")}')">Grant Access ⚡</button>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('god-grant-pass')?.focus(),80);
+}
 
+async function confirmGodGrant(playerId, name){
+  const input = document.getElementById('god-grant-pass');
+  const errEl = document.getElementById('god-grant-err');
+  const val = (input?.value||'').trim();
+  if(val !== GODMODE_PASSWORD){
+    errEl.textContent = val ? 'Wrong password.' : 'Enter the master password.';
+    errEl.style.display='block';
+    if(input){input.value='';input.focus();}
+    return;
+  }
+  try{
+    await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{god_mode:true}});
+    document.getElementById('god-grant-modal')?.remove();
+    flash(name+' now has God Mode access ⚡','success');
+    loadPlayersPanel();
+  }catch(e){
+    errEl.textContent='Error: '+e.message;
+    errEl.style.display='block';
+  }
+}
 
+async function revokeGodMode(playerId, name){
+  showConfirm('⚡','Revoke God Mode','Remove God Mode access from '+name+'? They will no longer see the God Mode button.','Revoke', async ()=>{
+    try{
+      await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{god_mode:false}});
+      flash(name+'\'s God Mode access has been revoked','success');
+      loadPlayersPanel();
+    }catch(e){flash('Error: '+e.message,'error');}
+  });
+}
 
 function renderPayChoiceCard(){
   const card = document.getElementById('pay-choice-card');
@@ -6597,7 +6656,8 @@ function showGodMode(){
   document.getElementById('screen-godmode').classList.add('show');
   document.getElementById('god-gate').style.display='block';
   document.getElementById('god-unlocked').style.display='none';
-  if(_godUnlocked){ unlockGodUI(); }
+  const autoAccess = _godUnlocked || (currentPlayer && (currentPlayer.god_mode || currentPlayer.is_admin));
+  if(autoAccess){ unlockGodUI(); }
   else { setTimeout(()=>document.getElementById('god-pass-input')?.focus(),80); }
 }
 
@@ -6807,6 +6867,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.26.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.27.0</div>
 </body>
 </html>
