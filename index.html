@@ -828,7 +828,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.5</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.6</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2735,7 +2735,7 @@ function renderMatchCardBody(){
     const r=results[_lastResultMatchId];
     const lastPicks = _picksViewMode==='grouped' ? _lastResultPicksGrouped : namedPicksHtml(_lastResultMatchId,'result');
     const hasLastPicks = !!(_lastResultPicksGrouped||(_matchPredsMap[_lastResultMatchId]?.length));
-    html += `<div class="hmc-label">Last Result</div>`+_pctTeamsHtml(_lastResultF,'',`${r.home_score}–${r.away_score}`,_lastResultMatchId)+_lastResultPredHtml+lastPicks+(hasLastPicks?picksHint:'')+_lastMatchStatsHtml;
+    html += `<div class="hmc-label">Last Result</div>`+_pctTeamsHtml(_lastResultF,'',`${r.home}–${r.away}`,_lastResultMatchId)+_lastResultPredHtml+lastPicks+(hasLastPicks?picksHint:'')+_lastMatchStatsHtml;
   }
   if(_nextUpcoming){
     const diff = _nextUpcoming.ko.getTime()-now;
@@ -3654,6 +3654,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.29.6',date:'14 Jun 2026',notes:['Fix: last result score showing undefined — used wrong field names after refactor']},
   {v:'1.29.5',date:'14 Jun 2026',notes:['Removed playing-for-money emoji from leaderboard, admin player cards, and profile menu']},
   {v:'1.29.4',date:'14 Jun 2026',notes:['Fix: God Mode button now visible when god_unlocked or in a shadow session (was requiring currentPlayer which is null in shadow sessions)']},
   {v:'1.29.3',date:'14 Jun 2026',notes:['God Mode: "Exit God Mode" button always visible when in a shadow session; exits back to your own profile on the home screen']},
@@ -7034,6 +7035,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.6</div>
 </body>
 </html>
