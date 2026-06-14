@@ -202,6 +202,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-pred-pct{display:flex;align-items:center;gap:.5rem;font-size:.6rem;color:var(--text-muted);opacity:.7;margin-top:.1rem;}
 .hmc-pct{flex:1;min-width:0;text-align:center;}
 .hmc-pct-draw{flex-shrink:0;min-width:3.5rem;text-align:center;}
+.pred-picks-panel{border-top:1px solid var(--border);padding:.55rem .75rem .45rem;margin-top:.1rem;}
+.pred-card-pct-row{display:flex;align-items:center;font-size:.62rem;color:var(--text-muted);margin-bottom:.35rem;}
+.pred-card-pct{flex:1;text-align:center;}
+.pred-card-pct-draw{flex:0 0 auto;min-width:4rem;text-align:center;}
 .hmc-cd{display:flex;justify-content:center;gap:.85rem;margin-top:.65rem;}
 .hmc-cd-unit{text-align:center;}
 .hmc-cd-num{font-size:2rem;font-weight:900;font-family:'DM Mono',monospace;color:#ef4444;line-height:1;}
@@ -829,7 +833,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.30.1</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.0</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2804,6 +2808,24 @@ function togglePicksView(){
   renderMatchCardBody();
 }
 
+function togglePredCardPicks(mid){
+  const panel = document.getElementById('pred-picks-'+mid);
+  if(!panel) return;
+  if(panel.style.display !== 'none'){ panel.style.display='none'; return; }
+  const res = results[mid];
+  const hasScore = res && res.home !== null;
+  const fx = allFixtures().find(f=>f.id===mid);
+  const ko = fx ? getMatchKickoff(fx) : null;
+  const koMs = ko ? ko.getTime() : null;
+  const now = Date.now();
+  const isLive = !!(koMs && now>=koMs && now<koMs+130*60*1000);
+  const mode = hasScore ? 'result' : isLive ? 'live' : 'upcoming';
+  const pct = _predPcts(mid);
+  const pctHtml = pct ? `<div class="pred-card-pct-row"><span class="pred-card-pct">${pct.hp}%</span><span class="pred-card-pct-draw">${pct.dp}% draw</span><span class="pred-card-pct">${pct.ap}%</span></div>` : '';
+  panel.innerHTML = pctHtml + namedPicksHtml(mid, mode);
+  panel.style.display = 'block';
+}
+
 let _countdownInterval = null;
 function startCountdown(){
   clearInterval(_countdownInterval);
@@ -3179,13 +3201,21 @@ async function loadPredictions(){
     const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice,god_mode,is_admin').catch(()=>null);
     if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem(); saveSession(); }
 
-    const [res,preds,tb]=await Promise.all([
+    const [res,preds,tb,allGroupPreds,allPlayers]=await Promise.all([
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=top_scorer,goals`),
+      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
     ]);
     results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score});
     predictions={}; (preds||[]).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score});
+    const _pm={}; (allPlayers||[]).forEach(p=>_pm[p.id]={name:p.name,display:p.nickname||p.name});
+    _matchPredsMap={};
+    (allGroupPreds||[]).filter(p=>p.home_score!=null&&p.away_score!=null&&!ALL_VOTE_IDS.has(p.match_id)).forEach(p=>{
+      if(!_matchPredsMap[p.match_id]) _matchPredsMap[p.match_id]=[];
+      _matchPredsMap[p.match_id].push({display:_pm[p.player_id]?.display||_pm[p.player_id]?.name||'?',predHome:p.home_score,predAway:p.away_score,playerId:p.player_id});
+    });
     if(tb&&tb.length){
       // Set values before locking (lockTiebreak reads them)
       const scorerEl = document.getElementById('tiebreak-scorer');
@@ -3348,7 +3378,7 @@ function renderPredictCard(f,pred,res){
   if(!kicked){
     const checkClass = isFilled ? 'mc-check done' : 'mc-check';
     return `<div class="${cardClass}" data-predicted="${isFilled}" data-finished="${dataFinished}">
-      <div class="mc-header">
+      <div class="mc-header" onclick="togglePredCardPicks('${f.id}')" style="cursor:pointer;">
         <span class="mc-ko">KO ${koStr}</span>
         <span class="mc-header-right">
           <span id="cd-${f.id}" class="match-countdown" style="font-size:.6rem;color:rgba(239,68,68,.6);"></span>
@@ -3371,6 +3401,7 @@ function renderPredictCard(f,pred,res){
           <div class="mc-name">${f.away}</div>
         </div>
       </div>
+      <div id="pred-picks-${f.id}" class="pred-picks-panel" style="display:none;"></div>
     </div>`;
   } else {
     const ph = pred.home!=='' ? pred.home : '–';
@@ -3391,7 +3422,7 @@ function renderPredictCard(f,pred,res){
           </div>
           ${resStr ? `<div class="mc-result-row">${resStr}</div>` : ''}`;
     }
-    return `<div class="${cardClass}" data-predicted="${isFilled}" data-finished="${dataFinished}">
+    return `<div class="${cardClass}" data-predicted="${isFilled}" data-finished="${dataFinished}" onclick="togglePredCardPicks('${f.id}')" style="cursor:pointer;">
       <div class="mc-header">
         <span class="mc-ko">KO ${koStr}</span>
         <span class="mc-header-right">${ptsBadge}${lockIcon}</span>
@@ -3410,6 +3441,7 @@ function renderPredictCard(f,pred,res){
           <div class="mc-name">${f.away}</div>
         </div>
       </div>
+      <div id="pred-picks-${f.id}" class="pred-picks-panel" style="display:none;"></div>
     </div>`;
   }
 }
@@ -3655,6 +3687,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.31.0',date:'14 Jun 2026',notes:['Predict page: tap any match card to reveal group prediction percentages and named picks; coloured by result on finished matches']},
   {v:'1.30.1',date:'14 Jun 2026',notes:['Streak key: Hot Streak description updated to "3 correct scores in a row"']},
   {v:'1.30.0',date:'14 Jun 2026',notes:['Leaderboard: your own player card highlighted with an accent-colour border']},
   {v:'1.29.9',date:'14 Jun 2026',notes:['Rules & Scoring: correct result (3pts) shown in amber to match picks colouring']},
@@ -7043,6 +7076,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.30.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.0</div>
 </body>
 </html>
