@@ -828,7 +828,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.7</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.8</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3654,6 +3654,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.29.8',date:'14 Jun 2026',notes:['Appearance modal: accent colour picker moved above theme grid, below dark/light toggle']},
   {v:'1.29.7',date:'14 Jun 2026',notes:['Correct result picks in named picks view now shown in amber regardless of group accent colour']},
   {v:'1.29.6',date:'14 Jun 2026',notes:['Fix: last result score showing undefined — used wrong field names after refactor']},
   {v:'1.29.5',date:'14 Jun 2026',notes:['Removed playing-for-money emoji from leaderboard, admin player cards, and profile menu']},
@@ -5326,10 +5327,10 @@ function showPlayerThemeModal(){
       <button id="ptm-dark-btn" onclick="playerModePick(false,this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${!document.body.classList.contains('light')?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">🌙 Dark</button>
       <button id="ptm-light-btn" onclick="playerModePick(true,this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${document.body.classList.contains('light')?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">☀️ Light</button>
     </div>
-    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">Accent Colour</div>
     <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem;" id="player-accent-swatches">${accentSwatches}</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
     ${hasOverride?`<button class="btn-ghost" style="font-size:.78rem;" onclick="clearPlayerAppearance(this)">Reset to group defaults</button>`:''}
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -7036,6 +7037,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.7</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.29.8</div>
 </body>
 </html>
