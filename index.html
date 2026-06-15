@@ -834,7 +834,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.2</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.3</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3570,14 +3570,19 @@ function calcPlayerStreaks(gamePreds, rm){
   });
   const streaks={};
   Object.entries(playerMatchPts).forEach(([pid,matchPts])=>{
-    const last3=orderedCompleted.slice(-3).map(f=>matchPts[f.id]);
+    const allPts=orderedCompleted.map(f=>matchPts[f.id]);
+    const last3=allPts.slice(-3);
     if(last3.length<3){streaks[pid]={};return;}
     // undefined = no prediction = streak breaker
-    streaks[pid]={
-      perfect:last3.every(p=>p!==undefined&&p>=5),
-      hot:last3.every(p=>p!==undefined&&p>=3),
-      cold:last3.every(p=>p!==undefined&&p===0)
-    };
+    const isPerfect=last3.every(p=>p!==undefined&&p>=5);
+    const isHot=last3.every(p=>p!==undefined&&p>=3);
+    const isCold=last3.every(p=>p!==undefined&&p===0);
+    let extra=0;
+    if(isPerfect||isHot||isCold){
+      const qualify=isPerfect?(p=>p!==undefined&&p>=5):isHot?(p=>p!==undefined&&p>=3):(p=>p!==undefined&&p===0);
+      for(let i=allPts.length-4;i>=0;i--){if(qualify(allPts[i]))extra++;else break;}
+    }
+    streaks[pid]={perfect:isPerfect,hot:isHot,cold:isCold,extra};
   });
   return streaks;
 }
@@ -3585,9 +3590,10 @@ function calcPlayerStreaks(gamePreds, rm){
 function streakBadgeHtml(streak,small){
   if(!streak) return '';
   const s=small?'font-size:.5rem;padding:.08rem .25rem;':'font-size:.55rem;padding:.1rem .3rem;';
-  if(streak.perfect) return `<span class="lb-badge lb-badge-perfect" style="${s}">💎 Perfect</span>`;
-  if(streak.hot) return `<span class="lb-badge lb-badge-hot" style="${s}">🔥 Hot</span>`;
-  if(streak.cold) return `<span class="lb-badge lb-badge-cold" style="${s}">💩 Shite</span>`;
+  const plus=streak.extra>0?` +${streak.extra}`:'';
+  if(streak.perfect) return `<span class="lb-badge lb-badge-perfect" style="${s}">💎 Perfect${plus}</span>`;
+  if(streak.hot) return `<span class="lb-badge lb-badge-hot" style="${s}">🔥 Hot${plus}</span>`;
+  if(streak.cold) return `<span class="lb-badge lb-badge-cold" style="${s}">💩 Shite${plus}</span>`;
   return '';
 }
 
@@ -3696,6 +3702,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.31.3',date:'15 Jun 2026',notes:['Streak badges: show +N when streak extends beyond 3 games (e.g. 🔥 Hot +2 for a 5-game streak)']},
   {v:'1.31.2',date:'14 Jun 2026',notes:['Predict cards: faint "tap for picks" hint at bottom of each card; changes to "tap to hide" when open']},
   {v:'1.31.1',date:'14 Jun 2026',notes:['Fix: predict card picks panel now tappable on full card area for all game states, not just the header row']},
   {v:'1.31.0',date:'14 Jun 2026',notes:['Predict page: tap any match card to reveal group prediction percentages and named picks; coloured by result on finished matches']},
@@ -7087,6 +7094,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.3</div>
 </body>
 </html>
