@@ -1068,6 +1068,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             <button id="lb-filter-money" class="lb-filter-btn" onclick="setLbFilter('money')">💸 Money</button>
             <button id="lb-filter-fun" class="lb-filter-btn" onclick="setLbFilter('fun')">😄 Fun</button>
           </div>
+          <button id="lb-timeline-btn" class="sync-refresh" onclick="toggleLbTimeline()" style="display:none;">⏱ Timeline</button>
           <button class="sync-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
         </div>
       </div>
@@ -3147,6 +3148,7 @@ let _lbRawPreds = [];
 let _lbRawResults = [];
 let _lbRawPlayers = [];
 let _lbTimelineActive = false;
+let _lbTimelineOpen = false;
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -3653,13 +3655,14 @@ async function loadLeaderboard(){
     const lbGamePreds=(allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
     lbGamePreds.forEach(p=>{
       const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
-      if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0,playerId:p.player_id};
+      if(!scores[name])scores[name]={exact:0,result:0,wrong:0,total:0,played:0,playerId:p.player_id};
       scores[name].played++;
       const res=rm[p.match_id]; if(!res)return;
       const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
       if(pts===8){scores[name].exact++;scores[name].result++;scores[name].total+=8;}
       else if(pts===5){scores[name].exact++;scores[name].total+=5;}
       else if(pts===3){scores[name].result++;scores[name].total+=3;}
+      else{scores[name].wrong++;}
     });
     const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
     _lbStreaks={};
@@ -3689,6 +3692,9 @@ async function loadLeaderboard(){
     _lbScores = scores;
     _lbForfeitVotes = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
     _lbTimelineActive = false;
+    _lbTimelineOpen = false;
+    const timelineBtn = document.getElementById('lb-timeline-btn');
+    if(timelineBtn){ timelineBtn.style.background=''; timelineBtn.style.color=''; }
     renderLeaderboard();
     _initLbTimeline();
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
@@ -3742,6 +3748,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.32.0',date:'17 Jun 2026',notes:['Leaderboard timeline: click ⏱ Timeline button to open slider; leaderboard switches to compact one-line view (❌✅⭐ counts + pts per player)']},
   {v:'1.31.7',date:'17 Jun 2026',notes:['God mode: new Predictions tab — choose group, choose player, edit any prediction (locked or not)']},
   {v:'1.31.6',date:'15 Jun 2026',notes:['Leaderboard: fix indent on first badge in badge row']},
   {v:'1.31.5',date:'15 Jun 2026',notes:['Leaderboard: joint ranking is now always on; removed the =Joint toggle button']},
@@ -6245,19 +6252,36 @@ function toggleLbRules(){
 function _initLbTimeline(){
   const wrap = document.getElementById('lb-timeline-wrap');
   const slider = document.getElementById('lb-timeline-slider');
+  const btn = document.getElementById('lb-timeline-btn');
   if(!wrap || !slider) return;
   const rm = {};
   (_lbRawResults||[]).forEach(r=>rm[r.match_id]=r);
   const completed = allFixtures()
     .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
     .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
-  if(completed.length === 0){ wrap.style.display='none'; return; }
-  wrap.style.display='';
+  if(completed.length === 0){ wrap.style.display='none'; if(btn) btn.style.display='none'; return; }
+  if(btn) btn.style.display='';
   slider.max = completed.length;
   if(!_lbTimelineActive) slider.value = completed.length;
   const endLabel = document.getElementById('lb-timeline-end-label');
   if(endLabel) endLabel.textContent = 'Match '+completed.length;
   _updateLbTimelineLabel(parseInt(slider.value), completed);
+  wrap.style.display = _lbTimelineOpen ? '' : 'none';
+}
+
+function toggleLbTimeline(){
+  _lbTimelineOpen = !_lbTimelineOpen;
+  const wrap = document.getElementById('lb-timeline-wrap');
+  const btn = document.getElementById('lb-timeline-btn');
+  if(wrap) wrap.style.display = _lbTimelineOpen ? '' : 'none';
+  if(btn) btn.style.background = _lbTimelineOpen ? 'var(--group-accent)' : '';
+  if(btn) btn.style.color = _lbTimelineOpen ? '#fff' : '';
+  if(!_lbTimelineOpen){
+    _lbTimelineActive = false;
+    const slider = document.getElementById('lb-timeline-slider');
+    if(slider) slider.value = slider.max;
+    renderLeaderboard();
+  }
 }
 
 function _updateLbTimelineLabel(val, completed){
@@ -6300,7 +6324,7 @@ function _renderLeaderboardAtMatchIdx(matchIdx){
   gamePreds.forEach(p=>{
     const pdata=pm[p.player_id];
     const name=(pdata&&(pdata.display||pdata.name))||'Unknown';
-    if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0,playerId:p.player_id};
+    if(!scores[name])scores[name]={exact:0,result:0,wrong:0,total:0,played:0,playerId:p.player_id};
     scores[name].played++;
     if(!limitIds.has(p.match_id)) return;
     const res=rm[p.match_id]; if(!res) return;
@@ -6308,6 +6332,7 @@ function _renderLeaderboardAtMatchIdx(matchIdx){
     if(pts===8){scores[name].exact++;scores[name].result++;scores[name].total+=8;}
     else if(pts===5){scores[name].exact++;scores[name].total+=5;}
     else if(pts===3){scores[name].result++;scores[name].total+=3;}
+    else{scores[name].wrong++;}
   });
   const savedScores = _lbScores;
   _lbScores = scores;
@@ -6446,6 +6471,18 @@ function renderLeaderboard(){
     const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
     const streakBadge = streakBadgeHtml(_lbStreaks[name]);
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
+    if(_lbTimelineOpen){
+      return '<div class="'+rowClass+'" style="cursor:pointer;padding:.45rem .85rem;display:flex;align-items:center;gap:.5rem;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
+        +'<div class="lb-rank" style="min-width:2rem;font-size:.8rem;">'+rankDisplay+'</div>'
+        +'<div style="flex:1;font-size:.85rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+name+'</div>'
+        +'<div style="display:flex;align-items:center;gap:.4rem;font-size:.75rem;white-space:nowrap;">'
+          +'<span style="color:var(--text-muted);">❌<span style="color:var(--text-dim);">×'+(s.wrong||0)+'</span></span>'
+          +'<span style="color:var(--text-muted);">✅<span style="color:var(--text-dim);">×'+s.result+'</span></span>'
+          +'<span style="color:var(--text-muted);">⭐<span style="color:var(--text-dim);">×'+s.exact+'</span></span>'
+          +'<span style="font-weight:700;color:var(--group-accent);margin-left:.25rem;">'+s.total+'<span style="font-size:.65rem;font-weight:400;color:var(--text-muted);"> pts</span></span>'
+        +'</div>'
+        +'</div>';
+    }
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+rankDisplay+'</div>'
       +'<div><div class="lb-name">'+name+payBadge+'</div>'+(statusBadge||streakBadge?'<div class="lb-badge-row" style="display:flex;gap:.25rem;align-items:center;flex-wrap:wrap;margin-top:.15rem;">'+statusBadge+streakBadge+'</div>':'')+'<div class="lb-breakdown">'+s.played+' of '+totalFix+' predicted · '+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
