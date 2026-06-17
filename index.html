@@ -832,7 +832,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.14</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.15</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3782,6 +3782,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.32.15',date:'17 Jun 2026',notes:["God mode predictions: ↺ Reset button restores the selected player's predictions to whatever they were when you opened the page (undoes your edits)"]},
   {v:'1.32.14',date:'17 Jun 2026',notes:['Leaderboard: total pot and streak key hidden by default; tap the new ⓘ Info button next to Refresh to show them (remembered per device)']},
   {v:'1.32.13',date:'17 Jun 2026',notes:['Timeline button background now uses the active theme (was stuck white in dark and light modes)']},
   {v:'1.32.1',date:'17 Jun 2026',notes:['Timeline: ▶ play button auto-advances through matches with player cards animating up/down as rankings change']},
@@ -7260,11 +7261,13 @@ async function godPredLoadPlayers(){
   });
 }
 
+let _godPredOriginal = {};
+
 async function godPredLoadFixtures(){
   const groupId = document.getElementById('god-pred-group').value;
   const playerId = document.getElementById('god-pred-player').value;
   const el = document.getElementById('god-pred-fixtures');
-  if(!groupId||!playerId){ el.innerHTML=''; return; }
+  if(!groupId||!playerId){ el.innerHTML=''; _godPredOriginal={}; return; }
   el.innerHTML = '<div class="loading">Loading…</div>';
 
   const [preds, fixtures] = await Promise.all([
@@ -7274,10 +7277,12 @@ async function godPredLoadFixtures(){
 
   const predMap = {};
   preds.forEach(p=>{ predMap[p.match_id]={home:p.home_score,away:p.away_score}; });
+  _godPredOriginal = JSON.parse(JSON.stringify(predMap));
 
   if(!fixtures.length){ el.innerHTML='<div style="color:var(--text-muted);font-size:.85rem;">No fixtures found.</div>'; return; }
 
-  let html = '<div style="display:flex;flex-direction:column;gap:.5rem;">';
+  let html = '<div style="display:flex;justify-content:flex-end;margin-bottom:.6rem;"><button class="view-preds-btn" onclick="godPredReset()" title="Discard your edits and restore this player\'s saved predictions">↺ Reset to player\'s saved</button></div>';
+  html += '<div style="display:flex;flex-direction:column;gap:.5rem;">';
   fixtures.forEach(f=>{
     const p = predMap[f.id];
     const hVal = p!=null ? p.home : '';
@@ -7313,6 +7318,39 @@ async function godPredAutoSave(matchId, groupId, playerId){
     await sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
     await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:groupId,player_id:playerId,match_id:matchId,home_score:+h,away_score:+a}});
   }catch(e){ console.warn('god pred save failed',matchId,e); }
+}
+
+function godPredReset(){
+  const groupId = document.getElementById('god-pred-group').value;
+  const playerId = document.getElementById('god-pred-player').value;
+  if(!groupId||!playerId) return;
+  const playerSel = document.getElementById('god-pred-player');
+  const playerName = playerSel.options[playerSel.selectedIndex]?.text || 'this player';
+  showConfirm('↺','Reset predictions',`Discard your edits and restore ${playerName}'s saved predictions?`,'Reset',async ()=>{
+    try{
+      const fixtures = allFixtures();
+      for(const f of fixtures){
+        const o = _godPredOriginal[f.id];
+        const hEl = document.getElementById('gph-'+f.id);
+        const aEl = document.getElementById('gpa-'+f.id);
+        const curH = (hEl?.value||'').trim();
+        const curA = (aEl?.value||'').trim();
+        const oH = o ? String(o.home) : '';
+        const oA = o ? String(o.away) : '';
+        if(curH===oH && curA===oA) continue;
+        await sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&match_id=eq.'+f.id,{method:'DELETE',prefer:'return=minimal'});
+        if(o){
+          await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:groupId,player_id:playerId,match_id:f.id,home_score:o.home,away_score:o.away}});
+          if(hEl) hEl.value = o.home;
+          if(aEl) aEl.value = o.away;
+        } else {
+          if(hEl) hEl.value = '';
+          if(aEl) aEl.value = '';
+        }
+      }
+      flash('Predictions restored','success');
+    }catch(e){ flash('Error: '+e.message,'error'); }
+  });
 }
 
 async function loadGodResults(){
@@ -7470,6 +7508,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.14</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.15</div>
 </body>
 </html>
