@@ -1110,7 +1110,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div id="lb-timeline-wrap" style="display:none;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
           <span style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);">⏱ Timeline</span>
-          <span id="lb-timeline-label" style="font-size:.75rem;color:var(--group-accent);font-weight:600;"></span>
+          <span id="lb-timeline-label" style="font-size:.75rem;color:var(--group-accent);font-weight:600;flex:1;text-align:center;"></span>
+          <button id="lb-timeline-play" onclick="lbTimelineTogglePlay()" style="background:var(--group-accent);color:#fff;border:none;border-radius:6px;width:2rem;height:1.6rem;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
         </div>
         <input id="lb-timeline-slider" type="range" min="0" max="0" value="0"
           style="width:100%;accent-color:var(--group-accent);cursor:pointer;"
@@ -3149,6 +3150,8 @@ let _lbRawResults = [];
 let _lbRawPlayers = [];
 let _lbTimelineActive = false;
 let _lbTimelineOpen = false;
+let _lbPlayInterval = null;
+let _lbPlayStepping = false;
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -3691,6 +3694,7 @@ async function loadLeaderboard(){
     } else if(filterBtns){ filterBtns.style.display = 'none'; }
     _lbScores = scores;
     _lbForfeitVotes = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
+    lbTimelinePause();
     _lbTimelineActive = false;
     _lbTimelineOpen = false;
     const timelineBtn = document.getElementById('lb-timeline-btn');
@@ -3748,6 +3752,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.32.1',date:'17 Jun 2026',notes:['Timeline: ▶ play button auto-advances through matches with player cards animating up/down as rankings change']},
   {v:'1.32.0',date:'17 Jun 2026',notes:['Leaderboard timeline: click ⏱ Timeline button to open slider; leaderboard switches to compact one-line view (❌✅⭐ counts + pts per player)']},
   {v:'1.31.7',date:'17 Jun 2026',notes:['God mode: new Predictions tab — choose group, choose player, edit any prediction (locked or not)']},
   {v:'1.31.6',date:'15 Jun 2026',notes:['Leaderboard: fix indent on first badge in badge row']},
@@ -6277,6 +6282,7 @@ function toggleLbTimeline(){
   if(btn) btn.style.background = _lbTimelineOpen ? 'var(--group-accent)' : '';
   if(btn) btn.style.color = _lbTimelineOpen ? '#fff' : '';
   if(!_lbTimelineOpen){
+    lbTimelinePause();
     _lbTimelineActive = false;
     const slider = document.getElementById('lb-timeline-slider');
     if(slider) slider.value = slider.max;
@@ -6305,9 +6311,40 @@ function _updateLbTimelineLabel(val, completed){
 }
 
 function onLbTimelineSlide(val){
+  if(!_lbPlayStepping) lbTimelinePause();
   _lbTimelineActive = parseInt(val) < parseInt(document.getElementById('lb-timeline-slider').max);
   _updateLbTimelineLabel(parseInt(val));
   _renderLeaderboardAtMatchIdx(parseInt(val));
+}
+
+function lbTimelineTogglePlay(){
+  if(_lbPlayInterval){ lbTimelinePause(); return; }
+  const slider = document.getElementById('lb-timeline-slider');
+  if(!slider) return;
+  if(parseInt(slider.value) >= parseInt(slider.max)){
+    slider.value = 0;
+    _lbPlayStepping = true;
+    onLbTimelineSlide(0);
+    _lbPlayStepping = false;
+  }
+  const playBtn = document.getElementById('lb-timeline-play');
+  if(playBtn) playBtn.textContent = '⏸';
+  _lbPlayInterval = setInterval(()=>{
+    const s = document.getElementById('lb-timeline-slider');
+    if(!s){ lbTimelinePause(); return; }
+    const next = parseInt(s.value) + 1;
+    s.value = next;
+    _lbPlayStepping = true;
+    onLbTimelineSlide(next);
+    _lbPlayStepping = false;
+    if(next >= parseInt(s.max)) lbTimelinePause();
+  }, 1200);
+}
+
+function lbTimelinePause(){
+  if(_lbPlayInterval){ clearInterval(_lbPlayInterval); _lbPlayInterval = null; }
+  const playBtn = document.getElementById('lb-timeline-play');
+  if(playBtn) playBtn.textContent = '▶';
 }
 
 function _renderLeaderboardAtMatchIdx(matchIdx){
@@ -6449,6 +6486,14 @@ function renderLeaderboard(){
   const lastRank = ranks[lastIdx];
   const rankCounts = {};
   ranks.forEach(r=>{rankCounts[r]=(rankCounts[r]||0)+1;});
+  // Capture old positions for FLIP animation (timeline compact mode only)
+  const oldTops = {};
+  if(_lbTimelineOpen){
+    lb.querySelectorAll('[data-pid]').forEach(el=>{
+      if(el.dataset.pid) oldTops[el.dataset.pid] = el.getBoundingClientRect().top;
+    });
+  }
+
   lb.innerHTML = sorted.map(([name,s],i)=>{
     const pid = s.playerId||'';
     const dn = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
@@ -6489,6 +6534,21 @@ function renderLeaderboard(){
       +'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>'
       +'</div>';
   }).join('');
+
+  // FLIP: animate cards from their old positions to new positions
+  if(_lbTimelineOpen && Object.keys(oldTops).length){
+    lb.querySelectorAll('[data-pid]').forEach(el=>{
+      const pid = el.dataset.pid;
+      if(!(pid in oldTops)) return;
+      const delta = oldTops[pid] - el.getBoundingClientRect().top;
+      if(Math.abs(delta) < 1) return;
+      el.style.transition = 'none';
+      el.style.transform = `translateY(${delta}px)`;
+      el.getBoundingClientRect(); // force reflow
+      el.style.transition = 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
+      el.style.transform = 'translateY(0)';
+    });
+  }
 }
 
 function lbRowClick(el){ viewPlayerPredictions(el.dataset.pid, el.dataset.pname); }
