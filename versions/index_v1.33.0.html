@@ -845,7 +845,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.33.1</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.33.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1026,8 +1026,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <div id="home-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
-      <!-- Tournament Stats (off by default; admin enables in Controls → Display) -->
-      <div class="home-card" id="home-stats-card" style="display:none;">
+      <!-- Tournament Stats -->
+      <div class="home-card" id="home-stats-card">
         <div class="home-card-title">📊 Tournament Stats</div>
         <div id="home-stats-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
@@ -3781,7 +3781,7 @@ const HOME_CARD_DEFS = [
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
-  {key:'stats',     id:'home-stats-card',     label:'Tournament Stats',   toggleId:'home-show-stats-toggle',     flag:'home_show_stats', defaultOff:true},
+  {key:'stats',     id:'home-stats-card',     label:'Tournament Stats',   toggleId:'home-show-stats-toggle',     flag:'home_show_stats'},
 ];
 function getHomeCardOrder(){
   const stored = currentGroup?.home_card_order;
@@ -3801,7 +3801,6 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
-  {v:'1.33.1',date:'17 Jun 2026',notes:['Tournament Stats card now off by default — admin enables it from Controls → Display → Home Page Cards']},
   {v:'1.33.0',date:'17 Jun 2026',notes:['New Tournament Stats card on the home page: games played, total goals, average per game, draws, clean sheets and H·D·A breakdown, plus highlights for goal-fest, biggest blowout, top scoring team, best defense, most common scoreline, group nailed it / biggest shock, and exact score king. Admin can toggle and reorder it under Controls → Display → Home Page Cards.']},
   {v:'1.32.19',date:'17 Jun 2026',notes:["God mode predictions: store and show the player's true original entry; ↺ Restore button now reverts to what the player typed (not just session edits). Requires the new player_home_score / player_away_score columns on the predictions table."]},
   {v:'1.32.18',date:'17 Jun 2026',notes:["Fix enterApp crash on missing pred-player-name element — it was aborting script init and breaking the god mode predictions tab (stuck Loading…)"]},
@@ -4311,7 +4310,7 @@ function loadHomeCardSettings(){
   getHomeCardOrder().forEach(key=>{
     const def = HOME_CARD_DEFS.find(c=>c.key===key);
     if(!def) return;
-    const isOn = def.flag ? (def.defaultOff ? g[def.flag] === true : g[def.flag] !== false) : null;
+    const isOn = def.flag ? g[def.flag] !== false : null;
     const row = document.createElement('div');
     row.className = 'home-card-sort-row';
     row.dataset.key = key;
@@ -5210,7 +5209,7 @@ async function loadHome(){
     if(!def.flag) return;
     const el = document.getElementById(def.id);
     if(!el) return;
-    const show = def.defaultOff ? currentGroup[def.flag] === true : currentGroup[def.flag] !== false;
+    const show = currentGroup[def.flag] !== false;
     if(!show) el.style.display = 'none';
     else if(def.key !== 'countdown') el.style.display = '';
     // countdown display left to startCountdown() when shown
@@ -7674,6 +7673,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.33.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.33.0</div>
 </body>
 </html>
