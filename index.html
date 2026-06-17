@@ -1068,7 +1068,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             <button id="lb-filter-money" class="lb-filter-btn" onclick="setLbFilter('money')">💸 Money</button>
             <button id="lb-filter-fun" class="lb-filter-btn" onclick="setLbFilter('fun')">😄 Fun</button>
           </div>
-          <button id="lb-timeline-btn" class="sync-refresh" onclick="toggleLbTimeline()" style="display:none;">⏱ Timeline</button>
           <button class="sync-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
         </div>
       </div>
@@ -1102,7 +1101,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         </div>
       </div>
       <div style="margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;display:flex;flex-wrap:wrap;gap:.35rem .75rem;align-items:center;">
-        <span style="font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);flex-basis:100%;">Streak Key</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-basis:100%;">
+          <span style="font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);">Streak Key</span>
+          <button id="lb-timeline-btn" onclick="toggleLbTimeline()" style="display:none;font-size:.65rem;font-weight:700;letter-spacing:.04em;padding:.2rem .55rem;border-radius:5px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;transition:background .15s,color .15s;">⏱ Timeline</button>
+        </div>
         <span style="font-size:.72rem;color:var(--text-dim);">💎 <span class="lb-badge lb-badge-perfect">Perfect Streak</span> 3 exact scores in a row</span>
         <span style="font-size:.72rem;color:var(--text-dim);">🔥 <span class="lb-badge lb-badge-hot">Hot Streak</span> 3 correct scores in a row</span>
         <span style="font-size:.72rem;color:var(--text-dim);">💩 <span class="lb-badge lb-badge-cold">Shite Streak</span> 3 wrong results in a row</span>
@@ -6279,8 +6281,9 @@ function toggleLbTimeline(){
   const wrap = document.getElementById('lb-timeline-wrap');
   const btn = document.getElementById('lb-timeline-btn');
   if(wrap) wrap.style.display = _lbTimelineOpen ? '' : 'none';
-  if(btn) btn.style.background = _lbTimelineOpen ? 'var(--group-accent)' : '';
-  if(btn) btn.style.color = _lbTimelineOpen ? '#fff' : '';
+  if(btn) btn.style.background = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--surface2)';
+  if(btn) btn.style.color = _lbTimelineOpen ? '#fff' : 'var(--text-muted)';
+  if(btn) btn.style.borderColor = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--border)';
   if(!_lbTimelineOpen){
     lbTimelinePause();
     _lbTimelineActive = false;
@@ -6517,9 +6520,11 @@ function renderLeaderboard(){
     const streakBadge = streakBadgeHtml(_lbStreaks[name]);
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
     if(_lbTimelineOpen){
+      const sk = _lbStreaks[name];
+      const streakIcon = sk ? (sk.perfect ? ' 💎' : sk.hot ? ' 🔥' : sk.cold ? ' 💩' : '') : '';
       return '<div class="'+rowClass+'" style="cursor:pointer;padding:.45rem .85rem;display:flex;align-items:center;gap:.5rem;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
         +'<div class="lb-rank" style="min-width:2rem;font-size:.8rem;">'+rankDisplay+'</div>'
-        +'<div style="flex:1;font-size:.85rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+name+'</div>'
+        +'<div style="flex:1;font-size:.85rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+name+streakIcon+'</div>'
         +'<div style="display:flex;align-items:center;gap:.4rem;font-size:.75rem;white-space:nowrap;">'
           +'<span style="color:var(--text-muted);">❌<span style="color:var(--text-dim);">×'+(s.wrong||0)+'</span></span>'
           +'<span style="color:var(--text-muted);">✅<span style="color:var(--text-dim);">×'+s.result+'</span></span>'
