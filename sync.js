@@ -86,6 +86,7 @@ const FIXTURES = [
 function norm(s) {
   if (!s) return '';
   return s.toLowerCase()
+    .replace(/-/g,' ')
     .replace(/ü/g,'u').replace(/ç/g,'c').replace(/é/g,'e').replace(/ô/g,'o').replace(/ñ/g,'n')
     // football-data.org name variants
     .replace("côte d'ivoire",'ivory coast')
@@ -104,6 +105,10 @@ function norm(s) {
     .replace('czech republic','czechia')
     .replace('iran (islamic republic of)','iran')
     .replace('new zealand','new zealand')
+    .replace('bosnia and herzegovina','bosnia herz')
+    .replace('bosnia herzegovina','bosnia herz')
+    .replace('bosnia & herz.','bosnia herz')
+    .replace('cape verde islands','cape verde')
     .replace(/\s+/g,' ').trim();
 }
 
