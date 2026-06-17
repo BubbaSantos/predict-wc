@@ -832,7 +832,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.6</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.7</div>
   <div class="landing">
     <div class="landing-logo">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1533,6 +1533,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       <div class="god-tabs">
         <button class="god-tab active" id="god-tab-groups" onclick="switchGodTab('groups')">Groups</button>
         <button class="god-tab" id="god-tab-results" onclick="switchGodTab('results')">Results</button>
+        <button class="god-tab" id="god-tab-predictions" onclick="switchGodTab('predictions')">Predictions</button>
       </div>
 
       <!-- Groups panel -->
@@ -1560,6 +1561,23 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           </div>
         </div>
         <div id="god-groups-list"><div class="loading">Loading…</div></div>
+      </div>
+
+      <!-- Predictions panel -->
+      <div id="god-panel-predictions" style="display:none;">
+        <div style="margin-bottom:1rem;">
+          <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">Group</label>
+          <select id="god-pred-group" class="config-input" style="margin-bottom:0;" onchange="godPredLoadPlayers()">
+            <option value="">— select group —</option>
+          </select>
+        </div>
+        <div id="god-pred-player-wrap" style="display:none;margin-bottom:1rem;">
+          <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;">Player</label>
+          <select id="god-pred-player" class="config-input" style="margin-bottom:0;" onchange="godPredLoadFixtures()">
+            <option value="">— select player —</option>
+          </select>
+        </div>
+        <div id="god-pred-fixtures"></div>
       </div>
 
       <!-- Results panel -->
@@ -3702,6 +3720,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.31.7',date:'17 Jun 2026',notes:['God mode: new Predictions tab — choose group, choose player, edit any prediction (locked or not)']},
   {v:'1.31.6',date:'15 Jun 2026',notes:['Leaderboard: fix indent on first badge in badge row']},
   {v:'1.31.5',date:'15 Jun 2026',notes:['Leaderboard: joint ranking is now always on; removed the =Joint toggle button']},
   {v:'1.31.4',date:'15 Jun 2026',notes:['Leaderboard: In the Money, Forfeit and streak badges moved to their own line beneath the player name']},
@@ -6929,11 +6948,100 @@ async function loadGodGroups(){
 }
 
 function switchGodTab(name){
-  ['groups','results'].forEach(t=>{
+  ['groups','results','predictions'].forEach(t=>{
     document.getElementById('god-panel-'+t).style.display = t===name ? 'block' : 'none';
     document.getElementById('god-tab-'+t).classList.toggle('active', t===name);
   });
   if(name==='results') loadGodResults();
+  if(name==='predictions') godPredInit();
+}
+
+async function godPredInit(){
+  const sel = document.getElementById('god-pred-group');
+  if(sel.options.length > 1) return; // already loaded
+  sel.innerHTML = '<option value="">— loading —</option>';
+  const groups = await sb('groups?select=id,name,key&order=name').catch(()=>[]);
+  sel.innerHTML = '<option value="">— select group —</option>';
+  groups.forEach(g=>{
+    const o = document.createElement('option');
+    o.value = g.id;
+    o.textContent = g.name + ' (' + g.key + ')';
+    sel.appendChild(o);
+  });
+}
+
+async function godPredLoadPlayers(){
+  const groupId = document.getElementById('god-pred-group').value;
+  const playerWrap = document.getElementById('god-pred-player-wrap');
+  const fixturesEl = document.getElementById('god-pred-fixtures');
+  fixturesEl.innerHTML = '';
+  if(!groupId){ playerWrap.style.display='none'; return; }
+  playerWrap.style.display = 'block';
+  const pSel = document.getElementById('god-pred-player');
+  pSel.innerHTML = '<option value="">— loading —</option>';
+  const players = await sb('players?group_id=eq.'+groupId+'&select=id,name,nickname&order=name').catch(()=>[]);
+  pSel.innerHTML = '<option value="">— select player —</option>';
+  players.forEach(p=>{
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = p.name + (p.nickname ? ' ('+p.nickname+')' : '');
+    pSel.appendChild(o);
+  });
+}
+
+async function godPredLoadFixtures(){
+  const groupId = document.getElementById('god-pred-group').value;
+  const playerId = document.getElementById('god-pred-player').value;
+  const el = document.getElementById('god-pred-fixtures');
+  if(!groupId||!playerId){ el.innerHTML=''; return; }
+  el.innerHTML = '<div class="loading">Loading…</div>';
+
+  const [preds, fixtures] = await Promise.all([
+    sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&select=match_id,home_score,away_score').catch(()=>[]),
+    Promise.resolve(allFixtures())
+  ]);
+
+  const predMap = {};
+  preds.forEach(p=>{ predMap[p.match_id]={home:p.home_score,away:p.away_score}; });
+
+  if(!fixtures.length){ el.innerHTML='<div style="color:var(--text-muted);font-size:.85rem;">No fixtures found.</div>'; return; }
+
+  let html = '<div style="display:flex;flex-direction:column;gap:.5rem;">';
+  fixtures.forEach(f=>{
+    const p = predMap[f.id];
+    const hVal = p!=null ? p.home : '';
+    const aVal = p!=null ? p.away : '';
+    const res = results[f.id];
+    const hasResult = res && res.home!=null && res.away!=null;
+    const koTime = getMatchKickoff(f);
+    const isLocked = !!(results[f.id] || (koTime && new Date()>=koTime));
+    const lockBadge = isLocked ? '<span style="font-size:.65rem;color:var(--text-muted);margin-left:.35rem;">🔒</span>' : '';
+    const resultBadge = hasResult ? `<span style="font-size:.65rem;color:var(--text-muted);margin-left:.35rem;">result ${res.home}–${res.away}</span>` : '';
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;display:grid;grid-template-columns:1fr auto;align-items:center;gap:.75rem;">
+      <div>
+        <div style="font-size:.8rem;font-weight:600;">${f.hf} ${f.home} vs ${f.away} ${f.af}${lockBadge}${resultBadge}</div>
+        <div style="font-size:.68rem;color:var(--text-muted);margin-top:.15rem;">${f.stage||'Group'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.4rem;">
+        <input type="number" min="0" max="99" inputmode="numeric" pattern="[0-9]*" value="${hVal}" placeholder="–" style="width:2.6rem;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.35rem .4rem;color:var(--text);font-size:.95rem;font-family:'DM Mono',monospace;font-weight:700;" id="gph-${f.id}" oninput="godPredAutoSave('${f.id}','${groupId}','${playerId}')" />
+        <span style="color:var(--text-muted);font-size:.8rem;">–</span>
+        <input type="number" min="0" max="99" inputmode="numeric" pattern="[0-9]*" value="${aVal}" placeholder="–" style="width:2.6rem;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.35rem .4rem;color:var(--text);font-size:.95rem;font-family:'DM Mono',monospace;font-weight:700;" id="gpa-${f.id}" oninput="godPredAutoSave('${f.id}','${groupId}','${playerId}')" />
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+async function godPredAutoSave(matchId, groupId, playerId){
+  const h = document.getElementById('gph-'+matchId)?.value.trim();
+  const a = document.getElementById('gpa-'+matchId)?.value.trim();
+  if(h===''||a===''||h===undefined||a===undefined) return;
+  if(isNaN(+h)||isNaN(+a)) return;
+  try{
+    await sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
+    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:groupId,player_id:playerId,match_id:matchId,home_score:+h,away_score:+a}});
+  }catch(e){ console.warn('god pred save failed',matchId,e); }
 }
 
 async function loadGodResults(){
@@ -7091,6 +7199,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.7</div>
 </body>
 </html>
