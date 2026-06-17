@@ -832,7 +832,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.13</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.14</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1068,6 +1068,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
             <button id="lb-filter-money" class="lb-filter-btn" onclick="setLbFilter('money')">💸 Money</button>
             <button id="lb-filter-fun" class="lb-filter-btn" onclick="setLbFilter('fun')">😄 Fun</button>
           </div>
+          <button class="sync-refresh" id="lb-info-toggle" onclick="toggleLbInfo()">ⓘ Info</button>
           <button class="sync-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
         </div>
       </div>
@@ -1100,7 +1101,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;margin-top:.35rem;"><strong>2.</strong> Top scorer prediction — whoever predicted the tournament's top scorer wins. If neither did, whoever's chosen player scored the most goals overall wins</div>
         </div>
       </div>
-      <div style="margin-bottom:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;display:flex;flex-wrap:wrap;gap:.35rem .75rem;align-items:center;">
+      <div id="lb-streak-key" style="display:none;margin-bottom:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;flex-wrap:wrap;gap:.35rem .75rem;align-items:center;">
         <span style="font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);flex-basis:100%;">Streak Key</span>
         <span style="font-size:.72rem;color:var(--text-dim);">💎 <span class="lb-badge lb-badge-perfect">Perfect Streak</span> 3 exact scores in a row</span>
         <span style="font-size:.72rem;color:var(--text-dim);">🔥 <span class="lb-badge lb-badge-hot">Hot Streak</span> 3 correct scores in a row</span>
@@ -3156,6 +3157,23 @@ let _lbTimelineOpen = false;
 let _lbPlayInterval = null;
 let _lbPlayStepping = false;
 let _lbPrevRanks = {};
+let _lbInfoOpen = localStorage.getItem('lbInfoOpen')==='1';
+function applyLbInfoVisibility(){
+  const sk = document.getElementById('lb-streak-key');
+  if(sk) sk.style.display = _lbInfoOpen ? 'flex' : 'none';
+  const btn = document.getElementById('lb-info-toggle');
+  if(btn){
+    btn.textContent = _lbInfoOpen ? '✕ Hide' : 'ⓘ Info';
+    btn.style.borderColor = _lbInfoOpen ? 'var(--group-accent)' : '';
+    btn.style.color = _lbInfoOpen ? 'var(--group-accent)' : '';
+  }
+}
+function toggleLbInfo(){
+  _lbInfoOpen = !_lbInfoOpen;
+  localStorage.setItem('lbInfoOpen', _lbInfoOpen ? '1' : '0');
+  applyLbInfoVisibility();
+  if(typeof renderLeaderboard==='function' && _lbScores) renderLeaderboard();
+}
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -3710,6 +3728,7 @@ async function loadLeaderboard(){
     }
     const timelineChev = document.getElementById('lb-timeline-btn-chevron');
     if(timelineChev){ timelineChev.style.transform = ''; timelineChev.style.color = 'var(--text-muted)'; }
+    applyLbInfoVisibility();
     renderLeaderboard();
     _initLbTimeline();
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
@@ -3763,6 +3782,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.32.14',date:'17 Jun 2026',notes:['Leaderboard: total pot and streak key hidden by default; tap the new ⓘ Info button next to Refresh to show them (remembered per device)']},
   {v:'1.32.13',date:'17 Jun 2026',notes:['Timeline button background now uses the active theme (was stuck white in dark and light modes)']},
   {v:'1.32.1',date:'17 Jun 2026',notes:['Timeline: ▶ play button auto-advances through matches with player cards animating up/down as rankings change']},
   {v:'1.32.0',date:'17 Jun 2026',notes:['Leaderboard timeline: click ⏱ Timeline button to open slider; leaderboard switches to compact one-line view (❌✅⭐ counts + pts per player)']},
@@ -6419,7 +6439,7 @@ function renderLeaderboard(){
     pot = moneyPlayers * fee;
     const views = getLbViews();
     const onlyAll = views.includes('all') && !views.includes('money');
-    const showPot = pot > 0 && (_lbFilter === 'money' || onlyAll);
+    const showPot = _lbInfoOpen && pot > 0 && (_lbFilter === 'money' || onlyAll);
     if(showPot){
       potDisplay.style.display='flex';
       potAmount.textContent = '£'+pot.toFixed(pot%1===0?0:2);
@@ -7450,6 +7470,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.13</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.14</div>
 </body>
 </html>
