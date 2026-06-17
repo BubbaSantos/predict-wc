@@ -832,7 +832,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.16</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.17</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3782,6 +3782,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.32.17',date:'17 Jun 2026',notes:['God mode predictions: 10s timeout on the fetch + console logging so the cause of the Loading… hang is visible']},
   {v:'1.32.16',date:'17 Jun 2026',notes:['God mode predictions: stop spinning Loading… forever when the fetch returns an empty body or fails; show the error instead']},
   {v:'1.32.15',date:'17 Jun 2026',notes:["God mode predictions: ↺ Reset button restores the selected player's predictions to whatever they were when you opened the page (undoes your edits)"]},
   {v:'1.32.14',date:'17 Jun 2026',notes:['Leaderboard: total pot and streak key hidden by default; tap the new ⓘ Info button next to Refresh to show them (remembered per device)']},
@@ -7269,15 +7270,19 @@ async function godPredLoadFixtures(){
   const playerId = document.getElementById('god-pred-player').value;
   const el = document.getElementById('god-pred-fixtures');
   if(!groupId||!playerId){ el.innerHTML=''; _godPredOriginal={}; return; }
+  console.log('[godPred] loading', {groupId, playerId});
   el.innerHTML = '<div class="loading">Loading…</div>';
 
   let preds, fixtures;
   try{
-    [preds, fixtures] = await Promise.all([
-      sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&select=match_id,home_score,away_score').catch(e=>{console.warn('god pred fetch failed',e);return [];}),
-      Promise.resolve(allFixtures())
-    ]);
+    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Request timed out after 10s')),10000));
+    const fetchPreds = sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&select=match_id,home_score,away_score');
+    preds = await Promise.race([fetchPreds, timeout]).catch(e=>{console.warn('[godPred] preds fetch failed',e);el.innerHTML=`<div class="empty">⚠️ ${e.message||e}</div>`;return null;});
+    if(preds===null) return;
+    fixtures = allFixtures();
+    console.log('[godPred] loaded', {preds:preds?.length, fixtures:fixtures?.length});
   }catch(e){
+    console.error('[godPred] error', e);
     el.innerHTML = `<div class="empty">⚠️ ${e.message||e}</div>`;
     return;
   }
@@ -7517,6 +7522,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.16</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.17</div>
 </body>
 </html>
