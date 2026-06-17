@@ -834,7 +834,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="screen-landing">
 <div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.31.7</div>
   <div class="landing">
-    <div class="landing-logo">⚽ Predictor</div>
+    <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
     <div class="landing-cards">
       <div class="landing-card" onclick="showFlow('create')">
