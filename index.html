@@ -3154,6 +3154,7 @@ let _lbTimelineActive = false;
 let _lbTimelineOpen = false;
 let _lbPlayInterval = null;
 let _lbPlayStepping = false;
+let _lbPrevRanks = {};
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -3699,6 +3700,7 @@ async function loadLeaderboard(){
     lbTimelinePause();
     _lbTimelineActive = false;
     _lbTimelineOpen = false;
+    _lbPrevRanks = {};
     const timelineBtn = document.getElementById('lb-timeline-btn');
     if(timelineBtn){ timelineBtn.style.background=''; timelineBtn.style.color=''; }
     renderLeaderboard();
@@ -6341,7 +6343,7 @@ function lbTimelineTogglePlay(){
     onLbTimelineSlide(next);
     _lbPlayStepping = false;
     if(next >= parseInt(s.max)) lbTimelinePause();
-  }, 1200);
+  }, 1600);
 }
 
 function lbTimelinePause(){
@@ -6374,10 +6376,20 @@ function _renderLeaderboardAtMatchIdx(matchIdx){
     else if(pts===3){scores[name].result++;scores[name].total+=3;}
     else{scores[name].wrong++;}
   });
+  // Build streaks scoped to this match index
+  const limitedRm = {};
+  completed.slice(0, matchIdx).forEach(f=>{ limitedRm[f.id] = rm[f.id]; });
+  const timelineStreaks = calcPlayerStreaks(gamePreds, limitedRm);
+  const savedStreaks = _lbStreaks;
   const savedScores = _lbScores;
+  _lbStreaks = {};
+  Object.entries(timelineStreaks).forEach(([pid,s])=>{
+    const pdata=pm[pid]; _lbStreaks[(pdata&&(pdata.display||pdata.name))||'Unknown']=s;
+  });
   _lbScores = scores;
   renderLeaderboard();
   _lbScores = savedScores;
+  _lbStreaks = savedStreaks;
 }
 
 function renderLeaderboard(){
@@ -6489,13 +6501,17 @@ function renderLeaderboard(){
   const lastRank = ranks[lastIdx];
   const rankCounts = {};
   ranks.forEach(r=>{rankCounts[r]=(rankCounts[r]||0)+1;});
-  // Capture old positions for FLIP animation (timeline compact mode only)
+  // FLIP step 1: capture old positions and ranks before any DOM change
   const oldTops = {};
   if(_lbTimelineOpen){
     lb.querySelectorAll('[data-pid]').forEach(el=>{
       if(el.dataset.pid) oldTops[el.dataset.pid] = el.getBoundingClientRect().top;
     });
   }
+
+  // Build new rank map for this render
+  const newRanks = {};
+  sorted.forEach(([name,s],i)=>{ if(s.playerId) newRanks[s.playerId] = _lbJointRanks ? ranks[i] : i+1; });
 
   lb.innerHTML = sorted.map(([name,s],i)=>{
     const pid = s.playerId||'';
@@ -6521,8 +6537,17 @@ function renderLeaderboard(){
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
     if(_lbTimelineOpen){
       const sk = _lbStreaks[name];
-      const streakIcon = sk ? (sk.perfect ? ' 💎' : sk.hot ? ' 🔥' : sk.cold ? ' 💩' : '') : '';
-      return '<div class="'+rowClass+'" style="cursor:pointer;padding:.45rem .85rem;display:flex;align-items:center;gap:.5rem;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
+      const streakIcon = sk ? (()=>{
+        const plus = sk.extra > 0 ? `<span style="font-size:.6rem;vertical-align:middle;color:var(--text-muted);"> +${sk.extra}</span>` : '';
+        if(sk.perfect) return ' 💎'+plus;
+        if(sk.hot) return ' 🔥'+plus;
+        if(sk.cold) return ' 💩'+plus;
+        return '';
+      })() : '';
+      const prevRank = _lbPrevRanks[pid];
+      const curRank = _lbJointRanks ? ranks[i] : i+1;
+      const moveDir = prevRank == null ? '' : prevRank > curRank ? 'data-rise="1"' : prevRank < curRank ? 'data-fall="1"' : '';
+      return '<div class="'+rowClass+'" style="cursor:pointer;padding:.45rem .85rem;display:flex;align-items:center;gap:.5rem;" onclick="lbRowClick(this)" data-pid="'+pid+'" data-pname="'+dn+'" '+moveDir+'>'
         +'<div class="lb-rank" style="min-width:2rem;font-size:.8rem;">'+rankDisplay+'</div>'
         +'<div style="flex:1;font-size:.85rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+name+streakIcon+'</div>'
         +'<div style="display:flex;align-items:center;gap:.4rem;font-size:.75rem;white-space:nowrap;">'
@@ -6540,8 +6565,12 @@ function renderLeaderboard(){
       +'</div>';
   }).join('');
 
-  // FLIP: animate cards from their old positions to new positions
+  // Store new ranks for next render's comparison
+  _lbPrevRanks = newRanks;
+
+  // FLIP step 2: animate cards using double-rAF (ensures browser has painted new positions)
   if(_lbTimelineOpen && Object.keys(oldTops).length){
+    const toAnimate = [];
     lb.querySelectorAll('[data-pid]').forEach(el=>{
       const pid = el.dataset.pid;
       if(!(pid in oldTops)) return;
@@ -6549,10 +6578,25 @@ function renderLeaderboard(){
       if(Math.abs(delta) < 1) return;
       el.style.transition = 'none';
       el.style.transform = `translateY(${delta}px)`;
-      el.getBoundingClientRect(); // force reflow
-      el.style.transition = 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
-      el.style.transform = 'translateY(0)';
+      toAnimate.push({el, rise: el.hasAttribute('data-rise'), fall: el.hasAttribute('data-fall')});
     });
+    if(toAnimate.length){
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{
+          toAnimate.forEach(({el, rise, fall})=>{
+            el.style.transition = 'transform 0.55s cubic-bezier(0.34,1.06,0.64,1), background-color 0.2s';
+            el.style.transform = 'translateY(0)';
+            if(rise){
+              el.style.backgroundColor = 'rgba(34,197,94,0.18)';
+              setTimeout(()=>{ el.style.backgroundColor = ''; }, 700);
+            } else if(fall){
+              el.style.backgroundColor = 'rgba(239,68,68,0.15)';
+              setTimeout(()=>{ el.style.backgroundColor = ''; }, 700);
+            }
+          });
+        });
+      });
+    }
   }
 }
 
