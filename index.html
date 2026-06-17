@@ -1106,6 +1106,19 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <span style="font-size:.72rem;color:var(--text-dim);">🔥 <span class="lb-badge lb-badge-hot">Hot Streak</span> 3 correct scores in a row</span>
         <span style="font-size:.72rem;color:var(--text-dim);">💩 <span class="lb-badge lb-badge-cold">Shite Streak</span> 3 wrong results in a row</span>
       </div>
+      <div id="lb-timeline-wrap" style="display:none;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+          <span style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);">⏱ Timeline</span>
+          <span id="lb-timeline-label" style="font-size:.75rem;color:var(--group-accent);font-weight:600;"></span>
+        </div>
+        <input id="lb-timeline-slider" type="range" min="0" max="0" value="0"
+          style="width:100%;accent-color:var(--group-accent);cursor:pointer;"
+          oninput="onLbTimelineSlide(this.value)">
+        <div style="display:flex;justify-content:space-between;margin-top:.3rem;">
+          <span style="font-size:.65rem;color:var(--text-muted);">Match 1</span>
+          <span id="lb-timeline-end-label" style="font-size:.65rem;color:var(--text-muted);"></span>
+        </div>
+      </div>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
     </div>
 
@@ -3130,6 +3143,10 @@ let _lbStreaks = {};
 let _lbPayMap = {};
 let _lbTiebreaks = {};
 let _lbForfeitVotes = [];
+let _lbRawPreds = [];
+let _lbRawResults = [];
+let _lbRawPlayers = [];
+let _lbTimelineActive = false;
 let _matchCountdownStarted = false;
 function startMatchCountdowns(){
   if(_matchCountdownStarted) return;
@@ -3629,6 +3646,9 @@ async function loadLeaderboard(){
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     _lbTiebreaks={}; (allTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
+    _lbRawPreds = allPreds||[];
+    _lbRawResults = allResults||[];
+    _lbRawPlayers = allPlayers||[];
     const scores={};
     const lbGamePreds=(allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
     lbGamePreds.forEach(p=>{
@@ -3668,7 +3688,9 @@ async function loadLeaderboard(){
     } else if(filterBtns){ filterBtns.style.display = 'none'; }
     _lbScores = scores;
     _lbForfeitVotes = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
+    _lbTimelineActive = false;
     renderLeaderboard();
+    _initLbTimeline();
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
@@ -6218,6 +6240,79 @@ function toggleLbRules(){
   const open = body.style.display === 'none';
   body.style.display = open ? 'block' : 'none';
   if(chevron) chevron.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function _initLbTimeline(){
+  const wrap = document.getElementById('lb-timeline-wrap');
+  const slider = document.getElementById('lb-timeline-slider');
+  if(!wrap || !slider) return;
+  const rm = {};
+  (_lbRawResults||[]).forEach(r=>rm[r.match_id]=r);
+  const completed = allFixtures()
+    .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
+    .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  if(completed.length === 0){ wrap.style.display='none'; return; }
+  wrap.style.display='';
+  slider.max = completed.length;
+  if(!_lbTimelineActive) slider.value = completed.length;
+  const endLabel = document.getElementById('lb-timeline-end-label');
+  if(endLabel) endLabel.textContent = 'Match '+completed.length;
+  _updateLbTimelineLabel(parseInt(slider.value), completed);
+}
+
+function _updateLbTimelineLabel(val, completed){
+  const label = document.getElementById('lb-timeline-label');
+  if(!label) return;
+  if(!completed){
+    const rm = {};
+    (_lbRawResults||[]).forEach(r=>rm[r.match_id]=r);
+    completed = allFixtures()
+      .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
+      .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  }
+  if(val >= completed.length){
+    label.textContent = 'Live · After match '+completed.length;
+  } else if(val === 0){
+    label.textContent = 'Before tournament';
+  } else {
+    const f = completed[val-1];
+    label.textContent = 'After match '+val+' · '+f.home+' v '+f.away;
+  }
+}
+
+function onLbTimelineSlide(val){
+  _lbTimelineActive = parseInt(val) < parseInt(document.getElementById('lb-timeline-slider').max);
+  _updateLbTimelineLabel(parseInt(val));
+  _renderLeaderboardAtMatchIdx(parseInt(val));
+}
+
+function _renderLeaderboardAtMatchIdx(matchIdx){
+  const rm = {};
+  (_lbRawResults||[]).forEach(r=>rm[r.match_id]=r);
+  const completed = allFixtures()
+    .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
+    .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  const limitIds = new Set(completed.slice(0,matchIdx).map(f=>f.id));
+  const pm = {};
+  (_lbRawPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
+  const gamePreds = (_lbRawPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
+  const scores = {};
+  gamePreds.forEach(p=>{
+    const pdata=pm[p.player_id];
+    const name=(pdata&&(pdata.display||pdata.name))||'Unknown';
+    if(!scores[name])scores[name]={exact:0,result:0,total:0,played:0,playerId:p.player_id};
+    scores[name].played++;
+    if(!limitIds.has(p.match_id)) return;
+    const res=rm[p.match_id]; if(!res) return;
+    const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+    if(pts===8){scores[name].exact++;scores[name].result++;scores[name].total+=8;}
+    else if(pts===5){scores[name].exact++;scores[name].total+=5;}
+    else if(pts===3){scores[name].result++;scores[name].total+=3;}
+  });
+  const savedScores = _lbScores;
+  _lbScores = scores;
+  renderLeaderboard();
+  _lbScores = savedScores;
 }
 
 function renderLeaderboard(){
