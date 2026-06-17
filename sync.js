@@ -188,6 +188,61 @@ async function main() {
   }
 
   console.log(`Done. ${total} result(s) updated.`);
+
+  await syncScorers();
+}
+
+// ── Tournament top scorers (football-data.org) ────────────────────
+// Writes to a global `tournament_scorers` table (not group-scoped — same
+// for every group since it's tournament-wide data).
+// Required schema (run once in Supabase SQL editor):
+//   CREATE TABLE IF NOT EXISTS tournament_scorers (
+//     rank        int PRIMARY KEY,
+//     player_id   bigint,
+//     player_name text NOT NULL,
+//     team_id     bigint,
+//     team_name   text,
+//     goals       int DEFAULT 0,
+//     assists     int,
+//     penalties   int,
+//     updated_at  timestamptz DEFAULT now()
+//   );
+//   ALTER TABLE tournament_scorers ENABLE ROW LEVEL SECURITY;
+//   CREATE POLICY "read scorers" ON tournament_scorers FOR SELECT USING (true);
+//   CREATE POLICY "write scorers" ON tournament_scorers FOR ALL USING (true) WITH CHECK (true);
+async function syncScorers() {
+  try {
+    const res = await fetch(`${FD_BASE}/competitions/${FD_COMP}/scorers?limit=20`, {
+      headers: { 'X-Auth-Token': FDORG_KEY },
+    });
+    if (!res.ok) {
+      console.log(`  Scorers fetch skipped (FD API ${res.status})`);
+      return;
+    }
+    const data = await res.json();
+    const scorers = data.scorers || [];
+    if (!scorers.length) { console.log('  No scorers returned.'); return; }
+    const rows = scorers.map((s, i) => ({
+      rank: i + 1,
+      player_id:   s.player?.id || null,
+      player_name: s.player?.name || 'Unknown',
+      team_id:     s.team?.id || null,
+      team_name:   s.team?.name || null,
+      goals:       s.goals ?? 0,
+      assists:     s.assists ?? null,
+      penalties:   s.penalties ?? null,
+      updated_at:  new Date().toISOString(),
+    }));
+    try {
+      await sb('tournament_scorers?rank=gte.0', { method: 'DELETE' });
+      await sb('tournament_scorers', { method: 'POST', body: rows });
+      console.log(`  Synced ${rows.length} top scorer(s).`);
+    } catch (e) {
+      console.log('  Scorers write skipped — table likely missing. Run the SQL in the comment above sync.js syncScorers().');
+    }
+  } catch (e) {
+    console.log('  Scorers sync error:', e.message);
+  }
 }
 
 main().catch(e => { console.error('Error:', e.message); process.exit(1); });
