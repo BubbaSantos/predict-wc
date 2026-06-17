@@ -6283,9 +6283,8 @@ function toggleLbTimeline(){
   _lbTimelineOpen = !_lbTimelineOpen;
   const wrap = document.getElementById('lb-timeline-wrap');
   const btn = document.getElementById('lb-timeline-btn');
-  if(wrap) wrap.style.display = _lbTimelineOpen ? '' : 'none';
-  const btn = document.getElementById('lb-timeline-btn');
   const chevron = document.getElementById('lb-timeline-btn-chevron');
+  if(wrap) wrap.style.display = _lbTimelineOpen ? '' : 'none';
   if(btn){ btn.style.borderColor = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--border)'; btn.style.color = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--text)'; }
   if(chevron){ chevron.style.transform = _lbTimelineOpen ? 'rotate(180deg)' : ''; chevron.style.color = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--text-muted)'; }
   if(!_lbTimelineOpen){
