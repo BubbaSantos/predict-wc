@@ -832,7 +832,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.18</div>
+<div style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.19</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3550,7 +3550,7 @@ async function saveSingle(id){
   const btn=document.getElementById(`sbtn-${id}`); if(btn)btn.textContent='…';
   try{
     await sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.${id}`,{method:'DELETE',prefer:'return=minimal'});
-    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:id,home_score:+h,away_score:+a}});
+    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:id,home_score:+h,away_score:+a,player_home_score:+h,player_away_score:+a}});
     predictions[id]={home:+h,away:+a};
     if(btn){btn.textContent='✓ Saved';btn.classList.add('done');}
     document.getElementById(`h-${id}`)?.classList.add('filled');
@@ -3572,7 +3572,7 @@ async function saveAllPredictions(){
   if(!toSave.length){flash('No new predictions to save','error');return;}
   try{
     for(const p of toSave) await sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.${p.match_id}`,{method:'DELETE',prefer:'return=minimal'});
-    await sb('predictions',{method:'POST',prefer:'return=minimal',body:toSave.map(p=>({group_id:currentGroup.id,player_id:currentPlayer.id,match_id:p.match_id,home_score:p.h,away_score:p.a}))});
+    await sb('predictions',{method:'POST',prefer:'return=minimal',body:toSave.map(p=>({group_id:currentGroup.id,player_id:currentPlayer.id,match_id:p.match_id,home_score:p.h,away_score:p.a,player_home_score:p.h,player_away_score:p.a}))});
     toSave.forEach(p=>{predictions[p.match_id]={home:p.h,away:p.a};const b=document.getElementById(`sbtn-${p.match_id}`);if(b){b.textContent='✓';b.classList.add('done');}});
     flash(`${toSave.length} predictions saved!`,'success');
   }catch(e){flash('Error: '+e.message,'error');}
@@ -3783,6 +3783,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.32.19',date:'17 Jun 2026',notes:["God mode predictions: store and show the player's true original entry; ↺ Restore button now reverts to what the player typed (not just session edits). Requires the new player_home_score / player_away_score columns on the predictions table."]},
   {v:'1.32.18',date:'17 Jun 2026',notes:["Fix enterApp crash on missing pred-player-name element — it was aborting script init and breaking the god mode predictions tab (stuck Loading…)"]},
   {v:'1.32.17',date:'17 Jun 2026',notes:['God mode predictions: 10s timeout on the fetch + console logging so the cause of the Loading… hang is visible']},
   {v:'1.32.16',date:'17 Jun 2026',notes:['God mode predictions: stop spinning Loading… forever when the fetch returns an empty body or fails; show the error instead']},
@@ -5376,7 +5377,7 @@ async function autoSaveIfComplete(matchId){
   if(existing && existing.home===+h && existing.away===+a) return;
   try{
     await sb('predictions?group_id=eq.'+currentGroup.id+'&player_id=eq.'+currentPlayer.id+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
-    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:matchId,home_score:+h,away_score:+a}});
+    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:matchId,home_score:+h,away_score:+a,player_home_score:+h,player_away_score:+a}});
     predictions[matchId]={home:+h,away:+a};
     document.getElementById('h-'+matchId)?.classList.add('filled');
     document.getElementById('a-'+matchId)?.classList.add('filled');
@@ -7265,20 +7266,18 @@ async function godPredLoadPlayers(){
   });
 }
 
-let _godPredOriginal = {};
-
 async function godPredLoadFixtures(){
   const groupId = document.getElementById('god-pred-group').value;
   const playerId = document.getElementById('god-pred-player').value;
   const el = document.getElementById('god-pred-fixtures');
-  if(!groupId||!playerId){ el.innerHTML=''; _godPredOriginal={}; return; }
+  if(!groupId||!playerId){ el.innerHTML=''; return; }
   console.log('[godPred] loading', {groupId, playerId});
   el.innerHTML = '<div class="loading">Loading…</div>';
 
   let preds, fixtures;
   try{
     const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Request timed out after 10s')),10000));
-    const fetchPreds = sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&select=match_id,home_score,away_score');
+    const fetchPreds = sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&select=match_id,home_score,away_score,player_home_score,player_away_score');
     preds = await Promise.race([fetchPreds, timeout]).catch(e=>{console.warn('[godPred] preds fetch failed',e);el.innerHTML=`<div class="empty">⚠️ ${e.message||e}</div>`;return null;});
     if(preds===null) return;
     fixtures = allFixtures();
@@ -7292,12 +7291,11 @@ async function godPredLoadFixtures(){
   fixtures = fixtures || [];
 
   const predMap = {};
-  preds.forEach(p=>{ predMap[p.match_id]={home:p.home_score,away:p.away_score}; });
-  _godPredOriginal = JSON.parse(JSON.stringify(predMap));
+  preds.forEach(p=>{ predMap[p.match_id]={home:p.home_score,away:p.away_score,playerHome:p.player_home_score,playerAway:p.player_away_score}; });
 
   if(!fixtures.length){ el.innerHTML='<div style="color:var(--text-muted);font-size:.85rem;">No fixtures found.</div>'; return; }
 
-  let html = '<div style="display:flex;justify-content:flex-end;margin-bottom:.6rem;"><button class="view-preds-btn" onclick="godPredReset()" title="Discard your edits and restore this player\'s saved predictions">↺ Reset to player\'s saved</button></div>';
+  let html = '<div style="display:flex;justify-content:flex-end;margin-bottom:.6rem;"><button class="view-preds-btn" onclick="godPredReset()" title="Restore this player\'s predictions to exactly what they originally entered">↺ Restore to player\'s original</button></div>';
   html += '<div style="display:flex;flex-direction:column;gap:.5rem;">';
   fixtures.forEach(f=>{
     const p = predMap[f.id];
@@ -7309,10 +7307,13 @@ async function godPredLoadFixtures(){
     const isLocked = !!(results[f.id] || (koTime && new Date()>=koTime));
     const lockBadge = isLocked ? '<span style="font-size:.65rem;color:var(--text-muted);margin-left:.35rem;">🔒</span>' : '';
     const resultBadge = hasResult ? `<span style="font-size:.65rem;color:var(--text-muted);margin-left:.35rem;">result ${res.home}–${res.away}</span>` : '';
+    const isEdited = p && p.playerHome != null && p.playerAway != null && (p.home !== p.playerHome || p.away !== p.playerAway);
+    const editedBadge = isEdited ? `<div style="font-size:.65rem;color:var(--accent2);margin-top:.15rem;">⚡ edited — player entered ${p.playerHome}–${p.playerAway}</div>` : '';
     html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;display:grid;grid-template-columns:1fr auto;align-items:center;gap:.75rem;">
       <div>
         <div style="font-size:.8rem;font-weight:600;">${f.hf} ${f.home} vs ${f.away} ${f.af}${lockBadge}${resultBadge}</div>
         <div style="font-size:.68rem;color:var(--text-muted);margin-top:.15rem;">${f.stage||'Group'}</div>
+        ${editedBadge}
       </div>
       <div style="display:flex;align-items:center;gap:.4rem;">
         <input type="number" min="0" max="99" inputmode="numeric" pattern="[0-9]*" value="${hVal}" placeholder="–" style="width:2.6rem;text-align:center;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.35rem .4rem;color:var(--text);font-size:.95rem;font-family:'DM Mono',monospace;font-weight:700;" id="gph-${f.id}" oninput="godPredAutoSave('${f.id}','${groupId}','${playerId}')" />
@@ -7331,8 +7332,11 @@ async function godPredAutoSave(matchId, groupId, playerId){
   if(h===''||a===''||h===undefined||a===undefined) return;
   if(isNaN(+h)||isNaN(+a)) return;
   try{
+    const existing = await sb(`predictions?group_id=eq.${groupId}&player_id=eq.${playerId}&match_id=eq.${matchId}&select=player_home_score,player_away_score`).catch(()=>[]);
+    const playerH = existing?.[0]?.player_home_score ?? null;
+    const playerA = existing?.[0]?.player_away_score ?? null;
     await sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
-    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:groupId,player_id:playerId,match_id:matchId,home_score:+h,away_score:+a}});
+    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:groupId,player_id:playerId,match_id:matchId,home_score:+h,away_score:+a,player_home_score:playerH,player_away_score:playerA}});
   }catch(e){ console.warn('god pred save failed',matchId,e); }
 }
 
@@ -7342,29 +7346,22 @@ function godPredReset(){
   if(!groupId||!playerId) return;
   const playerSel = document.getElementById('god-pred-player');
   const playerName = playerSel.options[playerSel.selectedIndex]?.text || 'this player';
-  showConfirm('↺','Reset predictions',`Discard your edits and restore ${playerName}'s saved predictions?`,'Reset',async ()=>{
+  showConfirm('↺','Restore to player original',`Restore ${playerName}'s predictions to exactly what they originally entered? Predictions you added that the player never entered will be deleted.`,'Restore',async ()=>{
     try{
-      const fixtures = allFixtures();
-      for(const f of fixtures){
-        const o = _godPredOriginal[f.id];
-        const hEl = document.getElementById('gph-'+f.id);
-        const aEl = document.getElementById('gpa-'+f.id);
-        const curH = (hEl?.value||'').trim();
-        const curA = (aEl?.value||'').trim();
-        const oH = o ? String(o.home) : '';
-        const oA = o ? String(o.away) : '';
-        if(curH===oH && curA===oA) continue;
-        await sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&match_id=eq.'+f.id,{method:'DELETE',prefer:'return=minimal'});
-        if(o){
-          await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:groupId,player_id:playerId,match_id:f.id,home_score:o.home,away_score:o.away}});
-          if(hEl) hEl.value = o.home;
-          if(aEl) aEl.value = o.away;
-        } else {
-          if(hEl) hEl.value = '';
-          if(aEl) aEl.value = '';
+      const rows = await sb(`predictions?group_id=eq.${groupId}&player_id=eq.${playerId}&select=match_id,home_score,away_score,player_home_score,player_away_score`).catch(()=>[]);
+      const byMatch = {};
+      (rows||[]).forEach(r=>{ byMatch[r.match_id] = r; });
+      for(const matchId of Object.keys(byMatch)){
+        const r = byMatch[matchId];
+        const orig = (r.player_home_score!=null && r.player_away_score!=null) ? {h:r.player_home_score, a:r.player_away_score} : null;
+        if(orig && r.home_score===orig.h && r.away_score===orig.a) continue;
+        await sb('predictions?group_id=eq.'+groupId+'&player_id=eq.'+playerId+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
+        if(orig){
+          await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:groupId,player_id:playerId,match_id:matchId,home_score:orig.h,away_score:orig.a,player_home_score:orig.h,player_away_score:orig.a}});
         }
       }
-      flash('Predictions restored','success');
+      flash("Restored to player's original",'success');
+      godPredLoadFixtures();
     }catch(e){ flash('Error: '+e.message,'error'); }
   });
 }
@@ -7524,6 +7521,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.18</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.32.19</div>
 </body>
 </html>
