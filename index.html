@@ -3412,6 +3412,9 @@ function renderPredictCard(f,pred,res){
     const ph = pred.home!=='' ? pred.home : '–';
     const pa = pred.away!=='' ? pred.away : '–';
     const lockIcon = statusBadge || '<span style="font-size:.65rem;color:var(--text-muted);opacity:.45;">🔒</span>';
+    const adminUnlockBtn = (currentPlayer && (currentPlayer.god_mode || currentPlayer.is_admin)) || _inGodSession
+  ? `<button onclick="adminUnlockCard('${f.id}',this)" style="position:absolute;top:.4rem;left:.4rem;background:none;border:none;font-size:.65rem;color:var(--text-muted);cursor:pointer;opacity:.4;" title="Edit prediction">✏️</button>`
+  : '';
     let centerHtml;
     if(hasActualScore){
       const predText = isFilled ? `you predicted ${ph}–${pa}` : 'not predicted';
