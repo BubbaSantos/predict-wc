@@ -1106,8 +1106,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <span style="font-size:.72rem;color:var(--text-dim);">🔥 <span class="lb-badge lb-badge-hot">Hot Streak</span> 3 correct scores in a row</span>
         <span style="font-size:.72rem;color:var(--text-dim);">💩 <span class="lb-badge lb-badge-cold">Shite Streak</span> 3 wrong results in a row</span>
       </div>
-      <button id="lb-timeline-btn" onclick="toggleLbTimeline()" style="display:none;width:100%;margin-bottom:.75rem;cursor:pointer;border:none;background:none;padding:0;">
-        <span style="display:flex;align-items:center;justify-content:center;gap:.4rem;background:#dc2626;color:#fff;font-size:.75rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.45rem 1rem;border-radius:6px;" id="lb-timeline-btn-inner">⏱ Tap for Timeline View</span>
+      <button id="lb-timeline-btn" onclick="toggleLbTimeline()" style="display:none;width:100%;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;align-items:center;justify-content:space-between;color:var(--text);font-size:.82rem;font-weight:600;transition:border-color .15s,color .15s;">
+        <span id="lb-timeline-btn-inner">⏱ Tap for Timeline View</span>
+        <span id="lb-timeline-btn-chevron" style="font-size:.7rem;color:var(--text-muted);transition:transform .2s;">▼</span>
       </button>
       <div id="lb-timeline-wrap" style="display:none;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
@@ -6269,7 +6270,7 @@ function _initLbTimeline(){
     .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
     .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
   if(completed.length === 0){ wrap.style.display='none'; if(btn) btn.style.display='none'; return; }
-  if(btn) btn.style.display='';
+  if(btn) btn.style.display='flex';
   slider.max = completed.length;
   if(!_lbTimelineActive) slider.value = completed.length;
   const endLabel = document.getElementById('lb-timeline-end-label');
@@ -6283,9 +6284,10 @@ function toggleLbTimeline(){
   const wrap = document.getElementById('lb-timeline-wrap');
   const btn = document.getElementById('lb-timeline-btn');
   if(wrap) wrap.style.display = _lbTimelineOpen ? '' : 'none';
-  const inner = document.getElementById('lb-timeline-btn-inner');
-  if(inner) inner.style.background = _lbTimelineOpen ? '#ef4444' : '#991b1b';
-  if(inner) inner.style.opacity = _lbTimelineOpen ? '1' : '0.75';
+  const btn = document.getElementById('lb-timeline-btn');
+  const chevron = document.getElementById('lb-timeline-btn-chevron');
+  if(btn){ btn.style.borderColor = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--border)'; btn.style.color = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--text)'; }
+  if(chevron){ chevron.style.transform = _lbTimelineOpen ? 'rotate(180deg)' : ''; chevron.style.color = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--text-muted)'; }
   if(!_lbTimelineOpen){
     lbTimelinePause();
     _lbTimelineActive = false;
