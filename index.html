@@ -852,7 +852,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.15</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.16</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3851,6 +3851,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.38.16',date:'18 Jun 2026',notes:['Mobile swipe navigation wraps around — leaderboard swipe left goes to home and vice versa']},
   {v:'1.38.15',date:'18 Jun 2026',notes:['Mobile: swipe left/right to navigate between Home, Predict, and Leaderboard']},
   {v:'1.38.14',date:'18 Jun 2026',notes:['Predictions compact: KO time and lock icon hidden; compact/full button removed; double-tap cards to toggle compact']},
   {v:'1.38.13',date:'18 Jun 2026',notes:['Predictions: single tap to see others picks, double-tap to toggle compact mode; per-card hint removed; single hint shown at top of fixtures list']},
@@ -7923,8 +7924,8 @@ async function godCreateGroup(){
     const cur = activeView();
     if(!cur) return;
     const idx = VIEWS.indexOf(cur);
-    const next = dx < 0 ? VIEWS[idx+1] : VIEWS[idx-1];
-    if(next) showView(next);
+    const next = dx < 0 ? VIEWS[(idx+1) % VIEWS.length] : VIEWS[(idx-1+VIEWS.length) % VIEWS.length];
+    showView(next);
   }, {passive:true});
 })();
 
@@ -7934,6 +7935,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.15</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.16</div>
 </body>
 </html>
