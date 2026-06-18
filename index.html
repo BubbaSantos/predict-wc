@@ -852,7 +852,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.14</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.15</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3851,6 +3851,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.38.15',date:'18 Jun 2026',notes:['Mobile: swipe left/right to navigate between Home, Predict, and Leaderboard']},
   {v:'1.38.14',date:'18 Jun 2026',notes:['Predictions compact: KO time and lock icon hidden; compact/full button removed; double-tap cards to toggle compact']},
   {v:'1.38.13',date:'18 Jun 2026',notes:['Predictions: single tap to see others picks, double-tap to toggle compact mode; per-card hint removed; single hint shown at top of fixtures list']},
   {v:'1.38.12',date:'18 Jun 2026',notes:['Fix: double-tap hint no longer duplicated when More panel is open; wording updated']},
@@ -7899,12 +7900,40 @@ async function godCreateGroup(){
   }catch(e){ showErr(errEl,'Error: '+e.message); }
 }
 
+// Mobile swipe navigation between home/predict/leaderboard
+(function(){
+  const VIEWS = ['home','predict','leaderboard'];
+  let _swX = null, _swY = null;
+  function activeView(){
+    for(const v of VIEWS){ if(document.getElementById('view-'+v)?.classList.contains('active')) return v; }
+    return null;
+  }
+  document.addEventListener('touchstart', e => {
+    if(window.innerWidth > 768) return;
+    const t = e.touches[0];
+    _swX = t.clientX; _swY = t.clientY;
+  }, {passive:true});
+  document.addEventListener('touchend', e => {
+    if(window.innerWidth > 768 || _swX === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - _swX;
+    const dy = t.clientY - _swY;
+    _swX = null; _swY = null;
+    if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const cur = activeView();
+    if(!cur) return;
+    const idx = VIEWS.indexOf(cur);
+    const next = dx < 0 ? VIEWS[idx+1] : VIEWS[idx-1];
+    if(next) showView(next);
+  }, {passive:true});
+})();
+
 // Patch sb to no-op in test mode
 const _sbOrig = window.sb || null;
 
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.14</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.38.15</div>
 </body>
 </html>
