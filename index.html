@@ -5275,28 +5275,29 @@ async function loadHome(){
         ${meta ? `<div class="stat-hi-meta">${meta}</div>` : ''}
       </div>`;
 
-      const cells = [];
+      const cells = [], hiddenCells = [];
       const _hiddenStats = Array.isArray(currentGroup.stats_hidden_highlights) ? currentGroup.stats_hidden_highlights
         : (typeof currentGroup.stats_hidden_highlights==='string' && currentGroup.stats_hidden_highlights ? currentGroup.stats_hidden_highlights.split(',') : []);
       const statShow = key => !_hiddenStats.includes(key);
+      const pushCell = (key, ...args) => { const c=cell(...args); if(statShow(key)) cells.push(c); else hiddenCells.push(c); };
 
-      if(statShow('top_scorer') && _homeTopScorers && _homeTopScorers.length){
+      if(_homeTopScorers && _homeTopScorers.length){
         const maxGoalsFD = Math.max(..._homeTopScorers.map(s=>s.goals||0));
         const leaders = _homeTopScorers.filter(s=>(s.goals||0)===maxGoalsFD);
         if(maxGoalsFD>0){
           const items = leaders.map(s=>`${s.player_name}${s.team_name?` <span style="color:var(--text-muted);font-weight:500;">(${s.team_name})</span>`:''}`);
-          cells.push(cell('👑', `Top Scorer${leaders.length>1?'s':''}`, joinList(items), `${maxGoalsFD} goal${maxGoalsFD===1?'':'s'}${leaders.length>1?' each':''}`));
+          pushCell('top_scorer', '👑', `Top Scorer${leaders.length>1?'s':''}`, joinList(items), `${maxGoalsFD} goal${maxGoalsFD===1?'':'s'}${leaders.length>1?' each':''}`);
         }
       }
-      if(statShow('goal_fest') && goalFests.length)
-        cells.push(cell('🥅', 'Goal-fest', joinList(goalFests.map(fixLine)), `${maxTotal} goals combined${goalFests.length>1?' each':''}`));
-      if(statShow('blowout') && blowouts.length)
-        cells.push(cell('💥', 'Biggest Blowout', joinList(blowouts.map(fixLine)), `${maxMargin}-goal margin${blowouts.length>1?' each':''}`));
-      if(statShow('top_team') && topScorers.length)
-        cells.push(cell('⚽', `Top Scoring Team${topScorers.length>1?'s':''}`, joinList(topScorers.map(t=>`${t.flag||''} ${t.name}`)), `${maxGf} goal${maxGf===1?'':'s'}${topScorers.length>1?' each':''}`));
-      if(statShow('best_defense') && bestDefenders.length)
-        cells.push(cell('🛡️', `Best Defense${bestDefenders.length>1?'s':''}`, joinList(bestDefenders.map(t=>`${t.flag||''} ${t.name}`)), `${minGa} conceded${bestDefenders.length>1?' each':''}`));
-      if(statShow('scoreline') && topScorelines.length && maxScCount >= 2){
+      if(goalFests.length)
+        pushCell('goal_fest', '🥅', 'Goal-fest', joinList(goalFests.map(fixLine)), `${maxTotal} goals combined${goalFests.length>1?' each':''}`);
+      if(blowouts.length)
+        pushCell('blowout', '💥', 'Biggest Blowout', joinList(blowouts.map(fixLine)), `${maxMargin}-goal margin${blowouts.length>1?' each':''}`);
+      if(topScorers.length)
+        pushCell('top_team', '⚽', `Top Scoring Team${topScorers.length>1?'s':''}`, joinList(topScorers.map(t=>`${t.flag||''} ${t.name}`)), `${maxGf} goal${maxGf===1?'':'s'}${topScorers.length>1?' each':''}`);
+      if(bestDefenders.length)
+        pushCell('best_defense', '🛡️', `Best Defense${bestDefenders.length>1?'s':''}`, joinList(bestDefenders.map(t=>`${t.flag||''} ${t.name}`)), `${minGa} conceded${bestDefenders.length>1?' each':''}`);
+      if(topScorelines.length && maxScCount >= 2){
         const fixListFor = sl => `<div class="stat-hi-sublist">${(scorelineGames[sl]||[]).map(f=>`<div>${f.hf} ${f.home} v ${f.away} ${f.af}</div>`).join('')}</div>`;
         let scValue;
         if(topScorelines.length === 1){
@@ -5308,26 +5309,31 @@ async function loadHome(){
             return `<div class="stat-multi-item">${scoreSpan(h,a)}${fixListFor(sl)}</div>`;
           }).join('')}</div>`;
         }
-        cells.push(cell('🔁', `Most Common Scoreline${topScorelines.length>1?'s':''}`, scValue, `${maxScCount} game${maxScCount===1?'':'s'}${topScorelines.length>1?' each':''}`));
+        pushCell('scoreline', '🔁', `Most Common Scoreline${topScorelines.length>1?'s':''}`, scValue, `${maxScCount} game${maxScCount===1?'':'s'}${topScorelines.length>1?' each':''}`);
       }
-      if(statShow('nailed_it') && nailedIt.length)
-        cells.push(cell('🎯', 'Group Nailed It', joinList(nailedIt.map(fixLine)), `${Math.round(maxPct*100)}% picked the right result`));
-      if(statShow('shock') && shocks.length)
-        cells.push(cell('🤯', 'Biggest Shock', joinList(shocks.map(fixLine)), `Only ${Math.round(minPct*100)}% picked the right result`));
-      if(statShow('days_top') && topDaysLeaders.length)
-        cells.push(cell('🏔️', 'Most Days at #1', joinList(topDaysLeaders), `${maxTopDays} matchday${maxTopDays===1?'':'s'} on top${topDaysLeaders.length>1?' each':''}`));
-      if(statShow('days_bottom') && botDaysLeaders.length)
-        cells.push(cell('📉', 'Most Days at the Bottom', joinList(botDaysLeaders), `${maxBotDays} matchday${maxBotDays===1?'':'s'} propping it up${botDaysLeaders.length>1?' each':''}`));
-      if(statShow('perfect_streaks') && perfectStreakStats.leaders.length)
-        cells.push(cell('💎', 'Most Perfect Streaks', joinList(perfectStreakStats.leaders), `${perfectStreakStats.max} perfect streak${perfectStreakStats.max===1?'':'s'}${perfectStreakStats.leaders.length>1?' each':''}`));
-      if(statShow('hot_streaks') && hotStreakStats.leaders.length)
-        cells.push(cell('🔥', 'Most Hot Streaks', joinList(hotStreakStats.leaders), `${hotStreakStats.max} hot streak${hotStreakStats.max===1?'':'s'}${hotStreakStats.leaders.length>1?' each':''}`));
-      if(statShow('cold_streaks') && coldStreakStats.leaders.length)
-        cells.push(cell('💩', 'Most Shite Streaks', joinList(coldStreakStats.leaders), `${coldStreakStats.max} shite streak${coldStreakStats.max===1?'':'s'}${coldStreakStats.leaders.length>1?' each':''}`));
-      if(statShow('exact_king') && exactKings.length)
-        cells.push(cell('⭐', `Exact Score King${exactKings.length>1?'s':''}`, joinList(exactKings), `${maxExact} exact-score prediction${maxExact===1?'':'s'}${exactKings.length>1?' each':''}`));
+      if(nailedIt.length)
+        pushCell('nailed_it', '🎯', 'Group Nailed It', joinList(nailedIt.map(fixLine)), `${Math.round(maxPct*100)}% picked the right result`);
+      if(shocks.length)
+        pushCell('shock', '🤯', 'Biggest Shock', joinList(shocks.map(fixLine)), `Only ${Math.round(minPct*100)}% picked the right result`);
+      if(topDaysLeaders.length)
+        pushCell('days_top', '🏔️', 'Most Days at #1', joinList(topDaysLeaders), `${maxTopDays} matchday${maxTopDays===1?'':'s'} on top${topDaysLeaders.length>1?' each':''}`);
+      if(botDaysLeaders.length)
+        pushCell('days_bottom', '📉', 'Most Days at the Bottom', joinList(botDaysLeaders), `${maxBotDays} matchday${maxBotDays===1?'':'s'} propping it up${botDaysLeaders.length>1?' each':''}`);
+      if(perfectStreakStats.leaders.length)
+        pushCell('perfect_streaks', '💎', 'Most Perfect Streaks', joinList(perfectStreakStats.leaders), `${perfectStreakStats.max} perfect streak${perfectStreakStats.max===1?'':'s'}${perfectStreakStats.leaders.length>1?' each':''}`);
+      if(hotStreakStats.leaders.length)
+        pushCell('hot_streaks', '🔥', 'Most Hot Streaks', joinList(hotStreakStats.leaders), `${hotStreakStats.max} hot streak${hotStreakStats.max===1?'':'s'}${hotStreakStats.leaders.length>1?' each':''}`);
+      if(coldStreakStats.leaders.length)
+        pushCell('cold_streaks', '💩', 'Most Shite Streaks', joinList(coldStreakStats.leaders), `${coldStreakStats.max} shite streak${coldStreakStats.max===1?'':'s'}${coldStreakStats.leaders.length>1?' each':''}`);
+      if(exactKings.length)
+        pushCell('exact_king', '⭐', `Exact Score King${exactKings.length>1?'s':''}`, joinList(exactKings), `${maxExact} exact-score prediction${maxExact===1?'':'s'}${exactKings.length>1?' each':''}`);
 
       if(cells.length) html += `<div class="stat-hi-grid">${cells.join('')}</div>`;
+
+      // Hidden highlights go into a "Show more" collapsible
+      if(hiddenCells.length){
+        html += `<div style="margin-top:.5rem;"><button onclick="(function(btn){const d=document.getElementById('stat-more-div');const open=d.style.display!=='none';d.style.display=open?'none':'block';btn.textContent=open?'▸ Show more (${hiddenCells.length})':'▾ Show less'})(this)" style="background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.75rem;padding:.3rem .6rem;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">▸ Show more (${hiddenCells.length})</button><div id="stat-more-div" style="display:none;"><div class="stat-hi-grid" style="margin-top:.45rem;">${hiddenCells.join('')}</div></div></div>`;
+      }
 
       if(statsEl) statsEl.innerHTML = html;
     }
