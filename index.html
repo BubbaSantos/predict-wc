@@ -1133,10 +1133,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
         <span style="font-size:.72rem;color:var(--text-dim);">🔥 <span class="lb-badge lb-badge-hot">Hot Streak</span> 3 correct scores in a row</span>
         <span style="font-size:.72rem;color:var(--text-dim);">💩 <span class="lb-badge lb-badge-cold">Shite Streak</span> 3 wrong results in a row</span>
       </div>
-      <button id="lb-timeline-btn" onclick="toggleLbTimeline()" style="display:none;width:100%;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;align-items:center;justify-content:space-between;color:var(--text);font-size:.82rem;font-weight:600;transition:border-color .15s,color .15s;overflow:hidden;-webkit-appearance:none;appearance:none;">
-        <span id="lb-timeline-btn-inner">⏱ Tap for Timeline View</span>
-        <span id="lb-timeline-btn-chevron" style="font-size:.7rem;color:var(--text-muted);transition:transform .2s;">▼</span>
-      </button>
+      <div id="lb-action-btns" style="display:none;display:flex;gap:.5rem;margin-bottom:.75rem;">
+        <button id="lb-timeline-btn" onclick="toggleLbTimeline()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-size:.82rem;font-weight:600;transition:border-color .15s,color .15s;overflow:hidden;-webkit-appearance:none;appearance:none;">
+          <span id="lb-timeline-btn-inner">⏱ Timeline</span>
+          <span id="lb-timeline-btn-chevron" style="font-size:.7rem;color:var(--text-muted);transition:transform .2s;">▼</span>
+        </button>
+        <button id="lb-compact-btn" onclick="toggleLbCompact()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:.82rem;font-weight:600;transition:border-color .15s,color .15s;-webkit-appearance:none;appearance:none;gap:.35rem;">
+          ⊟ Compact
+        </button>
+      </div>
       <div id="lb-timeline-wrap" style="display:none;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
           <span style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);">⏱ Timeline</span>
@@ -3203,6 +3208,7 @@ let _lbRawResults = [];
 let _lbRawPlayers = [];
 let _lbTimelineActive = false;
 let _lbTimelineOpen = false;
+let _lbCompactView = false;
 let _lbPlayInterval = null;
 let _lbPlayStepping = false;
 let _lbPrevRanks = {};
@@ -3771,7 +3777,10 @@ async function loadLeaderboard(){
     lbTimelinePause();
     _lbTimelineActive = false;
     _lbTimelineOpen = false;
+    _lbCompactView = false;
     _lbPrevRanks = {};
+    const compactBtn = document.getElementById('lb-compact-btn');
+    if(compactBtn){ compactBtn.style.borderColor='var(--border)'; compactBtn.style.color='var(--text)'; }
     const timelineBtn = document.getElementById('lb-timeline-btn');
     if(timelineBtn){
       timelineBtn.style.background = 'var(--surface)';
@@ -6602,8 +6611,9 @@ function _initLbTimeline(){
   const completed = allFixtures()
     .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
     .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
-  if(completed.length === 0){ wrap.style.display='none'; if(btn) btn.style.display='none'; return; }
-  if(btn) btn.style.display='flex';
+  const actionBtns = document.getElementById('lb-action-btns');
+  if(completed.length === 0){ wrap.style.display='none'; if(actionBtns) actionBtns.style.display='none'; return; }
+  if(actionBtns) actionBtns.style.display='flex';
   slider.max = completed.length;
   if(!_lbTimelineActive) slider.value = completed.length;
   const endLabel = document.getElementById('lb-timeline-end-label');
@@ -6627,6 +6637,13 @@ function toggleLbTimeline(){
     if(slider) slider.value = slider.max;
     renderLeaderboard();
   }
+}
+
+function toggleLbCompact(){
+  _lbCompactView = !_lbCompactView;
+  const btn = document.getElementById('lb-compact-btn');
+  if(btn){ btn.style.borderColor = _lbCompactView ? 'var(--group-accent)' : 'var(--border)'; btn.style.color = _lbCompactView ? 'var(--group-accent)' : 'var(--text)'; btn.style.background = _lbCompactView ? 'var(--surface)' : 'var(--surface)'; }
+  renderLeaderboard();
 }
 
 function _updateLbTimelineLabel(val, completed){
@@ -6870,7 +6887,7 @@ function renderLeaderboard(){
     const streakBadge = streakBadgeHtml(_lbStreaks[name]);
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
     const onlineDot = _lbOnline[pid] ? '<span title="Online now" style="display:inline-block;width:.4rem;height:.4rem;border-radius:50%;background:#10b981;margin-left:.4rem;vertical-align:middle;"></span>' : '';
-    if(_lbTimelineOpen){
+    if(_lbTimelineOpen || _lbCompactView){
       const sk = _lbStreaks[name];
       const streakIcon = sk ? (()=>{
         const plus = sk.extra > 0 ? `<span style="font-size:.6rem;vertical-align:middle;color:var(--text-muted);"> +${sk.extra}</span>` : '';
