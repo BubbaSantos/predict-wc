@@ -397,7 +397,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .msg-bar.error{border-color:rgba(239,68,68,.4);color:var(--accent2);}
 
 /* COMPACT — single-row layout */
-.compact .match-card{display:flex;align-items:center;gap:.45rem;padding:.3rem .55rem;margin-bottom:.22rem;}
+.compact .match-card{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;padding:.3rem .55rem;margin-bottom:.22rem;}
 .compact .matchday-group{margin-bottom:.6rem;}
 .compact .matchday-label{font-size:.82rem;margin:.4rem 0 .2rem;}
 /* Header becomes a narrow left column */
@@ -426,6 +426,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact .mc-header-right .pts-badge{display:inline;position:absolute;top:.15rem;right:.25rem;font-size:.58rem;padding:.1rem .28rem;}
 .compact .mc-pts-above{display:none;}
 .compact .pts-star{display:none;}
+.compact .pred-picks-hint,.compact .pred-picks-panel{flex:0 0 100%;}
 
 
 
@@ -1448,6 +1449,15 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <h3>Home Page Cards</h3>
           <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">Drag to reorder · toggle to show or hide. Forfeit and Paid Places visibility is set in the Polls &amp; Entry tab.</div>
           <div id="home-cards-sortable" style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.85rem;"></div>
+          <div style="margin-top:.85rem;margin-bottom:.75rem;border-top:1px solid var(--border);padding-top:.75rem;">
+            <div style="font-size:.75rem;font-weight:600;color:var(--text-muted);margin-bottom:.5rem;">Tournament Stats Columns</div>
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem;margin-bottom:.4rem;">
+              <input type="checkbox" id="stats-show-result-pct" checked> Result %
+            </label>
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem;">
+              <input type="checkbox" id="stats-show-score-pct" checked> Score %
+            </label>
+          </div>
           <button class="sync-refresh" onclick="saveHomeCardSettings()">Save Home Cards</button>
         </div>
         <div class="status-card">
@@ -3813,6 +3823,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.38.0',date:'18 Jun 2026',notes:['Player predictions card: shows today, yesterday & future by default; ▸ Previous Results dropdown for older matches','God mode results: shows only ongoing/future by default; ▸ Show Past Results to expand; auto-tabs to next input & auto-saves when both scores are entered','Compact mode: tapping for picks now expands the card correctly instead of overlapping','Admin: Tournament Stats highlights — toggle individual stat tiles in the Home Cards admin section']},
   {v:'1.37.3',date:'17 Jun 2026',notes:['Online dot now sits to the right of the player name and is a touch smaller on both the main leaderboard and the home mini-leaderboard']},
   {v:'1.37.2',date:'17 Jun 2026',notes:['Online dot (🟢) now appears next to player names on the main leaderboard and on the home mini-leaderboard for anyone whose last_seen is within 2 minutes — same dot the admin Players tab uses']},
   {v:'1.37.1',date:'17 Jun 2026',notes:['Leaderboard cards: restored the original breakdown text underneath the badges, but dropped the "X of Y predicted" prefix — now reads just "N correct scorelines · M correct results"']},
@@ -4345,6 +4356,11 @@ function loadHomeCardSettings(){
     container.appendChild(row);
   });
   initHomeCardSortable();
+  // Init stats column toggles
+  const rEl=document.getElementById('stats-show-result-pct');
+  const sEl=document.getElementById('stats-show-score-pct');
+  if(rEl) rEl.checked=g.stats_show_result_pct!==false;
+  if(sEl) sEl.checked=g.stats_show_score_pct!==false;
 }
 function initHomeCardSortable(){
   const container = document.getElementById('home-cards-sortable');
@@ -4407,6 +4423,8 @@ async function saveHomeCardSettings(){
     : getHomeCardOrder().join(',');
   const body = {home_card_order: order};
   HOME_CARD_DEFS.forEach(def=>{ if(def.flag){ const el=document.getElementById(def.toggleId); if(el) body[def.flag]=el.checked; } });
+  const rEl=document.getElementById('stats-show-result-pct'); if(rEl) body.stats_show_result_pct=rEl.checked;
+  const sEl=document.getElementById('stats-show-score-pct'); if(sEl) body.stats_show_score_pct=sEl.checked;
   try{
     await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body});
     currentGroup={...currentGroup,...body};
@@ -6920,9 +6938,14 @@ async function viewPlayerPredictions(playerId,name){
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const predMap={}; (preds||[]).forEach(p=>predMap[p.match_id]={h:p.home_score,a:p.away_score});
     let totalPts=0,statExact=0,statResult=0,statWrong=0;
-    const rows=allFixtures().map(f=>{
+    const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+    const td=new Date(todayKey+'T12:00:00');
+    const yd=new Date(td); yd.setDate(yd.getDate()-1);
+    const yesterdayKey=yd.toLocaleDateString('en-CA');
+    const recentRows=[], oldRows=[];
+    allFixtures().forEach(f=>{
       const p=predMap[f.id],r=rm[f.id];
-      if(!p)return'';
+      if(!p)return;
       const pts=r?calcPoints(p.h,p.a,r.home_score,r.away_score):null;
       if(pts!==null){
         totalPts+=pts;
@@ -6932,8 +6955,13 @@ async function viewPlayerPredictions(playerId,name){
       }
       const ptsTxt=pts===null?'<span style="color:var(--text-muted)">—</span>':pts===8?'<span style="color:var(--green)">+8⭐</span>':pts===5?'<span style="color:var(--green)">+5</span>':pts===3?'<span style="color:var(--group-accent)">+3 ✅</span>':'<span style="color:var(--text-muted)">0 ❌</span>';
       const resTxt=r?` <span style="color:var(--text-muted);font-size:.7rem;">(${r.home_score}–${r.away_score})</span>`:'';
-      return `<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span></div>`;
-    }).filter(Boolean).join('');
+      const html=`<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span></div>`;
+      const isOldPast = r && f.date && f.date < yesterdayKey;
+      if(isOldPast) oldRows.push(html); else recentRows.push(html);
+    });
+    const oldCount=oldRows.length;
+    const oldDropdown=oldCount>0?`<div style="margin-bottom:.75rem;"><button id="vpred-old-btn" onclick="(function(btn){const d=document.getElementById('vpred-old-div');const open=d.style.display!=='none';d.style.display=open?'none':'block';btn.textContent=open?'▸ Previous Results (${oldCount})':'▾ Previous Results (${oldCount})'})(this)" style="background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.78rem;padding:.35rem .65rem;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">▸ Previous Results (${oldCount})</button><div id="vpred-old-div" style="display:none;">${oldRows.join('')}</div></div>`:'';
+    const rows=(oldDropdown+(recentRows.join(''))) || '';
     const tb=tbs&&tbs[0];
     const tbHtml=tb&&tb.top_scorer
       ?`<div style="display:flex;align-items:center;gap:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;">⚽ <span style="color:var(--text-muted);">Top scorer:</span>&nbsp;<strong>${tb.top_scorer}</strong>${tb.goals!=null?`<span style="color:var(--text-muted);margin-left:.25rem;">(${tb.goals} goals)</span>`:''}</div>`
@@ -6951,7 +6979,8 @@ async function viewPlayerPredictions(playerId,name){
       +`</div>`;
     const modal=document.createElement('div');
     modal.className='modal-overlay';
-    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${name}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${rows||'<div class="empty">No predictions yet.</div>'}</div>`;
+    const emptyMsg = (!recentRows.length && !oldRows.length) ? '<div class="empty">No predictions yet.</div>' : '';
+    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${name}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${emptyMsg}${rows}</div>`;
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
     document.body.appendChild(modal);
   }catch(e){flash('Error: '+e.message,'error');}
@@ -7634,30 +7663,52 @@ async function loadGodResults(){
     const byDate={};
     fixtures.forEach(f=>{ (byDate[f.date]=byDate[f.date]||[]).push(f); });
     const days = Object.keys(byDate).sort();
-    el.innerHTML = days.map(d=>{
+    const todayKey = new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+    const pastDays = days.filter(d=>d<todayKey);
+    const futureDays = days.filter(d=>d>=todayKey);
+    // Build flat ordered list of future fixture IDs for auto-tab
+    const futureIds = [];
+    futureDays.forEach(d=>byDate[d].forEach(f=>futureIds.push(f.id)));
+    const buildRow = (f, nextFid) => {
+      const r = resMap[f.id];
+      const hv = r!=null ? r.home : '';
+      const av = r!=null ? r.away : '';
+      const filled = r!=null ? 'filled' : '';
+      const nextAttr = nextFid ? `data-next="grh-${nextFid}"` : '';
+      return `<div class="god-res-row" id="gres-row-${f.id}">
+        <div class="god-res-teams">
+          <span class="god-res-team">${f.hf} ${f.home}</span>
+          <span class="god-res-sep">vs</span>
+          <span class="god-res-team away">${f.away} ${f.af}</span>
+        </div>
+        <div class="god-res-inputs">
+          <input class="god-res-input ${filled}" id="grh-${f.id}" type="number" min="0" max="99" inputmode="numeric" value="${hv}" placeholder="–" oninput="this.classList.toggle('filled',this.value!=='');if(this.value!==''){const a=document.getElementById('gra-${f.id}');if(a){a.focus();a.select();}}" />
+          <span class="god-res-dash">–</span>
+          <input class="god-res-input ${filled}" id="gra-${f.id}" type="number" min="0" max="99" inputmode="numeric" value="${av}" placeholder="–" ${nextAttr} oninput="this.classList.toggle('filled',this.value!=='');if(this.value!==''&&this.dataset.next){const n=document.getElementById(this.dataset.next);if(n){n.focus();n.select();}}if(this.value!==''&&document.getElementById('grh-${f.id}').value!==''){saveGodResult('${f.id}');}" />
+        </div>
+        <button class="god-res-save" id="gres-btn-${f.id}" onclick="saveGodResult('${f.id}')">Save</button>
+        ${r!=null?`<button class="god-res-clear" onclick="clearGodResult('${f.id}')">✕</button>`:`<span style="width:1.8rem"></span>`}
+      </div>`;
+    };
+    const pastHtml = pastDays.map(d=>{
       const label = new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-      const rows = byDate[d].map(f=>{
-        const r = resMap[f.id];
-        const hv = r!=null ? r.home : '';
-        const av = r!=null ? r.away : '';
-        const filled = r!=null ? 'filled' : '';
-        return `<div class="god-res-row" id="gres-row-${f.id}">
-          <div class="god-res-teams">
-            <span class="god-res-team">${f.hf} ${f.home}</span>
-            <span class="god-res-sep">vs</span>
-            <span class="god-res-team away">${f.away} ${f.af}</span>
-          </div>
-          <div class="god-res-inputs">
-            <input class="god-res-input ${filled}" id="grh-${f.id}" type="number" min="0" max="99" inputmode="numeric" value="${hv}" placeholder="–" oninput="this.classList.toggle('filled',this.value!=='')" />
-            <span class="god-res-dash">–</span>
-            <input class="god-res-input ${filled}" id="gra-${f.id}" type="number" min="0" max="99" inputmode="numeric" value="${av}" placeholder="–" oninput="this.classList.toggle('filled',this.value!=='')" />
-          </div>
-          <button class="god-res-save" id="gres-btn-${f.id}" onclick="saveGodResult('${f.id}')">Save</button>
-          ${r!=null?`<button class="god-res-clear" onclick="clearGodResult('${f.id}')">✕</button>`:`<span style="width:1.8rem"></span>`}
-        </div>`;
+      const rows = byDate[d].map(f=>buildRow(f,null)).join('');
+      return `<div class="god-res-day">${label}</div>${rows}`;
+    }).join('');
+    const futureHtml = futureDays.map(d=>{
+      const label = new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+      const dFixtures = byDate[d];
+      const rows = dFixtures.map((f,i)=>{
+        // find next future fixture id across all future days
+        const flatIdx = futureIds.indexOf(f.id);
+        const nextFid = futureIds[flatIdx+1]||null;
+        return buildRow(f, nextFid);
       }).join('');
       return `<div class="god-res-day">${label}</div>${rows}`;
     }).join('');
+    const pastCount = pastDays.length;
+    const pastSection = pastCount>0 ? `<div style="margin-bottom:.5rem;"><button id="god-past-btn" onclick="(function(btn){const d=document.getElementById('god-past-div');const open=d.style.display!=='none';d.style.display=open?'none':'block';btn.textContent=open?'▸ Show Past Results (${pastCount} days)':'▾ Hide Past Results'})(this)" style="background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.78rem;padding:.35rem .65rem;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">▸ Show Past Results (${pastCount} days)</button><div id="god-past-div" style="display:none;">${pastHtml}</div></div>` : '';
+    el.innerHTML = pastSection + (futureHtml || '<div class="empty">No upcoming matches.</div>');
   }catch(e){ el.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`; }
 }
 
