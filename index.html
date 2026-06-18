@@ -1138,9 +1138,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
           <span id="lb-timeline-btn-inner">⏱ Timeline</span>
           <span id="lb-timeline-btn-chevron" style="font-size:.7rem;color:var(--text-muted);transition:transform .2s;">▼</span>
         </button>
-        <button id="lb-compact-btn" onclick="toggleLbCompact()" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:.82rem;font-weight:600;transition:border-color .15s,color .15s;-webkit-appearance:none;appearance:none;gap:.35rem;">
-          ⊟ Compact
-        </button>
+        <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+          <span style="font-size:.82rem;font-weight:600;color:var(--text);">⊟ Compact</span>
+          <label class="toggle-switch" style="flex-shrink:0;"><input type="checkbox" id="lb-compact-chk" onchange="toggleLbCompact()"><span class="toggle-slider"></span></label>
+        </div>
       </div>
       <div id="lb-timeline-wrap" style="display:none;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
@@ -6638,14 +6639,14 @@ function toggleLbTimeline(){
 }
 
 function toggleLbCompact(){
-  _lbCompactView = !_lbCompactView;
+  const chk = document.getElementById('lb-compact-chk');
+  _lbCompactView = chk ? chk.checked : !_lbCompactView;
   localStorage.setItem('wc26_lb_compact', _lbCompactView ? '1' : '0');
-  _applyLbCompactBtn();
   renderLeaderboard();
 }
 function _applyLbCompactBtn(){
-  const btn = document.getElementById('lb-compact-btn');
-  if(btn){ btn.style.borderColor = _lbCompactView ? 'var(--group-accent)' : 'var(--border)'; btn.style.color = _lbCompactView ? 'var(--group-accent)' : 'var(--text)'; }
+  const chk = document.getElementById('lb-compact-chk');
+  if(chk) chk.checked = _lbCompactView;
 }
 
 function _updateLbTimelineLabel(val, completed){
