@@ -1176,9 +1176,9 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <div id="lb-info-panel" style="display:none;margin-bottom:.75rem;display:flex;flex-direction:column;gap:.5rem;">
         <div id="lb-streak-key" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;display:flex;flex-wrap:wrap;gap:.35rem .75rem;align-items:center;">
           <span style="font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);flex-basis:100%;">Streak Key</span>
-          <span style="font-size:.72rem;color:var(--text-dim);"><span class="lb-name-streak lb-name-streak-perfect" style="font-weight:600;">Name 💎</span> Perfect — 3 exact scores in a row</span>
-          <span style="font-size:.72rem;color:var(--text-dim);"><span class="lb-name-streak lb-name-streak-hot" style="font-weight:600;">Name 🔥</span> Hot — 3 correct scores in a row</span>
-          <span style="font-size:.72rem;color:var(--text-dim);"><span class="lb-name-streak lb-name-streak-cold" style="font-weight:600;">Name 💩</span> Shite — 3 wrong results in a row</span>
+          <span style="font-size:.72rem;color:var(--text-dim);">💎 Perfect - 3 exact scores in a row</span>
+          <span style="font-size:.72rem;color:var(--text-dim);">🔥 Hot - 3 correct results in a row</span>
+          <span style="font-size:.72rem;color:var(--text-dim);">💩 Shite - 3 wrong results in a row</span>
         </div>
         <div>
           <button onclick="toggleLbRules()" id="lb-rules-toggle" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-size:.82rem;font-weight:600;">
@@ -3800,7 +3800,7 @@ function calcPlayerStreaks(gamePreds, rm){
 
 function streakNameHtml(nameHtml,streak){
   if(!streak) return nameHtml;
-  const games=streak.extra>0?`<span class="lb-name-streak-games">${3+streak.extra} games</span>`:'';
+  const games=streak.extra>0?`<span class="lb-name-streak-games">${3+streak.extra}</span>`:'';
   if(streak.perfect) return `<span class="lb-name-streak lb-name-streak-perfect">${nameHtml} 💎${games?' '+games:''}</span>`;
   if(streak.hot) return `<span class="lb-name-streak lb-name-streak-hot">${nameHtml} 🔥${games?' '+games:''}</span>`;
   if(streak.cold) return `<span class="lb-name-streak lb-name-streak-cold">${nameHtml} 💩${games?' '+games:''}</span>`;
