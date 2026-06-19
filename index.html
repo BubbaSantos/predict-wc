@@ -923,7 +923,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.2</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1685,6 +1685,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button class="god-tab active" id="god-tab-groups" onclick="switchGodTab('groups')">Groups</button>
         <button class="god-tab" id="god-tab-results" onclick="switchGodTab('results')">Results</button>
         <button class="god-tab" id="god-tab-predictions" onclick="switchGodTab('predictions')">Predictions</button>
+        <button class="god-tab" id="god-tab-settings" onclick="switchGodTab('settings')">Settings</button>
       </div>
 
       <!-- Groups panel -->
@@ -1738,6 +1739,22 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <button class="sync-refresh" onclick="loadGodResults()">↻ Refresh</button>
         </div>
         <div id="god-results-list"><div class="loading">Loading…</div></div>
+      </div>
+
+      <!-- Settings panel -->
+      <div id="god-panel-settings" style="display:none;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div>
+              <div style="font-size:.9rem;font-weight:600;margin-bottom:.2rem;">👻 Appear Offline</div>
+              <div style="font-size:.75rem;color:var(--text-muted);">Stop sending heartbeats — you'll show as offline to other players and in the admin panel.</div>
+            </div>
+            <label class="toggle-switch" style="flex-shrink:0;">
+              <input type="checkbox" id="god-ghost-toggle" onchange="setGhostMode(this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -3061,6 +3078,7 @@ function startCountdown(){
 let _heartbeatInterval = null;
 async function startHeartbeat(){
   if(!currentPlayer) return;
+  if(localStorage.getItem('wc26_ghost_mode')) return; // appear offline
   const ping = () => sb(`players?id=eq.${currentPlayer.id}`, {method:'PATCH', body:{last_seen: new Date().toISOString()}});
   ping();
   clearInterval(_heartbeatInterval);
@@ -3069,6 +3087,19 @@ async function startHeartbeat(){
 function stopHeartbeat(){
   clearInterval(_heartbeatInterval);
   _heartbeatInterval = null;
+}
+async function setGhostMode(on){
+  if(on){
+    localStorage.setItem('wc26_ghost_mode','1');
+    stopHeartbeat();
+    // Clear last_seen so we show as offline immediately
+    if(currentPlayer) await sb(`players?id=eq.${currentPlayer.id}`, {method:'PATCH', body:{last_seen: null}}).catch(()=>{});
+    flash('Ghost mode on — you appear offline','success');
+  } else {
+    localStorage.removeItem('wc26_ghost_mode');
+    startHeartbeat();
+    flash('Ghost mode off — you appear online','success');
+  }
 }
 
 let _pollInterval = null;
@@ -4012,6 +4043,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.43.3',date:'19 Jun 2026',notes:['God Mode → Settings: 👻 Appear Offline toggle — stops heartbeat and clears last_seen so you show as offline to other players; persists across page loads']},
   {v:'1.43.2',date:'19 Jun 2026',notes:['Admin players panel: last seen time shown next to each player (green "online now" if active within 2 min, otherwise "Xm/Xh/Xd ago")']},
   {v:'1.43.1',date:'19 Jun 2026',notes:['Leaderboard rows: remove border highlight on mobile tap — hover effect now only applies on pointer devices']},
   {v:'1.43.0',date:'19 Jun 2026',notes:['Removed swipe nav mode entirely; nav order updated to Home → Leaderboard → Predict → Admin; mobile swipe order matches']},
@@ -7842,12 +7874,16 @@ async function loadGodGroups(){
 }
 
 function switchGodTab(name){
-  ['groups','results','predictions'].forEach(t=>{
+  ['groups','results','predictions','settings'].forEach(t=>{
     document.getElementById('god-panel-'+t).style.display = t===name ? 'block' : 'none';
     document.getElementById('god-tab-'+t).classList.toggle('active', t===name);
   });
   if(name==='results') loadGodResults();
   if(name==='predictions') godPredInit();
+  if(name==='settings'){
+    const tog = document.getElementById('god-ghost-toggle');
+    if(tog) tog.checked = !!localStorage.getItem('wc26_ghost_mode');
+  }
 }
 
 async function godPredInit(){
@@ -8188,6 +8224,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.3</div>
 </body>
 </html>
