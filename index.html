@@ -7176,7 +7176,7 @@ function renderLeaderboard(){
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowTap(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+rankDisplay+fullRankChange+'</div>'
       +'<div><div class="lb-name">'+fullNameHtml+onlineDot+payBadge+'</div>'+(statusBadge?'<div class="lb-badge-row" style="display:flex;gap:.25rem;align-items:center;flex-wrap:wrap;margin-top:.15rem;">'+statusBadge+'</div>':'')+'<div class="lb-breakdown">'+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
-      +(()=>{const lp=_lbLastMatchPts[pid];if(lp==null)return'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>';const lc=lp>=8?'#22c55e':lp>=3?'#f59e0b':'var(--text-muted)';return'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div><div style="font-size:.6rem;color:'+lc+';">'+(lp>0?'+'+lp:'0')+'</div></div>';'})()
+      +(()=>{const lp=_lbLastMatchPts[pid];if(lp==null)return'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>';const lc=lp>=8?'#22c55e':lp>=3?'#f59e0b':'var(--text-muted)';return'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div><div style="font-size:.6rem;color:'+lc+';">'+(lp>0?'+'+lp:'0')+'</div></div>';})()
       +'</div>';
   }).join('');
 
