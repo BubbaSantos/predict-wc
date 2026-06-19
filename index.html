@@ -922,7 +922,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.7</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2900,7 +2900,7 @@ function renderMatchCardBody(){
       const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
       const p = predictions[f.id];
       const hasPred = p&&p.home!==''&&p.home!==null;
-      const picks = _picksViewMode==='grouped' ? (_livePicksMap[f.id]||'') : namedPicksHtml(f.id,'live');
+      const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
       const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
       html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+picks+(hasAnyPicks?picksHint:'');
     });
@@ -2975,6 +2975,35 @@ function namedPicksHtml(mid, mode){
   });
   const parts = scored.map(s=>`<span style="white-space:nowrap;">${s.html}</span>`).join(' &nbsp;·&nbsp; ');
   return `<div class="hmc-others">${parts}</div>`;
+}
+
+function coloredGroupedPicksHtml(mid, resHome, resAway){
+  const preds = _matchPredsMap[mid];
+  if(!preds || !preds.length) return '';
+  const ct = {};
+  preds.forEach(p=>{
+    const k=`${p.predHome}–${p.predAway}`;
+    if(!ct[k]) ct[k]={n:0,ph:p.predHome,pa:p.predAway};
+    ct[k].n++;
+  });
+  const hasResult = resHome!=null && resAway!=null;
+  const parts = Object.values(ct).sort((a,b)=>{
+    const aType=a.ph>a.pa?0:a.ph===a.pa?1:2, bType=b.ph>b.pa?0:b.ph===b.pa?1:2;
+    if(aType!==bType) return aType-bType;
+    if(aType===0) return b.ph-a.ph;
+    if(aType===1) return b.ph-a.ph;
+    return b.pa-a.pa;
+  }).map(({ph,pa,n})=>{
+    const sc=`${ph}–${pa}`;
+    let color=null;
+    if(hasResult){
+      const pts=calcPoints(ph,pa,resHome,resAway);
+      color=pts>=8?'#22c55e':pts>=3?'#f59e0b':'#ef4444';
+    }
+    const scHtml=color?`<span style="color:${color}">${sc}</span>`:sc;
+    return `${scHtml}<span style="opacity:.55"> ×${n}</span>`;
+  }).join(' &nbsp;·&nbsp; ');
+  return `<div class="hmc-others">Group picks: ${parts}</div>`;
 }
 
 function togglePicksView(){
@@ -3976,6 +4005,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.40.8',date:'19 Jun 2026',notes:['Live match grouped picks: green for exact current score, amber for correct outcome, red for wrong outcome']},
   {v:'1.40.7',date:'19 Jun 2026',notes:['Home match card view-by-name picks: same sort order as grouped (home wins → draws → away wins, by score)']},
   {v:'1.40.6',date:'19 Jun 2026',notes:['Home match card grouped picks: sorted home wins → draws → away wins, each by score descending']},
   {v:'1.40.5',date:'19 Jun 2026',notes:['Predict page player picks: amber for +3']},
@@ -8140,6 +8170,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.7</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.8</div>
 </body>
 </html>
