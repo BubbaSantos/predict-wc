@@ -923,7 +923,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.1</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4012,6 +4012,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.43.2',date:'19 Jun 2026',notes:['Admin players panel: last seen time shown next to each player (green "online now" if active within 2 min, otherwise "Xm/Xh/Xd ago")']},
   {v:'1.43.1',date:'19 Jun 2026',notes:['Leaderboard rows: remove border highlight on mobile tap — hover effect now only applies on pointer devices']},
   {v:'1.43.0',date:'19 Jun 2026',notes:['Removed swipe nav mode entirely; nav order updated to Home → Leaderboard → Predict → Admin; mobile swipe order matches']},
   {v:'1.42.3',date:'19 Jun 2026',notes:['Swipe nav: full live-drag with adjacent page preview (position:fixed two-view drag system); tabs now use 45vw side-padding so any tab can be centred by scrollIntoView; stats card always display:block in swipe mount']},
@@ -6408,7 +6409,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,is_admin:p.is_admin||false,god_mode:p.god_mode||false};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -6421,7 +6422,7 @@ async function loadPlayersPanel(){
       <div class="player-row">
         <div>
           <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}</span></div>
-          <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts</div>
+          <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
         <div style="flex-shrink:0;position:relative;">
@@ -8187,6 +8188,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.2</div>
 </body>
 </html>
