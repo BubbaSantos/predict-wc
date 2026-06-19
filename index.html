@@ -85,14 +85,13 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 /* ── SWIPE NAV MODE ── */
 #swipe-top-nav{display:none;background:var(--header-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:0;z-index:90;}
 #swipe-top-nav::-webkit-scrollbar{display:none;}
-.swipe-tabs{display:flex;padding:.45rem .75rem;gap:.3rem;min-width:100%;justify-content:center;}
+/* Large side padding lets any tab be scrolled to centre; max-content width prevents flex stretching */
+.swipe-tabs{display:flex;padding:.45rem 45vw;gap:.35rem;width:max-content;}
 .swipe-tab{flex-shrink:0;padding:.38rem .95rem;border-radius:20px;border:1px solid transparent;background:transparent;color:var(--text-muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .swipe-tab.active{background:var(--accent);color:#fff;}
 .swipe-tab:not(.active):hover{background:var(--surface2);color:var(--text);}
-body.swipe-mode .view.active{animation:swipeViewIn .22s cubic-bezier(.4,0,.2,1);}
-@keyframes swipeViewIn{from{opacity:0;transform:translateX(18px);}to{opacity:1;transform:translateX(0);}}
-body.swipe-mode.swipe-dir-left .view.active{animation:swipeViewInLeft .22s cubic-bezier(.4,0,.2,1);}
-@keyframes swipeViewInLeft{from{opacity:0;transform:translateX(-18px);}to{opacity:1;transform:translateX(0);}}
+body.swipe-mode .view.active{animation:swipeSlideIn .26s cubic-bezier(.4,0,.2,1);}
+@keyframes swipeSlideIn{from{opacity:.6;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
 
 /* ── GROUP HERO (shown when logged in) ── */
 .group-hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2rem;margin-bottom:2rem;display:flex;align-items:center;gap:1.5rem;position:relative;}
@@ -934,7 +933,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.42.2</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.42.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3207,9 +3206,9 @@ function applyNavMode(){
     // Move stats card to swipe stats mount
     const statsCard = document.getElementById('home-stats-card');
     const mount = document.getElementById('swipe-stats-mount');
-    if(statsCard && mount && statsCard.parentElement !== mount){
-      mount.appendChild(statsCard);
-      statsCard.style.display = '';
+    if(statsCard && mount){
+      if(statsCard.parentElement !== mount) mount.appendChild(statsCard);
+      statsCard.style.display = 'block';
     }
   } else {
     // Move stats card back to view-home
@@ -4135,6 +4134,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.42.3',date:'19 Jun 2026',notes:['Swipe nav: full live-drag with adjacent page preview (position:fixed two-view drag system); tabs now use 45vw side-padding so any tab can be centred by scrollIntoView; stats card always display:block in swipe mount']},
   {v:'1.42.2',date:'19 Jun 2026',notes:['Swipe nav: active tab now centres correctly (scrollIntoView); stats card no longer appears on match card page — moved to stats mount after loadHome() and applyHomeCardOrder() are swipe-mode-aware']},
   {v:'1.42.1',date:'19 Jun 2026',notes:['Fix swipe-top-nav not appearing: setting style.display="" fell back to CSS display:none — now correctly sets display:block']},
   {v:'1.42.0',date:'19 Jun 2026',notes:['New Swipe Nav mode (toggle in Profile → Switch to Swipe Nav): horizontal pill tab bar at the top, swipe left/right to navigate infinitely between Leaderboard, Match Card, Predictions, Stats, and Admin; leaderboard is the default page in swipe mode; stats appear as a standalone page; classic nav restored with one tap']},
@@ -5747,13 +5747,13 @@ async function loadHome(){
     else if(def.key !== 'countdown') el.style.display = '';
     // countdown display left to startCountdown() when shown
   });
-  // In swipe mode, ensure stats card is in the stats mount and visible
+  // In swipe mode, ensure stats card is in the stats mount and always visible
   if(_navMode === 'swipe'){
     const statsCard = document.getElementById('home-stats-card');
     const mount = document.getElementById('swipe-stats-mount');
     if(statsCard && mount){
       if(statsCard.parentElement !== mount) mount.appendChild(statsCard);
-      statsCard.style.display = '';
+      statsCard.style.display = 'block';
     }
   }
 }
@@ -8284,45 +8284,135 @@ async function godCreateGroup(){
   }catch(e){ showErr(errEl,'Error: '+e.message); }
 }
 
-// Mobile swipe navigation
+// Mobile swipe / drag navigation
 (function(){
-  const CLASSIC_VIEWS = ['home','predict','leaderboard'];
-  let _swX = null, _swY = null;
-  function activeViewId(){
-    const all = _navMode === 'swipe' ? _swipeTabsOrder() : CLASSIC_VIEWS;
-    for(const v of all){ if(document.getElementById('view-'+v)?.classList.contains('active')) return v; }
-    return null;
+  const CLASSIC = ['home','predict','leaderboard'];
+  let _drag = null; // drag state
+
+  function _cleanDragStyle(v){
+    ['position','top','left','width','bottom','overflowY','overflowX',
+     'zIndex','background','boxSizing','padding','transition','transform','display']
+      .forEach(k=>{ v.style[k]=''; });
   }
-  document.addEventListener('touchstart', e => {
-    if(window.innerWidth > 768) return;
-    // Don't hijack swipes on horizontally scrollable elements
-    const el = e.target.closest('#swipe-top-nav, .lb-timeline-wrap, [style*="overflow-x"]');
-    if(el) return;
-    const t = e.touches[0];
-    _swX = t.clientX; _swY = t.clientY;
-  }, {passive:true});
-  document.addEventListener('touchend', e => {
-    if(window.innerWidth > 768 || _swX === null) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - _swX;
-    const dy = t.clientY - _swY;
-    _swX = null; _swY = null;
-    if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    const cur = activeViewId();
-    if(!cur) return;
-    if(_navMode === 'swipe'){
-      const tabs = _swipeTabsOrder();
-      const idx = tabs.indexOf(cur);
-      if(idx === -1) return;
-      const nextIdx = dx < 0 ? (idx+1) % tabs.length : (idx-1+tabs.length) % tabs.length;
-      const dir = dx < 0 ? 'right' : 'left';
-      swipeNavTo(tabs[nextIdx], dir);
+
+  function _finishDrag(shouldNav){
+    if(!_drag) return;
+    const {curView, adjView, adjName, curName, adjSide, vw, topOffset} = _drag;
+    const T = '0.28s cubic-bezier(.4,0,.2,1)';
+    curView.style.transition = `transform ${T}`;
+    adjView.style.transition = `transform ${T}`;
+
+    if(shouldNav){
+      curView.style.transform = `translateX(${adjSide * vw}px)`;
+      adjView.style.transform = 'translateX(0)';
+      setTimeout(()=>{
+        _cleanDragStyle(curView); _cleanDragStyle(adjView);
+        curView.classList.remove('active');
+        adjView.classList.add('active');
+        // Update tab bar
+        document.querySelectorAll('.swipe-tab').forEach(t=>{
+          t.classList.toggle('active', t.dataset.view === adjName);
+        });
+        requestAnimationFrame(()=>{
+          const at = document.querySelector('.swipe-tab.active');
+          if(at) at.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+        });
+        // Load content for new view
+        if(adjName==='home'){ loadHome(); startCountdown(); }
+        else if(adjName==='predict') loadPredictions();
+        else if(adjName==='leaderboard') loadLeaderboard();
+        else if(adjName==='stats') loadHome();
+        else if(adjName==='admin') loadAdminFixtures();
+        window.scrollTo(0,0);
+      }, 290);
     } else {
-      const idx = CLASSIC_VIEWS.indexOf(cur);
-      const next = dx < 0 ? CLASSIC_VIEWS[(idx+1) % CLASSIC_VIEWS.length] : CLASSIC_VIEWS[(idx-1+CLASSIC_VIEWS.length) % CLASSIC_VIEWS.length];
-      showView(next);
+      curView.style.transform = 'translateX(0)';
+      adjView.style.transform = `translateX(${-adjSide * vw}px)`;
+      setTimeout(()=>{ _cleanDragStyle(curView); _cleanDragStyle(adjView); }, 290);
     }
-  }, {passive:true});
+    _drag = null;
+  }
+
+  document.addEventListener('touchstart', e=>{
+    if(window.innerWidth > 768) return;
+    if(e.target.closest('#swipe-top-nav,input,textarea,select,.lb-timeline-wrap')) return;
+    const t = e.touches[0];
+    _drag = {startX:t.clientX, startY:t.clientY, live:false};
+  },{passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!_drag) return;
+    const t = e.touches[0];
+    const dx = t.clientX - _drag.startX;
+    const dy = t.clientY - _drag.startY;
+
+    if(!_drag.live){
+      if(Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 12){ if(Math.abs(dy)>12){ _drag=null; } return; }
+      // Commit to horizontal drag
+      _drag.live = true;
+
+      if(_navMode==='swipe'){
+        const tabs = _swipeTabsOrder();
+        const curName = document.querySelector('.swipe-tab.active')?.dataset?.view || tabs[0];
+        const curIdx = tabs.indexOf(curName);
+        const adjIdx = dx<0 ? (curIdx+1)%tabs.length : (curIdx-1+tabs.length)%tabs.length;
+        const adjSide = dx<0 ? -1 : 1; // direction the adj view enters from
+
+        const header = document.querySelector('#screen-app header');
+        const nav = document.getElementById('swipe-top-nav');
+        const ticker = document.getElementById('news-ticker');
+        const topOffset = (header?.offsetHeight||56) + (nav?.offsetHeight||40) +
+                          (ticker?.style.display!=='none' ? (ticker?.offsetHeight||0) : 0);
+        const vw = window.innerWidth;
+
+        const curView = document.getElementById('view-'+tabs[curIdx]);
+        const adjView = document.getElementById('view-'+tabs[adjIdx]);
+
+        // Fix-position both views to allow side-by-side during drag
+        [curView, adjView].forEach(v=>{
+          v.style.position='fixed'; v.style.top=topOffset+'px'; v.style.left='0';
+          v.style.width=vw+'px'; v.style.bottom='0'; v.style.overflowY='auto';
+          v.style.overflowX='hidden'; v.style.zIndex='50'; v.style.background='var(--bg)';
+          v.style.boxSizing='border-box'; v.style.padding='1.5rem'; v.style.transition='none';
+        });
+        adjView.style.display='block';
+        adjView.style.transform=`translateX(${-adjSide*vw}px)`;
+        curView.style.transform='translateX(0)';
+
+        _drag = {..._drag, curView, adjView, curName, adjName:tabs[adjIdx],
+                 curIdx, adjIdx, tabs, adjSide, vw, topOffset};
+      }
+    }
+
+    if(!_drag?.live) return;
+
+    if(_navMode==='swipe' && _drag.curView){
+      const dx2 = t.clientX - _drag.startX;
+      _drag.curView.style.transform = `translateX(${dx2}px)`;
+      _drag.adjView.style.transform = `translateX(${dx2 - _drag.adjSide * _drag.vw}px)`;
+    }
+  },{passive:true});
+
+  function _onDragEnd(e){
+    if(!_drag?.live){ _drag=null; return; }
+    const t = (e.changedTouches||[e])[0];
+    const dx = t.clientX - _drag.startX;
+    const dy = t.clientY - _drag.startY;
+
+    if(_navMode==='swipe' && _drag.curView){
+      const threshold = Math.min(_drag.vw*0.35, 100);
+      _finishDrag(Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy));
+    } else {
+      // Classic mode snap
+      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.5){
+        const cur = CLASSIC.find(v=>document.getElementById('view-'+v)?.classList.contains('active'));
+        if(cur){ const i=CLASSIC.indexOf(cur); showView(dx<0?CLASSIC[(i+1)%CLASSIC.length]:CLASSIC[(i-1+CLASSIC.length)%CLASSIC.length]); }
+      }
+      _drag=null;
+    }
+  }
+  document.addEventListener('touchend', _onDragEnd, {passive:true});
+  document.addEventListener('touchcancel', ()=>{ _finishDrag(false); _drag=null; }, {passive:true});
 })();
 
 // Patch sb to no-op in test mode
@@ -8331,6 +8421,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.42.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.42.3</div>
 </body>
 </html>
