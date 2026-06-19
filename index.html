@@ -3830,9 +3830,10 @@ async function loadLeaderboard(){
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     const _lbMatchSubtitle = document.getElementById('lb-match-subtitle');
     if(_lbMatchSubtitle){
-      const completedCount = (allResults||[]).filter(r=>r.home_score!=null).length;
-      const totalCount = allFixtures().length;
-      _lbMatchSubtitle.textContent = completedCount > 0 ? `Match ${completedCount} of ${totalCount}` : '';
+      const gsIds = new Set(FIXTURES.map(f=>f.id));
+      const completedCount = (allResults||[]).filter(r=>gsIds.has(r.match_id)&&r.home_score!=null).length;
+      const totalCount = FIXTURES.length;
+      _lbMatchSubtitle.textContent = completedCount > 0 ? `Group Stage Match ${completedCount} of ${totalCount}` : '';
     }
     const _nowMs = Date.now();
     _lbOnline = {};
