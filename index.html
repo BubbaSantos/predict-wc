@@ -922,7 +922,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.6</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2964,9 +2964,15 @@ function namedPicksHtml(mid, mode){
       else { color='#ef4444'; order=2; }
     }
     const nameHtml = color ? `<span style="color:${color}">${p.display}</span>` : p.display;
-    return { html:`${nameHtml}: ${p.predHome}–${p.predAway}`, order };
+    const pType = p.predHome>p.predAway?0:p.predHome===p.predAway?1:2;
+    return { html:`${nameHtml}: ${p.predHome}–${p.predAway}`, pType, predHome:p.predHome, predAway:p.predAway };
   });
-  scored.sort((a,b)=>a.order-b.order);
+  scored.sort((a,b)=>{
+    if(a.pType!==b.pType) return a.pType-b.pType;
+    if(a.pType===0) return b.predHome-a.predHome;
+    if(a.pType===1) return b.predHome-a.predHome;
+    return b.predAway-a.predAway;
+  });
   const parts = scored.map(s=>`<span style="white-space:nowrap;">${s.html}</span>`).join(' &nbsp;·&nbsp; ');
   return `<div class="hmc-others">${parts}</div>`;
 }
@@ -3970,6 +3976,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.40.7',date:'19 Jun 2026',notes:['Home match card view-by-name picks: same sort order as grouped (home wins → draws → away wins, by score)']},
   {v:'1.40.6',date:'19 Jun 2026',notes:['Home match card grouped picks: sorted home wins → draws → away wins, each by score descending']},
   {v:'1.40.5',date:'19 Jun 2026',notes:['Predict page player picks: amber for +3']},
   {v:'1.40.4',date:'19 Jun 2026',notes:['Home match card: amber for +3 and correct result player names']},
@@ -8133,6 +8140,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.7</div>
 </body>
 </html>
