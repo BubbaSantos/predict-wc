@@ -2960,7 +2960,7 @@ function namedPicksHtml(mid, mode){
     } else if(mode==='result' && res && res.home!=null){
       const pts=calcPoints(p.predHome,p.predAway,res.home,res.away);
       if(pts>=8){ color='#22c55e'; order=0; }
-      else if(pts>=3){ color='var(--group-accent)'; order=1; }
+      else if(pts>=3){ color='#f59e0b'; order=1; }
       else { color='#ef4444'; order=2; }
     }
     const nameHtml = color ? `<span style="color:${color}">${p.display}</span>` : p.display;
@@ -5178,7 +5178,7 @@ async function loadHome(){
         const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
         const ptsNum=pts===8?8:pts===5?5:pts===3?3:0;
         const ptsDisplay=ptsNum===0?'0':ptsNum===8?'+8 ⭐':'+'+ptsNum;
-        const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'var(--group-accent)':'#22c55e';
+        const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'#f59e0b':'#22c55e';
         predHtml=`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received <span style="color:${ptsColor};font-weight:700;">${ptsDisplay}</span></div>`;
       }
       _lastResultHtml='';
