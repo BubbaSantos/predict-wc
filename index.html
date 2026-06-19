@@ -860,7 +860,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.39.1</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.39.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1091,7 +1091,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     <!-- LEADERBOARD -->
     <div id="view-leaderboard" class="view">
       <div class="page-header">
-        <div class="page-title">Leaderboard</div>
+        <div>
+          <div class="page-title">Leaderboard</div>
+          <div id="lb-match-subtitle" style="font-size:.72rem;color:var(--text-muted);margin-top:.1rem;"></div>
+        </div>
         <div style="display:flex;align-items:center;gap:.5rem;">
           <div id="lb-filter-btns" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:7px;display:flex;overflow:hidden;">
             <button id="lb-filter-all" class="lb-filter-btn active" onclick="setLbFilter('all')">All</button>
@@ -3763,6 +3766,12 @@ async function loadLeaderboard(){
     ]);
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
+    const _lbMatchSubtitle = document.getElementById('lb-match-subtitle');
+    if(_lbMatchSubtitle){
+      const completedCount = (allResults||[]).filter(r=>r.home_score!=null).length;
+      const totalCount = allFixtures().length;
+      _lbMatchSubtitle.textContent = completedCount > 0 ? `Match ${completedCount} of ${totalCount}` : '';
+    }
     const _nowMs = Date.now();
     _lbOnline = {};
     (allPlayers||[]).forEach(p=>{ _lbOnline[p.id] = !!(p.last_seen && (_nowMs - new Date(p.last_seen).getTime() < 120000)); });
@@ -3898,6 +3907,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.39.2',date:'19 Jun 2026',notes:['Leaderboard: small "Match X of Y" subtitle shown under the page title']},
   {v:'1.39.1',date:'19 Jun 2026',notes:['Leaderboard: optional ▲/▼ rank-change indicator next to each player showing how many places they\'ve moved since the previous game. Toggle in Admin → Display → Leaderboard Views. Works on the full and compact views.']},
   {v:'1.39.0',date:'19 Jun 2026',notes:['Streak badges restyled: the player\'s name now sits inside the coloured streak pill with the emoji after it (e.g. Sean 🔥), and 4+ game runs append the total (Sean 🔥 5 games). Applied to the main leaderboard, compact view, and home mini-leaderboard.']},
   {v:'1.38.18',date:'19 Jun 2026',notes:['Tournament stats: new 📏 Longest Streaks tile shows the longest 💎 perfect, 🔥 hot and 💩 shite runs in one box, with the leaders for each']},
@@ -8047,6 +8057,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.39.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.39.2</div>
 </body>
 </html>
