@@ -922,7 +922,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.8</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2954,9 +2954,8 @@ function namedPicksHtml(mid, mode){
   const scored = preds.map(p => {
     let color = null, order = 2;
     if(mode==='live' && res && res.home!=null){
-      if(res.home===p.predHome && res.away===p.predAway){ color='#22c55e'; order=0; }
-      else if(res.home > p.predHome || res.away > p.predAway){ color='#ef4444'; order=3; }
-      // else still possible: order=2, no color
+      const pts=calcPoints(p.predHome,p.predAway,res.home,res.away);
+      color=pts>=8?'#22c55e':pts>=3?'#f59e0b':'#ef4444';
     } else if(mode==='result' && res && res.home!=null){
       const pts=calcPoints(p.predHome,p.predAway,res.home,res.away);
       if(pts>=8){ color='#22c55e'; order=0; }
@@ -4005,6 +4004,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.40.9',date:'19 Jun 2026',notes:['Live match named picks: same green/amber/red outcome coloring as grouped view']},
   {v:'1.40.8',date:'19 Jun 2026',notes:['Live match grouped picks: green for exact current score, amber for correct outcome, red for wrong outcome']},
   {v:'1.40.7',date:'19 Jun 2026',notes:['Home match card view-by-name picks: same sort order as grouped (home wins → draws → away wins, by score)']},
   {v:'1.40.6',date:'19 Jun 2026',notes:['Home match card grouped picks: sorted home wins → draws → away wins, each by score descending']},
@@ -8170,6 +8170,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.8</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.9</div>
 </body>
 </html>
