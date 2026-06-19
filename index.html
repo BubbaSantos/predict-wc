@@ -922,7 +922,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3970,6 +3970,12 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.40.6',date:'19 Jun 2026',notes:['Home match card grouped picks: sorted home wins → draws → away wins, each by score descending']},
+  {v:'1.40.5',date:'19 Jun 2026',notes:['Predict page player picks: amber for +3']},
+  {v:'1.40.4',date:'19 Jun 2026',notes:['Home match card: amber for +3 and correct result player names']},
+  {v:'1.40.3',date:'19 Jun 2026',notes:['Streak key new format (💎 Perfect - 3 exact scores in a row); drop "games" from streak count badge']},
+  {v:'1.40.2',date:'19 Jun 2026',notes:['Leaderboard subtitle: Group Stage Match X of 72']},
+  {v:'1.40.1',date:'19 Jun 2026',notes:['Leaderboard: smaller More and Refresh buttons']},
   {v:'1.40.0',date:'19 Jun 2026',notes:['Full visual restyle: Plus Jakarta Sans + JetBrains Mono fonts, purple accent (#6d5cff), updated dark palette, rounded corners, subtle shadows, and color-mix theming throughout']},
   {v:'1.39.2',date:'19 Jun 2026',notes:['Leaderboard: small "Match X of Y" subtitle shown under the page title']},
   {v:'1.39.1',date:'19 Jun 2026',notes:['Leaderboard: optional ▲/▼ rank-change indicator next to each player showing how many places they\'ve moved since the previous game. Toggle in Admin → Display → Leaderboard Views. Works on the full and compact views.']},
@@ -5146,8 +5152,14 @@ async function loadHome(){
       if(!ps.length) return '';
       const ct={};
       ps.forEach(p=>{const k=`${p.home_score}–${p.away_score}`;ct[k]=(ct[k]||0)+1;});
-      const parts=Object.entries(ct).sort((a,b)=>b[1]-a[1])
-        .map(([sc,n])=>`${sc}<span style="opacity:.55"> ×${n}</span>`).join(' &nbsp;·&nbsp; ');
+      const parts=Object.entries(ct).sort((a,b)=>{
+        const [ah,aa]=a[0].split('–').map(Number), [bh,ba]=b[0].split('–').map(Number);
+        const aType=ah>aa?0:ah===aa?1:2, bType=bh>ba?0:bh===ba?1:2;
+        if(aType!==bType) return aType-bType;
+        if(aType===0) return bh-ah;
+        if(aType===1) return bh-ah;
+        return ba-aa;
+      }).map(([sc,n])=>`${sc}<span style="opacity:.55"> ×${n}</span>`).join(' &nbsp;·&nbsp; ');
       return `<div class="hmc-others">Group picks: ${parts}</div>`;
     };
 
@@ -8121,6 +8133,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.40.6</div>
 </body>
 </html>
