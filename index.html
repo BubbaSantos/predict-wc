@@ -923,7 +923,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.4</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3451,7 +3451,19 @@ function startTiebreakCountdown(){
   setInterval(update, 1000);
 }
 
-function allFixtures(){return [...FIXTURES,...knockoutFixtures];}
+function allFixtures(){
+  // Always return fixtures ordered by kickoff time so every list (predict,
+  // results, god mode, admin, etc.) shows games chronologically. TBD/unknown
+  // kickoffs sort to the end.
+  return [...FIXTURES,...knockoutFixtures].sort((a,b)=>{
+    const ta=getMatchKickoff(a)?.getTime();
+    const tb=getMatchKickoff(b)?.getTime();
+    if(ta==null&&tb==null) return 0;
+    if(ta==null) return 1;
+    if(tb==null) return -1;
+    return ta-tb;
+  });
+}
 
 function formatDate(d){
   if(!d||d==='TBD') return d;
@@ -4046,6 +4058,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.43.5',date:'20 Jun 2026',notes:['Game lists now always sorted by kickoff time — fixed games appearing out of order (a later kickoff shown before an earlier one) on the Predict page, God Mode predictions/results, Admin and everywhere fixtures are listed']},
   {v:'1.43.4',date:'19 Jun 2026',notes:['Ghost mode: green dot clears immediately in the current session without waiting for a leaderboard refresh']},
   {v:'1.43.3',date:'19 Jun 2026',notes:['God Mode → Settings: 👻 Appear Offline toggle — stops heartbeat and clears last_seen so you show as offline to other players; persists across page loads']},
   {v:'1.43.2',date:'19 Jun 2026',notes:['Admin players panel: last seen time shown next to each player (green "online now" if active within 2 min, otherwise "Xm/Xh/Xd ago")']},
@@ -8228,6 +8241,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.4</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.5</div>
 </body>
 </html>
