@@ -231,6 +231,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .tf-l{background:rgba(239,68,68,.12);color:#ef4444;}
 .tf-d{background:color-mix(in srgb,var(--text-muted) 20%,transparent);color:var(--text-muted);}
 .tf-none{color:var(--text-muted);opacity:.5;}
+.extras-toggle{font-size:.55rem;color:var(--text-muted);opacity:.5;text-align:center;padding:.35rem 0 .15rem;letter-spacing:.04em;cursor:pointer;user-select:none;}
+.extras-toggle:hover{opacity:.8;}
+.extras-toggle.collapsed{opacity:.45;}
 .pred-card-pct-row{display:flex;align-items:center;font-size:.62rem;color:var(--text-muted);margin-bottom:.35rem;}
 .pred-card-pct{flex:1;text-align:center;}
 .pred-card-pct-draw{flex:0 0 auto;min-width:4rem;text-align:center;}
@@ -945,7 +948,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.45.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.45.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2212,6 +2215,7 @@ let _matchPredsMap = {};
 let _lastResultPicksGrouped = '';
 let _lastResultMatchId = null;
 let _picksViewMode = 'named';
+let _hideMatchExtras = localStorage.getItem('wc26_hide_extras')==='1';
 
 // ── SUPABASE ─────────────────────────────
 async function sb(path, opts={}){
@@ -2942,13 +2946,13 @@ function renderMatchCardBody(){
       const hasPred = p&&p.home!==''&&p.home!==null;
       const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
       const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
-      html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+picks+(hasAnyPicks?picksHint:'')+teamFormHtml(f)+groupStandingsHtml(f);
+      html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+picks+(hasAnyPicks?picksHint:'')+matchExtrasHtml(f);
     });
   } else if(_lastResultF){
     const r=results[_lastResultMatchId];
     const lastPicks = _picksViewMode==='grouped' ? _lastResultPicksGrouped : namedPicksHtml(_lastResultMatchId,'result');
     const hasLastPicks = !!(_lastResultPicksGrouped||(_matchPredsMap[_lastResultMatchId]?.length));
-    html += `<div class="hmc-label">Last Result</div>`+_pctTeamsHtml(_lastResultF,'',`${r.home}–${r.away}`,_lastResultMatchId)+_lastResultPredHtml+lastPicks+(hasLastPicks?picksHint:'')+teamFormHtml(_lastResultF)+groupStandingsHtml(_lastResultF)+_lastMatchStatsHtml;
+    html += `<div class="hmc-label">Last Result</div>`+_pctTeamsHtml(_lastResultF,'',`${r.home}–${r.away}`,_lastResultMatchId)+_lastResultPredHtml+lastPicks+(hasLastPicks?picksHint:'')+matchExtrasHtml(_lastResultF)+_lastMatchStatsHtml;
   }
   if(_nextUpcoming){
     const diff = _nextUpcoming.ko.getTime()-now;
@@ -2959,7 +2963,7 @@ function renderMatchCardBody(){
       const nextId = _nextUpcoming.f.id;
       const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,'upcoming');
       const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_pctTeamsHtml(_nextUpcoming.f,'vs','vs',nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+teamFormHtml(_nextUpcoming.f)+groupStandingsHtml(_nextUpcoming.f);
+      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_pctTeamsHtml(_nextUpcoming.f,'vs','vs',nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
     }
   } else if(!html){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -3096,14 +3100,34 @@ function teamFormHtml(f){
   }).sort((a,b)=>((getMatchKickoff(a)?.getTime())??0)-((getMatchKickoff(b)?.getTime())??0))
     .map(g=>{
       const r=results[g.id], home=g.home===team;
-      const gf=home?r.home:r.away, ga=home?r.away:r.home, opp=home?g.af:g.hf;
+      const gf=home?r.home:r.away, ga=home?r.away:r.home, opp=home?g.away:g.home;
       const cls=gf>ga?'tf-w':gf<ga?'tf-l':'tf-d';
-      return `<span class="tf-res ${cls}">${gf}-${ga}&nbsp;${opp}</span>`;
+      return `<span class="tf-res ${cls}">${gf}-${ga} ${opp}</span>`;
     });
   const hf=formFor(f.home), af=formFor(f.away);
   if(!hf.length && !af.length) return '';
   const row=(flag,name,list)=>`<div class="tf-row"><span class="tf-team">${flag} ${name}</span><span class="tf-list">${list.length?list.join(''):'<span class="tf-none">no games yet</span>'}</span></div>`;
   return `<div class="team-form"><div class="tf-head">Recent results</div>${row(f.hf,f.home,hf)}${row(f.af,f.away,af)}</div>`;
+}
+
+// Recent results + group table wrapped in a tap-to-hide/show toggle.
+function matchExtrasHtml(f){
+  if(!f) return '';
+  const inner = teamFormHtml(f) + groupStandingsHtml(f);
+  if(!inner) return '';
+  if(_hideMatchExtras)
+    return `<div class="extras-toggle collapsed" onclick="toggleMatchExtras(event)">▾ show form &amp; table</div>`;
+  return `<div class="match-extras">${inner}</div><div class="extras-toggle" onclick="toggleMatchExtras(event)">▴ tap to hide</div>`;
+}
+function toggleMatchExtras(event){
+  if(event){ event.stopPropagation(); }
+  _hideMatchExtras = !_hideMatchExtras;
+  localStorage.setItem('wc26_hide_extras', _hideMatchExtras?'1':'0');
+  renderMatchCardBody();
+  // refresh any open predict-page picks panels
+  document.querySelectorAll('.pred-picks-panel').forEach(p=>{
+    if(p.style.display!=='none'){ p.innerHTML = predPanelInnerHtml(p.id.replace('pred-picks-','')); }
+  });
 }
 
 let _predTapTimer = null, _predTapEl = null, _predTapTime = 0;
@@ -3125,13 +3149,7 @@ function predCardTap(fid, event){
   }, 360);
 }
 
-function togglePredCardPicks(mid){
-  const panel = document.getElementById('pred-picks-'+mid);
-  if(!panel) return;
-  if(panel.style.display !== 'none'){
-    panel.style.display='none';
-    return;
-  }
+function predPanelInnerHtml(mid){
   const res = results[mid];
   const hasScore = res && res.home !== null;
   const fx = allFixtures().find(f=>f.id===mid);
@@ -3142,7 +3160,16 @@ function togglePredCardPicks(mid){
   const mode = hasScore ? 'result' : isLive ? 'live' : 'upcoming';
   const pct = _predPcts(mid);
   const pctHtml = pct ? `<div class="pred-card-pct-row"><span class="pred-card-pct">${pct.hp}%</span><span class="pred-card-pct-draw">${pct.dp}% draw</span><span class="pred-card-pct">${pct.ap}%</span></div>` : '';
-  panel.innerHTML = pctHtml + namedPicksHtml(mid, mode) + teamFormHtml(fx) + groupStandingsHtml(fx);
+  return pctHtml + namedPicksHtml(mid, mode) + matchExtrasHtml(fx);
+}
+function togglePredCardPicks(mid){
+  const panel = document.getElementById('pred-picks-'+mid);
+  if(!panel) return;
+  if(panel.style.display !== 'none'){
+    panel.style.display='none';
+    return;
+  }
+  panel.innerHTML = predPanelInnerHtml(mid);
   panel.style.display = 'block';
 }
 
@@ -4136,6 +4163,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.45.1',date:'21 Jun 2026',notes:['Recent results & group table can now be collapsed — tap “tap to hide” to hide them, “show form & table” to bring them back (remembered across visits, applies on Home and the Predict page)','Recent results now name the opponent (e.g. “2-0 Curaçao”) instead of just showing their flag']},
   {v:'1.45.0',date:'21 Jun 2026',notes:['Match cards now show each team’s recent results (previous scorelines from this tournament, from the team’s own perspective with win/draw/loss colours) above the group table — on the Predict page (tap a card to expand) and the Home screen Live / Last Result / Next Up cards. Only completed matches before kickoff are shown, so it stays empty on matchday 1']},
   {v:'1.44.1',date:'21 Jun 2026',notes:['Corrected fixtures and kickoff times to match the official schedule. Fixed wrong home/away on several games (Tunisia v Japan, New Zealand v Egypt, Jordan v Algeria, Panama v Croatia, Czechia v Mexico, Türkiye v Paraguay), re-paired Group I matchday 2 & 3 (now France v Iraq / Norway v Senegal, then Norway v France / Senegal v Iraq), and fixed matchday-3 dates/times for Groups E (25 Jun), K (28 Jun 00:30) and J (28 Jun 03:00)','sync.js updated to match so live results map to the correct games — re-run a results sync to pick up any games that previously failed to match']},
   {v:'1.44.0',date:'21 Jun 2026',notes:['Match cards now show a simple group table under the group picks — on the Predict page (tap a card to expand) and on the Home screen Live / Last Result / Next Up cards. Shows P, GD and Pts, sorted by points then goal difference, with the two teams in that match highlighted, computed live from results','Fixed matchday-3 kickoff times for Groups J, K and L: the two final group games in each now kick off simultaneously and are correctly scheduled after matchday 2 (previously Group K MD3 was timed before MD2, and the J/L pairs were hours/days apart, so games showed on the wrong day)','sync.js: corrected Group E and H matchday-3 pairings to match the v1.43.6 fixture fix so live results sync to the right games']},
@@ -8323,6 +8351,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.45.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.45.1</div>
 </body>
 </html>
