@@ -923,7 +923,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.5</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2119,14 +2119,14 @@ const FIXTURES = [
   { id:'m054', date:'2026-06-25', group:'C', home:'Morocco', away:'Haiti', hf:'🇲🇦', af:'🇭🇹', venue:'Atlanta', matchday:3 },
   { id:'m055', date:'2026-06-26', group:'D', home:'Türkiye', away:'USA', hf:'🇹🇷', af:'🇺🇸', venue:'Dallas', matchday:3 },
   { id:'m056', date:'2026-06-26', group:'D', home:'Paraguay', away:'Australia', hf:'🇵🇾', af:'🇦🇺', venue:'Houston', matchday:3 },
-  { id:'m057', date:'2026-06-27', group:'E', home:'Curaçao', away:'Germany', hf:'🇨🇼', af:'🇩🇪', venue:'Philadelphia', matchday:3 },
-  { id:'m058', date:'2026-06-27', group:'E', home:'Ecuador', away:'Ivory Coast', hf:'🇪🇨', af:'🇨🇮', venue:'Atlanta', matchday:3 },
+  { id:'m057', date:'2026-06-27', group:'E', home:'Ecuador', away:'Germany', hf:'🇪🇨', af:'🇩🇪', venue:'Philadelphia', matchday:3 },
+  { id:'m058', date:'2026-06-27', group:'E', home:'Curaçao', away:'Ivory Coast', hf:'🇨🇼', af:'🇨🇮', venue:'Atlanta', matchday:3 },
   { id:'m059', date:'2026-06-27', group:'F', home:'Tunisia', away:'Netherlands', hf:'🇹🇳', af:'🇳🇱', venue:'Monterrey', matchday:3 },
   { id:'m060', date:'2026-06-27', group:'F', home:'Japan', away:'Sweden', hf:'🇯🇵', af:'🇸🇪', venue:'Miami', matchday:3 },
   { id:'m061', date:'2026-06-27', group:'G', home:'New Zealand', away:'Belgium', hf:'🇳🇿', af:'🇧🇪', venue:'Seattle', matchday:3 },
   { id:'m062', date:'2026-06-27', group:'G', home:'Egypt', away:'Iran', hf:'🇪🇬', af:'🇮🇷', venue:'Boston', matchday:3 },
-  { id:'m063', date:'2026-06-27', group:'H', home:'Cape Verde', away:'Spain', hf:'🇨🇻', af:'🇪🇸', venue:'Kansas City', matchday:3 },
-  { id:'m064', date:'2026-06-27', group:'H', home:'Uruguay', away:'Saudi Arabia', hf:'🇺🇾', af:'🇸🇦', venue:'San Francisco', matchday:3 },
+  { id:'m063', date:'2026-06-27', group:'H', home:'Cape Verde', away:'Saudi Arabia', hf:'🇨🇻', af:'🇸🇦', venue:'Kansas City', matchday:3 },
+  { id:'m064', date:'2026-06-27', group:'H', home:'Uruguay', away:'Spain', hf:'🇺🇾', af:'🇪🇸', venue:'San Francisco', matchday:3 },
   { id:'m065', date:'2026-06-27', group:'I', home:'Norway', away:'Senegal', hf:'🇳🇴', af:'🇸🇳', venue:'Dallas', matchday:3 },
   { id:'m066', date:'2026-06-27', group:'I', home:'Iraq', away:'France', hf:'🇮🇶', af:'🇫🇷', venue:'Los Angeles', matchday:3 },
   { id:'m067', date:'2026-06-27', group:'J', home:'Jordan', away:'Argentina', hf:'🇯🇴', af:'🇦🇷', venue:'Atlanta', matchday:3 },
@@ -4058,6 +4058,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.43.6',date:'21 Jun 2026',notes:['Fixed duplicate matchups in the group stage — Group E matchday 3 was repeating Germany v Curaçao and Ivory Coast v Ecuador (now correctly Ecuador v Germany and Curaçao v Ivory Coast), and Group H was repeating Spain v Cape Verde and Saudi Arabia v Uruguay (now Cape Verde v Saudi Arabia and Uruguay v Spain). Every team now plays each group opponent exactly once']},
   {v:'1.43.5',date:'20 Jun 2026',notes:['Game lists now always sorted by kickoff time — fixed games appearing out of order (a later kickoff shown before an earlier one) on the Predict page, God Mode predictions/results, Admin and everywhere fixtures are listed']},
   {v:'1.43.4',date:'19 Jun 2026',notes:['Ghost mode: green dot clears immediately in the current session without waiting for a leaderboard refresh']},
   {v:'1.43.3',date:'19 Jun 2026',notes:['God Mode → Settings: 👻 Appear Offline toggle — stops heartbeat and clears last_seen so you show as offline to other players; persists across page loads']},
@@ -8241,6 +8242,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.43.6</div>
 </body>
 </html>
