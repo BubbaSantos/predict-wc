@@ -935,7 +935,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.44.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.44.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2104,47 +2104,47 @@ const FIXTURES = [
   { id:'m029', date:'2026-06-19', group:'D', home:'USA', away:'Australia', hf:'🇺🇸', af:'🇦🇺', venue:'Seattle', matchday:2 },
   { id:'m030', date:'2026-06-19', group:'C', home:'Scotland', away:'Morocco', hf:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', af:'🇲🇦', venue:'Boston', matchday:2 },
   { id:'m031', date:'2026-06-19', group:'C', home:'Brazil', away:'Haiti', hf:'🇧🇷', af:'🇭🇹', venue:'Philadelphia', matchday:2 },
-  { id:'m032', date:'2026-06-19', group:'D', home:'Paraguay', away:'Türkiye', hf:'🇵🇾', af:'🇹🇷', venue:'Kansas City', matchday:2 },
-  { id:'m033', date:'2026-06-20', group:'F', home:'Japan', away:'Tunisia', hf:'🇯🇵', af:'🇹🇳', venue:'Dallas', matchday:2 },
+  { id:'m032', date:'2026-06-19', group:'D', home:'Türkiye', away:'Paraguay', hf:'🇹🇷', af:'🇵🇾', venue:'Kansas City', matchday:2 },
+  { id:'m033', date:'2026-06-20', group:'F', home:'Tunisia', away:'Japan', hf:'🇹🇳', af:'🇯🇵', venue:'Dallas', matchday:2 },
   { id:'m034', date:'2026-06-20', group:'E', home:'Germany', away:'Ivory Coast', hf:'🇩🇪', af:'🇨🇮', venue:'Houston', matchday:2 },
   { id:'m035', date:'2026-06-20', group:'F', home:'Netherlands', away:'Sweden', hf:'🇳🇱', af:'🇸🇪', venue:'Philadelphia', matchday:2 },
   { id:'m036', date:'2026-06-20', group:'E', home:'Ecuador', away:'Curaçao', hf:'🇪🇨', af:'🇨🇼', venue:'San Francisco', matchday:2 },
   { id:'m037', date:'2026-06-21', group:'H', home:'Spain', away:'Saudi Arabia', hf:'🇪🇸', af:'🇸🇦', venue:'Atlanta', matchday:2 },
-  { id:'m038', date:'2026-06-21', group:'G', home:'Egypt', away:'New Zealand', hf:'🇪🇬', af:'🇳🇿', venue:'Seattle', matchday:2 },
+  { id:'m038', date:'2026-06-21', group:'G', home:'New Zealand', away:'Egypt', hf:'🇳🇿', af:'🇪🇬', venue:'Seattle', matchday:2 },
   { id:'m039', date:'2026-06-21', group:'H', home:'Uruguay', away:'Cape Verde', hf:'🇺🇾', af:'🇨🇻', venue:'Miami', matchday:2 },
   { id:'m040', date:'2026-06-21', group:'G', home:'Belgium', away:'Iran', hf:'🇧🇪', af:'🇮🇷', venue:'Los Angeles', matchday:2 },
-  { id:'m041', date:'2026-06-22', group:'I', home:'Senegal', away:'Iraq', hf:'🇸🇳', af:'🇮🇶', venue:'New Jersey', matchday:2 },
-  { id:'m042', date:'2026-06-22', group:'I', home:'France', away:'Norway', hf:'🇫🇷', af:'🇳🇴', venue:'Kansas City', matchday:2 },
-  { id:'m043', date:'2026-06-22', group:'J', home:'Algeria', away:'Jordan', hf:'🇩🇿', af:'🇯🇴', venue:'Houston', matchday:2 },
+  { id:'m041', date:'2026-06-22', group:'I', home:'Norway', away:'Senegal', hf:'🇳🇴', af:'🇸🇳', venue:'New Jersey', matchday:2 },
+  { id:'m042', date:'2026-06-22', group:'I', home:'France', away:'Iraq', hf:'🇫🇷', af:'🇮🇶', venue:'Kansas City', matchday:2 },
+  { id:'m043', date:'2026-06-22', group:'J', home:'Jordan', away:'Algeria', hf:'🇯🇴', af:'🇩🇿', venue:'Houston', matchday:2 },
   { id:'m044', date:'2026-06-22', group:'J', home:'Argentina', away:'Austria', hf:'🇦🇷', af:'🇦🇹', venue:'Dallas', matchday:2 },
   { id:'m045', date:'2026-06-23', group:'K', home:'Colombia', away:'DR Congo', hf:'🇨🇴', af:'🇨🇩', venue:'Boston', matchday:2 },
-  { id:'m046', date:'2026-06-23', group:'L', home:'Croatia', away:'Panama', hf:'🇭🇷', af:'🇵🇦', venue:'Toronto', matchday:2 },
+  { id:'m046', date:'2026-06-23', group:'L', home:'Panama', away:'Croatia', hf:'🇵🇦', af:'🇭🇷', venue:'Toronto', matchday:2 },
   { id:'m047', date:'2026-06-23', group:'L', home:'England', away:'Ghana', hf:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', af:'🇬🇭', venue:'Foxborough', matchday:2 },
   { id:'m048', date:'2026-06-23', group:'K', home:'Portugal', away:'Uzbekistan', hf:'🇵🇹', af:'🇺🇿', venue:'San Francisco', matchday:2 },
 
   // MATCHDAY 3
   { id:'m049', date:'2026-06-25', group:'A', home:'South Africa', away:'South Korea', hf:'🇿🇦', af:'🇰🇷', venue:'Guadalajara', matchday:3 },
-  { id:'m050', date:'2026-06-25', group:'A', home:'Mexico', away:'Czechia', hf:'🇲🇽', af:'🇨🇿', venue:'Mexico City', matchday:3 },
+  { id:'m050', date:'2026-06-25', group:'A', home:'Czechia', away:'Mexico', hf:'🇨🇿', af:'🇲🇽', venue:'Mexico City', matchday:3 },
   { id:'m051', date:'2026-06-25', group:'B', home:'Bosnia & Herz.', away:'Qatar', hf:'🇧🇦', af:'🇶🇦', venue:'Vancouver', matchday:3 },
   { id:'m052', date:'2026-06-25', group:'B', home:'Switzerland', away:'Canada', hf:'🇨🇭', af:'🇨🇦', venue:'Toronto', matchday:3 },
   { id:'m053', date:'2026-06-25', group:'C', home:'Scotland', away:'Brazil', hf:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', af:'🇧🇷', venue:'Miami', matchday:3 },
   { id:'m054', date:'2026-06-25', group:'C', home:'Morocco', away:'Haiti', hf:'🇲🇦', af:'🇭🇹', venue:'Atlanta', matchday:3 },
   { id:'m055', date:'2026-06-26', group:'D', home:'Türkiye', away:'USA', hf:'🇹🇷', af:'🇺🇸', venue:'Dallas', matchday:3 },
   { id:'m056', date:'2026-06-26', group:'D', home:'Paraguay', away:'Australia', hf:'🇵🇾', af:'🇦🇺', venue:'Houston', matchday:3 },
-  { id:'m057', date:'2026-06-27', group:'E', home:'Ecuador', away:'Germany', hf:'🇪🇨', af:'🇩🇪', venue:'Philadelphia', matchday:3 },
-  { id:'m058', date:'2026-06-27', group:'E', home:'Curaçao', away:'Ivory Coast', hf:'🇨🇼', af:'🇨🇮', venue:'Atlanta', matchday:3 },
+  { id:'m057', date:'2026-06-25', group:'E', home:'Ecuador', away:'Germany', hf:'🇪🇨', af:'🇩🇪', venue:'Philadelphia', matchday:3 },
+  { id:'m058', date:'2026-06-25', group:'E', home:'Curaçao', away:'Ivory Coast', hf:'🇨🇼', af:'🇨🇮', venue:'Atlanta', matchday:3 },
   { id:'m059', date:'2026-06-27', group:'F', home:'Tunisia', away:'Netherlands', hf:'🇹🇳', af:'🇳🇱', venue:'Monterrey', matchday:3 },
   { id:'m060', date:'2026-06-27', group:'F', home:'Japan', away:'Sweden', hf:'🇯🇵', af:'🇸🇪', venue:'Miami', matchday:3 },
   { id:'m061', date:'2026-06-27', group:'G', home:'New Zealand', away:'Belgium', hf:'🇳🇿', af:'🇧🇪', venue:'Seattle', matchday:3 },
   { id:'m062', date:'2026-06-27', group:'G', home:'Egypt', away:'Iran', hf:'🇪🇬', af:'🇮🇷', venue:'Boston', matchday:3 },
   { id:'m063', date:'2026-06-27', group:'H', home:'Cape Verde', away:'Saudi Arabia', hf:'🇨🇻', af:'🇸🇦', venue:'Kansas City', matchday:3 },
   { id:'m064', date:'2026-06-27', group:'H', home:'Uruguay', away:'Spain', hf:'🇺🇾', af:'🇪🇸', venue:'San Francisco', matchday:3 },
-  { id:'m065', date:'2026-06-27', group:'I', home:'Norway', away:'Senegal', hf:'🇳🇴', af:'🇸🇳', venue:'Dallas', matchday:3 },
-  { id:'m066', date:'2026-06-27', group:'I', home:'Iraq', away:'France', hf:'🇮🇶', af:'🇫🇷', venue:'Los Angeles', matchday:3 },
-  { id:'m067', date:'2026-06-27', group:'J', home:'Jordan', away:'Argentina', hf:'🇯🇴', af:'🇦🇷', venue:'Atlanta', matchday:3 },
-  { id:'m068', date:'2026-06-27', group:'J', home:'Algeria', away:'Austria', hf:'🇩🇿', af:'🇦🇹', venue:'Houston', matchday:3 },
-  { id:'m069', date:'2026-06-27', group:'K', home:'DR Congo', away:'Uzbekistan', hf:'🇨🇩', af:'🇺🇿', venue:'Atlanta', matchday:3 },
-  { id:'m070', date:'2026-06-27', group:'K', home:'Colombia', away:'Portugal', hf:'🇨🇴', af:'🇵🇹', venue:'Boston', matchday:3 },
+  { id:'m065', date:'2026-06-27', group:'I', home:'Norway', away:'France', hf:'🇳🇴', af:'🇫🇷', venue:'Dallas', matchday:3 },
+  { id:'m066', date:'2026-06-27', group:'I', home:'Senegal', away:'Iraq', hf:'🇸🇳', af:'🇮🇶', venue:'Los Angeles', matchday:3 },
+  { id:'m067', date:'2026-06-28', group:'J', home:'Jordan', away:'Argentina', hf:'🇯🇴', af:'🇦🇷', venue:'Atlanta', matchday:3 },
+  { id:'m068', date:'2026-06-28', group:'J', home:'Algeria', away:'Austria', hf:'🇩🇿', af:'🇦🇹', venue:'Houston', matchday:3 },
+  { id:'m069', date:'2026-06-28', group:'K', home:'DR Congo', away:'Uzbekistan', hf:'🇨🇩', af:'🇺🇿', venue:'Atlanta', matchday:3 },
+  { id:'m070', date:'2026-06-28', group:'K', home:'Colombia', away:'Portugal', hf:'🇨🇴', af:'🇵🇹', venue:'Boston', matchday:3 },
   { id:'m071', date:'2026-06-27', group:'L', home:'Panama', away:'England', hf:'🇵🇦', af:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', venue:'Monterrey', matchday:3 },
   { id:'m072', date:'2026-06-27', group:'L', home:'Croatia', away:'Ghana', hf:'🇭🇷', af:'🇬🇭', venue:'Vancouver', matchday:3 },
 ];
@@ -3334,7 +3334,7 @@ const KICKOFFS = {
   'm038':'2026-06-22T01:00:00Z', // New Zealand vs Egypt - 2am BST Mon
   'm039':'2026-06-21T22:00:00Z', // Uruguay vs Cape Verde - 11pm BST
   'm040':'2026-06-21T19:00:00Z', // Belgium vs Iran - 8pm BST
-  'm041':'2026-06-23T00:00:00Z', // Senegal vs Iraq - 1am BST Mon (Norway fixture)
+  'm041':'2026-06-23T00:00:00Z', // Norway vs Senegal - 1am BST Tue
   'm042':'2026-06-22T21:00:00Z', // France vs Iraq - 10pm BST Mon
   'm043':'2026-06-23T03:00:00Z', // Jordan vs Algeria - 4am BST Tue
   'm044':'2026-06-22T17:00:00Z', // Argentina vs Austria - 6pm BST Mon
@@ -3351,8 +3351,8 @@ const KICKOFFS = {
   'm054':'2026-06-24T22:00:00Z', // Morocco vs Haiti - 11pm BST - 11pm BST
   'm055':'2026-06-26T02:00:00Z', // Turkey vs USA - 3am BST
   'm056':'2026-06-26T02:00:00Z', // Paraguay vs Australia - 3am BST
-  'm057':'2026-06-26T20:00:00Z', // Ecuador vs Germany - 9pm BST
-  'm058':'2026-06-26T20:00:00Z', // Curacao vs Ivory Coast - 9pm BST
+  'm057':'2026-06-25T20:00:00Z', // Ecuador vs Germany - 9pm BST Thu
+  'm058':'2026-06-25T20:00:00Z', // Curacao vs Ivory Coast - 9pm BST Thu
   'm059':'2026-06-25T23:00:00Z', // Tunisia vs Netherlands - 12am BST
   'm060':'2026-06-25T23:00:00Z', // Japan vs Sweden - 12am BST
   'm061':'2026-06-27T03:00:00Z', // New Zealand vs Belgium - 4am BST
@@ -3361,10 +3361,10 @@ const KICKOFFS = {
   'm064':'2026-06-27T00:00:00Z', // Uruguay vs Spain - 1am BST
   'm065':'2026-06-26T19:00:00Z', // Norway vs France - 8pm BST
   'm066':'2026-06-26T19:00:00Z', // Senegal vs Iraq (Norway vs France paired) - 8pm BST
-  'm067':'2026-06-27T20:00:00Z', // Panama vs England - 10pm BST Sat
-  'm068':'2026-06-27T20:00:00Z', // Algeria vs Austria - 9pm BST Sat (simultaneous with m067)
-  'm069':'2026-06-27T02:00:00Z', // DR Congo vs Uzbekistan - 3am BST Sat
-  'm070':'2026-06-27T02:00:00Z', // Colombia vs Portugal - 3am BST Sat (simultaneous with m069)
+  'm067':'2026-06-28T02:00:00Z', // Jordan vs Argentina - 3am BST Sun
+  'm068':'2026-06-28T02:00:00Z', // Algeria vs Austria - 3am BST Sun (simultaneous with m067)
+  'm069':'2026-06-27T23:30:00Z', // DR Congo vs Uzbekistan - 12:30am BST Sun
+  'm070':'2026-06-27T23:30:00Z', // Colombia vs Portugal - 12:30am BST Sun (simultaneous with m069)
   'm071':'2026-06-27T21:00:00Z', // Panama vs England - 10pm BST
   'm072':'2026-06-27T21:00:00Z', // Croatia vs Ghana - 10pm BST Sat (simultaneous with m071)
 };
@@ -4100,6 +4100,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.44.1',date:'21 Jun 2026',notes:['Corrected fixtures and kickoff times to match the official schedule. Fixed wrong home/away on several games (Tunisia v Japan, New Zealand v Egypt, Jordan v Algeria, Panama v Croatia, Czechia v Mexico, Türkiye v Paraguay), re-paired Group I matchday 2 & 3 (now France v Iraq / Norway v Senegal, then Norway v France / Senegal v Iraq), and fixed matchday-3 dates/times for Groups E (25 Jun), K (28 Jun 00:30) and J (28 Jun 03:00)','sync.js updated to match so live results map to the correct games — re-run a results sync to pick up any games that previously failed to match']},
   {v:'1.44.0',date:'21 Jun 2026',notes:['Match cards now show a simple group table under the group picks — on the Predict page (tap a card to expand) and on the Home screen Live / Last Result / Next Up cards. Shows P, GD and Pts, sorted by points then goal difference, with the two teams in that match highlighted, computed live from results','Fixed matchday-3 kickoff times for Groups J, K and L: the two final group games in each now kick off simultaneously and are correctly scheduled after matchday 2 (previously Group K MD3 was timed before MD2, and the J/L pairs were hours/days apart, so games showed on the wrong day)','sync.js: corrected Group E and H matchday-3 pairings to match the v1.43.6 fixture fix so live results sync to the right games']},
   {v:'1.43.6',date:'21 Jun 2026',notes:['Fixed duplicate matchups in the group stage — Group E matchday 3 was repeating Germany v Curaçao and Ivory Coast v Ecuador (now correctly Ecuador v Germany and Curaçao v Ivory Coast), and Group H was repeating Spain v Cape Verde and Saudi Arabia v Uruguay (now Cape Verde v Saudi Arabia and Uruguay v Spain). Every team now plays each group opponent exactly once']},
   {v:'1.43.5',date:'20 Jun 2026',notes:['Game lists now always sorted by kickoff time — fixed games appearing out of order (a later kickoff shown before an earlier one) on the Predict page, God Mode predictions/results, Admin and everywhere fixtures are listed']},
@@ -8285,6 +8286,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.44.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.44.1</div>
 </body>
 </html>
