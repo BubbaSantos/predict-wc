@@ -716,26 +716,30 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     #news-ticker-inner{padding-right:6rem;}
     #ticker-tab{font-size:.6rem;padding:.22rem .45rem .22rem .35rem;}
 
-    #burger-btn { display: flex !important; align-items:center; gap:.3rem; }
-    #main-nav {
-      display: none;
-      position: absolute;
-      top: 56px;
-      left: 0;
-      right: 0;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-direction: column;
-      padding: .5rem;
-      z-index: 99;
-      gap: .25rem;
+    header {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: 56px;
+      row-gap: .35rem;
+      padding: .4rem 1rem;
     }
-    #main-nav.open { display: flex; }
+    #burger-btn { display: none !important; }
+    .header-brand { max-width: 60% !important; }
+    #main-nav {
+      display: flex !important;
+      flex-basis: 100%;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: .3rem;
+      order: 99;
+      padding-top: .25rem;
+      border-top: 1px solid var(--border);
+    }
     #main-nav button {
-      width: 100%;
-      text-align: left;
-      padding: .65rem 1rem;
-      font-size: .9rem;
+      flex: 1;
+      text-align: center;
+      padding: .45rem .4rem;
+      font-size: .8rem;
       border-radius: 6px;
     }
     .header-user { gap: .35rem; }
@@ -748,7 +752,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .header-group{display:none;}
   .header-logo{font-size:1rem;}
   #h-group-name{font-size:.9rem!important;}
-  header{padding:0 1rem;}
+  header{padding-inline:1rem;}
   nav button{padding:.3rem .5rem;font-size:.72rem;}
   .rules-grid{grid-template-columns:1fr;}
   .lb-row{grid-template-columns:2.5rem 1fr auto;}
@@ -948,7 +952,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.45.1</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.46.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4163,6 +4167,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.46.0',date:'22 Jun 2026',notes:['Mobile header: hamburger menu replaced with a two-row top bar. Group name + theme toggle + user chip stay on the top row; Home, Leaderboard, Predict (and Admin if applicable) sit on a second row, always visible.']},
   {v:'1.45.1',date:'21 Jun 2026',notes:['Recent results & group table can now be collapsed — tap “tap to hide” to hide them, “show form & table” to bring them back (remembered across visits, applies on Home and the Predict page)','Recent results now name the opponent (e.g. “2-0 Curaçao”) instead of just showing their flag']},
   {v:'1.45.0',date:'21 Jun 2026',notes:['Match cards now show each team’s recent results (previous scorelines from this tournament, from the team’s own perspective with win/draw/loss colours) above the group table — on the Predict page (tap a card to expand) and the Home screen Live / Last Result / Next Up cards. Only completed matches before kickoff are shown, so it stays empty on matchday 1']},
   {v:'1.44.1',date:'21 Jun 2026',notes:['Corrected fixtures and kickoff times to match the official schedule. Fixed wrong home/away on several games (Tunisia v Japan, New Zealand v Egypt, Jordan v Algeria, Panama v Croatia, Czechia v Mexico, Türkiye v Paraguay), re-paired Group I matchday 2 & 3 (now France v Iraq / Norway v Senegal, then Norway v France / Senegal v Iraq), and fixed matchday-3 dates/times for Groups E (25 Jun), K (28 Jun 00:30) and J (28 Jun 03:00)','sync.js updated to match so live results map to the correct games — re-run a results sync to pick up any games that previously failed to match']},
@@ -8351,6 +8356,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.45.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.46.0</div>
 </body>
 </html>
