@@ -952,7 +952,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.46.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.48.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3680,42 +3680,25 @@ function renderFixtures(container,forAdmin=false){
   const nowMs=Date.now();
   const LIVE_WIN=130*60*1000;
   allFixtures().forEach(f=>{
-    let key, label;
-    if(forAdmin){
-      key = f.isKnockout?(f.group||'Knockout'):`Matchday ${f.matchday}`;
-      label = key;
+    const dateKey=getMatchDateKey(f);
+    const ko=getMatchKickoff(f);
+    const koMs=ko?ko.getTime():null;
+    const isLive=!!(koMs&&nowMs>=koMs&&nowMs<koMs+LIVE_WIN);
+    if(dateKey!=='zz-tbd'&&dateKey<todayKey&&!isLive){
+      prevFixtures.push(f);
+    } else {
+      const key = dateKey;
+      const label = getMatchDateLabel(f);
       if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
       grouped[key].push(f);
-    } else {
-      const dateKey=getMatchDateKey(f);
-      const ko=getMatchKickoff(f);
-      const koMs=ko?ko.getTime():null;
-      const isLive=!!(koMs&&nowMs>=koMs&&nowMs<koMs+LIVE_WIN);
-      if(dateKey!=='zz-tbd'&&dateKey<todayKey&&!isLive){
-        prevFixtures.push(f);
-      } else {
-        key = dateKey;
-        label = getMatchDateLabel(f);
-        if(!grouped[key]){grouped[key]=[];keyMap[key]=label;}
-        grouped[key].push(f);
-      }
     }
   });
-  let keys;
-  if(forAdmin){
-    const koOrder=['Round of 32','Round of 16','Quarter-Final','Semi-Final','3rd Place Play-off','Final'];
-    const gKeys=Object.keys(grouped).filter(k=>k.startsWith('Matchday')).sort();
-    const kKeys=Object.keys(grouped).filter(k=>!k.startsWith('Matchday')).sort((a,b)=>koOrder.indexOf(a)-koOrder.indexOf(b));
-    keys=[...gKeys,...kKeys];
-  } else {
-    keys=Object.keys(grouped).sort();
-  }
+  const keys=Object.keys(grouped).sort();
+  const cardFor=(f)=> forAdmin?renderAdminCard(f,results[f.id]):renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
   let html='';
-  if(!forAdmin&&prevFixtures.length){
+  if(prevFixtures.length){
     html+=`<div class="matchday-group"><div class="matchday-label finished-heading" onclick="toggleFinishedSection()">Previous Matches<span class="finished-chevron" id="finished-chevron">›</span></div><div id="finished-matches-list" style="display:none;">`;
-    prevFixtures.forEach(f=>{
-      html+=renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
-    });
+    prevFixtures.forEach(f=>{ html+=cardFor(f); });
     html+=`</div></div>`;
   }
   keys.forEach(key=>{
@@ -3723,9 +3706,7 @@ function renderFixtures(container,forAdmin=false){
     const isToday=label==='Today';
     const isFuture=label!=='Today'&&label!=='Tomorrow'&&label!=='TBD';
     html+=`<div class="matchday-group"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${label}</div>`;
-    grouped[key].forEach(f=>{
-      html+=forAdmin?renderAdminCard(f,results[f.id]):renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
-    });
+    grouped[key].forEach(f=>{ html+=cardFor(f); });
     html+=`</div>`;
   });
   container.innerHTML=html||'<div class="empty">No fixtures yet.</div>';
@@ -4167,6 +4148,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.48.0',date:'22 Jun 2026',notes:['Admin → Results: saving or clearing a scoreline now propagates to every group at once (no need to drop into God Mode). Admin must still be logged into one group to do it.','Admin → Results: previous matches are tucked behind a “Previous Matches” dropdown; today’s and any live games sit at the top, upcoming games grouped by date below — matches the Predict page layout.','Reverted v1.47.0 bottom-bar mobile nav experiment.']},
   {v:'1.46.0',date:'22 Jun 2026',notes:['Mobile header: hamburger menu replaced with a two-row top bar. Group name + theme toggle + user chip stay on the top row; Home, Leaderboard, Predict (and Admin if applicable) sit on a second row, always visible.']},
   {v:'1.45.1',date:'21 Jun 2026',notes:['Recent results & group table can now be collapsed — tap “tap to hide” to hide them, “show form & table” to bring them back (remembered across visits, applies on Home and the Predict page)','Recent results now name the opponent (e.g. “2-0 Curaçao”) instead of just showing their flag']},
   {v:'1.45.0',date:'21 Jun 2026',notes:['Match cards now show each team’s recent results (previous scorelines from this tournament, from the team’s own perspective with win/draw/loss colours) above the group table — on the Predict page (tap a card to expand) and the Home screen Live / Last Result / Next Up cards. Only completed matches before kickoff are shown, so it stays empty on matchday 1']},
@@ -6508,10 +6490,13 @@ async function adminAutoSave(matchId){
   const existing = results[matchId];
   if(existing && existing.home===+h && existing.away===+a) return;
   try{
-    await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
-    await sb('results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a}});
+    const groups = await sb('groups?select=id');
+    if(!groups||!groups.length) throw new Error('No groups found');
+    await sb('results?match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
+    const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a}));
+    await sb('results',{method:'POST',prefer:'return=minimal',body:rows});
     results[matchId]={home:+h,away:+a};
-    flash(`Saved: ${h}–${a}`,'success');
+    flash(`Saved: ${h}–${a} (all groups)`,'success');
     const card = document.getElementById('acard-'+matchId);
     if(card){
       const f = allFixtures().find(f=>f.id===matchId);
@@ -6539,7 +6524,7 @@ function adminAdvanceToNext(currentMatchId){
 async function clearResult(id){
   if(!currentGroup) return;
   try{
-    await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    await sb('results?match_id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     delete results[id];
     // Clear the inputs
     const rh = document.getElementById('rh-'+id);
@@ -8356,6 +8341,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.46.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.48.0</div>
 </body>
 </html>
