@@ -365,6 +365,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .actual-input:focus{border-color:var(--green);}
 .actual-save-btn{background:none;border:1px solid rgba(16,185,129,.3);color:var(--green);font-size:.7rem;font-weight:600;padding:.25rem .65rem;border-radius:5px;cursor:pointer;transition:all .15s;}
 .actual-save-btn:hover{background:rgba(16,185,129,.1);}
+.ft-btn{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35);color:#22c55e;}
+.ft-btn:hover{background:rgba(34,197,94,.18);}
+.ft-btn.on{background:rgba(34,197,94,.32);border-color:#22c55e;color:#fff;box-shadow:0 0 12px rgba(34,197,94,.35);}
+.admin-match.is-fulltime{border-color:rgba(34,197,94,.35);background:color-mix(in srgb,#22c55e 4%,transparent);}
 .danger-btn{background:none;border:1px solid rgba(239,68,68,.4);color:var(--accent2);font-size:.82rem;font-weight:600;padding:.5rem 1rem;border-radius:7px;cursor:pointer;transition:all .15s;}
 .danger-btn:hover{background:rgba(239,68,68,.08);}
 .player-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.4rem;position:relative;}
@@ -929,6 +933,33 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .team-name{font-size:.78rem;}
 }
 
+/* End-of-game banner */
+.end-banner-overlay{position:fixed;inset:0;z-index:9700;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);transition:background .3s ease;pointer-events:none;padding:1rem;}
+.end-banner-overlay.show{background:rgba(0,0,0,.78);pointer-events:auto;backdrop-filter:blur(6px);}
+.end-banner-card{background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--group-accent);border-radius:18px;padding:1.6rem 1.6rem 1.2rem;max-width:440px;width:100%;text-align:center;transform:translateY(-110vh) scale(.85);transition:transform .6s cubic-bezier(.18,1.15,.5,1.05);box-shadow:0 18px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04),0 0 80px color-mix(in srgb,var(--group-accent) 25%,transparent);position:relative;overflow:hidden;}
+.end-banner-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at 30% 0%,color-mix(in srgb,var(--group-accent) 25%,transparent),transparent 60%);}
+.end-banner-overlay.show .end-banner-card{transform:translateY(0) scale(1);}
+.eb-tag{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.4em;color:var(--group-accent);margin-bottom:.85rem;position:relative;}
+.eb-teams{display:flex;align-items:center;justify-content:center;gap:.6rem;margin-bottom:1.1rem;position:relative;}
+.eb-team{display:flex;flex-direction:column;align-items:center;gap:.15rem;flex:1;min-width:0;}
+.eb-flag{font-size:1.6rem;line-height:1;}
+.eb-name{font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.eb-score{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:.1em;color:var(--text);flex-shrink:0;}
+.eb-you{font-size:.7rem;font-weight:700;letter-spacing:.25em;color:var(--text-muted);margin-bottom:.2rem;position:relative;}
+.eb-pts{font-family:'Bebas Neue',sans-serif;font-size:4.6rem;line-height:1;letter-spacing:.05em;margin:.1rem 0 .3rem;position:relative;}
+.eb-pts.pts-exact{color:#22c55e;text-shadow:0 0 24px rgba(34,197,94,.6);}
+.eb-pts.pts-five{color:#22c55e;text-shadow:0 0 18px rgba(34,197,94,.5);}
+.eb-pts.pts-three{color:var(--group-accent);text-shadow:0 0 18px color-mix(in srgb,var(--group-accent) 45%,transparent);}
+.eb-pts.pts-zero{color:var(--text-muted);}
+@media (prefers-reduced-motion: no-preference){
+  .end-banner-overlay.show .eb-pts{animation:ptsPop .65s cubic-bezier(.2,1.25,.55,1.05) .3s both;}
+  @keyframes ptsPop{0%{transform:scale(.35);opacity:0;}55%{transform:scale(1.18);opacity:1;}80%{transform:scale(.96);}100%{transform:scale(1);}}
+  .end-banner-overlay.show .eb-streak{animation:fadeUp .5s ease .85s both;}
+}
+.eb-pts-blurb{font-size:.78rem;color:var(--text-muted);letter-spacing:.05em;margin-bottom:1rem;position:relative;}
+.eb-streak{font-size:.95rem;font-weight:700;letter-spacing:.04em;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem;margin-bottom:1rem;position:relative;}
+.eb-dismiss{font-size:.62rem;color:var(--text-muted);letter-spacing:.18em;text-transform:uppercase;opacity:.6;position:relative;}
+
 /* God-cast (admin results → all groups) toggle */
 .godcast-btn{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:1rem;padding:.3rem .6rem;border-radius:7px;cursor:pointer;transition:all .2s;line-height:1;flex-shrink:0;}
 .godcast-btn:hover{color:var(--text);border-color:var(--text-muted);}
@@ -1128,7 +1159,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.51.2</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1737,6 +1768,24 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
               <input type="checkbox" id="lb-show-rank-change-toggle" onchange="saveLbShowRankChange()">
               <span class="toggle-slider"></span>
             </label>
+          </div>
+        </div>
+        <div class="status-card">
+          <h3>End-of-Game Banner</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">When admin marks a match Full Time (in the Results tab), the next time each player opens the Leaderboard a swoop-in banner shows the final score, the points they earned, and any active streak.</div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Show Banner</div>
+              <div class="toggle-desc">Off hides the banner for all players in this group, even when matches are marked Full Time.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="end-banner-toggle" onchange="saveEndBannerToggle()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="margin-top:.85rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="sync-refresh" onclick="testEndBanner()">🎬 Test Banner</button>
+            <button class="sync-refresh" onclick="resetEndBannerSeen()" title="Clear all 'seen' flags on this device so the banner shows again for any Full Time matches">↻ Reset Seen (this device)</button>
           </div>
         </div>
         <div class="status-card">
@@ -4023,7 +4072,9 @@ function renderPredictCard(f,pred,res){
 function renderAdminCard(f,res){
   const h=res?res.home:'', a=res?res.away:'';
   const grpLabel=f.isKnockout?(f.group||'KO'):`Grp ${f.group}`;
-  return `<div class="admin-match" id="acard-${f.id}">
+  const hasScore = h!==null&&h!==undefined&&h!=='';
+  const ftOn = !!(res && res.fullTime);
+  return `<div class="admin-match ${ftOn?'is-fulltime':''}" id="acard-${f.id}">
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
       <div style="display:flex;align-items:center;gap:.4rem;">
@@ -4031,14 +4082,40 @@ function renderAdminCard(f,res){
         <span class="score-sep">–</span>
         <input class="actual-input" type="number" min="0" max="99" id="ra-${f.id}" value="${a!==null&&a!==undefined?a:''}" placeholder="–" inputmode="numeric" oninput="adminScoreInput(this,null)" />
       </div>
-      ${(h!==null&&h!==undefined&&h!=='')? `<span class="result-badge">${h}–${a}</span>`:''}
+      ${hasScore? `<span class="result-badge">${h}–${a}</span>`:''}
     </div>
     <div class="team away"><span class="team-name">${f.away}</span><span class="team-flag">${f.af}</span></div>
     <div class="match-meta">
       <span class="match-info"><span class="group-tag">${grpLabel}</span> · ${formatDate(f.date)}</span>
-      ${(h!==null&&h!==undefined&&h!=='') ? `<button class="actual-save-btn" onclick="clearResult('${f.id}')" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;font-size:.7rem;padding:.3rem .6rem;">✕ Clear</button>` : ''}
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+        ${hasScore ? `<button class="actual-save-btn ft-btn ${ftOn?'on':''}" onclick="toggleFullTime('${f.id}')" title="Mark match as full time — triggers the end-of-game banner for players">${ftOn?'⏱ Full Time ✓':'⏱ Full Time'}</button>` : ''}
+        ${hasScore ? `<button class="actual-save-btn" onclick="clearResult('${f.id}')" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;font-size:.7rem;padding:.3rem .6rem;">✕ Clear</button>` : ''}
+      </div>
     </div>
   </div>`;
+}
+
+async function toggleFullTime(matchId){
+  if(!currentGroup) return;
+  if(!results[matchId]){ flash('Enter a score first','error'); return; }
+  const newVal = !results[matchId].fullTime;
+  try{
+    const godcast = _godcastOn && userHasGodAccess();
+    if(godcast){
+      await sb('results?match_id=eq.'+matchId,{method:'PATCH',prefer:'return=minimal',body:{full_time:newVal}});
+    } else {
+      await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+matchId,{method:'PATCH',prefer:'return=minimal',body:{full_time:newVal}});
+    }
+    results[matchId].fullTime = newVal;
+    const card = document.getElementById('acard-'+matchId);
+    if(card){
+      const f = allFixtures().find(f=>f.id===matchId);
+      if(f) card.outerHTML = renderAdminCard(f, results[matchId]);
+    }
+    // Reset the "seen" flag locally for the toggling admin if turning on, so they get the banner on next leaderboard open
+    if(newVal) localStorage.removeItem('wc26_ft_seen_'+matchId);
+    flash(newVal?(godcast?'⚡ Marked Full Time (all groups)':'⏱ Marked Full Time'):'Full Time unmarked','success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
 function markUnsaved(id){const b=document.getElementById(`sbtn-${id}`);if(b){b.textContent='Save';b.classList.remove('done');}}
@@ -4176,7 +4253,7 @@ async function loadLeaderboard(){
   try{
     const [allPreds,allResults,allPlayers,allTiebreaks]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
@@ -4279,6 +4356,7 @@ async function loadLeaderboard(){
     renderLeaderboard();
     _initLbTimeline();
     _applyLbCompactBtn();
+    maybeShowEndBanner(allPreds||[], allResults||[]);
   }catch(e){lb.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
@@ -4331,6 +4409,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.52.0',date:'22 Jun 2026',notes:['New end-of-game celebration banner. Admin → Results: each card with a score now has a ⏱ Full Time button — pressing it marks the match Full Time (respects the ⚡ god-cast toggle for cross-group fan-out). The next time each player opens the Leaderboard a swoop-in overlay shows the final score, a big +8 / +5 / +3 / 0 number, and a streak callout if they\'re on a hot/perfect/cold streak. Tap to dismiss (auto-dismisses after 7s). Tracked per-match per-device so it only fires once. Admin → Display → "End-of-Game Banner" toggles the feature group-wide, with a 🎬 Test Banner button and a ↻ Reset Seen helper that clears this device\'s seen flags. Requires two new Supabase columns: ALTER TABLE results ADD COLUMN full_time boolean DEFAULT false; ALTER TABLE groups ADD COLUMN show_end_banner boolean DEFAULT true;']},
   {v:'1.51.2',date:'22 Jun 2026',notes:['Match cards: tapping anywhere on the recent results + group table now collapses them. Previously only the tiny "tap to hide" label was clickable — tapping the table itself bubbled up to the card and switched the picks view instead.']},
   {v:'1.51.1',date:'22 Jun 2026',notes:['Admin → Players: players with no saved appearance now show a dim "default" chip (instead of nothing) so it\'s obvious who hasn\'t opened the app since v1.51. Tooltip explains it.']},
   {v:'1.51.0',date:'22 Jun 2026',notes:['Admin → Players: a small chip next to each player now shows their chosen theme + ☀️/🌙 mode (e.g. ⬤ Carbon ☀️). Theme + light/dark are now persisted server-side per player (new players.theme and players.light_mode columns required in Supabase). On first load after upgrading, each player\'s row backfills from their device localStorage automatically.','Gold shimmer: back to the v1.50.4 subtle look — one slow ~6s sweep followed by a ~4s rest, on a 10s loop.']},
@@ -6445,6 +6524,97 @@ async function savePlayerAppearancePref(patch){
     saveSession();
   }catch(e){ /* preference still works locally */ }
 }
+function loadEndBannerToggle(){
+  const tog=document.getElementById('end-banner-toggle');
+  if(tog) tog.checked = currentGroup ? currentGroup.show_end_banner !== false : true;
+}
+async function saveEndBannerToggle(){
+  if(!currentGroup) return;
+  const on = document.getElementById('end-banner-toggle')?.checked ?? true;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_end_banner:on}});
+    currentGroup = {...currentGroup, show_end_banner:on};
+    saveSession();
+    flash('End-of-game banner '+(on?'on':'off'),'success');
+  }catch(e){ flash('Save failed: '+e.message,'error'); }
+}
+function resetEndBannerSeen(){
+  let n=0;
+  for(let i=localStorage.length-1; i>=0; i--){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('wc26_ft_seen_')){ localStorage.removeItem(k); n++; }
+  }
+  flash(`Cleared ${n} seen flag${n===1?'':'s'} on this device`,'success');
+}
+
+function maybeShowEndBanner(allPreds, allResults){
+  if(!currentPlayer || !currentGroup) return;
+  if(currentGroup.show_end_banner === false) return;
+  const fts = (allResults||[]).filter(r=>r.full_time && localStorage.getItem('wc26_ft_seen_'+r.match_id)!=='1');
+  if(!fts.length) return;
+  const fixtures = allFixtures();
+  fts.sort((a,b)=>{
+    const fa=fixtures.find(f=>f.id===a.match_id), fb=fixtures.find(f=>f.id===b.match_id);
+    const ka=fa?getMatchKickoff(fa)?.getTime()||0:0, kb=fb?getMatchKickoff(fb)?.getTime()||0:0;
+    return kb-ka;
+  });
+  // Silently mark older un-seen full-times as seen so we don't queue them up forever
+  fts.slice(1).forEach(r=>localStorage.setItem('wc26_ft_seen_'+r.match_id,'1'));
+  const target = fts[0];
+  const fix = fixtures.find(f=>f.id===target.match_id);
+  if(!fix){ localStorage.setItem('wc26_ft_seen_'+target.match_id,'1'); return; }
+  const myPred = (allPreds||[]).find(p=>p.player_id===currentPlayer.id && p.match_id===target.match_id);
+  if(!myPred){ localStorage.setItem('wc26_ft_seen_'+target.match_id,'1'); return; }
+  const pts = calcPoints(myPred.home_score, myPred.away_score, target.home_score, target.away_score);
+  const myName = currentPlayer.nickname || currentPlayer.name;
+  const streak = _lbStreaks?.[myName];
+  let streakText = '';
+  if(streak?.perfect) streakText = `💎 PERFECT RUN — ${3+(streak.extra||0)} in a row!`;
+  else if(streak?.hot) streakText = `🔥 HOT STREAK — ${3+(streak.extra||0)} correct in a row!`;
+  else if(streak?.cold) streakText = `💩 Cold streak — ${3+(streak.extra||0)} duds in a row…`;
+  showEndBanner(fix, {home_score:target.home_score, away_score:target.away_score}, pts, streakText);
+  localStorage.setItem('wc26_ft_seen_'+target.match_id,'1');
+}
+
+function showEndBanner(fix, res, pts, streakText){
+  const existing = document.getElementById('end-banner-overlay');
+  if(existing) existing.remove();
+  const ptsClass = pts===8?'pts-exact':pts===5?'pts-five':pts===3?'pts-three':'pts-zero';
+  const ptsLabel = pts===8?'+8 ⭐':pts===5?'+5':pts===3?'+3':'0';
+  const ptsBlurb = pts===8?'EXACT SCORE!':pts===5?'Correct outcome + score!':pts===3?'Correct outcome':'Better luck next time';
+  const overlay = document.createElement('div');
+  overlay.id = 'end-banner-overlay';
+  overlay.className = 'end-banner-overlay';
+  overlay.innerHTML = `<div class="end-banner-card">
+    <div class="eb-tag">FULL TIME</div>
+    <div class="eb-teams">
+      <span class="eb-team"><span class="eb-flag">${fix.hf}</span><span class="eb-name">${fix.home}</span></span>
+      <span class="eb-score">${res.home_score} – ${res.away_score}</span>
+      <span class="eb-team"><span class="eb-flag">${fix.af}</span><span class="eb-name">${fix.away}</span></span>
+    </div>
+    <div class="eb-you">YOU SCORED</div>
+    <div class="eb-pts ${ptsClass}">${ptsLabel}</div>
+    <div class="eb-pts-blurb">${ptsBlurb}</div>
+    ${streakText?`<div class="eb-streak">${streakText}</div>`:''}
+    <div class="eb-dismiss">Tap to continue</div>
+  </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+  let closed = false;
+  const close = ()=>{ if(closed) return; closed=true; overlay.classList.remove('show'); setTimeout(()=>overlay.remove(),350); };
+  overlay.addEventListener('click', close);
+  setTimeout(close, 7000);
+}
+
+function testEndBanner(){
+  const fixtures = allFixtures();
+  // Pick a sample fixture — first one
+  const fix = fixtures[0] || {hf:'⚽',af:'⚽',home:'Home',away:'Away'};
+  const samplePts = [0,3,5,8][Math.floor(Math.random()*4)];
+  const sampleStreak = ['','🔥 HOT STREAK — 4 correct in a row!','💎 PERFECT RUN — 3 in a row!'][Math.floor(Math.random()*3)];
+  showEndBanner(fix, {home_score:2,away_score:1}, samplePts, sampleStreak);
+}
+
 async function syncPlayerAppearancePrefs(){
   if(!currentPlayer) return;
   const themeKey = getPlayerThemeKey();
@@ -6621,7 +6791,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -6695,8 +6865,8 @@ async function loadAdminFixtures(){
   const list=document.getElementById('admin-fixtures-list');
   list.innerHTML='<div class="loading">Loading…</div>';
   try{
-    const res=await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`);
-    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score});
+    const res=await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`);
+    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,fullTime:!!r.full_time});
     renderFixtures(list,true);
   }catch(e){list.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
@@ -6742,13 +6912,14 @@ async function adminAutoSave(matchId){
       const groups = await sb('groups?select=id');
       if(!groups||!groups.length) throw new Error('No groups found');
       await sb('results?match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
-      const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a}));
+      const ft = !!(existing&&existing.fullTime);
+      const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a,full_time:ft}));
       await sb('results',{method:'POST',prefer:'return=minimal',body:rows});
     } else {
       await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
-      await sb('results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a}});
+      await sb('results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a,full_time:!!(existing&&existing.fullTime)}});
     }
-    results[matchId]={home:+h,away:+a};
+    results[matchId]={home:+h,away:+a,fullTime:!!(existing&&existing.fullTime)};
     flash(godcast?`⚡ Saved ${h}–${a} (all groups)`:`Saved: ${h}–${a}`,'success');
     const card = document.getElementById('acard-'+matchId);
     if(card){
@@ -8612,6 +8783,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.51.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.0</div>
 </body>
 </html>
