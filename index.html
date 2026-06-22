@@ -703,22 +703,22 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     .landing-logo{animation:logoFloat 6s ease-in-out infinite, bounceIn .5s ease both;}
     @keyframes logoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
 
-    /* Streak pills — playful wiggle on render */
-    .lb-name-streak{display:inline-block;transform-origin:center;animation:streakWiggle .55s ease both;}
+    /* Streak pills — pill background stays static, inner text+emoji animates */
+    .lb-name-streak-inner{display:inline-block;transform-origin:center;animation:streakWiggle .55s ease both;}
     @keyframes streakWiggle{
       0%{transform:rotate(0) scale(.9);opacity:0;}
       40%{transform:rotate(-4deg) scale(1.08);opacity:1;}
       70%{transform:rotate(3deg) scale(1.04);}
       100%{transform:rotate(0) scale(1);}
     }
-    /* Perfect 💎 streak — slow rainbow glow */
-    .lb-name-streak-perfect{animation:streakWiggle .55s ease both, perfectGlow 3.2s ease-in-out infinite .6s;}
+    /* Perfect 💎 streak — slow blue glow on the text */
+    .lb-name-streak-perfect .lb-name-streak-inner{animation:streakWiggle .55s ease both, perfectGlow 3.2s ease-in-out infinite .6s;}
     @keyframes perfectGlow{
       0%,100%{filter:drop-shadow(0 0 1px rgba(99,102,241,.5));}
       50%{filter:drop-shadow(0 0 5px rgba(99,102,241,.85));}
     }
-    /* Hot 🔥 streak — flicker */
-    .lb-name-streak-hot{animation:streakWiggle .55s ease both, hotFlicker 1.6s ease-in-out infinite .6s;}
+    /* Hot 🔥 streak — text flicker */
+    .lb-name-streak-hot .lb-name-streak-inner{animation:streakWiggle .55s ease both, hotFlicker 1.6s ease-in-out infinite .6s;}
     @keyframes hotFlicker{
       0%,100%{filter:drop-shadow(0 0 2px rgba(249,115,22,.55));}
       50%{filter:drop-shadow(0 0 6px rgba(249,115,22,.9));}
@@ -1128,7 +1128,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.5</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4152,9 +4152,10 @@ function calcPlayerStreaks(gamePreds, rm){
 function streakNameHtml(nameHtml,streak){
   if(!streak) return nameHtml;
   const games=streak.extra>0?`<span class="lb-name-streak-games">${3+streak.extra}</span>`:'';
-  if(streak.perfect) return `<span class="lb-name-streak lb-name-streak-perfect">${nameHtml} 💎${games?' '+games:''}</span>`;
-  if(streak.hot) return `<span class="lb-name-streak lb-name-streak-hot">${nameHtml} 🔥${games?' '+games:''}</span>`;
-  if(streak.cold) return `<span class="lb-name-streak lb-name-streak-cold">${nameHtml} 💩${games?' '+games:''}</span>`;
+  const inner=(cls,emoji)=>`<span class="lb-name-streak ${cls}"><span class="lb-name-streak-inner">${nameHtml} ${emoji}${games?' '+games:''}</span></span>`;
+  if(streak.perfect) return inner('lb-name-streak-perfect','💎');
+  if(streak.hot) return inner('lb-name-streak-hot','🔥');
+  if(streak.cold) return inner('lb-name-streak-cold','💩');
   return nameHtml;
 }
 
@@ -4328,6 +4329,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.50.6',date:'22 Jun 2026',notes:['Streak pill animations now only apply to the inner text+emoji — the coloured pill background stays static.']},
   {v:'1.50.5',date:'22 Jun 2026',notes:['Gold shimmer: one clean sweep then rest off-screen, no edge flash. More gold (opacity .32) so the highlight reads clearly. 7s loop.']},
   {v:'1.50.4',date:'22 Jun 2026',notes:['Gold shimmer back to the original continuous slow scroll, just a touch subtler (lower gold opacity, slightly narrower highlight band).']},
   {v:'1.50.3',date:'22 Jun 2026',notes:['Gold shimmer: one slow ~3s sweep every 8 seconds with a longer rest between.']},
@@ -8564,6 +8566,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.6</div>
 </body>
 </html>
