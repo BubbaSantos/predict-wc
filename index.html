@@ -759,6 +759,50 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .team-name{font-size:.78rem;}
 }
 
+/* BOTTOM NAV BAR (opt-in via admin, mobile only) */
+#bottom-nav-bar{display:none;}
+@media(max-width:640px){
+  body.bottom-nav-mode #main-nav{display:none!important;}
+  body.bottom-nav-mode header{flex-wrap:nowrap;height:56px;min-height:0;padding:0 1rem;row-gap:0;}
+  body.bottom-nav-mode .header-brand{max-width:50%!important;}
+  body.bottom-nav-mode #bottom-nav-bar{
+    display:flex;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:var(--header-bg);
+    backdrop-filter:blur(10px);
+    border-top:1px solid var(--border);
+    z-index:95;
+    padding:.35rem .25rem;
+    padding-bottom:calc(.35rem + env(safe-area-inset-bottom,0px));
+    gap:.15rem;
+  }
+  body.bottom-nav-mode #bottom-nav-bar button{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    font-family:'DM Sans',sans-serif;
+    font-size:.62rem;
+    font-weight:500;
+    letter-spacing:.03em;
+    padding:.4rem .25rem;
+    border-radius:8px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.18rem;
+    transition:color .15s, background .15s;
+    line-height:1;
+  }
+  body.bottom-nav-mode #bottom-nav-bar .bn-icon{font-size:1.15rem;line-height:1;}
+  body.bottom-nav-mode #bottom-nav-bar button:hover{color:var(--text);}
+  body.bottom-nav-mode #bottom-nav-bar button.active{color:var(--group-accent);}
+  body.bottom-nav-mode .container{padding-bottom:calc(5rem + env(safe-area-inset-bottom,0px));}
+  body.bottom-nav-mode #ver-btn{bottom:calc(4.5rem + env(safe-area-inset-bottom,0px));}
+}
+
 /* ── GOD MODE ── */
 .god-screen{position:fixed;inset:0;background:var(--bg);z-index:9000;overflow-y:auto;display:none;}
 .god-screen.show{display:block;}
@@ -952,7 +996,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.46.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.47.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1561,6 +1605,20 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           </div>
         </div>
         <div class="status-card">
+          <h3>Mobile Navigation</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Choose how players reach Home, Leaderboard, Predict (and Admin) on phones.</div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Bottom Bar (mobile)</div>
+              <div class="toggle-desc">Off = classic two-row header. On = persistent icon bar pinned to the bottom of the screen.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="mobile-bottom-nav-toggle" onchange="saveMobileBottomNav()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="status-card">
           <h3>Home Page Cards</h3>
           <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">Drag to reorder · toggle to show or hide. Forfeit and Paid Places visibility is set in the Polls &amp; Entry tab.</div>
           <div id="home-cards-sortable" style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.85rem;"></div>
@@ -1685,6 +1743,12 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
     </div>
 
   </div><!-- /container -->
+  <nav id="bottom-nav-bar" aria-label="Bottom navigation">
+    <button id="bnav-home" onclick="window.location.reload(true)"><span class="bn-icon">🏠</span><span>Home</span></button>
+    <button id="bnav-leaderboard" onclick="showView('leaderboard')"><span class="bn-icon">🏆</span><span>Leaderboard</span></button>
+    <button id="bnav-predict" onclick="showView('predict')"><span class="bn-icon">⚽</span><span>Predict</span></button>
+    <button id="bnav-admin" onclick="showView('admin')" style="display:none;"><span class="bn-icon">⚙️</span><span>Admin</span></button>
+  </nav>
 </div><!-- /screen-app -->
 
 <!-- GOD MODE SCREEN -->
@@ -2904,6 +2968,7 @@ function enterApp(){
   refreshGroup().then(()=>{
     // Reload entry mode settings with fresh data
     loadEntryModeSettings();
+    applyMobileNavStyle();
     // Reload home now that group data is fresh (entry fees, etc.)
     if(document.getElementById('view-home')?.classList.contains('active')){
       loadHome();
@@ -2914,6 +2979,7 @@ function enterApp(){
   // Show admin tab if already authenticated as admin
   const adminBtn = document.getElementById('nav-admin');
   if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
+  applyMobileNavStyle();
 
   if(currentPlayer){
     document.getElementById('h-player-chip').innerHTML='<strong>'+currentPlayer.name+'</strong>';
@@ -3306,6 +3372,8 @@ function showView(name){ closeMenu();
   document.getElementById('view-'+name).classList.add('active');
   const nb=document.getElementById('nav-'+name);
   if(nb) nb.classList.add('active');
+  const bnb=document.getElementById('bnav-'+name);
+  if(bnb) bnb.classList.add('active');
   if(name==='home'){ loadHome(); startCountdown(); }
   if(name==='predict') loadPredictions();
   if(name==='leaderboard') loadLeaderboard();
@@ -4167,6 +4235,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.47.0',date:'22 Jun 2026',notes:['Admin → Display → Mobile Navigation: optional Bottom Bar mode. When on, mobile shows a persistent chin along the bottom of the screen with 🏠 Home, 🏆 Leaderboard, ⚽ Predict and ⚙️ Admin icons instead of the classic two-row header. Off by default (classic). Requires a new groups.mobile_bottom_nav boolean column in Supabase.']},
   {v:'1.46.0',date:'22 Jun 2026',notes:['Mobile header: hamburger menu replaced with a two-row top bar. Group name + theme toggle + user chip stay on the top row; Home, Leaderboard, Predict (and Admin if applicable) sit on a second row, always visible.']},
   {v:'1.45.1',date:'21 Jun 2026',notes:['Recent results & group table can now be collapsed — tap “tap to hide” to hide them, “show form & table” to bring them back (remembered across visits, applies on Home and the Predict page)','Recent results now name the opponent (e.g. “2-0 Curaçao”) instead of just showing their flag']},
   {v:'1.45.0',date:'21 Jun 2026',notes:['Match cards now show each team’s recent results (previous scorelines from this tournament, from the team’s own perspective with win/draw/loss colours) above the group table — on the Predict page (tap a card to expand) and the Home screen Live / Last Result / Next Up cards. Only completed matches before kickoff are shown, so it stays empty on matchday 1']},
@@ -4710,6 +4779,28 @@ async function saveLbShowRankChange(){
     saveSession();
     if(typeof renderLeaderboard==='function') renderLeaderboard();
     flash('Rank change indicator '+(show?'on':'off'),'success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
+function applyMobileNavStyle(){
+  const useBottom = !!(currentGroup && currentGroup.mobile_bottom_nav === true);
+  document.body.classList.toggle('bottom-nav-mode', useBottom);
+  const bAdmin = document.getElementById('bnav-admin');
+  if(bAdmin) bAdmin.style.display = isAdmin ? '' : 'none';
+}
+function loadMobileBottomNav(){
+  const tog = document.getElementById('mobile-bottom-nav-toggle');
+  if(tog) tog.checked = !!(currentGroup && currentGroup.mobile_bottom_nav === true);
+}
+async function saveMobileBottomNav(){
+  if(!currentGroup) return;
+  const on = document.getElementById('mobile-bottom-nav-toggle')?.checked ?? false;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{mobile_bottom_nav:on}});
+    currentGroup={...currentGroup,mobile_bottom_nav:on};
+    saveSession();
+    applyMobileNavStyle();
+    flash('Mobile nav: '+(on?'bottom bar':'classic'),'success');
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
@@ -6393,7 +6484,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadMobileBottomNav();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -7915,6 +8006,7 @@ function showAdminAccessPrompt(){
       saveSession();
       modal.remove();
       document.getElementById('nav-admin').style.display = 'inline-block';
+      applyMobileNavStyle();
       showView('admin');
       flash('Admin mode unlocked','success');
     } else {
@@ -8356,6 +8448,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.46.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.47.0</div>
 </body>
 </html>
