@@ -666,6 +666,110 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     }
     .result-badge:hover::after{animation:badgeShine .8s ease;}
     @keyframes badgeShine{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+
+    /* ── MOBILE-FRIENDLY FLAIR (works on touch too) ── */
+
+    /* Tap press feedback on cards (touch + mouse) */
+    .lb-row:active,.home-card:active,.match-card:active,.admin-match:active,.landing-card:active,.mini-lb-row:active{
+      transform:scale(.985);
+      transition:transform .08s ease;
+    }
+
+    /* Loading text — shimmery skeleton feel */
+    .loading{
+      background:linear-gradient(110deg,var(--text-muted) 0%,var(--text-muted) 38%,var(--text) 50%,var(--text-muted) 62%,var(--text-muted) 100%);
+      background-size:220% 100%;
+      -webkit-background-clip:text;background-clip:text;
+      -webkit-text-fill-color:transparent;color:transparent;
+      animation:loadShimmer 1.6s linear infinite;
+    }
+    @keyframes loadShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+    /* Group hero icon — idle bounce every few seconds */
+    .group-hero-icon{display:inline-block;animation:idleBounce 5s ease-in-out infinite;}
+    @keyframes idleBounce{
+      0%,82%,100%{transform:translateY(0) rotate(0);}
+      88%{transform:translateY(-5px) rotate(-6deg);}
+      92%{transform:translateY(2px) rotate(4deg);}
+      96%{transform:translateY(0) rotate(0);}
+    }
+
+    /* Landing logo — gentle float */
+    .landing-logo{animation:logoFloat 6s ease-in-out infinite, bounceIn .5s ease both;}
+    @keyframes logoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+
+    /* Streak pills — playful wiggle on render */
+    .lb-name-streak{display:inline-block;transform-origin:center;animation:streakWiggle .55s ease both;}
+    @keyframes streakWiggle{
+      0%{transform:rotate(0) scale(.9);opacity:0;}
+      40%{transform:rotate(-4deg) scale(1.08);opacity:1;}
+      70%{transform:rotate(3deg) scale(1.04);}
+      100%{transform:rotate(0) scale(1);}
+    }
+    /* Perfect 💎 streak — slow rainbow glow */
+    .lb-name-streak-perfect{animation:streakWiggle .55s ease both, perfectGlow 3.2s ease-in-out infinite .6s;}
+    @keyframes perfectGlow{
+      0%,100%{filter:drop-shadow(0 0 1px rgba(99,102,241,.5));}
+      50%{filter:drop-shadow(0 0 5px rgba(99,102,241,.85));}
+    }
+    /* Hot 🔥 streak — flicker */
+    .lb-name-streak-hot{animation:streakWiggle .55s ease both, hotFlicker 1.6s ease-in-out infinite .6s;}
+    @keyframes hotFlicker{
+      0%,100%{filter:drop-shadow(0 0 2px rgba(249,115,22,.55));}
+      50%{filter:drop-shadow(0 0 6px rgba(249,115,22,.9));}
+    }
+
+    /* +5/+8 pts badge — radiating green pulse */
+    .pts-badge.green{animation:popIn .3s ease, greenRadiate 2.4s ease-in-out infinite .3s;}
+    @keyframes greenRadiate{
+      0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5);}
+      50%{box-shadow:0 0 0 6px rgba(34,197,94,0);}
+    }
+
+    /* Live dot — heartbeat (overrides earlier plain pulse) */
+    .live-dot{animation:livebeat 1.3s ease-in-out infinite;}
+    @keyframes livebeat{
+      0%,30%,60%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.6);}
+      15%{transform:scale(1.45);box-shadow:0 0 0 6px rgba(239,68,68,0);}
+      45%{transform:scale(1.18);box-shadow:0 0 0 3px rgba(239,68,68,0);}
+    }
+
+    /* God-cast button — floating sparkle halo when on */
+    .godcast-btn{position:relative;}
+    .godcast-btn.on::after{
+      content:'⚡';position:absolute;top:-6px;right:-6px;font-size:.55rem;
+      filter:drop-shadow(0 0 4px rgba(253,224,71,.9));
+      animation:sparkleOrbit 2.6s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes sparkleOrbit{
+      0%,100%{transform:translate(0,0) scale(.85);opacity:.55;}
+      50%{transform:translate(-4px,3px) scale(1.15) rotate(15deg);opacity:1;}
+    }
+
+    /* Match-card going live — quick attention pop */
+    .match-card.is-live,.hmc-label.live{animation:liveCardPop .35s ease both;}
+    @keyframes liveCardPop{
+      0%{transform:scale(1);}
+      45%{transform:scale(1.03);}
+      100%{transform:scale(1);}
+    }
+
+    /* Save-btn flash on .done — green ring radiate */
+    .save-btn.done{animation:popIn .3s ease, greenRadiate 2s ease-in-out 2;}
+
+    /* Toggle switch — smooth knob bounce on flip */
+    .toggle-switch input:checked + .toggle-slider:before{animation:knobPop .25s ease;}
+    @keyframes knobPop{0%{transform:scale(.85) translateX(0);}50%{transform:scale(1.15);}100%{transform:scale(1);}}
+
+    /* Tournament/leaderboard rank-change arrows — slide in */
+    .lb-rank-change{display:inline-block;animation:rankChangePop .45s ease both;}
+    @keyframes rankChangePop{
+      0%{opacity:0;transform:translateY(4px) scale(.7);}
+      60%{opacity:1;transform:translateY(-1px) scale(1.1);}
+      100%{transform:translateY(0) scale(1);}
+    }
+
   }
 
   /* SCOTLAND EASTER EGG */
@@ -1040,7 +1144,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.1</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4240,6 +4344,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.50.0',date:'22 Jun 2026',notes:['Mobile-friendly flair pass: cards squish slightly when tapped, loading text gets a shimmering skeleton sweep, the group-hero emoji gives a periodic idle bounce/wiggle, the landing logo gently floats, streak pills wiggle in with 💎 perfect runs glowing blue-violet and 🔥 hot runs flickering orange, the live red dot now beats like a heart, +5/+8 pts badges radiate green, the ⚡ god-cast button gets an orbiting sparkle when active, toggle-switch knobs bounce on flip, rank-change arrows pop into place, and going-live match cards do a quick attention pop. All gated on prefers-reduced-motion.']},
   {v:'1.49.1',date:'22 Jun 2026',notes:['Gold shimmer on the leaderboard now applies to every joint 1st row, not just the top one.']},
   {v:'1.49.0',date:'22 Jun 2026',notes:['Admin → Results: new ⚡ god-cast toggle in the top-right of the Results tab (only visible if you have God Mode). Off by default = scoreline saves/clears stay scoped to this group. Tap to make it glow gold, and saves/clears propagate to every group at once.','Visual polish pass: staggered fade-in for leaderboard rows, home cards and match groups; hover lift + soft shadow on cards (pointer devices only); animated gold shimmer behind the #1 leaderboard row; stronger pulsing glow on the Today dot; subtle accent-coloured focus glow on score inputs; rotate-and-pop on the theme toggle; gentle wobble on the logo when you hover the brand; small shine sweep on result badges; reduced-motion respected throughout.']},
   {v:'1.48.0',date:'22 Jun 2026',notes:['Admin → Results: saving or clearing a scoreline now propagates to every group at once (no need to drop into God Mode). Admin must still be logged into one group to do it.','Admin → Results: previous matches are tucked behind a “Previous Matches” dropdown; today’s and any live games sit at the top, upcoming games grouped by date below — matches the Predict page layout.','Reverted v1.47.0 bottom-bar mobile nav experiment.']},
@@ -8470,6 +8575,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.0</div>
 </body>
 </html>
