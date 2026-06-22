@@ -637,11 +637,16 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     .lb-row.lb-gold{position:relative;overflow:hidden;}
     .lb-row.lb-gold::before{
       content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-      background:linear-gradient(110deg,transparent 38%,rgba(251,191,36,.11) 50%,transparent 62%);
-      background-size:220% 100%;
-      animation:goldShimmer 6s linear infinite;
+      background:linear-gradient(110deg,transparent 35%,rgba(251,191,36,.32) 50%,transparent 65%);
+      background-size:300% 100%;
+      animation:goldShimmer 7s ease-in-out infinite;
     }
-    @keyframes goldShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+    /* One clean sweep (left→right), then rest off-screen */
+    @keyframes goldShimmer{
+      0%{background-position:300% 0;}
+      40%{background-position:-300% 0;}
+      100%{background-position:-300% 0;}
+    }
 
     /* Match card saved — small wiggle then settle */
     @keyframes savedWiggle{0%{transform:rotate(0)}25%{transform:rotate(.6deg)}50%{transform:rotate(-.6deg)}75%{transform:rotate(.3deg)}100%{transform:rotate(0)}}
@@ -1123,7 +1128,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.4</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4323,6 +4328,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.50.5',date:'22 Jun 2026',notes:['Gold shimmer: one clean sweep then rest off-screen, no edge flash. More gold (opacity .32) so the highlight reads clearly. 7s loop.']},
   {v:'1.50.4',date:'22 Jun 2026',notes:['Gold shimmer back to the original continuous slow scroll, just a touch subtler (lower gold opacity, slightly narrower highlight band).']},
   {v:'1.50.3',date:'22 Jun 2026',notes:['Gold shimmer: one slow ~3s sweep every 8 seconds with a longer rest between.']},
   {v:'1.50.2',date:'22 Jun 2026',notes:['Gold shimmer on the 1st-place leaderboard row: slowed to a quick sweep every 10 seconds with a long pause between sweeps, instead of a constant slow scroll.']},
@@ -8558,6 +8564,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.4</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.5</div>
 </body>
 </html>
