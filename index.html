@@ -586,6 +586,88 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   body.light .match-card.saved { background:rgba(16,185,129,.08); border-color:rgba(16,185,129,.5) !important; }
 
 
+  /* ── EXTRA FLAIR (additive, respects prefers-reduced-motion) ── */
+  @media (prefers-reduced-motion: no-preference){
+    /* Staggered entry for lists — each child enters a bit after the last */
+    .lb-row{animation:fadeUp .35s ease both;}
+    .lb-row:nth-child(1){animation-delay:.02s;}
+    .lb-row:nth-child(2){animation-delay:.06s;}
+    .lb-row:nth-child(3){animation-delay:.10s;}
+    .lb-row:nth-child(4){animation-delay:.14s;}
+    .lb-row:nth-child(5){animation-delay:.18s;}
+    .lb-row:nth-child(n+6){animation-delay:.22s;}
+    .matchday-group{animation:fadeUp .35s ease both;}
+    .matchday-group:nth-of-type(2){animation-delay:.05s;}
+    .matchday-group:nth-of-type(3){animation-delay:.10s;}
+    .matchday-group:nth-of-type(4){animation-delay:.15s;}
+    .matchday-group:nth-of-type(n+5){animation-delay:.20s;}
+    .home-card{animation:fadeUp .4s ease both;}
+    .home-card:nth-of-type(2){animation-delay:.06s;}
+    .home-card:nth-of-type(3){animation-delay:.12s;}
+    .home-card:nth-of-type(4){animation-delay:.18s;}
+    .home-card:nth-of-type(n+5){animation-delay:.24s;}
+    .mini-lb-row{animation:fadeUp .3s ease both;}
+    .mini-lb-row:nth-child(2){animation-delay:.04s;}
+    .mini-lb-row:nth-child(3){animation-delay:.08s;}
+    .mini-lb-row:nth-child(n+4){animation-delay:.12s;}
+    .admin-match{animation:fadeUp .3s ease both;}
+
+    /* Hover lift on cards (pointer devices only) */
+    @media (hover:hover) and (pointer:fine){
+      .home-card,.match-card,.admin-match,.lb-row,.landing-card{transition:transform .18s ease, box-shadow .18s ease, border-color .15s;}
+      .home-card:hover,.match-card:hover,.admin-match:hover,.lb-row:hover,.landing-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.18);}
+      .home-cta-btn:hover,.btn-ghost:hover{transform:translateY(-1px);}
+      .btn:hover,.save-btn:hover,.actual-save-btn:hover{transform:translateY(-1px);filter:brightness(1.08);}
+      .theme-btn:hover{transform:rotate(-12deg) scale(1.08);}
+      .header-logo{display:inline-block;transition:transform .25s ease;}
+      .header-brand:hover .header-logo{transform:rotate(-10deg) scale(1.1);}
+    }
+
+    /* Punchy active press */
+    .btn:active,.save-btn:active,.home-cta-btn:active,.actual-save-btn:active,.btn-ghost:active{transform:translateY(0) scale(.97);}
+
+    /* Today-dot — stronger pulse + soft glow */
+    .today-dot{box-shadow:0 0 0 0 currentColor;animation:todayDotPulse 2.2s ease-in-out infinite;}
+    @keyframes todayDotPulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,.55), 0 0 6px rgba(99,102,241,.5);}
+      50%{box-shadow:0 0 0 8px rgba(99,102,241,0), 0 0 10px rgba(99,102,241,.75);}
+    }
+
+    /* Leaderboard #1 — subtle gold shimmer overlay */
+    .lb-row:first-child{position:relative;overflow:hidden;}
+    .lb-row:first-child::before{
+      content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+      background:linear-gradient(110deg,transparent 35%,rgba(251,191,36,.18) 50%,transparent 65%);
+      background-size:220% 100%;
+      animation:goldShimmer 5.5s linear infinite;
+    }
+    @keyframes goldShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+    /* Match card saved — small wiggle then settle */
+    @keyframes savedWiggle{0%{transform:rotate(0)}25%{transform:rotate(.6deg)}50%{transform:rotate(-.6deg)}75%{transform:rotate(.3deg)}100%{transform:rotate(0)}}
+    .match-card.saved{animation:savedPulse 1.2s ease, savedWiggle .35s ease;}
+
+    /* View change — gentle slide-in */
+    .view.active{animation:viewIn .25s ease both;}
+    @keyframes viewIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+    /* Score input focus — soft glow ring */
+    .score-input:focus,.mc-sinput:focus,.actual-input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--group-accent) 22%,transparent);border-color:var(--group-accent);}
+
+    /* Theme toggle — pressed bounce */
+    .theme-btn:active{transform:rotate(-30deg) scale(.95);}
+
+    /* Result badge — bigger pop with a tiny shine sweep */
+    .result-badge{position:relative;overflow:hidden;}
+    .result-badge::after{
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.35) 50%,transparent 60%);
+      transform:translateX(-120%);
+    }
+    .result-badge:hover::after{animation:badgeShine .8s ease;}
+    @keyframes badgeShine{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+  }
+
   /* SCOTLAND EASTER EGG */
   #scotland-banner-top{position:fixed;top:0;left:0;right:0;z-index:9999;pointer-events:none;overflow:hidden;height:0;}
   #scotland-banner-bottom{position:fixed;bottom:0;left:0;right:0;z-index:9999;pointer-events:none;overflow:hidden;height:0;}
@@ -758,6 +840,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .lb-row{grid-template-columns:2.5rem 1fr auto;}
   .team-name{font-size:.78rem;}
 }
+
+/* God-cast (admin results → all groups) toggle */
+.godcast-btn{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:1rem;padding:.3rem .6rem;border-radius:7px;cursor:pointer;transition:all .2s;line-height:1;flex-shrink:0;}
+.godcast-btn:hover{color:var(--text);border-color:var(--text-muted);}
+.godcast-btn.on{color:#fde047;border-color:rgba(253,224,71,.55);background:rgba(253,224,71,.08);box-shadow:0 0 12px rgba(253,224,71,.45);animation:godcastPulse 2s ease-in-out infinite;}
+@keyframes godcastPulse{0%,100%{box-shadow:0 0 10px rgba(253,224,71,.35);}50%{box-shadow:0 0 16px rgba(253,224,71,.6);}}
 
 /* ── GOD MODE ── */
 .god-screen{position:fixed;inset:0;background:var(--bg);z-index:9000;overflow-y:auto;display:none;}
@@ -952,7 +1040,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.48.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1274,7 +1362,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button id="admin-tab-changelog" class="admin-tab" onclick="switchAdminTab('changelog')" style="display:none;">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
-        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Results update automatically within 5 minutes of a match finishing. You can also enter or override scores manually below.</p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:1rem;">
+          <p style="font-size:.78rem;color:var(--text-muted);margin:0;flex:1;">Results update automatically within 5 minutes of a match finishing. You can also enter or override scores manually below.</p>
+          <button id="results-godcast-btn" class="godcast-btn" onclick="toggleGodcast()" title="God Mode: write results to every group" style="display:none;">⚡</button>
+        </div>
         <div id="admin-fixtures-list"><div class="loading">Loading…</div></div>
       </div>
       <div id="admin-panel-players" class="admin-panel">
@@ -2199,6 +2290,7 @@ let currentPlayer  = null; // {id, name, group_id}
 let isAdmin        = false;
 let _godUnlocked   = false;
 let _inGodSession  = false;
+let _godcastOn     = localStorage.getItem('wc26_godcast')==='1';
 let _godOriginalPlayer = null;
 let _godOriginalGroup  = null;
 let predictions    = {};
@@ -4148,6 +4240,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.49.0',date:'22 Jun 2026',notes:['Admin → Results: new ⚡ god-cast toggle in the top-right of the Results tab (only visible if you have God Mode). Off by default = scoreline saves/clears stay scoped to this group. Tap to make it glow gold, and saves/clears propagate to every group at once.','Visual polish pass: staggered fade-in for leaderboard rows, home cards and match groups; hover lift + soft shadow on cards (pointer devices only); animated gold shimmer behind the #1 leaderboard row; stronger pulsing glow on the Today dot; subtle accent-coloured focus glow on score inputs; rotate-and-pop on the theme toggle; gentle wobble on the logo when you hover the brand; small shine sweep on result badges; reduced-motion respected throughout.']},
   {v:'1.48.0',date:'22 Jun 2026',notes:['Admin → Results: saving or clearing a scoreline now propagates to every group at once (no need to drop into God Mode). Admin must still be logged into one group to do it.','Admin → Results: previous matches are tucked behind a “Previous Matches” dropdown; today’s and any live games sit at the top, upcoming games grouped by date below — matches the Predict page layout.','Reverted v1.47.0 bottom-bar mobile nav experiment.']},
   {v:'1.46.0',date:'22 Jun 2026',notes:['Mobile header: hamburger menu replaced with a two-row top bar. Group name + theme toggle + user chip stay on the top row; Home, Leaderboard, Predict (and Admin if applicable) sit on a second row, always visible.']},
   {v:'1.45.1',date:'21 Jun 2026',notes:['Recent results & group table can now be collapsed — tap “tap to hide” to hide them, “show form & table” to bring them back (remembered across visits, applies on Home and the Predict page)','Recent results now name the opponent (e.g. “2-0 Curaçao”) instead of just showing their flag']},
@@ -5819,6 +5912,29 @@ function updateGodModeMenuItem(){
   if(!btn) return;
   const hasAccess = _godUnlocked || _inGodSession || (currentPlayer && (currentPlayer.is_admin || currentPlayer.god_mode));
   btn.style.display = hasAccess ? '' : 'none';
+  updateGodcastBtn();
+}
+function userHasGodAccess(){
+  return !!(_godUnlocked || _inGodSession || (currentPlayer && (currentPlayer.is_admin || currentPlayer.god_mode)));
+}
+function updateGodcastBtn(){
+  const btn = document.getElementById('results-godcast-btn');
+  if(!btn) return;
+  const access = userHasGodAccess();
+  btn.style.display = access ? '' : 'none';
+  if(!access && _godcastOn){ _godcastOn=false; localStorage.removeItem('wc26_godcast'); }
+  btn.classList.toggle('on', _godcastOn);
+  btn.title = _godcastOn
+    ? '⚡ Writing results to EVERY group — tap to scope to this group only'
+    : 'God Mode: write results to every group';
+}
+function toggleGodcast(){
+  if(!userHasGodAccess()){ _godcastOn=false; updateGodcastBtn(); return; }
+  _godcastOn = !_godcastOn;
+  if(_godcastOn) localStorage.setItem('wc26_godcast','1');
+  else localStorage.removeItem('wc26_godcast');
+  updateGodcastBtn();
+  flash(_godcastOn?'⚡ Results will update for every group':'Results scoped to this group only','success');
 }
 
 function updatePayChoiceMenuItem(){
@@ -6445,6 +6561,7 @@ function switchAdminTab(name){
 
 async function loadAdminFixtures(){
   if(!currentGroup)return;
+  updateGodcastBtn();
   const list=document.getElementById('admin-fixtures-list');
   list.innerHTML='<div class="loading">Loading…</div>';
   try{
@@ -6490,13 +6607,19 @@ async function adminAutoSave(matchId){
   const existing = results[matchId];
   if(existing && existing.home===+h && existing.away===+a) return;
   try{
-    const groups = await sb('groups?select=id');
-    if(!groups||!groups.length) throw new Error('No groups found');
-    await sb('results?match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
-    const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a}));
-    await sb('results',{method:'POST',prefer:'return=minimal',body:rows});
+    const godcast = _godcastOn && userHasGodAccess();
+    if(godcast){
+      const groups = await sb('groups?select=id');
+      if(!groups||!groups.length) throw new Error('No groups found');
+      await sb('results?match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
+      const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a}));
+      await sb('results',{method:'POST',prefer:'return=minimal',body:rows});
+    } else {
+      await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
+      await sb('results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a}});
+    }
     results[matchId]={home:+h,away:+a};
-    flash(`Saved: ${h}–${a} (all groups)`,'success');
+    flash(godcast?`⚡ Saved ${h}–${a} (all groups)`:`Saved: ${h}–${a}`,'success');
     const card = document.getElementById('acard-'+matchId);
     if(card){
       const f = allFixtures().find(f=>f.id===matchId);
@@ -6524,7 +6647,12 @@ function adminAdvanceToNext(currentMatchId){
 async function clearResult(id){
   if(!currentGroup) return;
   try{
-    await sb('results?match_id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    const godcast = _godcastOn && userHasGodAccess();
+    if(godcast){
+      await sb('results?match_id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    } else {
+      await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
+    }
     delete results[id];
     // Clear the inputs
     const rh = document.getElementById('rh-'+id);
@@ -8341,6 +8469,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.48.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.0</div>
 </body>
 </html>
