@@ -685,8 +685,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
     }
     @keyframes loadShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
-    /* Group hero icon — idle bounce every few seconds */
-    .group-hero-icon{display:inline-block;animation:idleBounce 5s ease-in-out infinite;}
+    /* Top-bar logo emoji — idle bounce every few seconds */
+    .header-logo{display:inline-block;animation:idleBounce 5s ease-in-out infinite;}
     @keyframes idleBounce{
       0%,82%,100%{transform:translateY(0) rotate(0);}
       88%{transform:translateY(-5px) rotate(-6deg);}
@@ -732,27 +732,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       0%,30%,60%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.6);}
       15%{transform:scale(1.45);box-shadow:0 0 0 6px rgba(239,68,68,0);}
       45%{transform:scale(1.18);box-shadow:0 0 0 3px rgba(239,68,68,0);}
-    }
-
-    /* God-cast button — floating sparkle halo when on */
-    .godcast-btn{position:relative;}
-    .godcast-btn.on::after{
-      content:'⚡';position:absolute;top:-6px;right:-6px;font-size:.55rem;
-      filter:drop-shadow(0 0 4px rgba(253,224,71,.9));
-      animation:sparkleOrbit 2.6s ease-in-out infinite;
-      pointer-events:none;
-    }
-    @keyframes sparkleOrbit{
-      0%,100%{transform:translate(0,0) scale(.85);opacity:.55;}
-      50%{transform:translate(-4px,3px) scale(1.15) rotate(15deg);opacity:1;}
-    }
-
-    /* Match-card going live — quick attention pop */
-    .match-card.is-live,.hmc-label.live{animation:liveCardPop .35s ease both;}
-    @keyframes liveCardPop{
-      0%{transform:scale(1);}
-      45%{transform:scale(1.03);}
-      100%{transform:scale(1);}
     }
 
     /* Save-btn flash on .done — green ring radiate */
@@ -1144,7 +1123,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4344,6 +4323,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.50.1',date:'22 Jun 2026',notes:['Idle bounce/wiggle moved from the group-hero card emoji to the top-bar header logo so it’s always visible.','Removed the orbiting ⚡ sparkle on the god-cast button; gold glow stays.','Dialled back the going-live attention pop — match cards and the Live Now label no longer scale up, they just inherit the existing live styling.']},
   {v:'1.50.0',date:'22 Jun 2026',notes:['Mobile-friendly flair pass: cards squish slightly when tapped, loading text gets a shimmering skeleton sweep, the group-hero emoji gives a periodic idle bounce/wiggle, the landing logo gently floats, streak pills wiggle in with 💎 perfect runs glowing blue-violet and 🔥 hot runs flickering orange, the live red dot now beats like a heart, +5/+8 pts badges radiate green, the ⚡ god-cast button gets an orbiting sparkle when active, toggle-switch knobs bounce on flip, rank-change arrows pop into place, and going-live match cards do a quick attention pop. All gated on prefers-reduced-motion.']},
   {v:'1.49.1',date:'22 Jun 2026',notes:['Gold shimmer on the leaderboard now applies to every joint 1st row, not just the top one.']},
   {v:'1.49.0',date:'22 Jun 2026',notes:['Admin → Results: new ⚡ god-cast toggle in the top-right of the Results tab (only visible if you have God Mode). Off by default = scoreline saves/clears stay scoped to this group. Tap to make it glow gold, and saves/clears propagate to every group at once.','Visual polish pass: staggered fade-in for leaderboard rows, home cards and match groups; hover lift + soft shadow on cards (pointer devices only); animated gold shimmer behind the #1 leaderboard row; stronger pulsing glow on the Today dot; subtle accent-coloured focus glow on score inputs; rotate-and-pop on the theme toggle; gentle wobble on the logo when you hover the brand; small shine sweep on result badges; reduced-motion respected throughout.']},
@@ -8575,6 +8555,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.50.1</div>
 </body>
 </html>
