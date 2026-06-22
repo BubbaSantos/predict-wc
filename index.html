@@ -633,9 +633,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
       50%{box-shadow:0 0 0 8px rgba(99,102,241,0), 0 0 10px rgba(99,102,241,.75);}
     }
 
-    /* Leaderboard #1 — subtle gold shimmer overlay */
-    .lb-row:first-child{position:relative;overflow:hidden;}
-    .lb-row:first-child::before{
+    /* Leaderboard #1 — subtle gold shimmer overlay (covers joint 1sts) */
+    .lb-row.lb-gold{position:relative;overflow:hidden;}
+    .lb-row.lb-gold::before{
       content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
       background:linear-gradient(110deg,transparent 35%,rgba(251,191,36,.18) 50%,transparent 65%);
       background-size:220% 100%;
@@ -1040,7 +1040,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4240,6 +4240,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.49.1',date:'22 Jun 2026',notes:['Gold shimmer on the leaderboard now applies to every joint 1st row, not just the top one.']},
   {v:'1.49.0',date:'22 Jun 2026',notes:['Admin → Results: new ⚡ god-cast toggle in the top-right of the Results tab (only visible if you have God Mode). Off by default = scoreline saves/clears stay scoped to this group. Tap to make it glow gold, and saves/clears propagate to every group at once.','Visual polish pass: staggered fade-in for leaderboard rows, home cards and match groups; hover lift + soft shadow on cards (pointer devices only); animated gold shimmer behind the #1 leaderboard row; stronger pulsing glow on the Today dot; subtle accent-coloured focus glow on score inputs; rotate-and-pop on the theme toggle; gentle wobble on the logo when you hover the brand; small shine sweep on result badges; reduced-motion respected throughout.']},
   {v:'1.48.0',date:'22 Jun 2026',notes:['Admin → Results: saving or clearing a scoreline now propagates to every group at once (no need to drop into God Mode). Admin must still be logged into one group to do it.','Admin → Results: previous matches are tucked behind a “Previous Matches” dropdown; today’s and any live games sit at the top, upcoming games grouped by date below — matches the Predict page layout.','Reverted v1.47.0 bottom-bar mobile nav experiment.']},
   {v:'1.46.0',date:'22 Jun 2026',notes:['Mobile header: hamburger menu replaced with a two-row top bar. Group name + theme toggle + user chip stay on the top row; Home, Leaderboard, Predict (and Admin if applicable) sit on a second row, always visible.']},
@@ -8469,6 +8470,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.49.1</div>
 </body>
 </html>
