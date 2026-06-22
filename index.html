@@ -1128,7 +1128,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.51.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.51.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4331,6 +4331,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.51.1',date:'22 Jun 2026',notes:['Admin → Players: players with no saved appearance now show a dim "default" chip (instead of nothing) so it\'s obvious who hasn\'t opened the app since v1.51. Tooltip explains it.']},
   {v:'1.51.0',date:'22 Jun 2026',notes:['Admin → Players: a small chip next to each player now shows their chosen theme + ☀️/🌙 mode (e.g. ⬤ Carbon ☀️). Theme + light/dark are now persisted server-side per player (new players.theme and players.light_mode columns required in Supabase). On first load after upgrading, each player\'s row backfills from their device localStorage automatically.','Gold shimmer: back to the v1.50.4 subtle look — one slow ~6s sweep followed by a ~4s rest, on a 10s loop.']},
   {v:'1.50.6',date:'22 Jun 2026',notes:['Streak pill animations now only apply to the inner text+emoji — the coloured pill background stays static.']},
   {v:'1.50.5',date:'22 Jun 2026',notes:['Gold shimmer: one clean sweep then rest off-screen, no edge flash. More gold (opacity .32) so the highlight reads clearly. 7s loop.']},
@@ -6800,11 +6801,15 @@ async function clearResult(id){
 
 // ── PLAYERS PANEL ─────────────────────────
 function playerAppearanceChipHtml(theme, lightMode){
-  if(!theme && (lightMode==null)) return '';
-  const label = (theme && THEMES[theme]?.label) || '—';
+  const hasAny = !!theme || lightMode!=null;
+  const label = (theme && THEMES[theme]?.label) || (hasAny ? '—' : 'default');
   const accent = (theme && THEMES[theme]?.preview?.[2]) || 'var(--text-muted)';
   const modeIcon = lightMode===true ? '☀️' : lightMode===false ? '🌙' : '';
-  return `<span class="player-appearance-chip" title="Theme: ${label}${modeIcon?' · '+(lightMode?'Light':'Dark')+' mode':''}" style="display:inline-flex;align-items:center;gap:.25rem;font-size:.62rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.05rem .35rem;margin-left:.35rem;vertical-align:middle;letter-spacing:.02em;white-space:nowrap;"><span style="display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:${accent};"></span>${label}${modeIcon?' '+modeIcon:''}</span>`;
+  const title = hasAny
+    ? `Theme: ${label}${modeIcon?' · '+(lightMode?'Light':'Dark')+' mode':''}`
+    : 'No saved appearance yet — this player hasn\'t opened the app since the v1.51 update';
+  const dim = hasAny ? '' : 'opacity:.55;';
+  return `<span class="player-appearance-chip" title="${title}" style="display:inline-flex;align-items:center;gap:.25rem;font-size:.62rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.05rem .35rem;margin-left:.35rem;vertical-align:middle;letter-spacing:.02em;white-space:nowrap;${dim}"><span style="display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:${accent};"></span>${label}${modeIcon?' '+modeIcon:''}</span>`;
 }
 
 async function loadPlayersPanel(){
@@ -8606,6 +8611,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.51.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.51.1</div>
 </body>
 </html>
