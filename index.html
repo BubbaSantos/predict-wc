@@ -1159,7 +1159,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.2</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.53.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1279,6 +1279,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button class="profile-menu-item" onclick="showNicknameModal();closeProfileMenu()">✏️ Change Nickname</button>
         <button class="profile-menu-item" onclick="showChangePinModal();closeProfileMenu()">🔑 Change PIN</button>
         <button class="profile-menu-item" onclick="showMyPredictions();closeProfileMenu()">📊 My Predictions</button>
+        <button class="profile-menu-item" onclick="showMyStats();closeProfileMenu()">📈 My Stats</button>
         <button class="profile-menu-item" onclick="showPlayerThemeModal();closeProfileMenu()">🎨 Theme</button>
 <button id="profile-god-btn" class="profile-menu-item" onclick="showGodMode();closeProfileMenu()">⚡ God Mode</button>
         <div style="border-top:1px solid var(--border);margin:.25rem 0;"></div>
@@ -1814,6 +1815,16 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             </div>
           </div>
           <button class="sync-refresh" onclick="saveHomeCardSettings()">Save Home Cards</button>
+        </div>
+        <div class="status-card">
+          <h3>Personal Player Stats</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">Each player can open their own stats page from the profile menu (📈 My Stats). Untick a stat to hide it from everyone's page.</div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
+            <button class="sync-refresh" type="button" onclick="togglePlayerStatsAll(true)">Enable all</button>
+            <button class="sync-refresh" type="button" onclick="togglePlayerStatsAll(false)">Disable all</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.35rem;" id="player-stats-toggles"></div>
+          <button class="sync-refresh" style="margin-top:.85rem;" onclick="savePlayerStatsSettings()">Save Player Stats</button>
         </div>
         <div class="status-card">
           <h3>News Ticker</h3>
@@ -4391,6 +4402,46 @@ const HOME_CARD_DEFS = [
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
   {key:'stats',     id:'home-stats-card',     label:'Tournament Stats',   toggleId:'home-show-stats-toggle',     flag:'home_show_stats', defaultOff:true},
 ];
+// Personal stats shown on a player's own "📈 My Stats" page. Each is individually
+// hideable by an admin (Admin → Display → Personal Player Stats). The key is stored
+// in groups.player_stats_hidden when switched off. Order here = order on the page.
+const PLAYER_STAT_DEFS = [
+  {key:'total_pts',       emoji:'🎯', label:'Total Points'},
+  {key:'current_pos',     emoji:'📍', label:'Current Position'},
+  {key:'best_pos',        emoji:'🏆', label:'Highest Position'},
+  {key:'worst_pos',       emoji:'🪣', label:'Lowest Position'},
+  {key:'net_move',        emoji:'↕️', label:'Net Movement'},
+  {key:'days_top',        emoji:'🏔️', label:'Matchdays at #1'},
+  {key:'days_podium',     emoji:'🥉', label:'Matchdays in Top 3'},
+  {key:'days_bottom',     emoji:'📉', label:'Matchdays at the Bottom'},
+  {key:'fav_pos',         emoji:'🪑', label:'Most-Held Position'},
+  {key:'predictions_made',emoji:'📝', label:'Predictions Made'},
+  {key:'avg_pts',         emoji:'📊', label:'Average Points / Game'},
+  {key:'exact_scores',    emoji:'⭐', label:'Correct Scores'},
+  {key:'correct_results', emoji:'✅', label:'Correct Results'},
+  {key:'wrong',           emoji:'❌', label:'Wrong Predictions'},
+  {key:'exact_rate',      emoji:'🎲', label:'Correct-Score Rate'},
+  {key:'result_rate',     emoji:'✔️', label:'Correct-Result Rate'},
+  {key:'perfect_hauls',   emoji:'💥', label:'Perfect Hauls (+8)'},
+  {key:'solo_exacts',     emoji:'🦄', label:'Solo Correct Scores'},
+  {key:'best_matchday',   emoji:'🚀', label:'Best Matchday'},
+  {key:'worst_matchday',  emoji:'🥶', label:'Worst Matchday'},
+  {key:'current_streak',  emoji:'🔥', label:'Current Streak'},
+  {key:'longest_perfect', emoji:'💎', label:'Longest Perfect Streak'},
+  {key:'longest_hot',     emoji:'🔥', label:'Longest Hot Streak'},
+  {key:'longest_cold',    emoji:'💩', label:'Longest Cold Streak'},
+  {key:'perfect_streaks', emoji:'💎', label:'Perfect Streaks'},
+  {key:'hot_streaks',     emoji:'🔥', label:'Hot Streaks'},
+  {key:'cold_streaks',    emoji:'💩', label:'Shite Streaks'},
+  {key:'fav_scoreline',   emoji:'🔁', label:'Favourite Predicted Scoreline'},
+  {key:'goals_predicted', emoji:'⚽', label:'Total Goals Predicted'},
+];
+function getPlayerStatsHidden(){
+  const h = currentGroup?.player_stats_hidden;
+  if(Array.isArray(h)) return h;
+  if(typeof h==='string' && h) return h.split(',');
+  return [];
+}
 function getHomeCardOrder(){
   const stored = currentGroup?.home_card_order;
   const def = HOME_CARD_DEFS.map(c=>c.key);
@@ -4409,6 +4460,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.53.0',date:'23 Jun 2026',notes:['New 📈 My Stats page — open it from the profile menu (tap your name). Shows your personal tournament stats: total points, current / highest / lowest league position, net movement, matchdays spent at #1, in the top 3 and at the bottom, your most-held position, the games you predicted correct scores in (and your "solo" correct scores nobody else nailed), correct-score and correct-result hit rates, perfect hauls (+8), best & worst matchdays, current streak, longest perfect/hot/cold streaks and streak counts, your favourite predicted scoreline, total goals predicted and more.','Admin → Display → Personal Player Stats: toggle each of the 29 stats on or off individually (with Enable all / Disable all shortcuts). Hidden stats disappear from everyone\'s My Stats page.','Requires a new Supabase column: ALTER TABLE groups ADD COLUMN player_stats_hidden jsonb DEFAULT \'[]\'::jsonb;']},
   {v:'1.52.2',date:'23 Jun 2026',notes:['Leaderboard: player names are now a touch larger with slightly wider letter spacing for easier reading.']},
   {v:'1.52.1',date:'23 Jun 2026',notes:['Leaderboard: the big points total on each row is now bold (weight 700) so it reads more strongly.']},
   {v:'1.52.0',date:'22 Jun 2026',notes:['New end-of-game celebration banner. Admin → Results: each card with a score now has a ⏱ Full Time button — pressing it marks the match Full Time (respects the ⚡ god-cast toggle for cross-group fan-out). The next time each player opens the Leaderboard a swoop-in overlay shows the final score, a big +8 / +5 / +3 / 0 number, and a streak callout if they\'re on a hot/perfect/cold streak. Tap to dismiss (auto-dismisses after 7s). Tracked per-match per-device so it only fires once. Admin → Display → "End-of-Game Banner" toggles the feature group-wide, with a 🎬 Test Banner button and a ↻ Reset Seen helper that clears this device\'s seen flags. Requires two new Supabase columns: ALTER TABLE results ADD COLUMN full_time boolean DEFAULT false; ALTER TABLE groups ADD COLUMN show_end_banner boolean DEFAULT true;']},
@@ -5027,6 +5079,29 @@ function loadHomeCardSettings(){
   const hidden = Array.isArray(g.stats_hidden_highlights) ? g.stats_hidden_highlights
     : (typeof g.stats_hidden_highlights==='string' && g.stats_hidden_highlights ? g.stats_hidden_highlights.split(',') : []);
   document.querySelectorAll('.stat-hi-tog').forEach(cb=>{ cb.checked = !hidden.includes(cb.dataset.key); });
+  renderPlayerStatsToggles();
+}
+function renderPlayerStatsToggles(){
+  const box = document.getElementById('player-stats-toggles');
+  if(!box) return;
+  const hidden = getPlayerStatsHidden();
+  box.innerHTML = PLAYER_STAT_DEFS.map(d=>
+    `<label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="player-stat-tog" data-key="${d.key}"${hidden.includes(d.key)?'':' checked'}> ${d.emoji} ${d.label}</label>`
+  ).join('');
+}
+function togglePlayerStatsAll(on){
+  document.querySelectorAll('.player-stat-tog').forEach(cb=>{ cb.checked = on; });
+}
+async function savePlayerStatsSettings(){
+  if(!currentGroup) return;
+  const hiddenKeys=[];
+  document.querySelectorAll('.player-stat-tog').forEach(cb=>{ if(!cb.checked) hiddenKeys.push(cb.dataset.key); });
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{player_stats_hidden:hiddenKeys}});
+    currentGroup={...currentGroup,player_stats_hidden:hiddenKeys};
+    saveSession();
+    flash('Player stats saved!','success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
 }
 function initHomeCardSortable(){
   const container = document.getElementById('home-cards-sortable');
@@ -6186,6 +6261,161 @@ async function submitPinChange(){
 async function showMyPredictions(){
   if(!currentPlayer||!currentGroup) return;
   viewPlayerPredictions(currentPlayer.id, currentPlayer.nickname||currentPlayer.name);
+}
+
+// ── PERSONAL STATS PAGE ───────────────────────────────
+async function showMyStats(){
+  if(!currentPlayer||!currentGroup) return;
+  const me = currentPlayer.id;
+  const myName = currentPlayer.nickname || currentPlayer.name;
+  let allPreds, allResults, allPlayers;
+  try{
+    [allPreds, allResults, allPlayers] = await Promise.all([
+      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
+    ]);
+  }catch(e){ flash('Error: '+e.message,'error'); return; }
+
+  const gamePreds = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
+  const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
+  const matchPreds={}; gamePreds.forEach(p=>{ (matchPreds[p.match_id]=matchPreds[p.match_id]||[]).push(p); });
+  const fixtures = allFixtures();
+
+  // ── My per-game points + scoreline tallies ──
+  const myPredMap={}; // match_id -> {h,a}
+  gamePreds.filter(p=>p.player_id===me).forEach(p=>{ myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
+  let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0;
+  const exactGames=[], soloExactGames=[], scorelineCount={};
+  fixtures.forEach(f=>{
+    const p=myPredMap[f.id]; if(!p || p.h==null || p.a==null) return;
+    predictionsMade++;
+    goalsPredicted += (p.h + p.a);
+    const sl=`${p.h}–${p.a}`; scorelineCount[sl]=(scorelineCount[sl]||0)+1;
+    const r=rm[f.id]; if(!r || r.home_score==null) return;
+    const pts=calcPoints(p.h,p.a,r.home_score,r.away_score);
+    if(pts===null) return;
+    scoredGames++; totalPts+=pts;
+    if(pts===8) perfect8++;
+    if(pts>=5){
+      exact++; exactGames.push(f);
+      const others=(matchPreds[f.id]||[]).filter(q=>q.player_id!==me && q.home_score!=null && calcPoints(q.home_score,q.away_score,r.home_score,r.away_score)>=5);
+      if(!others.length) soloExactGames.push(f);
+    } else if(pts===3){ results3++; }
+    else if(pts===0){ wrong++; }
+  });
+
+  // ── Rank snapshots after each completed matchday (mirrors home stats) ──
+  const completed = fixtures.filter(f=>{ const r=rm[f.id]; return r && r.home_score!=null && r.away_score!=null; })
+    .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  const matchesByDate={};
+  completed.forEach(f=>{ const k=f.date||'unknown'; (matchesByDate[k]=matchesByDate[k]||[]).push(f); });
+  const dateKeys=Object.keys(matchesByDate).filter(k=>k!=='unknown').sort();
+  const cum={}; // pid -> {total,result}
+  const rankHistory=[], daysAtPos={}, mdPoints=[];
+  dateKeys.forEach(dateKey=>{
+    let myMdPts=0, myPlayed=false;
+    matchesByDate[dateKey].forEach(f=>{
+      const r=rm[f.id];
+      (matchPreds[f.id]||[]).forEach(p=>{
+        if(p.home_score==null) return;
+        const pts=calcPoints(p.home_score,p.away_score,r.home_score,r.away_score);
+        if(!cum[p.player_id]) cum[p.player_id]={total:0,result:0};
+        if(pts===8){cum[p.player_id].total+=8;cum[p.player_id].result++;}
+        else if(pts===5){cum[p.player_id].total+=5;cum[p.player_id].result++;}
+        else if(pts===3){cum[p.player_id].total+=3;cum[p.player_id].result++;}
+        if(p.player_id===me){ myMdPts+=(pts||0); myPlayed=true; }
+      });
+    });
+    if(myPlayed) mdPoints.push({dateKey, pts:myMdPts});
+    if(!cum[me]) return;
+    const ranked=Object.entries(cum);
+    const myEntry=[me,cum[me]];
+    let rank=1;
+    ranked.forEach(e=>{ if(e[0]!==me && lbCompare(e,myEntry)<0) rank++; });
+    rankHistory.push({rank, field:ranked.length});
+    daysAtPos[rank]=(daysAtPos[rank]||0)+1;
+  });
+  const ranks=rankHistory.map(h=>h.rank);
+  const hasRanks=ranks.length>0;
+  const currentPos=hasRanks?rankHistory[rankHistory.length-1]:null;
+  const bestPos=hasRanks?Math.min(...ranks):null;
+  const worstPos=hasRanks?Math.max(...ranks):null;
+  const netMove=hasRanks?(ranks[0]-ranks[ranks.length-1]):null; // + = climbed
+  const daysTop=ranks.filter(r=>r===1).length;
+  const daysPodium=ranks.filter(r=>r<=3).length;
+  const daysBottom=rankHistory.filter(h=>h.field>1 && h.rank===h.field).length;
+  const posEntries=Object.entries(daysAtPos).map(([p,c])=>({pos:+p,count:c})).sort((a,b)=>b.count-a.count||a.pos-b.pos);
+  const favPos=posEntries.length?posEntries[0]:null;
+
+  // ── Streaks (mirrors leaderboard streak-history logic) ──
+  const myOrderedPts=completed.map(f=>{ const p=myPredMap[f.id]; if(!p||p.h==null) return undefined; return calcPoints(p.h,p.a,rm[f.id].home_score,rm[f.id].away_score); });
+  const countRuns=(arr,q)=>{let c=0,run=0;arr.forEach(p=>{if(p!==undefined&&q(p)){run++;if(run>=3)c++;}else run=0;});return c;};
+  const longestRun=(arr,q)=>{let b=0,run=0;arr.forEach(p=>{if(p!==undefined&&q(p)){run++;if(run>b)b=run;}else run=0;});return b;};
+  const trailingRun=(arr,q)=>{let run=0;for(let i=arr.length-1;i>=0;i--){const p=arr[i];if(p!==undefined&&q(p))run++;else break;}return run;};
+  const perfectCount=countRuns(myOrderedPts,p=>p>=5), hotCount=countRuns(myOrderedPts,p=>p>=3), coldCount=countRuns(myOrderedPts,p=>p===0);
+  const longestPerfect=longestRun(myOrderedPts,p=>p>=5), longestHot=longestRun(myOrderedPts,p=>p>=3), longestCold=longestRun(myOrderedPts,p=>p===0);
+  const trailPerfect=trailingRun(myOrderedPts,p=>p>=5), trailHot=trailingRun(myOrderedPts,p=>p>=3), trailCold=trailingRun(myOrderedPts,p=>p===0);
+
+  const slEntries=Object.entries(scorelineCount).sort((a,b)=>b[1]-a[1]);
+  const favScoreline=slEntries.length?{sl:slEntries[0][0],count:slEntries[0][1]}:null;
+
+  // ── Build stat values ──
+  const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+  const fmtMd=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const fixLine=f=>{ const r=rm[f.id]; const sc=r?` <span class="stat-score">${r.home_score}–${r.away_score}</span>`:''; return `${f.hf} ${f.home} v ${f.away} ${f.af}${sc}`; };
+  const gameSub=arr=>arr.length?arr.map(f=>`<div>${fixLine(f)}</div>`).join(''):'';
+  const V={};
+  V.total_pts={value:`${totalPts}`, meta:`${scoredGames} game${scoredGames!==1?'s':''} scored`};
+  if(currentPos) V.current_pos={value:ord(currentPos.rank), meta:`of ${currentPos.field}`};
+  if(bestPos!=null) V.best_pos={value:ord(bestPos)};
+  if(worstPos!=null) V.worst_pos={value:ord(worstPos)};
+  if(netMove!=null) V.net_move={value: netMove>0?`▲ ${netMove}`:netMove<0?`▼ ${Math.abs(netMove)}`:'—', meta: netMove>0?'places climbed':netMove<0?'places dropped':'no change'};
+  if(hasRanks) V.days_top={value:`${daysTop}`, meta:`matchday${daysTop!==1?'s':''} at #1`};
+  if(hasRanks) V.days_podium={value:`${daysPodium}`, meta:`matchday${daysPodium!==1?'s':''} in top 3`};
+  if(hasRanks) V.days_bottom={value:`${daysBottom}`, meta:`matchday${daysBottom!==1?'s':''} last`};
+  if(favPos) V.fav_pos={value:ord(favPos.pos), meta:`held ${favPos.count} matchday${favPos.count!==1?'s':''}`};
+  V.predictions_made={value:`${predictionsMade}`};
+  if(scoredGames) V.avg_pts={value:(totalPts/scoredGames).toFixed(2)};
+  V.exact_scores={value:`${exact}`, sub:gameSub(exactGames)};
+  V.correct_results={value:`${results3}`};
+  V.wrong={value:`${wrong}`};
+  if(scoredGames) V.exact_rate={value:`${Math.round(exact/scoredGames*100)}%`};
+  if(scoredGames) V.result_rate={value:`${Math.round((exact+results3)/scoredGames*100)}%`};
+  V.perfect_hauls={value:`${perfect8}`, meta:'+8 scorelines'};
+  V.solo_exacts={value:`${soloExactGames.length}`, meta:'nobody else nailed', sub:gameSub(soloExactGames)};
+  if(mdPoints.length){ const best=mdPoints.reduce((a,b)=>b.pts>a.pts?b:a); V.best_matchday={value:`${best.pts} pts`, meta:fmtMd(best.dateKey)}; }
+  if(mdPoints.length){ const worst=mdPoints.reduce((a,b)=>b.pts<a.pts?b:a); V.worst_matchday={value:`${worst.pts} pts`, meta:fmtMd(worst.dateKey)}; }
+  V.current_streak={value: trailPerfect>=3?`💎 Perfect ${trailPerfect}`: trailHot>=3?`🔥 Hot ${trailHot}`: trailCold>=3?`💩 Cold ${trailCold}`:'—', meta:(trailPerfect>=3||trailHot>=3||trailCold>=3)?'games in a row':'no active streak'};
+  V.longest_perfect={value:`${longestPerfect}`, meta:'games'};
+  V.longest_hot={value:`${longestHot}`, meta:'games'};
+  V.longest_cold={value:`${longestCold}`, meta:'games'};
+  V.perfect_streaks={value:`${perfectCount}`};
+  V.hot_streaks={value:`${hotCount}`};
+  V.cold_streaks={value:`${coldCount}`};
+  if(favScoreline) V.fav_scoreline={value:favScoreline.sl, meta:`predicted ${favScoreline.count} time${favScoreline.count!==1?'s':''}`};
+  V.goals_predicted={value:`${goalsPredicted}`};
+
+  // ── Render ──
+  const hidden=getPlayerStatsHidden();
+  const cell=(emoji,label,v)=>`<div class="stat-hi-cell">
+      <div class="stat-hi-head"><span class="stat-hi-emoji">${emoji}</span><span class="stat-hi-label">${label}</span></div>
+      <div class="stat-hi-value">${v.value}</div>
+      ${v.meta?`<div class="stat-hi-meta">${v.meta}</div>`:''}
+      ${v.sub?`<div class="stat-hi-sublist">${v.sub}</div>`:''}
+    </div>`;
+  const cells=[];
+  PLAYER_STAT_DEFS.forEach(d=>{ if(hidden.includes(d.key)) return; const v=V[d.key]; if(!v) return; cells.push(cell(d.emoji,d.label,v)); });
+
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  const subtitle = currentPos
+    ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
+    : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet — keep predicting!</div>` : '');
+  const body = cells.length ? `<div class="stat-hi-grid">${cells.join('')}</div>` : '<div class="empty">No stats to show yet — they\'ll appear once you\'ve made predictions and results come in.</div>';
+  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
 }
 
 // ── ENTRY MODE ────────────────────────────────────────
@@ -8785,6 +9015,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.53.0</div>
 </body>
 </html>
