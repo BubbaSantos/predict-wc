@@ -327,7 +327,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .lb-rank-change.down{background:rgba(239,68,68,.15);color:#ef4444;}
 .lb-name{font-weight:600;font-size:.95rem;}
 .lb-breakdown{font-size:.72rem;color:var(--text-muted);margin-top:.15rem;}
-.lb-points{font-family:'JetBrains Mono',monospace;font-size:2rem;color:var(--group-accent);line-height:1;}
+.lb-points{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--group-accent);line-height:1;}
 .lb-pts-label{font-size:.65rem;color:var(--text-muted);text-align:right;margin-top:.1rem;letter-spacing:.08em;text-transform:uppercase;}
 
 /* ── RULES ── */
@@ -1159,7 +1159,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4409,6 +4409,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.52.1',date:'23 Jun 2026',notes:['Leaderboard: the big points total on each row is now bold (weight 700) so it reads more strongly.']},
   {v:'1.52.0',date:'22 Jun 2026',notes:['New end-of-game celebration banner. Admin → Results: each card with a score now has a ⏱ Full Time button — pressing it marks the match Full Time (respects the ⚡ god-cast toggle for cross-group fan-out). The next time each player opens the Leaderboard a swoop-in overlay shows the final score, a big +8 / +5 / +3 / 0 number, and a streak callout if they\'re on a hot/perfect/cold streak. Tap to dismiss (auto-dismisses after 7s). Tracked per-match per-device so it only fires once. Admin → Display → "End-of-Game Banner" toggles the feature group-wide, with a 🎬 Test Banner button and a ↻ Reset Seen helper that clears this device\'s seen flags. Requires two new Supabase columns: ALTER TABLE results ADD COLUMN full_time boolean DEFAULT false; ALTER TABLE groups ADD COLUMN show_end_banner boolean DEFAULT true;']},
   {v:'1.51.2',date:'22 Jun 2026',notes:['Match cards: tapping anywhere on the recent results + group table now collapses them. Previously only the tiny "tap to hide" label was clickable — tapping the table itself bubbled up to the card and switched the picks view instead.']},
   {v:'1.51.1',date:'22 Jun 2026',notes:['Admin → Players: players with no saved appearance now show a dim "default" chip (instead of nothing) so it\'s obvious who hasn\'t opened the app since v1.51. Tooltip explains it.']},
@@ -8783,6 +8784,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.52.1</div>
 </body>
 </html>
