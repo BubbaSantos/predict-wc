@@ -426,6 +426,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .pred-modal-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;letter-spacing:.06em;}
 .modal-close{background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:.2rem .4rem;border-radius:4px;}
 .modal-close:hover{color:var(--text);background:var(--surface2);}
+.stats-link-btn{flex-shrink:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.7rem;font-weight:600;padding:.28rem .6rem;border-radius:6px;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s;}
+.stats-link-btn:hover{border-color:var(--group-accent);background:var(--surface);}
 .pred-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem;}
 .pred-row:last-child{border-bottom:none;}
 .pred-match{color:var(--text-dim);flex:1;}
@@ -1159,7 +1161,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.53.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4460,6 +4462,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.54.0',date:'23 Jun 2026',notes:['Any player\'s stats are now viewable: tap a player on the leaderboard to open their predictions, then tap the 📈 Stats button next to their name to see their full personal stats page (same 29 stats as your own My Stats, respecting the admin on/off toggles). Also available from the admin Players list and your own My Predictions.']},
   {v:'1.53.0',date:'23 Jun 2026',notes:['New 📈 My Stats page — open it from the profile menu (tap your name). Shows your personal tournament stats: total points, current / highest / lowest league position, net movement, matchdays spent at #1, in the top 3 and at the bottom, your most-held position, the games you predicted correct scores in (and your "solo" correct scores nobody else nailed), correct-score and correct-result hit rates, perfect hauls (+8), best & worst matchdays, current streak, longest perfect/hot/cold streaks and streak counts, your favourite predicted scoreline, total goals predicted and more.','Admin → Display → Personal Player Stats: toggle each of the 29 stats on or off individually (with Enable all / Disable all shortcuts). Hidden stats disappear from everyone\'s My Stats page.','Requires a new Supabase column: ALTER TABLE groups ADD COLUMN player_stats_hidden jsonb DEFAULT \'[]\'::jsonb;']},
   {v:'1.52.2',date:'23 Jun 2026',notes:['Leaderboard: player names are now a touch larger with slightly wider letter spacing for easier reading.']},
   {v:'1.52.1',date:'23 Jun 2026',notes:['Leaderboard: the big points total on each row is now bold (weight 700) so it reads more strongly.']},
@@ -6266,8 +6269,13 @@ async function showMyPredictions(){
 // ── PERSONAL STATS PAGE ───────────────────────────────
 async function showMyStats(){
   if(!currentPlayer||!currentGroup) return;
-  const me = currentPlayer.id;
-  const myName = currentPlayer.nickname || currentPlayer.name;
+  showPlayerStats(currentPlayer.id, currentPlayer.nickname||currentPlayer.name);
+}
+
+async function showPlayerStats(playerId, name){
+  if(!currentGroup) return;
+  const me = playerId;
+  const myName = name;
   let allPreds, allResults, allPlayers;
   try{
     [allPreds, allResults, allPlayers] = await Promise.all([
@@ -6411,8 +6419,8 @@ async function showMyStats(){
   modal.className='modal-overlay';
   const subtitle = currentPos
     ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
-    : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet — keep predicting!</div>` : '');
-  const body = cells.length ? `<div class="stat-hi-grid">${cells.join('')}</div>` : '<div class="empty">No stats to show yet — they\'ll appear once you\'ve made predictions and results come in.</div>';
+    : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
+  const body = cells.length ? `<div class="stat-hi-grid">${cells.join('')}</div>` : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
   modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
@@ -8133,7 +8141,9 @@ async function viewPlayerPredictions(playerId,name){
     const modal=document.createElement('div');
     modal.className='modal-overlay';
     const emptyMsg = (!recentRows.length && !oldRows.length) ? '<div class="empty">No predictions yet.</div>' : '';
-    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${name}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${emptyMsg}${rows}</div>`;
+    const nameEsc=String(name).replace(/'/g,"\\'");
+    const pidEsc=String(playerId).replace(/'/g,"\\'");
+    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div style="display:flex;align-items:center;gap:.55rem;min-width:0;"><div class="pred-modal-title" style="min-width:0;overflow:hidden;text-overflow:ellipsis;">${name}</div><button class="stats-link-btn" onclick="showPlayerStats('${pidEsc}','${nameEsc}')">📈 Stats</button></div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${emptyMsg}${rows}</div>`;
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
     document.body.appendChild(modal);
   }catch(e){flash('Error: '+e.message,'error');}
@@ -9015,6 +9025,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.53.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.0</div>
 </body>
 </html>
