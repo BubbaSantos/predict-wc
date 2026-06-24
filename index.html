@@ -1164,7 +1164,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.55.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.55.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1266,7 +1266,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <div>
         <div id="h-group-name" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;letter-spacing:.1em;color:var(--group-accent);line-height:1.1;"></div>
         <div class="header-group" id="h-group-sub"></div>
-        <span id="h-god-ver" style="display:none;font-size:.55rem;color:var(--text-muted);opacity:.5;letter-spacing:.06em;"></span>
       </div>
     </div>
     <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:.3rem .4rem;border-radius:5px;font-size:.85rem;line-height:1;align-items:center;gap:.25rem;vertical-align:middle;"><span style="vertical-align:middle;">☰</span> <span style="font-size:.75rem;font-weight:600;letter-spacing:.04em;vertical-align:middle;">Menu</span></button>
@@ -1277,6 +1276,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <button id="nav-admin" onclick="showView('admin')" style="display:none;">Admin</button>
     </nav>
     <div class="header-user" style="position:relative;">
+      <span id="h-god-ver" style="display:none;font-size:.6rem;color:var(--text-muted);opacity:.45;letter-spacing:.06em;white-space:nowrap;"></span>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
       <div style="position:relative;">
       <button class="user-chip" id="h-player-chip" type="button" style="cursor:pointer;user-select:none;background:none;border:1px solid var(--border);font-family:inherit;font-size:inherit;" title="Profile"></button>
@@ -9163,6 +9163,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.5</div>
 </body>
 </html>
