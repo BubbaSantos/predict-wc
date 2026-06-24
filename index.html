@@ -241,6 +241,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-cd-unit{text-align:center;}
 .hmc-cd-num{font-size:2rem;font-weight:900;font-family:'JetBrains Mono',monospace;color:#ef4444;line-height:1;}
 .hmc-cd-lbl{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-top:.15rem;}
+.hmc-carousel-wrap{overflow:hidden;position:relative;touch-action:pan-y;}
+.hmc-carousel-track{display:flex;}
+.hmc-carousel-slide{flex-shrink:0;}
+.hmc-dots{display:flex;justify-content:center;gap:.45rem;margin-top:.5rem;}
+.hmc-dot{width:.42rem;height:.42rem;border-radius:50%;background:var(--text-muted);opacity:.3;cursor:pointer;transition:opacity .2s,background .2s;}
+.hmc-dot.active{background:var(--group-accent);opacity:1;}
 .match-stat-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid rgba(30,45,69,.5);font-size:.78rem;}
 .match-stat-row:last-child{border-bottom:none;}
 .match-stat-teams{color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1164,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.55.8</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.55.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2463,6 +2469,9 @@ let _homeTopScorers = []; // populated by football-data.org sync, optional
 let _nextGameStaticHtml = '';
 let _nextGamePredHtml = '';
 let _nextUpcoming = null;
+let _nextUpcomingAll = [];
+let _nextUpcomingIdx = 0;
+let _nextGamePredHtmlAll = [];
 let _livePicksMap = {};
 let _matchPredsMap = {};
 let _lastResultPicksGrouped = '';
@@ -3217,15 +3226,42 @@ function renderMatchCardBody(){
       if(html) html += '<hr class="hmc-sep">';
       const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
       const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
-      const nextId = _nextUpcoming.f.id;
-      const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,'upcoming');
-      const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`+_pctTeamsHtml(_nextUpcoming.f,'vs','vs',nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
+      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;
+      if(_nextUpcomingAll.length > 1){
+        const cn = _nextUpcomingAll.length;
+        const slides = _nextUpcomingAll.map((item,i)=>{
+          const nid=item.f.id;
+          const np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,'upcoming');
+          const hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));
+          return `<div class="hmc-carousel-slide" style="width:${100/cn}%">${_pctTeamsHtml(item.f,'vs','vs',nid)}${_nextGamePredHtmlAll[i]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`;
+        }).join('');
+        const pct = _nextUpcomingIdx*(100/cn);
+        html += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" style="width:${cn*100}%;transform:translateX(-${pct}%)">${slides}</div></div>`;
+        const dots = _nextUpcomingAll.map((_,i)=>`<span class="hmc-dot${i===_nextUpcomingIdx?' active':''}" onclick="hmcGoToSlide(${i});event.stopPropagation()"></span>`).join('');
+        html += `<div class="hmc-dots">${dots}</div>`;
+      } else {
+        const nextId = _nextUpcoming.f.id;
+        const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,'upcoming');
+        const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
+        html += _pctTeamsHtml(_nextUpcoming.f,'vs','vs',nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
+      }
     }
   } else if(!html){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
   }
   el.innerHTML = html;
+}
+
+function hmcGoToSlide(idx){
+  if(idx<0||idx>=_nextUpcomingAll.length) return;
+  _nextUpcomingIdx = idx;
+  const track = document.getElementById('hmc-carousel-track');
+  if(track){
+    const n = _nextUpcomingAll.length;
+    track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
+    track.style.transform = `translateX(-${idx*(100/n)}%)`;
+  }
+  document.querySelectorAll('.hmc-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
 }
 
 function _predPcts(mid){
@@ -4517,6 +4553,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.55.9',date:'24 Jun 2026',notes:['Next Up card: when multiple games kick off at the same time, swipe left/right to browse them — smooth iOS-style carousel with dot indicators. Works via touch drag (real-time follow) or tap the dots to jump directly.']},
   {v:'1.55.2',date:'24 Jun 2026',notes:['Version number now shown in the header bar next to the group tagline for god mode / admin users only.']},
   {v:'1.55.1',date:'24 Jun 2026',notes:['Version number: on mobile it\'s now in the normal document flow at the bottom of the page (scroll to find it) rather than position:fixed, which was causing it to ghost over content as the browser chrome appeared/disappeared. Fixed positioning kept on desktop where it works reliably.']},
   {v:'1.55.0',date:'24 Jun 2026',notes:['My Stats: "Net Movement" renamed to "Form Trend (Last 10 Games)" — now compares your current rank to your average rank over the last 10 games rather than comparing two fixed points, so it shows genuine drift even when you start and end at the same spot. Sub-text includes your high/low rank range over the window. Player predictions card: "Previous Results" dropdown now only hides matches older than 2 days (was 1 day), so the last 2 full days of results are visible by default.']},
@@ -5906,22 +5943,27 @@ async function loadHome(){
       } else { _lastMatchStatsHtml=''; }
     } else { _lastMatchStatsHtml=''; }
 
-    // Next upcoming match
-    _nextUpcoming = allFixtures()
+    // Next upcoming match(es) — group all games sharing the same earliest KO
+    const _nextSorted = allFixtures()
       .filter(f=>!rm[f.id])
       .map(f=>({f,ko:getMatchKickoff(f)}))
       .filter(({ko})=>ko&&ko>now)
-      .sort((a,b)=>a.ko-b.ko)[0]||null;
+      .sort((a,b)=>a.ko-b.ko);
+    _nextUpcoming = _nextSorted[0]||null;
     if(_nextUpcoming){
-      const {f,ko}=_nextUpcoming, pred=myPredMap[f.id];
-      const dateStr=ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/London'});
-      const timeStr=ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
-      const predHtml=pred
-        ?`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div>`
-        :`<div class="hmc-meta" style="font-style:italic;">Not predicted yet — <span style="cursor:pointer;text-decoration:underline;color:var(--group-accent);" onclick="showView('predict')">predict now</span></div>`;
+      const firstKoMs = _nextUpcoming.ko.getTime();
+      _nextUpcomingAll = _nextSorted.filter(({ko})=>ko.getTime()===firstKoMs);
+      // Clamp carousel index if games changed
+      if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
+      _nextGamePredHtmlAll = _nextUpcomingAll.map(({f})=>{
+        const pred=myPredMap[f.id];
+        return pred
+          ?`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div>`
+          :`<div class="hmc-meta" style="font-style:italic;">Not predicted yet — <span style="cursor:pointer;text-decoration:underline;color:var(--group-accent);" onclick="showView('predict')">predict now</span></div>`;
+      });
       _nextGameStaticHtml='';
-      _nextGamePredHtml = predHtml;
-    } else { _nextGameStaticHtml=''; _nextGamePredHtml=''; }
+      _nextGamePredHtml = _nextGamePredHtmlAll[0]||'';
+    } else { _nextUpcomingAll=[]; _nextGamePredHtmlAll=[]; _nextGameStaticHtml=''; _nextGamePredHtml=''; }
 
     // Predict button
     const predictBtn=document.getElementById('home-predict-btn');
@@ -9164,6 +9206,51 @@ async function godCreateGroup(){
   }catch(e){ showErr(errEl,'Error: '+e.message); }
 }
 
+// Carousel swipe for next-up card (multiple simultaneous KO games)
+(function(){
+  const card = document.getElementById('home-next-card');
+  if(!card) return;
+  let _cSwX=null, _cSwY=null, _cDragging=false, _cStartPct=0;
+  card.addEventListener('touchstart',e=>{
+    if(_nextUpcomingAll.length < 2) return;
+    e.stopPropagation(); // prevent outer view-swipe from capturing this touch
+    const t=e.touches[0];
+    _cSwX=t.clientX; _cSwY=t.clientY; _cDragging=false;
+    _cStartPct=_nextUpcomingIdx*(100/_nextUpcomingAll.length);
+  },{passive:true});
+  card.addEventListener('touchmove',e=>{
+    if(_cSwX===null||_nextUpcomingAll.length<2) return;
+    const track=document.getElementById('hmc-carousel-track');
+    if(!track) return;
+    const t=e.touches[0];
+    const dx=t.clientX-_cSwX, dy=t.clientY-_cSwY;
+    if(!_cDragging){
+      if(Math.abs(dy)>Math.abs(dx)){_cSwX=null;return;} // vertical — bail
+      _cDragging=true;
+    }
+    e.preventDefault();
+    const n=_nextUpcomingAll.length;
+    const pct=_cStartPct-(dx/card.offsetWidth)*(100/n);
+    const clamped=Math.max(0,Math.min(pct,(n-1)*(100/n)));
+    track.style.transition='none';
+    track.style.transform=`translateX(-${clamped}%)`;
+  },{passive:false});
+  card.addEventListener('touchend',e=>{
+    if(_cSwX===null||!_cDragging||_nextUpcomingAll.length<2){_cSwX=null;_cDragging=false;return;}
+    const track=document.getElementById('hmc-carousel-track');
+    if(!track){_cSwX=null;_cDragging=false;return;}
+    const dx=e.changedTouches[0].clientX-_cSwX;
+    _cSwX=null; _cDragging=false;
+    const n=_nextUpcomingAll.length;
+    const threshold=card.offsetWidth*0.2;
+    if(dx<-threshold&&_nextUpcomingIdx<n-1) _nextUpcomingIdx++;
+    else if(dx>threshold&&_nextUpcomingIdx>0) _nextUpcomingIdx--;
+    track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
+    track.style.transform=`translateX(-${_nextUpcomingIdx*(100/n)}%)`;
+    document.querySelectorAll('.hmc-dot').forEach((d,i)=>d.classList.toggle('active',i===_nextUpcomingIdx));
+  },{passive:true});
+})();
+
 // Mobile swipe navigation between Home / Leaderboard / Predict
 (function(){
   const VIEWS = ['home','leaderboard','predict'];
@@ -9198,6 +9285,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.8</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.9</div>
 </body>
 </html>
