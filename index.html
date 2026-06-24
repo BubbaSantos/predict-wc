@@ -1161,7 +1161,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.5</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4492,6 +4492,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.54.6',date:'24 Jun 2026',notes:['Ticker seen-by: current user (admin/god) always counts as seen; seen-by bar hides when you dismiss the ticker and reappears when you restore it; home bar shows count only (no names) — names appear in admin settings only.']},
   {v:'1.54.5',date:'24 Jun 2026',notes:['Fix ticker seen-by not appearing: removed dependency on ticker_updated_at DB column (was causing ticker saves to fail and both seen-by UIs to stay hidden). Cutoff is now stored in localStorage on the admin\'s device — hit Save Ticker once to start tracking from that point.']},
   {v:'1.54.4',date:'24 Jun 2026',notes:['Ticker seen-by bar now refreshes automatically when navigating to the home tab, reusing the player data already fetched by loadHome (no extra network request).']},
   {v:'1.54.3',date:'24 Jun 2026',notes:['Ticker: god mode users now see a small "seen by X/Y · names…" bar directly below the ticker on the home screen, showing who has opened the app since the ticker was last saved.']},
@@ -5408,9 +5409,9 @@ function renderTicker(){
   if(tab) tab.style.display=hidden?'block':'none';
   const isGod = currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin);
   if(seenBar){
-    if(isGod){
+    if(isGod && !hidden){
       seenBar.style.display='block';
-      renderTickerSeenBar(seenBar);
+      renderTickerSeenBar(seenBar, null, false);
     } else {
       seenBar.style.display='none';
     }
@@ -5418,37 +5419,43 @@ function renderTicker(){
 }
 
 let _tickerSeenBarLoading=false;
-async function renderTickerSeenBar(bar, players){
+async function renderTickerSeenBar(bar, players, showNames){
   if(!bar) return;
   if(!players){
     if(_tickerSeenBarLoading) return;
     _tickerSeenBarLoading=true;
-    try{ players = await sb(`players?group_id=eq.${currentGroup.id}&select=name,nickname,last_seen`); }
+    try{ players = await sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,last_seen`); }
     catch(e){ bar.textContent=''; _tickerSeenBarLoading=false; return; }
     _tickerSeenBarLoading=false;
   }
   if(!players){ bar.textContent=''; return; }
   const savedAt=localStorage.getItem('wc26_ticker_saved_at');
   const cutoff=savedAt?new Date(savedAt):null;
-  const seen=players.filter(p=>p.last_seen&&(!cutoff||new Date(p.last_seen)>=cutoff));
+  const myId=currentPlayer?.id;
+  const seen=players.filter(p=>(myId&&p.id===myId)||( p.last_seen&&(!cutoff||new Date(p.last_seen)>=cutoff)));
   const names=seen.map(p=>p.nickname||p.name).join(', ');
-  bar.textContent=`seen by ${seen.length}/${players.length}${names?' · '+names:''}`;
+  bar.textContent=`seen by ${seen.length}/${players.length}${showNames&&names?' · '+names:''}`;
 }
 
 function hideTicker(){
   localStorage.setItem('tickerHidden','1');
   const el=document.getElementById('news-ticker');
   const tab=document.getElementById('ticker-tab');
+  const seenBar=document.getElementById('ticker-seen-bar');
   if(el) el.style.display='none';
   if(tab) tab.style.display='block';
+  if(seenBar) seenBar.style.display='none';
 }
 
 function showTicker(){
   localStorage.removeItem('tickerHidden');
   const el=document.getElementById('news-ticker');
   const tab=document.getElementById('ticker-tab');
+  const seenBar=document.getElementById('ticker-seen-bar');
   if(el) el.style.display='block';
   if(tab) tab.style.display='none';
+  const isGod=currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin);
+  if(seenBar) seenBar.style.display=isGod?'block':'none';
 }
 
 function renderChangelog(){
@@ -6204,7 +6211,7 @@ async function loadHome(){
       if(statsEl) statsEl.innerHTML = html;
     }
   const seenBar=document.getElementById('ticker-seen-bar');
-  if(seenBar&&seenBar.style.display!=='none') renderTickerSeenBar(seenBar, allPlayers);
+  if(seenBar&&seenBar.style.display!=='none') renderTickerSeenBar(seenBar, allPlayers, false);
   } catch(e){
     const errHtml = `<div style="font-size:.82rem;color:var(--text-muted);">⚠️ ${e.message}</div>`;
     if(lbEl) lbEl.innerHTML = errHtml;
@@ -9130,6 +9137,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.5</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.6</div>
 </body>
 </html>
