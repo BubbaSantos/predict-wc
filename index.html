@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.58.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.58.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4404,19 +4404,21 @@ function calcPlayerStreaks(gamePreds, rm){
     const isPerfect=last3.every(r=>r&&r.allPerfect);
     const isHot=last3.every(r=>r&&r.allHot);
     const isCold=last3.every(r=>r&&!r.anyHot);
-    let extra=0;
+    let gameCount=0;
     if(isPerfect||isHot||isCold){
       const qualify=isPerfect?(r=>r&&r.allPerfect):isHot?(r=>r&&r.allHot):(r=>r&&!r.anyHot);
-      for(let i=roundResults.length-4;i>=0;i--){if(qualify(roundResults[i]))extra++;else break;}
+      // Count games (not rounds) across the qualifying streak so simultaneous games are included
+      for(let i=roundResults.length-3;i<roundResults.length;i++) gameCount+=rounds[i].length;
+      for(let i=roundResults.length-4;i>=0;i--){if(qualify(roundResults[i]))gameCount+=rounds[i].length;else break;}
     }
-    streaks[pid]={perfect:isPerfect,hot:isHot,cold:isCold,extra};
+    streaks[pid]={perfect:isPerfect,hot:isHot,cold:isCold,gameCount};
   });
   return streaks;
 }
 
 function streakNameHtml(nameHtml,streak){
   if(!streak) return nameHtml;
-  const games=streak.extra>0?`<span class="lb-name-streak-games">${3+streak.extra}</span>`:'';
+  const games=(streak.gameCount||0)>3?`<span class="lb-name-streak-games">${streak.gameCount}</span>`:'';
   const inner=(cls,emoji)=>`<span class="lb-name-streak ${cls}"><span class="lb-name-streak-inner">${nameHtml} ${emoji}${games?' '+games:''}</span></span>`;
   if(streak.perfect) return inner('lb-name-streak-perfect','💎');
   if(streak.hot) return inner('lb-name-streak-hot','🔥');
@@ -4639,6 +4641,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.58.2',date:'24 Jun 2026',notes:['Fix: streak counter now counts games, not rounds — so winning 4 games where 2 were simultaneous correctly shows 🔥4 rather than just 🔥. Also fixes the end-of-game banner streak count.']},
   {v:'1.58.1',date:'24 Jun 2026',notes:['Streak rule for simultaneous games: a round only qualifies as hot if ALL games in the round scored ≥3 — win one and lose one now breaks the streak. The win still counts as round 1 of the next run. Cold streaks similarly require every game to be 0 (a win+loss breaks cold too).']},
   {v:'1.58.0',date:'24 Jun 2026',notes:['Leaderboard now treats simultaneous kick-offs as a single round: streaks are evaluated per round (win one of two games = round counts as won, not broken), last-round points column sums both games (e.g. +16, +11, +6), and rank-change arrow compares against scores before the whole round.']},
   {v:'1.57.6',date:'24 Jun 2026',notes:['Live Now carousel now uses the same smooth slide animation as Next Up and Last Results — was rebuilding the DOM on each swipe which killed the transition.']},
@@ -7114,9 +7117,9 @@ function maybeShowEndBanner(allPreds, allResults){
   const myName = currentPlayer.nickname || currentPlayer.name;
   const streak = _lbStreaks?.[myName];
   let streakText = '';
-  if(streak?.perfect) streakText = `💎 PERFECT RUN — ${3+(streak.extra||0)} in a row!`;
-  else if(streak?.hot) streakText = `🔥 HOT STREAK — ${3+(streak.extra||0)} correct in a row!`;
-  else if(streak?.cold) streakText = `💩 Cold streak — ${3+(streak.extra||0)} duds in a row…`;
+  if(streak?.perfect) streakText = `💎 PERFECT RUN — ${streak.gameCount||3} in a row!`;
+  else if(streak?.hot) streakText = `🔥 HOT STREAK — ${streak.gameCount||3} correct in a row!`;
+  else if(streak?.cold) streakText = `💩 Cold streak — ${streak.gameCount||3} duds in a row…`;
   showEndBanner(fix, {home_score:target.home_score, away_score:target.away_score}, pts, streakText);
   localStorage.setItem('wc26_ft_seen_'+target.match_id,'1');
 }
@@ -9392,6 +9395,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.2</div>
 </body>
 </html>
