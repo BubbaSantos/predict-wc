@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.58.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.58.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4387,21 +4387,26 @@ function calcPlayerStreaks(gamePreds, rm){
   });
   const streaks={};
   Object.entries(playerMatchPts).forEach(([pid,matchPts])=>{
-    // Per-round result: null = no predictions (streak breaker); otherwise {total, allPerfect}
+    // Per-round result: null = no predictions (streak breaker); otherwise {allPerfect, allHot, anyHot}
     const roundResults=rounds.map(ids=>{
       const pts=ids.map(id=>matchPts[id]);
       const defined=pts.filter(p=>p!==undefined);
       if(!defined.length) return null;
-      return {total:defined.reduce((a,b)=>a+b,0), allPerfect:ids.every(id=>matchPts[id]!==undefined&&matchPts[id]>=5)};
+      return {
+        allPerfect: ids.every(id=>matchPts[id]!==undefined&&matchPts[id]>=5),
+        allHot:     ids.every(id=>matchPts[id]!==undefined&&matchPts[id]>=3),
+        anyHot:     ids.some(id=>matchPts[id]!==undefined&&matchPts[id]>=3),
+      };
     });
     const last3=roundResults.slice(-3);
     if(last3.length<3){streaks[pid]={};return;}
+    // Mixed round (win one, lose one) = anyHot but not allHot → breaks hot/perfect streak and also cold streak
     const isPerfect=last3.every(r=>r&&r.allPerfect);
-    const isHot=last3.every(r=>r&&r.total>=3);
-    const isCold=last3.every(r=>r&&r.total===0);
+    const isHot=last3.every(r=>r&&r.allHot);
+    const isCold=last3.every(r=>r&&!r.anyHot);
     let extra=0;
     if(isPerfect||isHot||isCold){
-      const qualify=isPerfect?(r=>r&&r.allPerfect):isHot?(r=>r&&r.total>=3):(r=>r&&r.total===0);
+      const qualify=isPerfect?(r=>r&&r.allPerfect):isHot?(r=>r&&r.allHot):(r=>r&&!r.anyHot);
       for(let i=roundResults.length-4;i>=0;i--){if(qualify(roundResults[i]))extra++;else break;}
     }
     streaks[pid]={perfect:isPerfect,hot:isHot,cold:isCold,extra};
@@ -4634,6 +4639,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.58.1',date:'24 Jun 2026',notes:['Streak rule for simultaneous games: a round only qualifies as hot if ALL games in the round scored ≥3 — win one and lose one now breaks the streak. The win still counts as round 1 of the next run. Cold streaks similarly require every game to be 0 (a win+loss breaks cold too).']},
   {v:'1.58.0',date:'24 Jun 2026',notes:['Leaderboard now treats simultaneous kick-offs as a single round: streaks are evaluated per round (win one of two games = round counts as won, not broken), last-round points column sums both games (e.g. +16, +11, +6), and rank-change arrow compares against scores before the whole round.']},
   {v:'1.57.6',date:'24 Jun 2026',notes:['Live Now carousel now uses the same smooth slide animation as Next Up and Last Results — was rebuilding the DOM on each swipe which killed the transition.']},
   {v:'1.57.5',date:'24 Jun 2026',notes:['Next Up and Last Results carousels now loop like Live Now — swiping past the last slide wraps back to the first.']},
@@ -9386,6 +9392,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.1</div>
 </body>
 </html>
