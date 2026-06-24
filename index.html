@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.57.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.58.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4371,6 +4371,14 @@ function calcPlayerStreaks(gamePreds, rm){
   const orderedCompleted = allFixtures()
     .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
     .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  // Group into rounds by kickoff time so simultaneous games count as one round
+  const rounds=[];
+  let lastKo=null;
+  orderedCompleted.forEach(f=>{
+    const ko=getMatchKickoff(f)?.getTime()||0;
+    if(ko!==lastKo){rounds.push([]);lastKo=ko;}
+    rounds[rounds.length-1].push(f.id);
+  });
   const playerMatchPts={};
   (gamePreds||[]).forEach(p=>{
     const res=rm[p.match_id]; if(!res||res.home_score==null) return;
@@ -4379,17 +4387,22 @@ function calcPlayerStreaks(gamePreds, rm){
   });
   const streaks={};
   Object.entries(playerMatchPts).forEach(([pid,matchPts])=>{
-    const allPts=orderedCompleted.map(f=>matchPts[f.id]);
-    const last3=allPts.slice(-3);
+    // Per-round result: null = no predictions (streak breaker); otherwise {total, allPerfect}
+    const roundResults=rounds.map(ids=>{
+      const pts=ids.map(id=>matchPts[id]);
+      const defined=pts.filter(p=>p!==undefined);
+      if(!defined.length) return null;
+      return {total:defined.reduce((a,b)=>a+b,0), allPerfect:ids.every(id=>matchPts[id]!==undefined&&matchPts[id]>=5)};
+    });
+    const last3=roundResults.slice(-3);
     if(last3.length<3){streaks[pid]={};return;}
-    // undefined = no prediction = streak breaker
-    const isPerfect=last3.every(p=>p!==undefined&&p>=5);
-    const isHot=last3.every(p=>p!==undefined&&p>=3);
-    const isCold=last3.every(p=>p!==undefined&&p===0);
+    const isPerfect=last3.every(r=>r&&r.allPerfect);
+    const isHot=last3.every(r=>r&&r.total>=3);
+    const isCold=last3.every(r=>r&&r.total===0);
     let extra=0;
     if(isPerfect||isHot||isCold){
-      const qualify=isPerfect?(p=>p!==undefined&&p>=5):isHot?(p=>p!==undefined&&p>=3):(p=>p!==undefined&&p===0);
-      for(let i=allPts.length-4;i>=0;i--){if(qualify(allPts[i]))extra++;else break;}
+      const qualify=isPerfect?(r=>r&&r.allPerfect):isHot?(r=>r&&r.total>=3):(r=>r&&r.total===0);
+      for(let i=roundResults.length-4;i>=0;i--){if(qualify(roundResults[i]))extra++;else break;}
     }
     streaks[pid]={perfect:isPerfect,hot:isHot,cold:isCold,extra};
   });
@@ -4454,31 +4467,36 @@ async function loadLeaderboard(){
       else if(pts===3){scores[name].result++;scores[name].total+=3;}
       else{scores[name].wrong++;}
     });
-    // Snapshot scores as they were before the most recent completed game (for rank-change indicator)
+    // Snapshot scores as they were before the most recent completed round (for rank-change indicator).
+    // Group by kickoff time so simultaneous games are treated as a single round.
     const _orderedCompleted = allFixtures()
       .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
       .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
-    const _lastMatchId = _orderedCompleted.length ? _orderedCompleted[_orderedCompleted.length-1].id : null;
+    const _lastRoundKo = _orderedCompleted.length ? (getMatchKickoff(_orderedCompleted[_orderedCompleted.length-1])?.getTime()||0) : null;
+    const _lastRoundIds = _lastRoundKo
+      ? new Set(_orderedCompleted.filter(f=>(getMatchKickoff(f)?.getTime()||0)===_lastRoundKo).map(f=>f.id))
+      : new Set();
     const prevScores = {};
     Object.entries(scores).forEach(([n,s])=>{ prevScores[n] = {...s}; });
-    if(_lastMatchId && rm[_lastMatchId]){
-      const lastRes = rm[_lastMatchId];
-      lbGamePreds.filter(p=>p.match_id===_lastMatchId).forEach(p=>{
+    if(_lastRoundIds.size){
+      lbGamePreds.filter(p=>_lastRoundIds.has(p.match_id)).forEach(p=>{
         const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
         const ps=prevScores[name]; if(!ps) return;
-        const pts=calcPoints(p.home_score,p.away_score,lastRes.home_score,lastRes.away_score);
+        const res=rm[p.match_id]; if(!res) return;
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
         if(pts===8){ps.exact--;ps.result--;ps.total-=8;}
         else if(pts===5){ps.exact--;ps.total-=5;}
         else if(pts===3){ps.result--;ps.total-=3;}
         else{ps.wrong--;}
       });
     }
-    _lbPrevGameScores = _lastMatchId ? prevScores : {};
+    _lbPrevGameScores = _lastRoundIds.size ? prevScores : {};
     _lbLastMatchPts = {};
-    if(_lastMatchId && rm[_lastMatchId]){
-      const lastRes=rm[_lastMatchId];
-      lbGamePreds.filter(p=>p.match_id===_lastMatchId).forEach(p=>{
-        _lbLastMatchPts[p.player_id]=calcPoints(p.home_score,p.away_score,lastRes.home_score,lastRes.away_score);
+    if(_lastRoundIds.size){
+      lbGamePreds.filter(p=>_lastRoundIds.has(p.match_id)).forEach(p=>{
+        const res=rm[p.match_id]; if(!res) return;
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        _lbLastMatchPts[p.player_id]=(_lbLastMatchPts[p.player_id]||0)+pts;
       });
     }
     const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
@@ -4616,6 +4634,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.58.0',date:'24 Jun 2026',notes:['Leaderboard now treats simultaneous kick-offs as a single round: streaks are evaluated per round (win one of two games = round counts as won, not broken), last-round points column sums both games (e.g. +16, +11, +6), and rank-change arrow compares against scores before the whole round.']},
   {v:'1.57.6',date:'24 Jun 2026',notes:['Live Now carousel now uses the same smooth slide animation as Next Up and Last Results — was rebuilding the DOM on each swipe which killed the transition.']},
   {v:'1.57.5',date:'24 Jun 2026',notes:['Next Up and Last Results carousels now loop like Live Now — swiping past the last slide wraps back to the first.']},
   {v:'1.57.4',date:'24 Jun 2026',notes:['Home match card: team flags enlarged (1.75rem → 2.4rem).']},
@@ -9367,6 +9386,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.0</div>
 </body>
 </html>
