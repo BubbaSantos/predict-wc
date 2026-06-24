@@ -1161,7 +1161,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.2</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1294,6 +1294,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
     <span id="ticker-hide-btn" onclick="hideTicker()">✕ hide</span><span id="ticker-scroll-wrap"><span id="news-ticker-inner">📢 <span id="news-ticker-text"></span></span></span>
   </div>
   <div id="ticker-tab" onclick="showTicker()">📢 Show news</div>
+  <div id="ticker-seen-bar" style="display:none;background:rgba(253,224,71,.08);border-bottom:1px solid rgba(253,224,71,.15);padding:.18rem .75rem;font-size:.65rem;color:var(--text-muted);letter-spacing:.02em;"></div>
 
   <div class="container">
 
@@ -4491,6 +4492,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.54.3',date:'24 Jun 2026',notes:['Ticker: god mode users now see a small "seen by X/Y · names…" bar directly below the ticker on the home screen, showing who has opened the app since the ticker was last saved.']},
   {v:'1.54.2',date:'24 Jun 2026',notes:['Admin → Display → News Ticker: new "Seen by" section shows which players have opened the app since the ticker was last saved (green chips), and who hasn\'t yet (grey chips). Requires one new Supabase column: ALTER TABLE groups ADD COLUMN ticker_updated_at timestamptz;']},
   {v:'1.54.1',date:'24 Jun 2026',notes:['End-of-game banner: now fires automatically when a result is entered and 130 minutes have passed since kickoff — no need for admin to press the Full Time button. The results poller now also tracks the full_time flag so the banner triggers for all players as soon as the admin marks a match Full Time, even if they\'re on a different tab.']},
   {v:'1.54.0',date:'23 Jun 2026',notes:['Any player\'s stats are now viewable: tap a player on the leaderboard to open their predictions, then tap the 📈 Stats button next to their name to see their full personal stats page (same 29 stats as your own My Stats, respecting the admin on/off toggles). Also available from the admin Players list and your own My Predictions.']},
@@ -5382,10 +5384,16 @@ function renderTicker(){
   const tab=document.getElementById('ticker-tab');
   const inner=document.getElementById('news-ticker-inner');
   const textEl=document.getElementById('news-ticker-text');
+  const seenBar=document.getElementById('ticker-seen-bar');
   if(!el) return;
   const enabled=currentGroup&&currentGroup.ticker_enabled===true;
   const text=(currentGroup&&currentGroup.ticker_text||'').trim();
-  if(!enabled||!text){el.style.display='none';if(tab)tab.style.display='none';return;}
+  if(!enabled||!text){
+    el.style.display='none';
+    if(tab) tab.style.display='none';
+    if(seenBar) seenBar.style.display='none';
+    return;
+  }
   textEl.textContent=text;
   const speed=currentGroup&&currentGroup.ticker_speed;
   const mult=speed==='slow'?0.27:speed==='fast'?0.10:0.18;
@@ -5395,6 +5403,30 @@ function renderTicker(){
   const hidden=localStorage.getItem('tickerHidden')==='1';
   el.style.display=hidden?'none':'block';
   if(tab) tab.style.display=hidden?'block':'none';
+  const isGod = currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin);
+  if(seenBar){
+    if(isGod && currentGroup.ticker_updated_at){
+      seenBar.style.display='block';
+      renderTickerSeenBar(seenBar);
+    } else {
+      seenBar.style.display='none';
+    }
+  }
+}
+
+let _tickerSeenBarLoading=false;
+async function renderTickerSeenBar(bar){
+  if(_tickerSeenBarLoading) return;
+  _tickerSeenBarLoading=true;
+  try{
+    const players = await sb(`players?group_id=eq.${currentGroup.id}&select=name,nickname,last_seen`);
+    if(!players){bar.textContent='';return;}
+    const updatedAt=new Date(currentGroup.ticker_updated_at);
+    const seen=players.filter(p=>p.last_seen&&new Date(p.last_seen)>=updatedAt);
+    const names=seen.map(p=>p.nickname||p.name).join(', ');
+    bar.textContent=`seen by ${seen.length}/${players.length}${names?' · '+names:''}`;
+  }catch(e){bar.textContent='';}
+  finally{_tickerSeenBarLoading=false;}
 }
 
 function hideTicker(){
@@ -9090,6 +9122,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.2</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.3</div>
 </body>
 </html>
