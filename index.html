@@ -1174,7 +1174,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.57.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.57.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1332,9 +1332,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <!-- Match Card: last result + next game + countdown -->
       <div class="home-card" id="home-next-card" onclick="togglePicksView()" style="cursor:pointer;">
         <div id="hmc-body"></div>
-        <div class="home-cta" style="margin-top:.7rem;" onclick="event.stopPropagation()">
-          <button id="home-predict-btn" class="home-cta-btn primary" onclick="showView('predict')">My Predictions</button>
-        </div>
       </div>
 
       <!-- Mini Leaderboard -->
@@ -4629,6 +4626,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.57.2',date:'24 Jun 2026',notes:['Removed the "My Predictions" button from the bottom of the home match card.']},
   {v:'1.57.1',date:'24 Jun 2026',notes:['Live Now carousel: removed bounce animation; added dot indicators at the bottom; peek indicator now shows ‹ flags when on the second game (swipe left to go back) and flags › when on the first (swipe right to see the next).']},
   {v:'1.57.0',date:'24 Jun 2026',notes:['Live Now: when two games are on simultaneously, they show as a swipeable carousel instead of stacked. The "Live Now" header shows the other game\'s flags and a › arrow on the right — tap to jump, or swipe the card. A subtle bounce nudge hints that more is available.']},
   {v:'1.56.0',date:'24 Jun 2026',notes:['Last Results and Next Up now both show swipeable carousels: swipe left/right (or tap dots) to browse the last 4 results and the next 4 upcoming matches. Each Next Up slide shows its own countdown. Unified touch handler handles both carousels independently.']},
@@ -9371,6 +9369,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.2</div>
 </body>
 </html>
