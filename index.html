@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.58.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.58.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4074,7 +4074,7 @@ function getMatchDateLabel(f){
 
 function renderFixtures(container,forAdmin=false){
   const grouped={}, keyMap={};
-  const prevFixtures=[];
+  const prevFixtures=[], liveFixtures=[];
   const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
   const nowMs=Date.now();
   const LIVE_WIN=130*60*1000;
@@ -4083,7 +4083,9 @@ function renderFixtures(container,forAdmin=false){
     const ko=getMatchKickoff(f);
     const koMs=ko?ko.getTime():null;
     const isLive=!!(koMs&&nowMs>=koMs&&nowMs<koMs+LIVE_WIN);
-    if(dateKey!=='zz-tbd'&&dateKey<todayKey&&!isLive){
+    if(forAdmin && isLive){
+      liveFixtures.push(f);
+    } else if(dateKey!=='zz-tbd'&&dateKey<todayKey&&!isLive){
       prevFixtures.push(f);
     } else {
       const key = dateKey;
@@ -4092,22 +4094,47 @@ function renderFixtures(container,forAdmin=false){
       grouped[key].push(f);
     }
   });
+  if(forAdmin){
+    // Newest-first for admin previous matches
+    prevFixtures.sort((a,b)=>(getMatchKickoff(b)?.getTime()||0)-(getMatchKickoff(a)?.getTime()||0));
+  }
   const keys=Object.keys(grouped).sort();
   const cardFor=(f)=> forAdmin?renderAdminCard(f,results[f.id]):renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
   let html='';
-  if(prevFixtures.length){
-    html+=`<div class="matchday-group"><div class="matchday-label finished-heading" onclick="toggleFinishedSection()">Previous Matches<span class="finished-chevron" id="finished-chevron">›</span></div><div id="finished-matches-list" style="display:none;">`;
-    prevFixtures.forEach(f=>{ html+=cardFor(f); });
-    html+=`</div></div>`;
+  if(forAdmin){
+    if(liveFixtures.length){
+      html+=`<div class="matchday-group"><div class="matchday-label"><span class="today-dot"></span>Live Now</div>`;
+      liveFixtures.forEach(f=>{ html+=cardFor(f); });
+      html+=`</div>`;
+    }
+    if(prevFixtures.length){
+      html+=`<div class="matchday-group"><div class="matchday-label">Previous Matches</div>`;
+      prevFixtures.forEach(f=>{ html+=cardFor(f); });
+      html+=`</div>`;
+    }
+    keys.forEach(key=>{
+      const label=keyMap[key];
+      const isToday=label==='Today';
+      const isFuture=label!=='Today'&&label!=='Tomorrow'&&label!=='TBD';
+      html+=`<div class="matchday-group"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${label}</div>`;
+      grouped[key].forEach(f=>{ html+=cardFor(f); });
+      html+=`</div>`;
+    });
+  } else {
+    if(prevFixtures.length){
+      html+=`<div class="matchday-group"><div class="matchday-label finished-heading" onclick="toggleFinishedSection()">Previous Matches<span class="finished-chevron" id="finished-chevron">›</span></div><div id="finished-matches-list" style="display:none;">`;
+      prevFixtures.forEach(f=>{ html+=cardFor(f); });
+      html+=`</div></div>`;
+    }
+    keys.forEach(key=>{
+      const label=keyMap[key];
+      const isToday=label==='Today';
+      const isFuture=label!=='Today'&&label!=='Tomorrow'&&label!=='TBD';
+      html+=`<div class="matchday-group"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${label}</div>`;
+      grouped[key].forEach(f=>{ html+=cardFor(f); });
+      html+=`</div>`;
+    });
   }
-  keys.forEach(key=>{
-    const label=keyMap[key];
-    const isToday=label==='Today';
-    const isFuture=label!=='Today'&&label!=='Tomorrow'&&label!=='TBD';
-    html+=`<div class="matchday-group"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${label}</div>`;
-    grouped[key].forEach(f=>{ html+=cardFor(f); });
-    html+=`</div>`;
-  });
   container.innerHTML=html||'<div class="empty">No fixtures yet.</div>';
 }
 
@@ -4641,6 +4668,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.58.5',date:'24 Jun 2026',notes:['Admin Results: live games now appear at the top under a "Live Now" header; previous matches follow in newest-to-oldest order (no longer collapsed); upcoming games remain at the bottom.']},
   {v:'1.58.4',date:'24 Jun 2026',notes:['Fix: end-of-game banner now shows one banner per unseen finished game (oldest first) when you open the leaderboard — so if you missed two or more games since you last opened it, you see all of them in sequence. Counter shows "1 / 2" etc. Streak text on the final banner only.']},
   {v:'1.58.3',date:'24 Jun 2026',notes:['Fix: when two simultaneous games both finish, opening the leaderboard now shows an end-of-game banner for each game in sequence (1/2 then 2/2) rather than only the first. Streak text appears on the final banner.']},
   {v:'1.58.2',date:'24 Jun 2026',notes:['Fix: streak counter now counts games, not rounds — so winning 4 games where 2 were simultaneous correctly shows 🔥4 rather than just 🔥. Also fixes the end-of-game banner streak count.']},
@@ -9409,6 +9437,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.5</div>
 </body>
 </html>
