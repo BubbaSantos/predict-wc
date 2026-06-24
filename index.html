@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.58.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.58.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4094,6 +4094,10 @@ function renderFixtures(container,forAdmin=false){
       grouped[key].push(f);
     }
   });
+  if(forAdmin){
+    // Within each date group, sort most recent kickoff first
+    Object.values(grouped).forEach(arr=>arr.sort((a,b)=>(getMatchKickoff(b)?.getTime()||0)-(getMatchKickoff(a)?.getTime()||0)));
+  }
   const cardFor=(f)=> forAdmin?renderAdminCard(f,results[f.id]):renderPredictCard(f,predictions[f.id]||{home:'',away:''},results[f.id]);
   let html='';
   if(forAdmin){
@@ -4673,6 +4677,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.58.7',date:'24 Jun 2026',notes:['Admin Results: within each date group, games are now sorted most-recent kickoff first.']},
   {v:'1.58.6',date:'24 Jun 2026',notes:['Admin Results ordering: Live Now → Today → yesterday → day before → … → future dates at the bottom. Each date group keeps its own heading.']},
   {v:'1.58.5',date:'24 Jun 2026',notes:['Admin Results: live games now appear at the top under a "Live Now" header; previous matches follow in newest-to-oldest order (no longer collapsed); upcoming games remain at the bottom.']},
   {v:'1.58.4',date:'24 Jun 2026',notes:['Fix: end-of-game banner now shows one banner per unseen finished game (oldest first) when you open the leaderboard — so if you missed two or more games since you last opened it, you see all of them in sequence. Counter shows "1 / 2" etc. Streak text on the final banner only.']},
@@ -9443,6 +9448,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.7</div>
 </body>
 </html>
