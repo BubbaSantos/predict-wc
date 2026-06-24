@@ -1164,7 +1164,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.55.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.55.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3554,7 +3554,10 @@ function applyBranding(){
 
   document.getElementById('h-logo').textContent=emoji+' ';
   document.getElementById('h-group-name').textContent=name;
-  document.getElementById('h-group-sub').textContent=tag;
+  const isGodUser=currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin);
+  const verEl=document.getElementById('ver-btn');
+  const verTxt=verEl?verEl.textContent:'';
+  document.getElementById('h-group-sub').textContent=tag+(isGodUser&&verTxt?' · '+verTxt:'');
   document.getElementById('gh-icon').textContent=emoji;
   document.getElementById('gh-name').textContent=name;
   document.getElementById('gh-tag').textContent=tag;
@@ -4496,6 +4499,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.55.2',date:'24 Jun 2026',notes:['Version number now shown in the header bar next to the group tagline for god mode / admin users only.']},
   {v:'1.55.1',date:'24 Jun 2026',notes:['Version number: on mobile it\'s now in the normal document flow at the bottom of the page (scroll to find it) rather than position:fixed, which was causing it to ghost over content as the browser chrome appeared/disappeared. Fixed positioning kept on desktop where it works reliably.']},
   {v:'1.55.0',date:'24 Jun 2026',notes:['My Stats: "Net Movement" renamed to "Form Trend (Last 10 Games)" — now compares your current rank to your average rank over the last 10 games rather than comparing two fixed points, so it shows genuine drift even when you start and end at the same spot. Sub-text includes your high/low rank range over the window. Player predictions card: "Previous Results" dropdown now only hides matches older than 2 days (was 1 day), so the last 2 full days of results are visible by default.']},
   {v:'1.54.9',date:'24 Jun 2026',notes:['My Stats: removed Perfect Hauls (+8) — redundant with Correct Scores. Net Movement now measures your rank change over the last 10 games (or however many have been played) rather than from game 1, so it reflects recent form rather than a meaningless all-time delta.']},
@@ -9156,6 +9160,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.2</div>
 </body>
 </html>
