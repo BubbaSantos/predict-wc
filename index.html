@@ -1164,7 +1164,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.55.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.55.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1266,6 +1266,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <div>
         <div id="h-group-name" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;letter-spacing:.1em;color:var(--group-accent);line-height:1.1;"></div>
         <div class="header-group" id="h-group-sub"></div>
+        <span id="h-god-ver" style="display:none;font-size:.55rem;color:var(--text-muted);opacity:.5;letter-spacing:.06em;"></span>
       </div>
     </div>
     <button id="burger-btn" onclick="toggleMenu()" aria-label="Menu" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:.3rem .4rem;border-radius:5px;font-size:.85rem;line-height:1;align-items:center;gap:.25rem;vertical-align:middle;"><span style="vertical-align:middle;">☰</span> <span style="font-size:.75rem;font-weight:600;letter-spacing:.04em;vertical-align:middle;">Menu</span></button>
@@ -3557,7 +3558,9 @@ function applyBranding(){
   const isGodUser=_godUnlocked||_inGodSession||(currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin));
   const verEl=document.getElementById('ver-btn');
   const verTxt=verEl?verEl.textContent:'';
-  document.getElementById('h-group-sub').textContent=tag+(isGodUser&&verTxt?' · '+verTxt:'');
+  document.getElementById('h-group-sub').textContent=tag;
+  const godVerEl=document.getElementById('h-god-ver');
+  if(godVerEl){godVerEl.textContent=verTxt;godVerEl.style.display=isGodUser&&verTxt?'':'none';}
   document.getElementById('gh-icon').textContent=emoji;
   document.getElementById('gh-name').textContent=name;
   document.getElementById('gh-tag').textContent=tag;
@@ -9160,6 +9163,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.4</div>
 </body>
 </html>
