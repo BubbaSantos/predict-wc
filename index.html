@@ -251,7 +251,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-label-row .hmc-label{margin-bottom:0;}
 .hmc-live-peek{display:flex;align-items:center;gap:.2rem;font-size:.75rem;opacity:.7;cursor:pointer;user-select:none;}
 .hmc-live-peek-arrow{font-size:.6rem;color:var(--text-muted);margin-left:.05rem;}
-@media (prefers-reduced-motion: no-preference){@keyframes hmc-live-bounce{0%,100%{transform:translateX(0)}60%{transform:translateX(5px)}80%{transform:translateX(-2px)}}.hmc-carousel-wrap.live-bounce{animation:hmc-live-bounce .7s ease-in-out;}}
 .match-stat-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid rgba(30,45,69,.5);font-size:.78rem;}
 .match-stat-row:last-child{border-bottom:none;}
 .match-stat-teams{color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1175,7 +1174,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.57.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.57.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3216,7 +3215,10 @@ function renderMatchCardBody(){
       if(_liveGamesIdx >= liveGames.length) _liveGamesIdx = 0;
       const otherIdx = (_liveGamesIdx + 1) % liveGames.length;
       const other = liveGames[otherIdx];
-      const peekHtml = `<div class="hmc-live-peek" onclick="hmcLiveGoToSlide(${otherIdx});event.stopPropagation()"><span>${other.hf}</span><span style="font-size:.55rem;color:var(--text-muted);">vs</span><span>${other.af}</span><span class="hmc-live-peek-arrow">›</span></div>`;
+      const goingRight = _liveGamesIdx === 0;
+      const peekHtml = goingRight
+        ? `<div class="hmc-live-peek" onclick="hmcLiveGoToSlide(${otherIdx});event.stopPropagation()"><span>${other.hf}</span><span style="font-size:.55rem;color:var(--text-muted);">vs</span><span>${other.af}</span><span class="hmc-live-peek-arrow">›</span></div>`
+        : `<div class="hmc-live-peek" onclick="hmcLiveGoToSlide(${otherIdx});event.stopPropagation()"><span class="hmc-live-peek-arrow">‹</span><span>${other.hf}</span><span style="font-size:.55rem;color:var(--text-muted);">vs</span><span>${other.af}</span></div>`;
       html += `<div class="hmc-label-row"><div class="hmc-label live" style="margin-bottom:0"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>${peekHtml}</div>`;
       const slides = liveGames.map(f=>{
         const r = results[f.id];
@@ -3229,6 +3231,8 @@ function renderMatchCardBody(){
       }).join('');
       const livePct = _liveGamesIdx*(100/liveGames.length);
       html += `<div class="hmc-carousel-wrap" id="hmc-live-wrap"><div class="hmc-carousel-track" id="hmc-live-track" style="width:${liveGames.length*100}%;transform:translateX(-${livePct}%)">${slides}</div></div>`;
+      const liveDots = liveGames.map((_,i)=>`<span class="hmc-dot${i===_liveGamesIdx?' active':''}" onclick="hmcLiveGoToSlide(${i});event.stopPropagation()"></span>`).join('');
+      html += `<div class="hmc-dots">${liveDots}</div>`;
     } else {
       html += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
       const f = liveGames[0];
@@ -3290,14 +3294,6 @@ function renderMatchCardBody(){
     html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
   }
   el.innerHTML = html;
-  if(document.getElementById('hmc-live-wrap')){
-    setTimeout(()=>{
-      const w=document.getElementById('hmc-live-wrap');
-      if(!w) return;
-      w.classList.add('live-bounce');
-      w.addEventListener('animationend',()=>w.classList.remove('live-bounce'),{once:true});
-    }, 800);
-  }
 }
 
 function hmcGoToSlide(idx){
@@ -4633,6 +4629,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.57.1',date:'24 Jun 2026',notes:['Live Now carousel: removed bounce animation; added dot indicators at the bottom; peek indicator now shows ‹ flags when on the second game (swipe left to go back) and flags › when on the first (swipe right to see the next).']},
   {v:'1.57.0',date:'24 Jun 2026',notes:['Live Now: when two games are on simultaneously, they show as a swipeable carousel instead of stacked. The "Live Now" header shows the other game\'s flags and a › arrow on the right — tap to jump, or swipe the card. A subtle bounce nudge hints that more is available.']},
   {v:'1.56.0',date:'24 Jun 2026',notes:['Last Results and Next Up now both show swipeable carousels: swipe left/right (or tap dots) to browse the last 4 results and the next 4 upcoming matches. Each Next Up slide shows its own countdown. Unified touch handler handles both carousels independently.']},
   {v:'1.55.9',date:'24 Jun 2026',notes:['Next Up card: when multiple games kick off at the same time, swipe left/right to browse them — smooth iOS-style carousel with dot indicators. Works via touch drag (real-time follow) or tap the dots to jump directly.']},
@@ -9374,6 +9371,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.1</div>
 </body>
 </html>
