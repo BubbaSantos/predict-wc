@@ -780,7 +780,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .ticker-speed-btn:hover{border-color:var(--group-accent);color:var(--text);}
   .ticker-speed-btn.active{background:var(--group-accent);border-color:var(--group-accent);color:#000;font-weight:700;}
   @keyframes newsTicker{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
-  #ticker-tab{display:none;position:fixed;top:var(--header-h,60px);left:0;z-index:51;background:#fde047;color:#111;font-size:.65rem;font-weight:700;padding:.28rem .55rem .28rem .45rem;border-radius:0 6px 6px 0;border:1.5px solid #b45309;border-left:none;cursor:pointer;letter-spacing:.04em;box-shadow:2px 2px 6px rgba(0,0,0,.15);}
+  #ticker-tab{display:none;position:fixed;top:var(--header-h,60px);left:0;z-index:51;background:var(--surface2);color:var(--text-muted);font-size:.62rem;font-weight:600;padding:.25rem .55rem .25rem .4rem;border-radius:0 6px 6px 0;border:1px solid var(--border);border-left:none;cursor:pointer;letter-spacing:.03em;box-shadow:0 2px 6px rgba(0,0,0,.12);opacity:.75;transition:opacity .15s;}
+  #ticker-tab:hover{opacity:1;color:var(--text);}
 
   /* MORE ANIMATIONS */
   @keyframes slideInRight { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
@@ -1161,7 +1162,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.7</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4494,6 +4495,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.54.8',date:'24 Jun 2026',notes:['Ticker: "Show news" tab is now subtle — matches the surface/border colours at 75% opacity instead of the loud yellow. Seen-by timestamp only resets when the ticker message text actually changes, so toggling speed or enable/disable no longer wipes the counter.']},
   {v:'1.54.7',date:'24 Jun 2026',notes:['Ticker: "Show news" tab and the ticker strip now track the actual header height via a CSS variable (--header-h), so they always sit flush below the two-row mobile nav instead of being hidden behind it.']},
   {v:'1.54.6',date:'24 Jun 2026',notes:['Ticker seen-by: current user (admin/god) always counts as seen; seen-by bar hides when you dismiss the ticker and reappears when you restore it; home bar shows count only (no names) — names appear in admin settings only.']},
   {v:'1.54.5',date:'24 Jun 2026',notes:['Fix ticker seen-by not appearing: removed dependency on ticker_updated_at DB column (was causing ticker saves to fail and both seen-by UIs to stay hidden). Cutoff is now stored in localStorage on the admin\'s device — hit Save Ticker once to start tracking from that point.']},
@@ -5115,7 +5117,7 @@ async function saveTickerSettings(){
   const speed=(['slow','normal','fast'].find(s=>document.getElementById('ticker-speed-'+s)?.classList.contains('active')))||'normal';
   try{
     await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed}});
-    localStorage.setItem('wc26_ticker_saved_at', new Date().toISOString());
+    if((text||null) !== (currentGroup.ticker_text||null)) localStorage.setItem('wc26_ticker_saved_at', new Date().toISOString());
     currentGroup={...currentGroup,ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed};
     saveSession();
     renderTicker();
@@ -9146,6 +9148,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.7</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.8</div>
 </body>
 </html>
