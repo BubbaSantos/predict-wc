@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.55.9</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.56.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2472,6 +2472,8 @@ let _nextUpcoming = null;
 let _nextUpcomingAll = [];
 let _nextUpcomingIdx = 0;
 let _nextGamePredHtmlAll = [];
+let _lastResultsAll = [];
+let _lastResultIdx = 0;
 let _livePicksMap = {};
 let _matchPredsMap = {};
 let _lastResultPicksGrouped = '';
@@ -3214,26 +3216,40 @@ function renderMatchCardBody(){
       const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
       html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+picks+(hasAnyPicks?picksHint:'')+matchExtrasHtml(f);
     });
-  } else if(_lastResultF){
-    const r=results[_lastResultMatchId];
-    const lastPicks = _picksViewMode==='grouped' ? _lastResultPicksGrouped : namedPicksHtml(_lastResultMatchId,'result');
-    const hasLastPicks = !!(_lastResultPicksGrouped||(_matchPredsMap[_lastResultMatchId]?.length));
-    html += `<div class="hmc-label">Last Result</div>`+_pctTeamsHtml(_lastResultF,'',`${r.home}–${r.away}`,_lastResultMatchId)+_lastResultPredHtml+lastPicks+(hasLastPicks?picksHint:'')+matchExtrasHtml(_lastResultF)+_lastMatchStatsHtml;
+  } else if(_lastResultsAll.length){
+    const lrn = _lastResultsAll.length;
+    const lrLabel = lrn > 1 ? 'Last Results' : 'Last Result';
+    if(lrn > 1){
+      const slides = _lastResultsAll.map((item,i)=>{
+        const r=results[item.matchId];
+        const lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
+        const hasLastPicks=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length));
+        return `<div class="hmc-carousel-slide" style="width:${100/lrn}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLastPicks?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`;
+      }).join('');
+      const lrPct = _lastResultIdx*(100/lrn);
+      html += `<div class="hmc-label">${lrLabel}</div><div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-last-track" style="width:${lrn*100}%;transform:translateX(-${lrPct}%)">${slides}</div></div>`;
+      const lrDots = _lastResultsAll.map((_,i)=>`<span class="hmc-dot${i===_lastResultIdx?' active':''}" onclick="hmcLastGoToSlide(${i});event.stopPropagation()"></span>`).join('');
+      html += `<div class="hmc-dots">${lrDots}</div>`;
+    } else {
+      const item=_lastResultsAll[0], r=results[item.matchId];
+      const lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
+      const hasLastPicks=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length));
+      html += `<div class="hmc-label">${lrLabel}</div>`+_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)+item.predHtml+lastPicks+(hasLastPicks?picksHint:'')+matchExtrasHtml(item.f)+item.statsHtml;
+    }
   }
   if(_nextUpcoming){
-    const diff = _nextUpcoming.ko.getTime()-now;
-    if(diff>0){
+    const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
+    const cdHtml=ko=>{const diff=ko.getTime()-now;if(diff<=0)return'';const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);return`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;};
+    if(_nextUpcomingAll.some(item=>item.ko.getTime()>now)){
       if(html) html += '<hr class="hmc-sep">';
-      const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
-      const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
-      html += `<div class="hmc-label">Next Up</div><div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;
+      html += `<div class="hmc-label">Next Up</div>`;
       if(_nextUpcomingAll.length > 1){
         const cn = _nextUpcomingAll.length;
         const slides = _nextUpcomingAll.map((item,i)=>{
           const nid=item.f.id;
           const np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,'upcoming');
           const hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));
-          return `<div class="hmc-carousel-slide" style="width:${100/cn}%">${_pctTeamsHtml(item.f,'vs','vs',nid)}${_nextGamePredHtmlAll[i]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`;
+          return `<div class="hmc-carousel-slide" style="width:${100/cn}%">${cdHtml(item.ko)}${_pctTeamsHtml(item.f,'vs','vs',nid)}${_nextGamePredHtmlAll[i]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`;
         }).join('');
         const pct = _nextUpcomingIdx*(100/cn);
         html += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" style="width:${cn*100}%;transform:translateX(-${pct}%)">${slides}</div></div>`;
@@ -3243,7 +3259,7 @@ function renderMatchCardBody(){
         const nextId = _nextUpcoming.f.id;
         const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,'upcoming');
         const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-        html += _pctTeamsHtml(_nextUpcoming.f,'vs','vs',nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
+        html += cdHtml(_nextUpcoming.ko)+_pctTeamsHtml(_nextUpcoming.f,'vs','vs',nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
       }
     }
   } else if(!html){
@@ -3260,8 +3276,26 @@ function hmcGoToSlide(idx){
     const n = _nextUpcomingAll.length;
     track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
     track.style.transform = `translateX(-${idx*(100/n)}%)`;
+    _hmcSyncDots(track, idx);
   }
-  document.querySelectorAll('.hmc-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+function hmcLastGoToSlide(idx){
+  if(idx<0||idx>=_lastResultsAll.length) return;
+  _lastResultIdx = idx;
+  const track = document.getElementById('hmc-last-track');
+  if(track){
+    const n = _lastResultsAll.length;
+    track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
+    track.style.transform = `translateX(-${idx*(100/n)}%)`;
+    _hmcSyncDots(track, idx);
+  }
+}
+function _hmcSyncDots(track, idx){
+  const wrap = track.parentElement;
+  if(!wrap) return;
+  const dotsEl = wrap.nextElementSibling;
+  if(dotsEl&&dotsEl.classList.contains('hmc-dots'))
+    dotsEl.querySelectorAll('.hmc-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
 }
 
 function _predPcts(mid){
@@ -4553,6 +4587,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.56.0',date:'24 Jun 2026',notes:['Last Results and Next Up now both show swipeable carousels: swipe left/right (or tap dots) to browse the last 4 results and the next 4 upcoming matches. Each Next Up slide shows its own countdown. Unified touch handler handles both carousels independently.']},
   {v:'1.55.9',date:'24 Jun 2026',notes:['Next Up card: when multiple games kick off at the same time, swipe left/right to browse them — smooth iOS-style carousel with dot indicators. Works via touch drag (real-time follow) or tap the dots to jump directly.']},
   {v:'1.55.2',date:'24 Jun 2026',notes:['Version number now shown in the header bar next to the group tagline for god mode / admin users only.']},
   {v:'1.55.1',date:'24 Jun 2026',notes:['Version number: on mobile it\'s now in the normal document flow at the bottom of the page (scroll to find it) rather than position:fixed, which was causing it to ghost over content as the browser chrome appeared/disappeared. Fixed positioning kept on desktop where it works reliably.']},
@@ -5905,45 +5940,43 @@ async function loadHome(){
       });
     });
 
-    // Last completed match
-    const lastCompleted = allFixtures()
+    // Last 4 completed matches
+    _lastResultsAll = allFixtures()
       .filter(f=>rm[f.id]&&rm[f.id].home_score!==null&&rm[f.id].home_score!==undefined)
       .map(f=>({f,ko:getMatchKickoff(f)}))
       .filter(({ko})=>ko)
-      .sort((a,b)=>b.ko-a.ko)[0];
-    if(lastCompleted){
-      const {f}=lastCompleted, r=rm[f.id], pred=myPredMap[f.id];
-      let predHtml='';
-      if(pred){
-        const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
-        const ptsNum=pts===8?8:pts===5?5:pts===3?3:0;
-        const ptsDisplay=ptsNum===0?'0':ptsNum===8?'+8 ⭐':'+'+ptsNum;
-        const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'#f59e0b':'#22c55e';
-        predHtml=`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received <span style="color:${ptsColor};font-weight:700;">${ptsDisplay}</span></div>`;
-      }
-      _lastResultHtml='';
-      _lastResultF = f;
-      _lastResultPredHtml = predHtml;
-      _lastResultPicksGrouped = coloredGroupedPicksHtml(f.id, r.home_score, r.away_score);
-      _lastResultMatchId = f.id;
-    } else { _lastResultHtml=''; _lastResultF=null; _lastResultPredHtml=''; _lastResultPicksGrouped=''; _lastResultMatchId=null; }
+      .sort((a,b)=>b.ko-a.ko)
+      .slice(0,4)
+      .map(({f})=>{
+        const r=rm[f.id], pred=myPredMap[f.id];
+        let predHtml='';
+        if(pred){
+          const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
+          const ptsNum=pts===8?8:pts===5?5:pts===3?3:0;
+          const ptsDisplay=ptsNum===0?'0':ptsNum===8?'+8 ⭐':'+'+ptsNum;
+          const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'#f59e0b':'#22c55e';
+          predHtml=`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received <span style="color:${ptsColor};font-weight:700;">${ptsDisplay}</span></div>`;
+        }
+        const mPreds=(gamePreds||[]).filter(p=>p.match_id===f.id);
+        const n=mPreds.length;
+        let statsHtml='';
+        if(n>0){
+          const correct=mPreds.filter(p=>calcPoints(p.home_score,p.away_score,r.home_score,r.away_score)>=3).length;
+          const exact=mPreds.filter(p=>calcPoints(p.home_score,p.away_score,r.home_score,r.away_score)>=5).length;
+          const pctR=Math.round(correct/n*100), pctE=Math.round(exact/n*100);
+          statsHtml=`<div style="font-size:.67rem;color:var(--text-muted);margin-top:.55rem;text-align:center;line-height:1.8;"><span style="color:${pctR>=50?'var(--green)':'var(--text-muted)'};">${pctR}%</span> predicted the correct result &nbsp;·&nbsp; <span style="color:${pctE>=30?'var(--group-accent)':'var(--text-muted)'};">${pctE}%</span> got the exact score</div>`;
+        }
+        return {f, matchId:f.id, predHtml, picksGrouped:coloredGroupedPicksHtml(f.id,r.home_score,r.away_score), statsHtml};
+      });
+    // Clamp carousel index and set backward-compat vars from first result
+    if(_lastResultIdx >= _lastResultsAll.length) _lastResultIdx = 0;
+    if(_lastResultsAll.length){
+      const lr=_lastResultsAll[0];
+      _lastResultHtml=''; _lastResultF=lr.f; _lastResultPredHtml=lr.predHtml;
+      _lastResultPicksGrouped=lr.picksGrouped; _lastResultMatchId=lr.matchId; _lastMatchStatsHtml=lr.statsHtml;
+    } else { _lastResultHtml=''; _lastResultF=null; _lastResultPredHtml=''; _lastResultPicksGrouped=''; _lastResultMatchId=null; _lastMatchStatsHtml=''; }
 
-    // Stats for last completed match
-    if(lastCompleted){
-      const lastF=lastCompleted.f, lastR=rm[lastF.id];
-      const mPreds=(gamePreds||[]).filter(p=>p.match_id===lastF.id);
-      const n=mPreds.length;
-      if(n>0){
-        const correct=mPreds.filter(p=>calcPoints(p.home_score,p.away_score,lastR.home_score,lastR.away_score)>=3).length;
-        const exact=mPreds.filter(p=>calcPoints(p.home_score,p.away_score,lastR.home_score,lastR.away_score)>=5).length;
-        const pctR=Math.round(correct/n*100), pctE=Math.round(exact/n*100);
-        _lastMatchStatsHtml=`<div style="font-size:.67rem;color:var(--text-muted);margin-top:.55rem;text-align:center;line-height:1.8;">
-          <span style="color:${pctR>=50?'var(--green)':'var(--text-muted)'};">${pctR}%</span> predicted the correct result &nbsp;·&nbsp; <span style="color:${pctE>=30?'var(--group-accent)':'var(--text-muted)'};">${pctE}%</span> got the exact score
-        </div>`;
-      } else { _lastMatchStatsHtml=''; }
-    } else { _lastMatchStatsHtml=''; }
-
-    // Next upcoming match(es) — group all games sharing the same earliest KO
+    // Next 4 upcoming matches
     const _nextSorted = allFixtures()
       .filter(f=>!rm[f.id])
       .map(f=>({f,ko:getMatchKickoff(f)}))
@@ -5951,9 +5984,7 @@ async function loadHome(){
       .sort((a,b)=>a.ko-b.ko);
     _nextUpcoming = _nextSorted[0]||null;
     if(_nextUpcoming){
-      const firstKoMs = _nextUpcoming.ko.getTime();
-      _nextUpcomingAll = _nextSorted.filter(({ko})=>ko.getTime()===firstKoMs);
-      // Clamp carousel index if games changed
+      _nextUpcomingAll = _nextSorted.slice(0,4);
       if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
       _nextGamePredHtmlAll = _nextUpcomingAll.map(({f})=>{
         const pred=myPredMap[f.id];
@@ -9206,48 +9237,55 @@ async function godCreateGroup(){
   }catch(e){ showErr(errEl,'Error: '+e.message); }
 }
 
-// Carousel swipe for next-up card (multiple simultaneous KO games)
+// Unified carousel swipe handler for home match card (last results + next up)
 (function(){
   const card = document.getElementById('home-next-card');
   if(!card) return;
-  let _cSwX=null, _cSwY=null, _cDragging=false, _cStartPct=0;
+  let _cSwX=null,_cSwY=null,_cDragging=false,_cStartPct=0,_cTrack=null,_cItems=null,_cGetIdx=null,_cSetIdx=null;
   card.addEventListener('touchstart',e=>{
-    if(_nextUpcomingAll.length < 2) return;
-    e.stopPropagation(); // prevent outer view-swipe from capturing this touch
+    const wrap=e.target.closest('.hmc-carousel-wrap');
+    if(!wrap) return;
+    const track=wrap.querySelector('.hmc-carousel-track');
+    if(!track) return;
+    let items,getIdx,setIdx;
+    if(track.id==='hmc-last-track'&&_lastResultsAll.length>1){
+      items=_lastResultsAll; getIdx=()=>_lastResultIdx; setIdx=v=>{_lastResultIdx=v;};
+    } else if(track.id==='hmc-carousel-track'&&_nextUpcomingAll.length>1){
+      items=_nextUpcomingAll; getIdx=()=>_nextUpcomingIdx; setIdx=v=>{_nextUpcomingIdx=v;};
+    } else return;
+    e.stopPropagation();
     const t=e.touches[0];
     _cSwX=t.clientX; _cSwY=t.clientY; _cDragging=false;
-    _cStartPct=_nextUpcomingIdx*(100/_nextUpcomingAll.length);
+    _cTrack=track; _cItems=items; _cGetIdx=getIdx; _cSetIdx=setIdx;
+    _cStartPct=getIdx()*(100/items.length);
   },{passive:true});
   card.addEventListener('touchmove',e=>{
-    if(_cSwX===null||_nextUpcomingAll.length<2) return;
-    const track=document.getElementById('hmc-carousel-track');
-    if(!track) return;
+    if(_cSwX===null||!_cTrack) return;
     const t=e.touches[0];
     const dx=t.clientX-_cSwX, dy=t.clientY-_cSwY;
     if(!_cDragging){
-      if(Math.abs(dy)>Math.abs(dx)){_cSwX=null;return;} // vertical — bail
+      if(Math.abs(dy)>Math.abs(dx)){_cSwX=null;_cTrack=null;return;}
       _cDragging=true;
     }
     e.preventDefault();
-    const n=_nextUpcomingAll.length;
+    const n=_cItems.length;
     const pct=_cStartPct-(dx/card.offsetWidth)*(100/n);
-    const clamped=Math.max(0,Math.min(pct,(n-1)*(100/n)));
-    track.style.transition='none';
-    track.style.transform=`translateX(-${clamped}%)`;
+    _cTrack.style.transition='none';
+    _cTrack.style.transform=`translateX(-${Math.max(0,Math.min(pct,(n-1)*(100/n)))}%)`;
   },{passive:false});
   card.addEventListener('touchend',e=>{
-    if(_cSwX===null||!_cDragging||_nextUpcomingAll.length<2){_cSwX=null;_cDragging=false;return;}
-    const track=document.getElementById('hmc-carousel-track');
-    if(!track){_cSwX=null;_cDragging=false;return;}
+    if(_cSwX===null||!_cDragging||!_cTrack){_cSwX=null;_cTrack=null;_cDragging=false;return;}
+    const track=_cTrack,items=_cItems,getIdx=_cGetIdx,setIdx=_cSetIdx;
     const dx=e.changedTouches[0].clientX-_cSwX;
-    _cSwX=null; _cDragging=false;
-    const n=_nextUpcomingAll.length;
-    const threshold=card.offsetWidth*0.2;
-    if(dx<-threshold&&_nextUpcomingIdx<n-1) _nextUpcomingIdx++;
-    else if(dx>threshold&&_nextUpcomingIdx>0) _nextUpcomingIdx--;
+    _cSwX=null;_cTrack=null;_cDragging=false;
+    const n=items.length,threshold=card.offsetWidth*0.2;
+    let idx=getIdx();
+    if(dx<-threshold&&idx<n-1) idx++;
+    else if(dx>threshold&&idx>0) idx--;
+    setIdx(idx);
     track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
-    track.style.transform=`translateX(-${_nextUpcomingIdx*(100/n)}%)`;
-    document.querySelectorAll('.hmc-dot').forEach((d,i)=>d.classList.toggle('active',i===_nextUpcomingIdx));
+    track.style.transform=`translateX(-${idx*(100/n)}%)`;
+    _hmcSyncDots(track,idx);
   },{passive:true});
 })();
 
@@ -9285,6 +9323,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.9</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.56.0</div>
 </body>
 </html>
