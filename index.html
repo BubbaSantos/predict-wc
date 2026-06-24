@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.57.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.57.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3316,8 +3316,8 @@ function hmcLiveGoToSlide(idx){
     const n = liveGames.length;
     track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
     track.style.transform = `translateX(-${idx*(100/n)}%)`;
+    _hmcSyncDots(track, idx);
   }
-  renderMatchCardBody();
 }
 function _hmcSyncDots(track, idx){
   const wrap = track.parentElement;
@@ -4616,6 +4616,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.57.6',date:'24 Jun 2026',notes:['Live Now carousel now uses the same smooth slide animation as Next Up and Last Results — was rebuilding the DOM on each swipe which killed the transition.']},
   {v:'1.57.5',date:'24 Jun 2026',notes:['Next Up and Last Results carousels now loop like Live Now — swiping past the last slide wraps back to the first.']},
   {v:'1.57.4',date:'24 Jun 2026',notes:['Home match card: team flags enlarged (1.75rem → 2.4rem).']},
   {v:'1.57.3',date:'24 Jun 2026',notes:['Live Now carousel: removed flags peek indicator from header; swipe threshold reduced to 10% (was 20%) and flick detection added so short fast swipes register; carousel loops — swiping past the last game wraps back to the first.']},
@@ -9328,7 +9329,7 @@ async function godCreateGroup(){
     setIdx(idx);
     track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
     track.style.transform=`translateX(-${idx*(100/n)}%)`;
-    if(track.id==='hmc-live-track') renderMatchCardBody(); else _hmcSyncDots(track,idx);
+    _hmcSyncDots(track,idx);
   },{passive:true});
 })();
 
@@ -9366,6 +9367,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.6</div>
 </body>
 </html>
