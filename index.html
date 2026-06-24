@@ -196,7 +196,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-sep{border:none;border-top:1px solid var(--border);margin:.85rem 0;}
 .hmc-teams{display:flex;align-items:center;gap:.5rem;}
 .hmc-team{display:flex;flex-direction:column;align-items:center;gap:.18rem;flex:1;min-width:0;}
-.hmc-flag{font-size:1.75rem;line-height:1;}
+.hmc-flag{font-size:2.4rem;line-height:1;}
 .hmc-tname{font-size:.7rem;font-weight:600;text-align:center;color:var(--text);}
 .hmc-score{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:900;color:var(--text);text-align:center;flex-shrink:0;min-width:3.5rem;}
 .hmc-score.live{color:#ef4444;}
@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.57.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.57.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4616,6 +4616,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.57.4',date:'24 Jun 2026',notes:['Home match card: team flags enlarged (1.75rem → 2.4rem).']},
   {v:'1.57.3',date:'24 Jun 2026',notes:['Live Now carousel: removed flags peek indicator from header; swipe threshold reduced to 10% (was 20%) and flick detection added so short fast swipes register; carousel loops — swiping past the last game wraps back to the first.']},
   {v:'1.57.2',date:'24 Jun 2026',notes:['Removed the "My Predictions" button from the bottom of the home match card.']},
   {v:'1.57.1',date:'24 Jun 2026',notes:['Live Now carousel: removed bounce animation; added dot indicators at the bottom; peek indicator now shows ‹ flags when on the second game (swipe left to go back) and flags › when on the first (swipe right to see the next).']},
@@ -9364,6 +9365,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.4</div>
 </body>
 </html>
