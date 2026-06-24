@@ -1161,7 +1161,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.1</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1851,6 +1851,13 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             </div>
           </div>
           <button class="sync-refresh" style="margin-top:.85rem;" onclick="saveTickerSettings()">Save Ticker</button>
+          <div id="ticker-seen-section" style="margin-top:1rem;display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+              <label style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Seen by</label>
+              <button class="sync-refresh" style="font-size:.65rem;padding:.2rem .55rem;" onclick="loadTickerSeenBy()">↻</button>
+            </div>
+            <div id="ticker-seen-list" style="font-size:.8rem;"></div>
+          </div>
         </div>
 
         </div><!-- /ctrl-section-display -->
@@ -4484,6 +4491,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.54.2',date:'24 Jun 2026',notes:['Admin → Display → News Ticker: new "Seen by" section shows which players have opened the app since the ticker was last saved (green chips), and who hasn\'t yet (grey chips). Requires one new Supabase column: ALTER TABLE groups ADD COLUMN ticker_updated_at timestamptz;']},
   {v:'1.54.1',date:'24 Jun 2026',notes:['End-of-game banner: now fires automatically when a result is entered and 130 minutes have passed since kickoff — no need for admin to press the Full Time button. The results poller now also tracks the full_time flag so the banner triggers for all players as soon as the admin marks a match Full Time, even if they\'re on a different tab.']},
   {v:'1.54.0',date:'23 Jun 2026',notes:['Any player\'s stats are now viewable: tap a player on the leaderboard to open their predictions, then tap the 📈 Stats button next to their name to see their full personal stats page (same 29 stats as your own My Stats, respecting the admin on/off toggles). Also available from the admin Players list and your own My Predictions.']},
   {v:'1.53.0',date:'23 Jun 2026',notes:['New 📈 My Stats page — open it from the profile menu (tap your name). Shows your personal tournament stats: total points, current / highest / lowest league position, net movement, matchdays spent at #1, in the top 3 and at the bottom, your most-held position, the games you predicted correct scores in (and your "solo" correct scores nobody else nailed), correct-score and correct-result hit rates, perfect hauls (+8), best & worst matchdays, current streak, longest perfect/hot/cold streaks and streak counts, your favourite predicted scoreline, total goals predicted and more.','Admin → Display → Personal Player Stats: toggle each of the 29 stats on or off individually (with Enable all / Disable all shortcuts). Hidden stats disappear from everyone\'s My Stats page.','Requires a new Supabase column: ALTER TABLE groups ADD COLUMN player_stats_hidden jsonb DEFAULT \'[]\'::jsonb;']},
@@ -5055,6 +5063,29 @@ function loadTickerSettings(){
   if(tog) tog.checked=currentGroup.ticker_enabled===true;
   if(txt) txt.value=currentGroup.ticker_text||'';
   setTickerSpeed(currentGroup.ticker_speed||'normal', true);
+  const seenSec = document.getElementById('ticker-seen-section');
+  if(seenSec) seenSec.style.display = (currentGroup.ticker_enabled && currentGroup.ticker_updated_at) ? '' : 'none';
+  if(currentGroup.ticker_enabled && currentGroup.ticker_updated_at) loadTickerSeenBy();
+}
+
+async function loadTickerSeenBy(){
+  if(!currentGroup) return;
+  const el = document.getElementById('ticker-seen-list');
+  if(!el) return;
+  el.innerHTML = '<span style="color:var(--text-muted);font-size:.75rem;">Loading…</span>';
+  try{
+    const updatedAt = currentGroup.ticker_updated_at;
+    const players = await sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,last_seen`);
+    if(!players){ el.innerHTML='<span style="color:var(--text-muted);">–</span>'; return; }
+    const seen=[], unseen=[];
+    players.forEach(p=>{
+      const display = p.nickname||p.name;
+      if(p.last_seen && new Date(p.last_seen) >= new Date(updatedAt)) seen.push(display);
+      else unseen.push(display);
+    });
+    const chip = (name,ok)=>`<span style="display:inline-block;background:${ok?'rgba(16,185,129,.12)':'var(--surface2)'};color:${ok?'var(--green)':'var(--text-muted)'};border:1px solid ${ok?'rgba(16,185,129,.25)':'var(--border)'};border-radius:5px;padding:.15rem .45rem;font-size:.72rem;font-weight:600;margin:.15rem .15rem .15rem 0;">${name}</span>`;
+    el.innerHTML = seen.map(n=>chip(n,true)).join('')+(unseen.length?'<div style="margin-top:.4rem;border-top:1px solid var(--border);padding-top:.4rem;">'+unseen.map(n=>chip(n,false)).join('')+'</div>':'');
+  }catch(e){ el.innerHTML='<span style="color:var(--text-muted);font-size:.75rem;">Failed to load</span>'; }
 }
 
 function setTickerSpeed(speed, silent){
@@ -5074,8 +5105,9 @@ async function saveTickerSettings(){
   const text=(document.getElementById('ticker-text')?.value||'').trim();
   const speed=(['slow','normal','fast'].find(s=>document.getElementById('ticker-speed-'+s)?.classList.contains('active')))||'normal';
   try{
-    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed}});
-    currentGroup={...currentGroup,ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed};
+    const updatedAt = new Date().toISOString();
+    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed,ticker_updated_at:updatedAt}});
+    currentGroup={...currentGroup,ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed,ticker_updated_at:updatedAt};
     saveSession();
     renderTicker();
     flash('Ticker saved!','success');
@@ -9058,6 +9090,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.1</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.2</div>
 </body>
 </html>
