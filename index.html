@@ -247,10 +247,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-dots{display:flex;justify-content:center;gap:.45rem;margin-top:.5rem;}
 .hmc-dot{width:.42rem;height:.42rem;border-radius:50%;background:var(--text-muted);opacity:.3;cursor:pointer;transition:opacity .2s,background .2s;}
 .hmc-dot.active{background:var(--group-accent);opacity:1;}
-.hmc-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem;}
-.hmc-label-row .hmc-label{margin-bottom:0;}
-.hmc-live-peek{display:flex;align-items:center;gap:.2rem;font-size:.75rem;opacity:.7;cursor:pointer;user-select:none;}
-.hmc-live-peek-arrow{font-size:.6rem;color:var(--text-muted);margin-left:.05rem;}
 .match-stat-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid rgba(30,45,69,.5);font-size:.78rem;}
 .match-stat-row:last-child{border-bottom:none;}
 .match-stat-teams{color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1174,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.57.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.57.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3210,13 +3206,7 @@ function renderMatchCardBody(){
   if(liveGames.length){
     if(liveGames.length > 1){
       if(_liveGamesIdx >= liveGames.length) _liveGamesIdx = 0;
-      const otherIdx = (_liveGamesIdx + 1) % liveGames.length;
-      const other = liveGames[otherIdx];
-      const goingRight = _liveGamesIdx === 0;
-      const peekHtml = goingRight
-        ? `<div class="hmc-live-peek" onclick="hmcLiveGoToSlide(${otherIdx});event.stopPropagation()"><span>${other.hf}</span><span style="font-size:.55rem;color:var(--text-muted);">vs</span><span>${other.af}</span><span class="hmc-live-peek-arrow">›</span></div>`
-        : `<div class="hmc-live-peek" onclick="hmcLiveGoToSlide(${otherIdx});event.stopPropagation()"><span class="hmc-live-peek-arrow">‹</span><span>${other.hf}</span><span style="font-size:.55rem;color:var(--text-muted);">vs</span><span>${other.af}</span></div>`;
-      html += `<div class="hmc-label-row"><div class="hmc-label live" style="margin-bottom:0"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>${peekHtml}</div>`;
+      html += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
       const slides = liveGames.map(f=>{
         const r = results[f.id];
         const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
@@ -4626,6 +4616,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.57.3',date:'24 Jun 2026',notes:['Live Now carousel: removed flags peek indicator from header; swipe threshold reduced to 10% (was 20%) and flick detection added so short fast swipes register; carousel loops — swiping past the last game wraps back to the first.']},
   {v:'1.57.2',date:'24 Jun 2026',notes:['Removed the "My Predictions" button from the bottom of the home match card.']},
   {v:'1.57.1',date:'24 Jun 2026',notes:['Live Now carousel: removed bounce animation; added dot indicators at the bottom; peek indicator now shows ‹ flags when on the second game (swipe left to go back) and flags › when on the first (swipe right to see the next).']},
   {v:'1.57.0',date:'24 Jun 2026',notes:['Live Now: when two games are on simultaneously, they show as a swipeable carousel instead of stacked. The "Live Now" header shows the other game\'s flags and a › arrow on the right — tap to jump, or swipe the card. A subtle bounce nudge hints that more is available.']},
@@ -9283,25 +9274,26 @@ async function godCreateGroup(){
 (function(){
   const card = document.getElementById('home-next-card');
   if(!card) return;
-  let _cSwX=null,_cSwY=null,_cDragging=false,_cStartPct=0,_cTrack=null,_cItems=null,_cGetIdx=null,_cSetIdx=null;
+  let _cSwX=null,_cSwY=null,_cSwT=0,_cDragging=false,_cStartPct=0,_cTrack=null,_cItems=null,_cGetIdx=null,_cSetIdx=null,_cLoop=false;
   card.addEventListener('touchstart',e=>{
     const wrap=e.target.closest('.hmc-carousel-wrap');
     if(!wrap) return;
     const track=wrap.querySelector('.hmc-carousel-track');
     if(!track) return;
     let items,getIdx,setIdx;
+    let loop=false;
     if(track.id==='hmc-last-track'&&_lastResultsAll.length>1){
       items=_lastResultsAll; getIdx=()=>_lastResultIdx; setIdx=v=>{_lastResultIdx=v;};
     } else if(track.id==='hmc-carousel-track'&&_nextUpcomingAll.length>1){
       items=_nextUpcomingAll; getIdx=()=>_nextUpcomingIdx; setIdx=v=>{_nextUpcomingIdx=v;};
     } else if(track.id==='hmc-live-track'){
       const _liveNow=(()=>{const fx=allFixtures(),n=Date.now(),W=130*60*1000;return fx.filter(f=>{const ko=getMatchKickoff(f);return ko&&n>=ko.getTime()&&n<ko.getTime()+W;});})();
-      if(_liveNow.length>1){ items=_liveNow; getIdx=()=>_liveGamesIdx; setIdx=v=>{_liveGamesIdx=v;}; }
+      if(_liveNow.length>1){ items=_liveNow; getIdx=()=>_liveGamesIdx; setIdx=v=>{_liveGamesIdx=v;}; loop=true; }
       else return;
     } else return;
     e.stopPropagation();
     const t=e.touches[0];
-    _cSwX=t.clientX; _cSwY=t.clientY; _cDragging=false;
+    _cSwX=t.clientX; _cSwY=t.clientY; _cSwT=Date.now(); _cDragging=false; _cLoop=loop;
     _cTrack=track; _cItems=items; _cGetIdx=getIdx; _cSetIdx=setIdx;
     _cStartPct=getIdx()*(100/items.length);
   },{passive:true});
@@ -9323,11 +9315,14 @@ async function godCreateGroup(){
     if(_cSwX===null||!_cDragging||!_cTrack){_cSwX=null;_cTrack=null;_cDragging=false;return;}
     const track=_cTrack,items=_cItems,getIdx=_cGetIdx,setIdx=_cSetIdx;
     const dx=e.changedTouches[0].clientX-_cSwX;
-    _cSwX=null;_cTrack=null;_cDragging=false;
-    const n=items.length,threshold=card.offsetWidth*0.2;
+    const dt=Date.now()-_cSwT;
+    const loop=_cLoop;
+    _cSwX=null;_cTrack=null;_cDragging=false;_cLoop=false;
+    const n=items.length,threshold=card.offsetWidth*0.1;
+    const isFlick=Math.abs(dx)>28&&dt<320;
     let idx=getIdx();
-    if(dx<-threshold&&idx<n-1) idx++;
-    else if(dx>threshold&&idx>0) idx--;
+    if((dx<-threshold||isFlick&&dx<-10)&&(loop||idx<n-1)) idx=loop?(idx+1)%n:idx+1;
+    else if((dx>threshold||isFlick&&dx>10)&&(loop||idx>0)) idx=loop?(idx-1+n)%n:idx-1;
     setIdx(idx);
     track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
     track.style.transform=`translateX(-${idx*(100/n)}%)`;
@@ -9369,6 +9364,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.57.3</div>
 </body>
 </html>
