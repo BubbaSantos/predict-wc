@@ -1161,7 +1161,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.0</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3464,20 +3464,42 @@ async function startResultsPoller(){
   _pollInterval = setInterval(async ()=>{
     if(!currentGroup) return;
     try{
-      const fresh = await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`);
+      const fresh = await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`);
       if(!fresh) return;
       let changed = false;
+      let newFullTime = false;
       fresh.forEach(r=>{
         const ex = results[r.match_id];
+        const ftNow = !!r.full_time;
         if(!ex || ex.home!==r.home_score || ex.away!==r.away_score){
-          results[r.match_id] = {home:r.home_score, away:r.away_score};
+          results[r.match_id] = {home:r.home_score, away:r.away_score, fullTime:ftNow};
+          changed = true;
+        } else if(ex.fullTime !== ftNow){
+          results[r.match_id].fullTime = ftNow;
+          if(ftNow) newFullTime = true;
           changed = true;
         }
       });
-      if(changed){
+      // Also trigger if any unseen result is now past 130 min after KO
+      if(!newFullTime){
+        const nowMs = Date.now();
+        const fixtures = allFixtures();
+        newFullTime = fresh.some(r=>{
+          if(r.home_score==null||r.away_score==null) return false;
+          if(localStorage.getItem('wc26_ft_seen_'+r.match_id)==='1') return false;
+          const fix = fixtures.find(f=>f.id===r.match_id);
+          if(!fix) return false;
+          const ko = getMatchKickoff(fix)?.getTime();
+          return ko && nowMs >= ko + 130*60*1000;
+        });
+      }
+      if(changed || newFullTime){
         const active = document.querySelector('.view.active')?.id;
         if(active==='view-home') loadHome();
         else if(active==='view-predict') loadPredictions();
+        // Always load leaderboard when full_time flips or time-based banner may be due,
+        // so maybeShowEndBanner fires regardless of which tab is active.
+        if(newFullTime) loadLeaderboard();
         else if(active==='view-leaderboard') loadLeaderboard();
       }
     }catch(e){}
@@ -4462,6 +4484,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.54.1',date:'24 Jun 2026',notes:['End-of-game banner: now fires automatically when a result is entered and 130 minutes have passed since kickoff — no need for admin to press the Full Time button. The results poller now also tracks the full_time flag so the banner triggers for all players as soon as the admin marks a match Full Time, even if they\'re on a different tab.']},
   {v:'1.54.0',date:'23 Jun 2026',notes:['Any player\'s stats are now viewable: tap a player on the leaderboard to open their predictions, then tap the 📈 Stats button next to their name to see their full personal stats page (same 29 stats as your own My Stats, respecting the admin on/off toggles). Also available from the admin Players list and your own My Predictions.']},
   {v:'1.53.0',date:'23 Jun 2026',notes:['New 📈 My Stats page — open it from the profile menu (tap your name). Shows your personal tournament stats: total points, current / highest / lowest league position, net movement, matchdays spent at #1, in the top 3 and at the bottom, your most-held position, the games you predicted correct scores in (and your "solo" correct scores nobody else nailed), correct-score and correct-result hit rates, perfect hauls (+8), best & worst matchdays, current streak, longest perfect/hot/cold streaks and streak counts, your favourite predicted scoreline, total goals predicted and more.','Admin → Display → Personal Player Stats: toggle each of the 29 stats on or off individually (with Enable all / Disable all shortcuts). Hidden stats disappear from everyone\'s My Stats page.','Requires a new Supabase column: ALTER TABLE groups ADD COLUMN player_stats_hidden jsonb DEFAULT \'[]\'::jsonb;']},
   {v:'1.52.2',date:'23 Jun 2026',notes:['Leaderboard: player names are now a touch larger with slightly wider letter spacing for easier reading.']},
@@ -6790,7 +6813,17 @@ function resetEndBannerSeen(){
 function maybeShowEndBanner(allPreds, allResults){
   if(!currentPlayer || !currentGroup) return;
   if(currentGroup.show_end_banner === false) return;
-  const fts = (allResults||[]).filter(r=>r.full_time && localStorage.getItem('wc26_ft_seen_'+r.match_id)!=='1');
+  const nowMs = Date.now();
+  const fts = (allResults||[]).filter(r=>{
+    if(localStorage.getItem('wc26_ft_seen_'+r.match_id)==='1') return false;
+    if(r.full_time) return true;
+    // Auto-trigger: score entered + 130 min past KO
+    if(r.home_score!=null && r.away_score!=null){
+      const fix = allFixtures().find(f=>f.id===r.match_id);
+      if(fix){ const ko=getMatchKickoff(fix)?.getTime(); if(ko && nowMs>=ko+130*60*1000) return true; }
+    }
+    return false;
+  });
   if(!fts.length) return;
   const fixtures = allFixtures();
   fts.sort((a,b)=>{
@@ -9025,6 +9058,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.0</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.1</div>
 </body>
 </html>
