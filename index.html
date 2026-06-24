@@ -771,7 +771,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .scotland-ticker-inner2{display:inline-block;animation:tickerScroll2 6s linear;}
   @keyframes tickerScroll{0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)}}
   @keyframes tickerScroll2{0%{transform:translateX(-100%)} 100%{transform:translateX(100vw)}}
-  #news-ticker{background:#fde047;color:#111;font-size:.68rem;font-weight:700;white-space:nowrap;overflow:hidden;border-bottom:1.5px solid #b45309;letter-spacing:.04em;line-height:2;position:sticky;top:var(--header-h,56px);z-index:50;}
+  #news-ticker{background:#fde047;color:#111;font-size:.68rem;font-weight:700;white-space:nowrap;overflow:hidden;border-bottom:1.5px solid #b45309;letter-spacing:.04em;line-height:2;}
   #ticker-hide-btn{display:inline-block;vertical-align:middle;padding:0 .6rem 0 .45rem;cursor:pointer;font-size:.7rem;opacity:.65;border-right:1px solid rgba(0,0,0,.15);margin-right:.3rem;}
   #ticker-hide-btn:hover{opacity:1;}
   #ticker-scroll-wrap{display:inline-block;overflow:hidden;width:calc(100% - 5rem);vertical-align:middle;}
@@ -1164,7 +1164,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.55.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.55.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1294,11 +1294,13 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
     </div>
   </header>
-<div id="news-ticker" style="display:none;">
+<div id="ticker-sticky-wrap" style="position:sticky;top:var(--header-h,56px);z-index:50;">
+  <div id="news-ticker" style="display:none;">
     <span id="ticker-hide-btn" onclick="hideTicker()">✕ hide</span><span id="ticker-scroll-wrap"><span id="news-ticker-inner">📢 <span id="news-ticker-text"></span></span></span>
   </div>
-  <div id="ticker-tab" onclick="showTicker()">📢 Show news</div>
   <div id="ticker-seen-bar" style="display:none;background:rgba(253,224,71,.08);border-bottom:1px solid rgba(253,224,71,.15);padding:.18rem .75rem;font-size:.65rem;color:var(--text-muted);letter-spacing:.02em;"></div>
+</div>
+<div id="ticker-tab" onclick="showTicker()">📢 Show news</div>
 
   <div class="container">
 
@@ -5442,7 +5444,7 @@ function renderTicker(){
   const hidden=localStorage.getItem('tickerHidden')==='1';
   el.style.display=hidden?'none':'block';
   if(tab) tab.style.display=hidden?'block':'none';
-  const isGod = currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin);
+  const isGod = _godUnlocked||_inGodSession||(currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin));
   if(seenBar){
     if(isGod && !hidden){
       seenBar.style.display='block';
@@ -5489,7 +5491,7 @@ function showTicker(){
   const seenBar=document.getElementById('ticker-seen-bar');
   if(el) el.style.display='block';
   if(tab) tab.style.display='none';
-  const isGod=currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin);
+  const isGod=_godUnlocked||_inGodSession||(currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin));
   if(seenBar) seenBar.style.display=isGod?'block':'none';
 }
 
@@ -9196,6 +9198,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.8</div>
 </body>
 </html>
