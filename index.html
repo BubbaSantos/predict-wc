@@ -1164,7 +1164,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.55.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.55.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2316,13 +2316,7 @@ const THEMES = {
     lightVars:{'--bg':'#EDE8DC','--surface':'#FFFFFF','--surface2':'#F5F0E8','--border':'#C8BFB0','--text':'#1A1510','--text-muted':'#8A7E6A','--text-dim':'#5A5040','--bronze':'#7A4A20','--header-bg':'rgba(237,232,220,.97)'},
     bodyGradient:'none',
     extraCss:`
-      .match-card,.home-card,.tie-break-section,.predict-toggle-bar,.group-hero{border-radius:3px!important;}
-      .lb-row,.lb-row.lb-gold,.lb-row.lb-silver,.lb-row.lb-bronze,.lb-row.lb-last{border-radius:3px!important;}
-      .modal,.pred-modal,.landing-card,.pay-modal{border-radius:4px!important;}
-      .mc-adj,.mc-sinput,.score-input,.field input,.field select,.config-input,.compact-toggle{border-radius:3px!important;}
-      .save-btn,.btn-ghost,.pts-badge,.group-tag,.user-chip{border-radius:2px!important;}
-      .lb-badge{border-radius:2px!important;}
-      .btn:not(.btn-ghost){background:#D44E2A!important;border-color:#B83A1A!important;color:#fff!important;border-radius:3px!important;letter-spacing:.06em!important;}
+      .btn:not(.btn-ghost){background:#D44E2A!important;border-color:#B83A1A!important;color:#fff!important;letter-spacing:.06em!important;}
       .matchday-label{text-transform:uppercase!important;letter-spacing:.14em!important;font-size:.75rem!important;font-weight:800!important;padding-bottom:.5rem!important;border-bottom:1.5px solid color-mix(in srgb,var(--text) 30%,transparent)!important;margin-bottom:.65rem!important;}
       .matchday-label.dim{font-size:.72rem!important;}
       .page-header{border-bottom:2px solid color-mix(in srgb,var(--text) 22%,transparent)!important;}
@@ -2330,10 +2324,9 @@ const THEMES = {
       .home-card-title{letter-spacing:.18em!important;font-weight:800!important;}
       .mc-ko{letter-spacing:.16em!important;font-weight:800!important;}
       .match-info{letter-spacing:.05em!important;}
-      nav button.active{background:color-mix(in srgb,var(--text) 8%,transparent)!important;border-radius:2px!important;}
+      nav button.active{background:color-mix(in srgb,var(--text) 8%,transparent)!important;}
       .lb-breakdown{letter-spacing:.03em!important;}
       .predict-toggle-bar{font-weight:700!important;letter-spacing:.06em!important;text-transform:uppercase!important;font-size:.75rem!important;}
-      .mc-check{border-radius:2px!important;}
       .match-card.predicted{border-left:3px solid #D44E2A!important;}
     `
   },
@@ -3541,12 +3534,32 @@ function applyTheme(themeId){
 }
 
 function getPlayerThemeKey(){ return currentPlayer ? `wc26_player_theme_${currentPlayer.id}` : null; }
+function getPlayerEdgesKey(){ return currentPlayer ? `wc26_player_edges_${currentPlayer.id}` : null; }
+
+const SQUARE_EDGES_CSS=`
+  .match-card,.home-card,.tie-break-section,.predict-toggle-bar,.group-hero,.lb-row,.status-card,.sync-bar,.admin-match,.rules-card,.rules-full{border-radius:3px!important;}
+  .modal,.pred-modal,.landing-card{border-radius:4px!important;}
+  .mc-adj,.mc-sinput,.score-input,.field input,.field select,.compact-toggle,.home-cta-btn,.stat-tile,.stat-hi-cell{border-radius:3px!important;}
+  .save-btn,.btn-ghost,.pts-badge,.group-tag,.user-chip,.btn,.actual-save-btn,.sync-refresh,.admin-tab{border-radius:3px!important;}
+  .lb-badge,.mc-check,.result-badge,.live-badge{border-radius:2px!important;}
+`;
+function applyEdges(style){
+  let el=document.getElementById('edges-extra-css');
+  if(style==='square'){
+    if(!el){el=document.createElement('style');el.id='edges-extra-css';document.head.appendChild(el);}
+    el.textContent=SQUARE_EDGES_CSS;
+  } else {
+    if(el) el.textContent='';
+  }
+}
 
 function applyBranding(){
   if(!currentGroup) return;
   const playerTheme = getPlayerThemeKey() ? localStorage.getItem(getPlayerThemeKey()) : null;
   const playerAccent = getPlayerAccentKey() ? localStorage.getItem(getPlayerAccentKey()) : null;
+  const playerEdges = getPlayerEdgesKey() ? localStorage.getItem(getPlayerEdgesKey()) : null;
   applyTheme(playerTheme || currentGroup.theme||'dark');
+  applyEdges(playerEdges||'curved');
   const accent = playerAccent || currentGroup.accent||'#6d5cff';
   document.documentElement.style.setProperty('--group-accent', accent);
   const emoji = currentGroup.emoji||'⚽';
@@ -6821,8 +6834,10 @@ function getPlayerAccentKey(){ return currentPlayer ? `wc26_player_accent_${curr
 function showPlayerThemeModal(){
   const themeKey = getPlayerThemeKey();
   const accentKey = getPlayerAccentKey();
+  const edgesKey = getPlayerEdgesKey();
   const currentTheme = (themeKey && localStorage.getItem(themeKey)) || currentGroup?.theme || 'dark';
   const currentAccent = (accentKey && localStorage.getItem(accentKey)) || currentGroup?.accent || '#6d5cff';
+  const currentEdges = (edgesKey && localStorage.getItem(edgesKey)) || 'curved';
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   const themeGrid = Object.entries(THEMES).map(([id,t])=>{
@@ -6841,7 +6856,7 @@ function showPlayerThemeModal(){
     <div onclick="playerAccentPick('${c.val}',this)" data-aval="${c.val}" title="${c.name}"
       style="width:30px;height:30px;border-radius:50%;background:${c.val};cursor:pointer;border:3px solid ${c.val===currentAccent?'#fff':'transparent'};box-sizing:border-box;transition:border-color .15s;flex-shrink:0;"></div>
   `).join('');
-  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey));
+  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey));
   modal.innerHTML=`<div class="pred-modal" style="max-width:480px;">
     <div class="pred-modal-header">
       <div class="pred-modal-title">Appearance</div>
@@ -6852,6 +6867,11 @@ function showPlayerThemeModal(){
     <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
       <button id="ptm-dark-btn" onclick="playerModePick(false,this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${!document.body.classList.contains('light')?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">🌙 Dark</button>
       <button id="ptm-light-btn" onclick="playerModePick(true,this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${document.body.classList.contains('light')?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">☀️ Light</button>
+    </div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Edge Style</div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;" id="player-edges-btns">
+      <button id="ptm-curved-btn" onclick="playerEdgesPick('curved',this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${'curved'===currentEdges?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">⬭ Curved</button>
+      <button id="ptm-square-btn" onclick="playerEdgesPick('square',this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${'square'===currentEdges?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">⬜ Square</button>
     </div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">Accent Colour</div>
     <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem;" id="player-accent-swatches">${accentSwatches}</div>
@@ -6882,6 +6902,17 @@ function playerThemePick(id, el){
   });
   applyBranding();
   savePlayerAppearancePref({theme:id});
+}
+
+function playerEdgesPick(style, el){
+  const edgesKey = getPlayerEdgesKey();
+  if(edgesKey) localStorage.setItem(edgesKey, style);
+  const wrap = el.closest('#player-edges-btns');
+  if(wrap){
+    wrap.querySelector('#ptm-curved-btn').style.borderColor = style==='curved' ? 'var(--group-accent)' : 'var(--border)';
+    wrap.querySelector('#ptm-square-btn').style.borderColor = style==='square' ? 'var(--group-accent)' : 'var(--border)';
+  }
+  applyEdges(style);
 }
 
 async function savePlayerAppearancePref(patch){
@@ -7022,8 +7053,10 @@ function playerAccentPick(val, el){
 function clearPlayerAppearance(btn){
   const themeKey = getPlayerThemeKey();
   const accentKey = getPlayerAccentKey();
+  const edgesKey = getPlayerEdgesKey();
   if(themeKey) localStorage.removeItem(themeKey);
   if(accentKey) localStorage.removeItem(accentKey);
+  if(edgesKey) localStorage.removeItem(edgesKey);
   applyBranding();
   btn.closest('.modal-overlay').remove();
   savePlayerAppearancePref({theme:null, light_mode:null});
@@ -9163,6 +9196,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.55.7</div>
 </body>
 </html>
