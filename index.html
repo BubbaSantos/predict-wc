@@ -771,7 +771,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .scotland-ticker-inner2{display:inline-block;animation:tickerScroll2 6s linear;}
   @keyframes tickerScroll{0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)}}
   @keyframes tickerScroll2{0%{transform:translateX(-100%)} 100%{transform:translateX(100vw)}}
-  #news-ticker{background:#fde047;color:#111;font-size:.68rem;font-weight:700;white-space:nowrap;overflow:hidden;border-bottom:1.5px solid #b45309;letter-spacing:.04em;line-height:2;position:sticky;top:56px;z-index:50;}
+  #news-ticker{background:#fde047;color:#111;font-size:.68rem;font-weight:700;white-space:nowrap;overflow:hidden;border-bottom:1.5px solid #b45309;letter-spacing:.04em;line-height:2;position:sticky;top:var(--header-h,56px);z-index:50;}
   #ticker-hide-btn{display:inline-block;vertical-align:middle;padding:0 .6rem 0 .45rem;cursor:pointer;font-size:.7rem;opacity:.65;border-right:1px solid rgba(0,0,0,.15);margin-right:.3rem;}
   #ticker-hide-btn:hover{opacity:1;}
   #ticker-scroll-wrap{display:inline-block;overflow:hidden;width:calc(100% - 5rem);vertical-align:middle;}
@@ -780,7 +780,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .ticker-speed-btn:hover{border-color:var(--group-accent);color:var(--text);}
   .ticker-speed-btn.active{background:var(--group-accent);border-color:var(--group-accent);color:#000;font-weight:700;}
   @keyframes newsTicker{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
-  #ticker-tab{display:none;position:fixed;top:60px;left:0;z-index:51;background:#fde047;color:#111;font-size:.65rem;font-weight:700;padding:.28rem .55rem .28rem .45rem;border-radius:0 6px 6px 0;border:1.5px solid #b45309;border-left:none;cursor:pointer;letter-spacing:.04em;box-shadow:2px 2px 6px rgba(0,0,0,.15);}
+  #ticker-tab{display:none;position:fixed;top:var(--header-h,60px);left:0;z-index:51;background:#fde047;color:#111;font-size:.65rem;font-weight:700;padding:.28rem .55rem .28rem .45rem;border-radius:0 6px 6px 0;border:1.5px solid #b45309;border-left:none;cursor:pointer;letter-spacing:.04em;box-shadow:2px 2px 6px rgba(0,0,0,.15);}
 
   /* MORE ANIMATIONS */
   @keyframes slideInRight { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
@@ -1161,7 +1161,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.6</div>
+<div style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3149,6 +3149,8 @@ async function refreshGroup(){
 }
 
 function enterApp(){
+  syncHeaderHeight();
+  window.addEventListener('resize', syncHeaderHeight, {passive:true});
   applyBranding();
   // Refresh group settings from DB to pick up any admin changes
   refreshGroup().then(()=>{
@@ -4492,6 +4494,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.54.7',date:'24 Jun 2026',notes:['Ticker: "Show news" tab and the ticker strip now track the actual header height via a CSS variable (--header-h), so they always sit flush below the two-row mobile nav instead of being hidden behind it.']},
   {v:'1.54.6',date:'24 Jun 2026',notes:['Ticker seen-by: current user (admin/god) always counts as seen; seen-by bar hides when you dismiss the ticker and reappears when you restore it; home bar shows count only (no names) — names appear in admin settings only.']},
   {v:'1.54.5',date:'24 Jun 2026',notes:['Fix ticker seen-by not appearing: removed dependency on ticker_updated_at DB column (was causing ticker saves to fail and both seen-by UIs to stay hidden). Cutoff is now stored in localStorage on the admin\'s device — hit Save Ticker once to start tracking from that point.']},
   {v:'1.54.4',date:'24 Jun 2026',notes:['Ticker seen-by bar now refreshes automatically when navigating to the home tab, reusing the player data already fetched by loadHome (no extra network request).']},
@@ -5383,7 +5386,13 @@ async function loadPollVoteBreakdown(){
   }catch(e){el.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
+function syncHeaderHeight(){
+  const h=document.querySelector('header')?.offsetHeight||56;
+  document.documentElement.style.setProperty('--header-h',h+'px');
+}
+
 function renderTicker(){
+  syncHeaderHeight();
   const el=document.getElementById('news-ticker');
   const tab=document.getElementById('ticker-tab');
   const inner=document.getElementById('news-ticker-inner');
@@ -9137,6 +9146,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.6</div>
+<div id="ver-btn" style="position:fixed;bottom:1rem;left:0;right:0;width:fit-content;margin-inline:auto;font-size:.6rem;color:var(--text-muted);opacity:.35;letter-spacing:.06em;z-index:10;cursor:pointer;user-select:none;" onclick="versionClick(event)">v1.54.7</div>
 </body>
 </html>
