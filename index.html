@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.58.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.58.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4641,6 +4641,8 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.58.4',date:'24 Jun 2026',notes:['Fix: end-of-game banner now shows one banner per unseen finished game (oldest first) when you open the leaderboard — so if you missed two or more games since you last opened it, you see all of them in sequence. Counter shows "1 / 2" etc. Streak text on the final banner only.']},
+  {v:'1.58.3',date:'24 Jun 2026',notes:['Fix: when two simultaneous games both finish, opening the leaderboard now shows an end-of-game banner for each game in sequence (1/2 then 2/2) rather than only the first. Streak text appears on the final banner.']},
   {v:'1.58.2',date:'24 Jun 2026',notes:['Fix: streak counter now counts games, not rounds — so winning 4 games where 2 were simultaneous correctly shows 🔥4 rather than just 🔥. Also fixes the end-of-game banner streak count.']},
   {v:'1.58.1',date:'24 Jun 2026',notes:['Streak rule for simultaneous games: a round only qualifies as hot if ALL games in the round scored ≥3 — win one and lose one now breaks the streak. The win still counts as round 1 of the next run. Cold streaks similarly require every game to be 0 (a win+loss breaks cold too).']},
   {v:'1.58.0',date:'24 Jun 2026',notes:['Leaderboard now treats simultaneous kick-offs as a single round: streaks are evaluated per round (win one of two games = round counts as won, not broken), last-round points column sums both games (e.g. +16, +11, +6), and rank-change arrow compares against scores before the whole round.']},
@@ -7101,30 +7103,42 @@ function maybeShowEndBanner(allPreds, allResults){
   });
   if(!fts.length) return;
   const fixtures = allFixtures();
+  // Sort oldest-first so banners appear in match order
   fts.sort((a,b)=>{
     const fa=fixtures.find(f=>f.id===a.match_id), fb=fixtures.find(f=>f.id===b.match_id);
     const ka=fa?getMatchKickoff(fa)?.getTime()||0:0, kb=fb?getMatchKickoff(fb)?.getTime()||0:0;
-    return kb-ka;
+    return ka-kb;
   });
-  // Silently mark older un-seen full-times as seen so we don't queue them up forever
-  fts.slice(1).forEach(r=>localStorage.setItem('wc26_ft_seen_'+r.match_id,'1'));
-  const target = fts[0];
-  const fix = fixtures.find(f=>f.id===target.match_id);
-  if(!fix){ localStorage.setItem('wc26_ft_seen_'+target.match_id,'1'); return; }
-  const myPred = (allPreds||[]).find(p=>p.player_id===currentPlayer.id && p.match_id===target.match_id);
-  if(!myPred){ localStorage.setItem('wc26_ft_seen_'+target.match_id,'1'); return; }
-  const pts = calcPoints(myPred.home_score, myPred.away_score, target.home_score, target.away_score);
   const myName = currentPlayer.nickname || currentPlayer.name;
   const streak = _lbStreaks?.[myName];
   let streakText = '';
   if(streak?.perfect) streakText = `💎 PERFECT RUN — ${streak.gameCount||3} in a row!`;
   else if(streak?.hot) streakText = `🔥 HOT STREAK — ${streak.gameCount||3} correct in a row!`;
   else if(streak?.cold) streakText = `💩 Cold streak — ${streak.gameCount||3} duds in a row…`;
-  showEndBanner(fix, {home_score:target.home_score, away_score:target.away_score}, pts, streakText);
-  localStorage.setItem('wc26_ft_seen_'+target.match_id,'1');
+  // Build a banner for every unseen finished game the player predicted
+  const queue = [];
+  for(const target of fts){
+    const fix = fixtures.find(f=>f.id===target.match_id);
+    if(!fix){ localStorage.setItem('wc26_ft_seen_'+target.match_id,'1'); continue; }
+    const myPred = (allPreds||[]).find(p=>p.player_id===currentPlayer.id && p.match_id===target.match_id);
+    if(!myPred){ localStorage.setItem('wc26_ft_seen_'+target.match_id,'1'); continue; }
+    const pts = calcPoints(myPred.home_score, myPred.away_score, target.home_score, target.away_score);
+    queue.push({fix, res:{home_score:target.home_score, away_score:target.away_score}, pts, matchId:target.match_id});
+  }
+  if(!queue.length) return;
+  // Show banners sequentially; streak text only on the last one
+  function showNext(i){
+    if(i >= queue.length) return;
+    const {fix, res, pts, matchId} = queue[i];
+    localStorage.setItem('wc26_ft_seen_'+matchId,'1');
+    const isLast = i === queue.length - 1;
+    const counter = queue.length > 1 ? `${i+1} / ${queue.length}` : '';
+    showEndBanner(fix, res, pts, isLast ? streakText : '', counter, ()=>showNext(i+1));
+  }
+  showNext(0);
 }
 
-function showEndBanner(fix, res, pts, streakText){
+function showEndBanner(fix, res, pts, streakText, counter, onClose){
   const existing = document.getElementById('end-banner-overlay');
   if(existing) existing.remove();
   const ptsClass = pts===8?'pts-exact':pts===5?'pts-five':pts===3?'pts-three':'pts-zero';
@@ -7134,7 +7148,7 @@ function showEndBanner(fix, res, pts, streakText){
   overlay.id = 'end-banner-overlay';
   overlay.className = 'end-banner-overlay';
   overlay.innerHTML = `<div class="end-banner-card">
-    <div class="eb-tag">FULL TIME</div>
+    <div class="eb-tag">FULL TIME${counter?` <span style="opacity:.55;font-size:.75em;font-weight:500">${counter}</span>`:''}</div>
     <div class="eb-teams">
       <span class="eb-team"><span class="eb-flag">${fix.hf}</span><span class="eb-name">${fix.home}</span></span>
       <span class="eb-score">${res.home_score} – ${res.away_score}</span>
@@ -7144,12 +7158,12 @@ function showEndBanner(fix, res, pts, streakText){
     <div class="eb-pts ${ptsClass}">${ptsLabel}</div>
     <div class="eb-pts-blurb">${ptsBlurb}</div>
     ${streakText?`<div class="eb-streak">${streakText}</div>`:''}
-    <div class="eb-dismiss">Tap to continue</div>
+    <div class="eb-dismiss">${onClose?'Tap for next game':'Tap to continue'}</div>
   </div>`;
   document.body.appendChild(overlay);
   requestAnimationFrame(()=>overlay.classList.add('show'));
   let closed = false;
-  const close = ()=>{ if(closed) return; closed=true; overlay.classList.remove('show'); setTimeout(()=>overlay.remove(),350); };
+  const close = ()=>{ if(closed) return; closed=true; overlay.classList.remove('show'); setTimeout(()=>{ overlay.remove(); if(onClose) onClose(); },350); };
   overlay.addEventListener('click', close);
   setTimeout(close, 7000);
 }
@@ -9395,6 +9409,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.4</div>
 </body>
 </html>
