@@ -3233,7 +3233,7 @@ function renderMatchCardBody(){
     }
   } else if(_lastResultsAll.length){
     const lrn = _lastResultsAll.length;
-    const lrLabel = lrn > 1 ? 'Last Results' : 'Last Result';
+    const lrLabel = lrn > 1 ? "Yesterday's Results" : "Yesterday's Result";
     if(lrn > 1){
       const slides = _lastResultsAll.map((item,i)=>{
         const r=results[item.matchId];
@@ -4692,6 +4692,7 @@ const CHANGELOG = [
   {v:'1.57.2',date:'24 Jun 2026',notes:['Removed the "My Predictions" button from the bottom of the home match card.']},
   {v:'1.57.1',date:'24 Jun 2026',notes:['Live Now carousel: removed bounce animation; added dot indicators at the bottom; peek indicator now shows ‹ flags when on the second game (swipe left to go back) and flags › when on the first (swipe right to see the next).']},
   {v:'1.57.0',date:'24 Jun 2026',notes:['Live Now: when two games are on simultaneously, they show as a swipeable carousel instead of stacked. The "Live Now" header shows the other game\'s flags and a › arrow on the right — tap to jump, or swipe the card. A subtle bounce nudge hints that more is available.']},
+  {v:'1.56.1',date:'25 Jun 2026',notes:["Yesterday's Results: now shows all completed fixtures from the previous calendar day in US Eastern time (up to 6), so games that cross midnight UK time are grouped correctly. Falls back to the 6 most recent results if no ET-yesterday games are found. Label updated to \"Yesterday's Results\"."]},
   {v:'1.56.0',date:'24 Jun 2026',notes:['Last Results and Next Up now both show swipeable carousels: swipe left/right (or tap dots) to browse the last 4 results and the next 4 upcoming matches. Each Next Up slide shows its own countdown. Unified touch handler handles both carousels independently.']},
   {v:'1.55.9',date:'24 Jun 2026',notes:['Next Up card: when multiple games kick off at the same time, swipe left/right to browse them — smooth iOS-style carousel with dot indicators. Works via touch drag (real-time follow) or tap the dots to jump directly.']},
   {v:'1.55.2',date:'24 Jun 2026',notes:['Version number now shown in the header bar next to the group tagline for god mode / admin users only.']},
@@ -6045,13 +6046,15 @@ async function loadHome(){
       });
     });
 
-    // Last 4 completed matches
-    _lastResultsAll = allFixtures()
+    // Yesterday's completed matches in US Eastern time (up to 6), fallback to 6 most recent
+    const _etYdKey = new Date(Date.now()-86400000).toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    const _completedKOs = allFixtures()
       .filter(f=>rm[f.id]&&rm[f.id].home_score!==null&&rm[f.id].home_score!==undefined)
       .map(f=>({f,ko:getMatchKickoff(f)}))
-      .filter(({ko})=>ko)
-      .sort((a,b)=>b.ko-a.ko)
-      .slice(0,4)
+      .filter(({ko})=>ko);
+    let _ydKOs = _completedKOs.filter(({ko})=>ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'})===_etYdKey).sort((a,b)=>a.ko-b.ko);
+    if(!_ydKOs.length) _ydKOs = _completedKOs.sort((a,b)=>b.ko-a.ko).slice(0,6);
+    _lastResultsAll = _ydKOs.slice(0,6)
       .map(({f})=>{
         const r=rm[f.id], pred=myPredMap[f.id];
         let predHtml='';
