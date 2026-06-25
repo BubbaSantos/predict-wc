@@ -1170,7 +1170,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.58.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.58.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3235,14 +3235,11 @@ function renderMatchCardBody(){
     const lrn = _lastResultsAll.length;
     const lrLabel = lrn > 1 ? "Yesterday's Results" : "Yesterday's Result";
     if(lrn > 1){
-      const slides = _lastResultsAll.map((item,i)=>{
-        const r=results[item.matchId];
-        const lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
-        const hasLastPicks=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length));
-        return `<div class="hmc-carousel-slide" style="width:${100/lrn}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLastPicks?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`;
-      }).join('');
-      const lrPct = _lastResultIdx*(100/lrn);
-      html += `<div class="hmc-label">${lrLabel}</div><div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-last-track" style="width:${lrn*100}%;transform:translateX(-${lrPct}%)">${slides}</div></div>`;
+      const lrTN = lrn+2;
+      const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`; };
+      const slides = [lrn-1,...Array.from({length:lrn},(_,i)=>i),0].map(mkLrSlide).join('');
+      const lrPct = (_lastResultIdx+1)*(100/lrTN);
+      html += `<div class="hmc-label">${lrLabel}</div><div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-last-track" data-rn="${lrn}" style="width:${lrTN*100}%;transform:translateX(-${lrPct}%)">${slides}</div></div>`;
       const lrDots = _lastResultsAll.map((_,i)=>`<span class="hmc-dot${i===_lastResultIdx?' active':''}" onclick="hmcLastGoToSlide(${i});event.stopPropagation()"></span>`).join('');
       html += `<div class="hmc-dots">${lrDots}</div>`;
     } else {
@@ -3259,15 +3256,11 @@ function renderMatchCardBody(){
       if(html) html += '<hr class="hmc-sep">';
       html += `<div class="hmc-label">Next Up</div>`;
       if(_nextUpcomingAll.length > 1){
-        const cn = _nextUpcomingAll.length;
-        const slides = _nextUpcomingAll.map((item,i)=>{
-          const nid=item.f.id;
-          const np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,'upcoming');
-          const hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));
-          return `<div class="hmc-carousel-slide" style="width:${100/cn}%">${cdHtml(item.ko)}${_pctTeamsHtml(item.f,'vs','vs',nid)}${_nextGamePredHtmlAll[i]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`;
-        }).join('');
-        const pct = _nextUpcomingIdx*(100/cn);
-        html += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" style="width:${cn*100}%;transform:translateX(-${pct}%)">${slides}</div></div>`;
+        const cn = _nextUpcomingAll.length, cnTN = cn+2;
+        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,'upcoming'),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%">${cdHtml(item.ko)}${_pctTeamsHtml(item.f,'vs','vs',nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
+        const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
+        const pct = (_nextUpcomingIdx+1)*(100/cnTN);
+        html += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
         const dots = _nextUpcomingAll.map((_,i)=>`<span class="hmc-dot${i===_nextUpcomingIdx?' active':''}" onclick="hmcGoToSlide(${i});event.stopPropagation()"></span>`).join('');
         html += `<div class="hmc-dots">${dots}</div>`;
       } else {
@@ -3288,9 +3281,9 @@ function hmcGoToSlide(idx){
   _nextUpcomingIdx = idx;
   const track = document.getElementById('hmc-carousel-track');
   if(track){
-    const n = _nextUpcomingAll.length;
+    const n=_nextUpcomingAll.length, totalN=n+2, vIdx=idx+1;
     track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
-    track.style.transform = `translateX(-${idx*(100/n)}%)`;
+    track.style.transform = `translateX(-${vIdx*(100/totalN)}%)`;
     _hmcSyncDots(track, idx);
   }
 }
@@ -3299,9 +3292,9 @@ function hmcLastGoToSlide(idx){
   _lastResultIdx = idx;
   const track = document.getElementById('hmc-last-track');
   if(track){
-    const n = _lastResultsAll.length;
+    const n=_lastResultsAll.length, totalN=n+2, vIdx=idx+1;
     track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
-    track.style.transform = `translateX(-${idx*(100/n)}%)`;
+    track.style.transform = `translateX(-${vIdx*(100/totalN)}%)`;
     _hmcSyncDots(track, idx);
   }
 }
@@ -4677,6 +4670,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.58.8',date:'25 Jun 2026',notes:['Seamless infinite loop on Yesterday\'s Results and Next Up carousels — swiping past the last slide now wraps smoothly to the first without animating backwards through all slides (clone technique). Next Up now shows all of today\'s upcoming games in US Eastern time (up to 6), falling back to the next 6 if none today.']},
   {v:'1.58.7',date:'24 Jun 2026',notes:['Admin Results: within each date group, games are now sorted most-recent kickoff first.']},
   {v:'1.58.6',date:'24 Jun 2026',notes:['Admin Results ordering: Live Now → Today → yesterday → day before → … → future dates at the bottom. Each date group keeps its own heading.']},
   {v:'1.58.5',date:'24 Jun 2026',notes:['Admin Results: live games now appear at the top under a "Live Now" header; previous matches follow in newest-to-oldest order (no longer collapsed); upcoming games remain at the bottom.']},
@@ -6092,7 +6086,10 @@ async function loadHome(){
       .sort((a,b)=>a.ko-b.ko);
     _nextUpcoming = _nextSorted[0]||null;
     if(_nextUpcoming){
-      _nextUpcomingAll = _nextSorted.slice(0,4);
+      const _etTodayKey = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+      let _todayKOs = _nextSorted.filter(({ko})=>ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'})===_etTodayKey);
+      if(!_todayKOs.length) _todayKOs = _nextSorted.slice(0,6);
+      _nextUpcomingAll = _todayKOs.slice(0,6);
       if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
       _nextGamePredHtmlAll = _nextUpcomingAll.map(({f})=>{
         const pred=myPredMap[f.id];
@@ -9357,32 +9354,35 @@ async function godCreateGroup(){
   }catch(e){ showErr(errEl,'Error: '+e.message); }
 }
 
-// Unified carousel swipe handler for home match card (last results + next up)
+// Unified carousel swipe handler for home match card (last results + next up + live)
+// Last Results and Next Up use clone-based infinite loop: DOM is [clone_last, ...real, clone_first]
+// so visual index = logical+1 and totalN = n+2. On landing on a clone, snap instantly to the real slide.
 (function(){
   const card = document.getElementById('home-next-card');
   if(!card) return;
-  let _cSwX=null,_cSwY=null,_cSwT=0,_cDragging=false,_cStartPct=0,_cTrack=null,_cItems=null,_cGetIdx=null,_cSetIdx=null,_cLoop=false;
+  let _cSwX=null,_cSwY=null,_cSwT=0,_cDragging=false,_cStartPct=0,_cTrack=null,_cItems=null,_cGetIdx=null,_cSetIdx=null,_cClone=false,_cTotalN=0;
   card.addEventListener('touchstart',e=>{
     const wrap=e.target.closest('.hmc-carousel-wrap');
     if(!wrap) return;
     const track=wrap.querySelector('.hmc-carousel-track');
     if(!track) return;
-    let items,getIdx,setIdx;
-    let loop=false;
+    let items,getIdx,setIdx,isClone=false;
     if(track.id==='hmc-last-track'&&_lastResultsAll.length>1){
-      items=_lastResultsAll; getIdx=()=>_lastResultIdx; setIdx=v=>{_lastResultIdx=v;}; loop=true;
+      items=_lastResultsAll; getIdx=()=>_lastResultIdx; setIdx=v=>{_lastResultIdx=v;}; isClone=true;
     } else if(track.id==='hmc-carousel-track'&&_nextUpcomingAll.length>1){
-      items=_nextUpcomingAll; getIdx=()=>_nextUpcomingIdx; setIdx=v=>{_nextUpcomingIdx=v;}; loop=true;
+      items=_nextUpcomingAll; getIdx=()=>_nextUpcomingIdx; setIdx=v=>{_nextUpcomingIdx=v;}; isClone=true;
     } else if(track.id==='hmc-live-track'){
       const _liveNow=(()=>{const fx=allFixtures(),n=Date.now(),W=130*60*1000;return fx.filter(f=>{const ko=getMatchKickoff(f);return ko&&n>=ko.getTime()&&n<ko.getTime()+W;});})();
-      if(_liveNow.length>1){ items=_liveNow; getIdx=()=>_liveGamesIdx; setIdx=v=>{_liveGamesIdx=v;}; loop=true; }
+      if(_liveNow.length>1){ items=_liveNow; getIdx=()=>_liveGamesIdx; setIdx=v=>{_liveGamesIdx=v;}; }
       else return;
     } else return;
     e.stopPropagation();
     const t=e.touches[0];
-    _cSwX=t.clientX; _cSwY=t.clientY; _cSwT=Date.now(); _cDragging=false; _cLoop=loop;
-    _cTrack=track; _cItems=items; _cGetIdx=getIdx; _cSetIdx=setIdx;
-    _cStartPct=getIdx()*(100/items.length);
+    const n=items.length;
+    _cSwX=t.clientX; _cSwY=t.clientY; _cSwT=Date.now(); _cDragging=false;
+    _cTrack=track; _cItems=items; _cGetIdx=getIdx; _cSetIdx=setIdx; _cClone=isClone;
+    _cTotalN=isClone?n+2:n;
+    _cStartPct=isClone?(getIdx()+1)*(100/_cTotalN):getIdx()*(100/n);
   },{passive:true});
   card.addEventListener('touchmove',e=>{
     if(_cSwX===null||!_cTrack) return;
@@ -9393,27 +9393,49 @@ async function godCreateGroup(){
       _cDragging=true;
     }
     e.preventDefault();
-    const n=_cItems.length;
-    const pct=_cStartPct-(dx/card.offsetWidth)*(100/n);
+    const totalN=_cTotalN;
+    const pct=_cStartPct-(dx/card.offsetWidth)*(100/totalN);
     _cTrack.style.transition='none';
-    _cTrack.style.transform=`translateX(-${Math.max(0,Math.min(pct,(n-1)*(100/n)))}%)`;
+    _cTrack.style.transform=`translateX(-${Math.max(0,Math.min(pct,(totalN-1)*(100/totalN)))}%)`;
   },{passive:false});
   card.addEventListener('touchend',e=>{
     if(_cSwX===null||!_cDragging||!_cTrack){_cSwX=null;_cTrack=null;_cDragging=false;return;}
-    const track=_cTrack,items=_cItems,getIdx=_cGetIdx,setIdx=_cSetIdx;
+    const track=_cTrack,items=_cItems,getIdx=_cGetIdx,setIdx=_cSetIdx,isClone=_cClone,totalN=_cTotalN;
     const dx=e.changedTouches[0].clientX-_cSwX;
     const dt=Date.now()-_cSwT;
-    const loop=_cLoop;
-    _cSwX=null;_cTrack=null;_cDragging=false;_cLoop=false;
+    _cSwX=null;_cTrack=null;_cDragging=false;_cClone=false;
     const n=items.length,threshold=card.offsetWidth*0.1;
     const isFlick=Math.abs(dx)>28&&dt<320;
-    let idx=getIdx();
-    if((dx<-threshold||isFlick&&dx<-10)&&(loop||idx<n-1)) idx=loop?(idx+1)%n:idx+1;
-    else if((dx>threshold||isFlick&&dx>10)&&(loop||idx>0)) idx=loop?(idx-1+n)%n:idx-1;
-    setIdx(idx);
-    track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
-    track.style.transform=`translateX(-${idx*(100/n)}%)`;
-    _hmcSyncDots(track,idx);
+    if(isClone){
+      // Visual index: 0=clone_last, 1..n=real, n+1=clone_first
+      let vIdx=getIdx()+1;
+      if(dx<-threshold||isFlick&&dx<-10) vIdx++;
+      else if(dx>threshold||isFlick&&dx>10) vIdx--;
+      vIdx=Math.max(0,Math.min(vIdx,n+1));
+      const logIdx=(vIdx-1+n)%n;
+      setIdx(logIdx);
+      track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
+      track.style.transform=`translateX(-${vIdx*(100/totalN)}%)`;
+      _hmcSyncDots(track,logIdx);
+      if(vIdx===0||vIdx===n+1){
+        const snapV=vIdx===0?n:1;
+        track.addEventListener('transitionend',function h(){
+          track.removeEventListener('transitionend',h);
+          track.style.transition='none';
+          track.style.transform=`translateX(-${snapV*(100/totalN)}%)`;
+          setIdx(snapV-1);
+          _hmcSyncDots(track,snapV-1);
+        },{once:true});
+      }
+    } else {
+      let idx=getIdx();
+      if(dx<-threshold||isFlick&&dx<-10) idx=(idx+1)%n;
+      else if(dx>threshold||isFlick&&dx>10) idx=(idx-1+n)%n;
+      setIdx(idx);
+      track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
+      track.style.transform=`translateX(-${idx*(100/n)}%)`;
+      _hmcSyncDots(track,idx);
+    }
   },{passive:true});
 })();
 
@@ -9451,6 +9473,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.8</div>
 </body>
 </html>
