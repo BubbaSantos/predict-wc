@@ -969,6 +969,27 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .eb-streak{font-size:.95rem;font-weight:700;letter-spacing:.04em;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem;margin-bottom:1rem;position:relative;}
 .eb-dismiss{font-size:.62rem;color:var(--text-muted);letter-spacing:.18em;text-transform:uppercase;opacity:.6;position:relative;}
 
+/* Round Summary Banner */
+.summ-card{max-height:90dvh;overflow:hidden;display:flex;flex-direction:column;padding:1.4rem 1.4rem 1.1rem;}
+.summ-games{text-align:left;overflow-y:auto;flex:1;margin-bottom:.85rem;padding-right:.1rem;}
+.summ-game{padding:.5rem 0;border-bottom:1px solid var(--border);}
+.summ-game:last-child{border-bottom:none;}
+.summ-match{font-size:.82rem;font-weight:600;margin-bottom:.2rem;}
+.summ-score{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.05em;}
+.summ-pred{font-size:.75rem;color:var(--text-muted);display:block;}
+.summ-footer{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem;margin-bottom:.85rem;text-align:center;}
+.summ-total{font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:.25rem;}
+.summ-rank{font-size:.88rem;font-weight:700;}
+/* MOTM Banner */
+.motm-icon{font-size:2.4rem;margin-bottom:.4rem;position:relative;animation:none;}
+.motm-name{font-size:1.7rem;font-weight:800;letter-spacing:.02em;line-height:1.15;margin-bottom:.25rem;position:relative;}
+.motm-sub{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;position:relative;}
+.motm-pts{font-size:3.4rem !important;margin:.15rem 0 .1rem !important;}
+@media (prefers-reduced-motion:no-preference){
+  .motm-icon{animation:motmBounce .7s cubic-bezier(.2,1.4,.5,1) .2s both;}
+  @keyframes motmBounce{0%{transform:scale(0) rotate(-20deg);}60%{transform:scale(1.25) rotate(8deg);}80%{transform:scale(.95) rotate(-3deg);}100%{transform:scale(1) rotate(0deg);}}
+}
+
 /* God-cast (admin results → all groups) toggle */
 .godcast-btn{background:none;border:1px solid var(--border);color:var(--text-muted);font-size:1rem;padding:.3rem .6rem;border-radius:7px;cursor:pointer;transition:all .2s;line-height:1;flex-shrink:0;}
 .godcast-btn:hover{color:var(--text);border-color:var(--text-muted);}
@@ -1170,7 +1191,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.58.8</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.59.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1799,6 +1820,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <div style="margin-top:.85rem;display:flex;gap:.5rem;flex-wrap:wrap;">
             <button class="sync-refresh" onclick="testEndBanner()">🎬 Test Banner</button>
             <button class="sync-refresh" onclick="resetEndBannerSeen()" title="Clear all 'seen' flags on this device so the banner shows again for any Full Time matches">↻ Reset Seen (this device)</button>
+            <button class="sync-refresh" onclick="resetRoundSummarySeen()" title="Clear round-summary and MOTM seen flags so the summary shows again">↻ Reset Round Summary</button>
           </div>
         </div>
         <div class="status-card">
@@ -3879,6 +3901,10 @@ let _lbPlayStepping = false;
 let _lbPrevRanks = {};
 let _lbPrevGameScores = {};
 let _lbLastMatchPts = {};
+let _homeRoundDate = null;
+let _homeRoundPtsByName = {};
+let _homeRoundPrevRankByName = {};
+let _homeRoundCurRankByName = {};
 let _lbInfoOpen = false;
 function applyLbInfoVisibility(){
   const panel = document.getElementById('lb-info-panel');
@@ -4670,6 +4696,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.59.0',date:'26 Jun 2026',notes:['Home standings card: rank indicator (▲/▼) and round points (+x) now show accumulated movement and points from the previous day\'s fixtures. Round Summary banner appears after the match banners — lists all of the round\'s results, your prediction for each, total round points and rank movement. Man of the Match (MOTM) banner follows the summary, showing the best-performing player this round. Both summary and MOTM show once per round (tracked per-device) and respect the End-of-Game Banner setting.']},
   {v:'1.58.8',date:'25 Jun 2026',notes:['Seamless infinite loop on Yesterday\'s Results and Next Up carousels — swiping past the last slide now wraps smoothly to the first without animating backwards through all slides (clone technique). Next Up now shows all of today\'s upcoming games in US Eastern time (up to 6), falling back to the next 6 if none today.']},
   {v:'1.58.7',date:'24 Jun 2026',notes:['Admin Results: within each date group, games are now sorted most-recent kickoff first.']},
   {v:'1.58.6',date:'24 Jun 2026',notes:['Admin Results ordering: Live Now → Today → yesterday → day before → … → future dates at the bottom. Each date group keeps its own heading.']},
@@ -5962,6 +5989,54 @@ async function loadHome(){
     const miniRankCounts = {};
     miniRanks.forEach(r=>{miniRankCounts[r]=(miniRankCounts[r]||0)+1;});
 
+    // ── Previous round data for home mini-lb (accumulated by calendar date)
+    const completedDatesH = [...new Set(
+      allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date).map(f=>f.date)
+    )].sort();
+    const prevRoundDateH = completedDatesH.length ? completedDatesH[completedDatesH.length-1] : null;
+    const prevRoundIdsH = prevRoundDateH
+      ? new Set(allFixtures().filter(f=>f.date===prevRoundDateH&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id))
+      : new Set();
+    const prevRoundPtsByNameH = {};
+    if(prevRoundIdsH.size){
+      gamePreds.filter(p=>prevRoundIdsH.has(p.match_id)).forEach(p=>{
+        const pdata=pm[p.player_id]; const name=(pdata&&(pdata.display||pdata.name))||'Unknown';
+        const res=rm[p.match_id]; if(!res) return;
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        prevRoundPtsByNameH[name]=(prevRoundPtsByNameH[name]||0)+pts;
+      });
+    }
+    // Rank before the round: subtract round points, re-sort, assign ranks
+    const prevScoresH={};
+    Object.entries(scores).forEach(([n,s])=>{ prevScoresH[n]={...s,total:s.total-(prevRoundPtsByNameH[n]||0)}; });
+    const prevSortedH=Object.entries(prevScoresH).sort((a,b)=>lbCompare(a,b));
+    const prevRankByNameH={};
+    for(let i=0;i<prevSortedH.length;i++){
+      if(i===0||lbCompare(prevSortedH[i],prevSortedH[i-1])!==0) prevRankByNameH[prevSortedH[i][0]]=i+1;
+      else prevRankByNameH[prevSortedH[i][0]]=prevRankByNameH[prevSortedH[i-1][0]];
+    }
+    const curRankByNameH={};
+    sorted.forEach(([name],i)=>{ curRankByNameH[name]=miniRanks[i]; });
+    // Store for round-summary banner
+    _homeRoundDate=prevRoundDateH;
+    _homeRoundPtsByName=prevRoundPtsByNameH;
+    _homeRoundPrevRankByName=prevRankByNameH;
+    _homeRoundCurRankByName=curRankByNameH;
+
+    // Helper: small rank-change arrow for mini-lb
+    const miniRankArrow=(prev,cur)=>{
+      if(prev==null||cur==null||!prevRoundIdsH.size) return '';
+      const diff=prev-cur;
+      if(diff===0) return '';
+      return `<div style="font-size:.48rem;font-weight:700;color:${diff>0?'#10b981':'#ef4444'};line-height:1.2;margin-top:.06rem;">${diff>0?'▲':'▼'}${Math.abs(diff)}</div>`;
+    };
+    const miniPtsGained=(name)=>{
+      const g=prevRoundPtsByNameH[name];
+      if(g==null||!prevRoundIdsH.size) return '';
+      const c=g>0?'#22c55e':g===0?'var(--text-muted)':'#ef4444';
+      return `<div style="font-size:.58rem;color:${c};font-weight:600;line-height:1.2;margin-top:.06rem;">${g>0?'+'+g:String(g)}</div>`;
+    };
+
     // Mini leaderboard HTML
     const rankMedals = {1:'🥇',2:'🥈',3:'🥉'};
     const rankCls = {1:'mlb-gold',2:'mlb-silver',3:'mlb-bronze'};
@@ -5979,9 +6054,9 @@ async function loadHome(){
         const medal = rankMedals[r] || (miniRankCounts[r]>1?'='+r:String(r));
         const cls = rankCls[r] || '';
         lbHtml += `<div class="mini-lb-row ${cls}">
-          <div class="mini-lb-rank">${medal}</div>
+          <div class="mini-lb-rank" style="display:flex;flex-direction:column;align-items:center;">${medal}${miniRankArrow(prevRankByNameH[name],r)}</div>
           <div class="mini-lb-name">${mNameHtml}${miniDot(s.playerId)}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}</div>
-          <div class="mini-lb-pts">${s.total} pts</div>
+          <div style="text-align:right;"><div class="mini-lb-pts">${s.total} pts</div>${miniPtsGained(name)}</div>
         </div>`;
       });
       if(myIdx > 2){
@@ -5993,9 +6068,9 @@ async function loadHome(){
         const myR = miniRanks[myIdx];
         const myRankDisplay = miniRankCounts[myR]>1?'='+myR:String(myR);
         lbHtml += `<div class="mini-lb-row mlb-you">
-          <div class="mini-lb-rank">${myRankDisplay}</div>
+          <div class="mini-lb-rank" style="display:flex;flex-direction:column;align-items:center;">${myRankDisplay}${miniRankArrow(prevRankByNameH[myName],myR)}</div>
           <div class="mini-lb-name">${myNameHtml}${miniDot(myS.playerId)} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}</div>
-          <div class="mini-lb-pts">${myS.total} pts</div>
+          <div style="text-align:right;"><div class="mini-lb-pts">${myS.total} pts</div>${miniPtsGained(myName)}</div>
         </div>`;
       }
     }
@@ -7125,6 +7200,14 @@ function resetEndBannerSeen(){
   }
   flash(`Cleared ${n} seen flag${n===1?'':'s'} on this device`,'success');
 }
+function resetRoundSummarySeen(){
+  let n=0;
+  for(let i=localStorage.length-1; i>=0; i--){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('wc26_round_summ_seen_')){ localStorage.removeItem(k); n++; }
+  }
+  flash(`Cleared ${n} round summary flag${n===1?'':'s'} on this device`,'success');
+}
 
 function maybeShowEndBanner(allPreds, allResults){
   if(!currentPlayer || !currentGroup) return;
@@ -7140,7 +7223,7 @@ function maybeShowEndBanner(allPreds, allResults){
     }
     return false;
   });
-  if(!fts.length) return;
+  if(!fts.length){ _maybeShowRoundSummary(allPreds, allResults); return; }
   const fixtures = allFixtures();
   // Sort oldest-first so banners appear in match order
   fts.sort((a,b)=>{
@@ -7164,10 +7247,10 @@ function maybeShowEndBanner(allPreds, allResults){
     const pts = calcPoints(myPred.home_score, myPred.away_score, target.home_score, target.away_score);
     queue.push({fix, res:{home_score:target.home_score, away_score:target.away_score}, pts, matchId:target.match_id});
   }
-  if(!queue.length) return;
+  if(!queue.length){ _maybeShowRoundSummary(allPreds, allResults); return; }
   // Show banners sequentially; streak text only on the last one
   function showNext(i){
-    if(i >= queue.length) return;
+    if(i >= queue.length){ _maybeShowRoundSummary(allPreds, allResults); return; }
     const {fix, res, pts, matchId} = queue[i];
     localStorage.setItem('wc26_ft_seen_'+matchId,'1');
     const isLast = i === queue.length - 1;
@@ -7214,6 +7297,120 @@ function testEndBanner(){
   const samplePts = [0,3,5,8][Math.floor(Math.random()*4)];
   const sampleStreak = ['','🔥 HOT STREAK — 4 correct in a row!','💎 PERFECT RUN — 3 in a row!'][Math.floor(Math.random()*3)];
   showEndBanner(fix, {home_score:2,away_score:1}, samplePts, sampleStreak);
+}
+
+function _maybeShowRoundSummary(allPreds, allResults){
+  if(!currentPlayer || !currentGroup) return;
+  if(currentGroup.show_end_banner === false) return;
+  const rm={};
+  (allResults||[]).forEach(r=>rm[r.match_id]=r);
+  const completedDates=[...new Set(
+    allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date).map(f=>f.date)
+  )].sort();
+  if(!completedDates.length) return;
+  const roundDate=completedDates[completedDates.length-1];
+  const seenKey='wc26_round_summ_seen_'+roundDate;
+  if(localStorage.getItem(seenKey)==='1') return;
+  const roundFixtures=allFixtures().filter(f=>f.date===roundDate&&rm[f.id]&&rm[f.id].home_score!=null);
+  if(!roundFixtures.length) return;
+  const roundMatchIds=new Set(roundFixtures.map(f=>f.id));
+  // My predictions for this round
+  const myPredMap={};
+  (allPreds||[]).filter(p=>p.player_id===currentPlayer.id&&roundMatchIds.has(p.match_id))
+    .forEach(p=>myPredMap[p.match_id]={h:p.home_score,a:p.away_score});
+  let myRoundPts=0;
+  roundFixtures.forEach(f=>{
+    const pred=myPredMap[f.id];
+    if(pred) myRoundPts+=calcPoints(pred.h,pred.a,rm[f.id].home_score,rm[f.id].away_score);
+  });
+  // MOTM: player with most points this round
+  const pidToName={};
+  (_lbRawPlayers||[]).forEach(p=>{pidToName[p.id]=p.nickname||p.name;});
+  const roundPtsByPid={};
+  (allPreds||[]).filter(p=>roundMatchIds.has(p.match_id)).forEach(p=>{
+    const res=rm[p.match_id]; if(!res) return;
+    const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+    roundPtsByPid[p.player_id]=(roundPtsByPid[p.player_id]||0)+pts;
+  });
+  let motmPid=null, motmPts=0;
+  Object.entries(roundPtsByPid).forEach(([pid,pts])=>{ if(pts>motmPts){motmPts=pts;motmPid=pid;} });
+  const motmName=motmPid?pidToName[motmPid]||null:null;
+  localStorage.setItem(seenKey,'1');
+  const myPrevRank=_homeRoundPrevRankByName[currentPlayer.nickname||currentPlayer.name];
+  const myCurRank=_homeRoundCurRankByName[currentPlayer.nickname||currentPlayer.name];
+  showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,myPrevRank,myCurRank,()=>{
+    if(motmName&&motmPts>0) showMOTMBanner(motmName,motmPts,roundFixtures.length);
+  });
+}
+
+function showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,myPrevRank,myCurRank,onClose){
+  const ex=document.getElementById('round-summ-overlay'); if(ex) ex.remove();
+  const todayStr=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+  const yest=new Date(); yest.setDate(yest.getDate()-1);
+  const yestStr=yest.toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+  const dayLabel=roundDate===todayStr?"TODAY'S RESULTS":roundDate===yestStr?"YESTERDAY'S RESULTS":"ROUND RECAP";
+  const gameRows=roundFixtures.map(f=>{
+    const r=rm[f.id]; const pred=myPredMap[f.id];
+    const pts=pred?calcPoints(pred.h,pred.a,r.home_score,r.away_score):null;
+    const ptsLabel=pts===null?'':pts===8?'+8 ⭐':pts>=5?'+5':pts>=3?'+3':'0';
+    const ptsColor=pts===8||pts===5?'#22c55e':pts===3?'#f59e0b':'var(--text-muted)';
+    const predHtml=pred
+      ?`<span class="summ-pred">You: ${pred.h}–${pred.a} <span style="color:${ptsColor};font-weight:700;">${ptsLabel}</span></span>`
+      :`<span class="summ-pred" style="font-style:italic;">No prediction</span>`;
+    return `<div class="summ-game">
+      <div class="summ-match">${f.hf} ${f.home} <span class="summ-score">${r.home_score}–${r.away_score}</span> ${f.away} ${f.af}</div>
+      ${predHtml}
+    </div>`;
+  }).join('');
+  const totalColor=myRoundPts>=8?'#22c55e':myRoundPts>=3?'#f59e0b':'var(--text-muted)';
+  let rankHtml='';
+  if(myPrevRank!=null&&myCurRank!=null){
+    const diff=myPrevRank-myCurRank;
+    const label=diff>0?`▲${diff} &nbsp;(#${myPrevRank} → #${myCurRank})`:diff<0?`▼${-diff} &nbsp;(#${myPrevRank} → #${myCurRank})`:`— holding #${myCurRank}`;
+    const rc=diff>0?'#10b981':diff<0?'#ef4444':'var(--text-muted)';
+    rankHtml=`<div class="summ-rank" style="color:${rc};">${label}</div>`;
+  }
+  const overlay=document.createElement('div');
+  overlay.id='round-summ-overlay';
+  overlay.className='end-banner-overlay';
+  overlay.innerHTML=`<div class="end-banner-card summ-card">
+    <div class="eb-tag">${dayLabel}</div>
+    <div class="summ-games">${gameRows}</div>
+    <div class="summ-footer">
+      <div class="summ-total">Your round: <span style="color:${totalColor};font-weight:800;">${myRoundPts>0?'+'+myRoundPts:myRoundPts} pts</span></div>
+      ${rankHtml}
+    </div>
+    <div class="eb-dismiss">Tap to continue</div>
+  </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+  let closed=false;
+  const close=()=>{if(closed)return;closed=true;overlay.classList.remove('show');setTimeout(()=>{overlay.remove();if(onClose)onClose();},350);};
+  overlay.addEventListener('click',close);
+  setTimeout(close,10000);
+}
+
+function showMOTMBanner(motmName,motmPts,gamesInRound){
+  const ex=document.getElementById('motm-overlay'); if(ex) ex.remove();
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const overlay=document.createElement('div');
+  overlay.id='motm-overlay';
+  overlay.className='end-banner-overlay';
+  overlay.innerHTML=`<div class="end-banner-card">
+    <div class="eb-tag">MAN OF THE MATCH</div>
+    <div class="motm-icon">⚽</div>
+    <div class="motm-name">${esc(motmName)}</div>
+    <div class="motm-sub">top scorer this round</div>
+    <div class="eb-pts pts-exact motm-pts">+${motmPts}</div>
+    <div class="eb-pts-blurb">${gamesInRound===1?'in this game':`across ${gamesInRound} game${gamesInRound!==1?'s':''}`}</div>
+    <div class="eb-dismiss">Tap to dismiss</div>
+  </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+  let closed=false;
+  const close=()=>{if(closed)return;closed=true;overlay.classList.remove('show');setTimeout(()=>overlay.remove(),350);};
+  overlay.addEventListener('click',close);
+  setTimeout(close,7000);
 }
 
 async function syncPlayerAppearancePrefs(){
@@ -9473,6 +9670,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.58.8</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.0</div>
 </body>
 </html>
