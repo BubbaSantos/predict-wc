@@ -488,8 +488,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .lb-view-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0;}
   .lb-view-tab{background:none;border:none;color:var(--text-muted);font-size:.72rem;font-weight:600;padding:.32rem .65rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
   .lb-view-tab.active{background:var(--surface2);color:var(--group-accent);}
-  .form-dot{display:inline-block;width:.52rem;height:.52rem;border-radius:50%;vertical-align:middle;}
-  .form-dots{display:flex;align-items:center;gap:.22rem;}
+  .form-dot{display:inline-block;width:.62rem;height:.62rem;border-radius:50%;vertical-align:middle;}
+  .form-dots{display:flex;align-items:center;gap:.28rem;}
   .lb-form-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;}
 
 
@@ -1198,7 +1198,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4744,6 +4744,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.1',date:'26 Jun 2026',notes:['Form dots simplified: green = scored any points, red = 0 points, grey = no prediction. Dots slightly larger for clarity.']},
   {v:'1.60.0',date:'26 Jun 2026',notes:['Form table: "Overall / Form" toggle on the Leaderboard page. Form view ranks players by points from the last 5 completed matchdays (US Eastern time). Each row shows a 5-dot form strip — green (5+ pts), yellow (1–4 pts), red (0 pts), grey (no prediction that day) — plus the form point total. MOTM badge carries over into the form view.']},
   {v:'1.59.4',date:'26 Jun 2026',notes:['MOTM badge: shared by all tied top-scorers — if multiple players score the same highest round total, each gets the ⚽ MOTM badge.']},
   {v:'1.59.3',date:'26 Jun 2026',notes:['MOTM badge: the player who scored the most points in yesterday\'s round gets a ⚽ MOTM badge on the full leaderboard, compact leaderboard, and home standings mini-lb.']},
@@ -8553,8 +8554,6 @@ function renderLeaderboard(){
   // ── Form view: rank by last-5-days points
   if(_lbFormView){
     if(!_lbFormDates.length){ lb.innerHTML='<div class="empty" style="font-size:.82rem;color:var(--text-muted);">No completed matchdays yet.</div>'; return; }
-    const dotColor=pts=>pts>=8?'#22c55e':pts>=3?'#f59e0b':pts===0?'#ef4444':'#ef4444';
-    const dotTitle=d=>d!=null?`${d} pts`:'no game';
     // Merge overall players with form scores so everyone appears (0 pts if they played no form games)
     const allNames=new Set([...Object.keys(_lbScores||{})]);
     const formEntries=[...allNames].map(name=>{
@@ -8588,7 +8587,7 @@ function renderLeaderboard(){
       const motmB=isMotm?'<span class="lb-badge lb-badge-motm">⚽ MOTM</span>':'';
       const dots=_lbFormDates.map(d=>{
         const dayPts=s.days&&s.days[d]!=null?s.days[d]:null;
-        const col=dayPts==null?'var(--border)':dayPts===0?'#ef4444':dayPts<5?'#f59e0b':'#22c55e';
+        const col=dayPts==null?'var(--border)':dayPts>0?'#22c55e':'#ef4444';
         const title=dayPts==null?'no prediction':dayPts+' pts';
         return `<span class="form-dot" style="background:${col};" title="${title}"></span>`;
       }).join('');
@@ -9793,6 +9792,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.1</div>
 </body>
 </html>
