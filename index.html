@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.61.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.61.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1510,6 +1510,15 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         </div>
       </div>
       <div id="lb-compact-hint" style="font-size:.65rem;color:var(--text-muted);text-align:center;opacity:.55;margin-bottom:.4rem;letter-spacing:.03em;">Double-tap any name to switch between compact and full view</div>
+      <div id="lb-form-window-bar" style="display:none;margin-bottom:.5rem;">
+        <div style="display:flex;align-items:center;gap:.35rem;justify-content:center;">
+          <span style="font-size:.65rem;color:var(--text-muted);letter-spacing:.04em;">Window:</span>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;display:flex;overflow:hidden;">
+            <button id="lb-form-win-5"  class="lb-filter-btn active" onclick="setLbFormWindow(5)"  style="font-size:.7rem;padding:.25rem .6rem;">Last 5</button>
+            <button id="lb-form-win-10" class="lb-filter-btn"        onclick="setLbFormWindow(10)" style="font-size:.7rem;padding:.25rem .6rem;">Last 10</button>
+          </div>
+        </div>
+      </div>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
     </div>
 
@@ -1854,6 +1863,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
               <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="stat-hi-tog" data-key="nailed_it" checked> 🎯 Group Nailed It</label>
               <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="stat-hi-tog" data-key="shock" checked> 🤯 Biggest Shock</label>
               <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="stat-hi-tog" data-key="days_top" checked> 🏔️ Most Days at #1</label>
+              <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="stat-hi-tog" data-key="motm_awards" checked> ⚽ Most Man of the Match</label>
               <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="stat-hi-tog" data-key="days_bottom" checked> 📉 Most Days at Bottom</label>
               <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="stat-hi-tog" data-key="perfect_streaks" checked> 💎 Most Perfect Streaks</label>
               <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;cursor:pointer;"><input type="checkbox" class="stat-hi-tog" data-key="hot_streaks" checked> 🔥 Most Hot Streaks</label>
@@ -3916,7 +3926,12 @@ let _lbPrevRanks = {};
 let _lbPrevGameScores = {};
 let _lbLastMatchPts = {};
 let _lbMotmPids = new Set();
+let _lbMotmCounts = {};
 let _lbFormView = false;
+let _lbFormWindow = parseInt(localStorage.getItem('wc26_form_window')||'5',10)||5; // 5 or 10
+let _lbAllFormDates = []; // all completed ET matchday dates
+let _lbAllFormDayPts = {}; // name -> {date -> pts}
+let _lbFormPlayerIds = {}; // name -> playerId (populated during loadLeaderboard)
 let _lbFormScores = {};
 let _lbFormDates = [];
 let _lbFormDayStats = {}; // date -> {max, avg}
@@ -4587,35 +4602,44 @@ async function loadLeaderboard(){
       const best=Math.max(...Object.values(_lbLastMatchPts));
       if(best>0) Object.entries(_lbLastMatchPts).forEach(([pid,pts])=>{ if(pts===best) _lbMotmPids.add(pid); });
     }
-    // ── Form table: last 5 completed matchdays (KO date ET, before today)
+    // ── All-time MOTM counts: per completed ET matchday, who scored most points
+    _lbMotmCounts={};
+    _lbCompletedDates.forEach(d=>{
+      const dayIds=new Set(allFixtures().filter(f=>_koDateLB(f)===d&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id));
+      const dayPts={};
+      lbGamePreds.filter(p=>dayIds.has(p.match_id)).forEach(p=>{
+        const res=rm[p.match_id]; if(!res) return;
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        dayPts[p.player_id]=(dayPts[p.player_id]||0)+pts;
+      });
+      if(!Object.keys(dayPts).length) return;
+      const best=Math.max(...Object.values(dayPts));
+      if(best>0) Object.entries(dayPts).forEach(([pid,pts])=>{ if(pts===best) _lbMotmCounts[pid]=(_lbMotmCounts[pid]||0)+1; });
+    });
+    // ── Form table: raw day-by-day points for all completed matchdays
     {
       const _formKoDateET=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
       const _formToday=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-      _lbFormDates=[...new Set(
+      _lbAllFormDates=[...new Set(
         allFixtures().filter(f=>{const d=_formKoDateET(f);return d&&d<_formToday&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_formKoDateET(f))
-      )].sort().slice(-5);
-      const formIds=new Set(allFixtures().filter(f=>_lbFormDates.includes(_formKoDateET(f))&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id));
-      _lbFormScores={};
-      lbGamePreds.filter(p=>formIds.has(p.match_id)).forEach(p=>{
+      )].sort();
+      // Build raw per-player per-day pts and playerId map
+      _lbAllFormDayPts={}; // name -> { date -> pts }
+      const _formPlayerIds={}; // name -> playerId
+      const allFormIds=new Set(allFixtures().filter(f=>{const d=_formKoDateET(f);return d&&_lbAllFormDates.includes(d)&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>f.id));
+      lbGamePreds.filter(p=>allFormIds.has(p.match_id)).forEach(p=>{
         const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
-        if(!_lbFormScores[name]) _lbFormScores[name]={total:0,exact:0,result:0,wrong:0,played:0,playerId:p.player_id,days:{}};
         const res=rm[p.match_id]; if(!res) return;
         const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
-        _lbFormScores[name].total+=pts; _lbFormScores[name].played++;
-        if(pts===8){_lbFormScores[name].exact++;_lbFormScores[name].result++;}
-        else if(pts===5){_lbFormScores[name].exact++;}
-        else if(pts===3){_lbFormScores[name].result++;}
-        else{_lbFormScores[name].wrong++;}
         const d=_formKoDateET(allFixtures().find(f=>f.id===p.match_id));
-        if(d){_lbFormScores[name].days[d]=(_lbFormScores[name].days[d]||0)+pts;}
+        if(!d) return;
+        if(!_lbAllFormDayPts[name]) _lbAllFormDayPts[name]={};
+        _lbAllFormDayPts[name][d]=(_lbAllFormDayPts[name][d]||0)+pts;
+        _formPlayerIds[name]=p.player_id;
       });
-      _lbFormDayStats={};
-      _lbFormDates.forEach(d=>{
-        const vals=Object.values(_lbFormScores).map(s=>s.days[d]??null).filter(v=>v!==null);
-        const max=vals.length?Math.max(...vals):0;
-        const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
-        _lbFormDayStats[d]={max,avg};
-      });
+      _lbFormPlayerIds=_formPlayerIds;
+      // Derive windowed scores (used by renderLeaderboard)
+      rebuildFormWindow();
     }
     const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
     _lbStreaks={};
@@ -4708,6 +4732,7 @@ const PLAYER_STAT_DEFS = [
   {key:'worst_pos',       emoji:'🪣', label:'Lowest Position'},
   {key:'net_move',        emoji:'↕️', label:'Form Trend (Last 10 Games)'},
   {key:'days_top',        emoji:'🏔️', label:'Matchdays at #1'},
+  {key:'motm_awards',     emoji:'⚽', label:'Man of the Match'},
   {key:'days_podium',     emoji:'🥉', label:'Matchdays in Top 3'},
   {key:'days_bottom',     emoji:'📉', label:'Matchdays at the Bottom'},
   {key:'fav_pos',         emoji:'🪑', label:'Most-Held Position'},
@@ -4755,6 +4780,9 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.61.3',date:'26 Jun 2026',notes:['Form leaderboard: "Last 5 / Last 10" window toggle. Switches between the last 5 and last 10 completed matchdays without a network round-trip. Preference saved to localStorage.']},
+  {v:'1.61.2',date:'26 Jun 2026',notes:['Form leaderboard: compact view now works (double-tap any row). Compact rows show coloured dots instead of pill badges. Colour key hidden in compact mode.']},
+  {v:'1.61.1',date:'26 Jun 2026',notes:['Personal Stats: new ⚽ Man of the Match stat — counts how many matchdays you topped the scoring. Tournament Stats: new ⚽ Most Man of the Match highlight — shows who has the most MOTM awards across all completed matchdays.']},
   {v:'1.61.0',date:'26 Jun 2026',notes:['Form leaderboard: added small colour key above the #1 card — red dot (avg or less), green dot (above avg), gold dot (top score that day).']},
   {v:'1.60.9',date:'26 Jun 2026',notes:['Leaderboard: removed More and Refresh buttons entirely.']},
   {v:'1.60.8',date:'26 Jun 2026',notes:['Form leaderboard: hide More and Refresh buttons.']},
@@ -6546,6 +6574,15 @@ async function loadHome(){
         pushCell('shock', '🤯', 'Biggest Shock', joinList(shocks.map(fixLine)), `Only ${Math.round(minPct*100)}% picked the right result`);
       if(topDaysLeaders.length)
         pushCell('days_top', '🏔️', 'Most Days at #1', joinList(topDaysLeaders), `${maxTopDays} matchday${maxTopDays===1?'':'s'} on top${topDaysLeaders.length>1?' each':''}`);
+      {
+        if(Object.keys(_lbMotmCounts).length){
+          const pm2={}; (_lbRawPlayers||[]).forEach(p=>pm2[p.id]=p.nickname||p.name);
+          const motmMax=Math.max(...Object.values(_lbMotmCounts));
+          const motmLeaders=Object.entries(_lbMotmCounts).filter(([,c])=>c===motmMax).map(([pid])=>pm2[pid]||pid);
+          if(motmMax>0&&motmLeaders.length)
+            pushCell('motm_awards','⚽',`Most Man of the Match${motmLeaders.length>1?'s':''}`,joinList(motmLeaders),`${motmMax} MOTM award${motmMax===1?'':'s'}${motmLeaders.length>1?' each':''}`);
+        }
+      }
       if(botDaysLeaders.length)
         pushCell('days_bottom', '📉', 'Most Days at the Bottom', joinList(botDaysLeaders), `${maxBotDays} matchday${maxBotDays===1?'':'s'} propping it up${botDaysLeaders.length>1?' each':''}`);
       if(perfectStreakStats.leaders.length)
@@ -6843,6 +6880,22 @@ async function showPlayerStats(playerId, name){
   const slEntries=Object.entries(scorelineCount).sort((a,b)=>b[1]-a[1]);
   const favScoreline=slEntries.length?{sl:slEntries[0][0],count:slEntries[0][1]}:null;
 
+  // ── MOTM count for this player ──
+  const _koDatePS=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
+  const _completedDatesPS=[...new Set(fixtures.filter(f=>{const d=_koDatePS(f);return d&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDatePS(f)))].sort();
+  let motmAwards=0;
+  _completedDatesPS.forEach(d=>{
+    const dayIds=new Set(fixtures.filter(f=>_koDatePS(f)===d&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id));
+    const dayPts={};
+    gamePreds.filter(p=>dayIds.has(p.match_id)).forEach(p=>{
+      const res=rm[p.match_id]; if(!res) return;
+      dayPts[p.player_id]=(dayPts[p.player_id]||0)+calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+    });
+    if(!Object.keys(dayPts).length) return;
+    const best=Math.max(...Object.values(dayPts));
+    if(best>0&&dayPts[me]===best) motmAwards++;
+  });
+
   // ── Build stat values ──
   const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
   const fmtMd=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
@@ -6855,6 +6908,7 @@ async function showPlayerStats(playerId, name){
   if(worstPos!=null) V.worst_pos={value:ord(worstPos)};
   if(netMove!=null){const nd=Math.round(Math.abs(netMove));const rangeMeta=recentBest&&recentWorst&&recentBest!==recentWorst?` · ranged ${ord(recentBest)}–${ord(recentWorst)}`:'';V.net_move={value:netMove>0.5?`▲ ${nd}`:netMove<-0.5?`▼ ${nd}`:'—',meta:`${netMove>0.5?'above your recent average':netMove<-0.5?'below your recent average':'on your recent average'} (last ${netLookback} game${netLookback!==1?'s':''})${rangeMeta}`};}
   if(hasRanks) V.days_top={value:`${daysTop}`, meta:`matchday${daysTop!==1?'s':''} at #1`};
+  V.motm_awards={value:`${motmAwards}`, meta:motmAwards===1?'round top scorer':'rounds as top scorer'};
   if(hasRanks) V.days_podium={value:`${daysPodium}`, meta:`matchday${daysPodium!==1?'s':''} in top 3`};
   if(hasRanks) V.days_bottom={value:`${daysBottom}`, meta:`matchday${daysBottom!==1?'s':''} last`};
   if(favPos) V.fav_pos={value:ord(favPos.pos), meta:`held ${favPos.count} matchday${favPos.count!==1?'s':''}`};
@@ -8326,7 +8380,13 @@ function setLbFormView(form){
   const sub = document.getElementById('lb-match-subtitle');
   if(sub) sub.textContent = form ? `Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}` : '';
   const hint = document.getElementById('lb-compact-hint');
-  if(hint) hint.style.display = form ? 'none' : '';
+  if(hint) hint.style.display = '';
+  const winBar = document.getElementById('lb-form-window-bar');
+  if(winBar) winBar.style.display = form ? '' : 'none';
+  if(form){
+    document.getElementById('lb-form-win-5')?.classList.toggle('active', _lbFormWindow===5);
+    document.getElementById('lb-form-win-10')?.classList.toggle('active', _lbFormWindow===10);
+  }
   renderLeaderboard();
 }
 function toggleLbRules(){
@@ -8481,6 +8541,43 @@ function _renderLeaderboardAtMatchIdx(matchIdx){
   _lbStreaks = savedStreaks;
 }
 
+function rebuildFormWindow(){
+  _lbFormDates=_lbAllFormDates.slice(-_lbFormWindow);
+  _lbFormScores={};
+  Object.entries(_lbAllFormDayPts).forEach(([name,dayMap])=>{
+    const pid=_lbFormPlayerIds[name]||null;
+    const s={total:0,exact:0,result:0,wrong:0,played:0,playerId:pid,days:{}};
+    _lbFormDates.forEach(d=>{
+      if(dayMap[d]==null) return;
+      const pts=dayMap[d];
+      s.days[d]=pts; s.total+=pts; s.played++;
+      if(pts===8){s.exact++;s.result++;}
+      else if(pts===5){s.exact++;}
+      else if(pts===3){s.result++;}
+      else{s.wrong++;}
+    });
+    _lbFormScores[name]=s;
+  });
+  _lbFormDayStats={};
+  _lbFormDates.forEach(d=>{
+    const vals=Object.values(_lbAllFormDayPts).map(dm=>dm[d]??null).filter(v=>v!==null);
+    const max=vals.length?Math.max(...vals):0;
+    const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+    _lbFormDayStats[d]={max,avg};
+  });
+}
+
+function setLbFormWindow(n){
+  _lbFormWindow=n;
+  localStorage.setItem('wc26_form_window',String(n));
+  rebuildFormWindow();
+  const sub=document.getElementById('lb-match-subtitle');
+  if(sub&&_lbFormView) sub.textContent=`Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}`;
+  document.getElementById('lb-form-win-5')?.classList.toggle('active',n===5);
+  document.getElementById('lb-form-win-10')?.classList.toggle('active',n===10);
+  renderLeaderboard();
+}
+
 function renderLeaderboard(){
   const lb = document.getElementById('leaderboard-list');
   if(!lb) return;
@@ -8596,7 +8693,7 @@ function renderLeaderboard(){
     const fRankCounts={};
     fRanks.forEach(r=>{fRankCounts[r]=(fRankCounts[r]||0)+1;});
     const myDisplayName=currentPlayer?(currentPlayer.nickname||currentPlayer.name):null;
-    const formKey='<div style="display:flex;align-items:center;gap:.6rem;padding:.2rem .85rem .35rem;justify-content:flex-end;">'
+    const formKey=_lbCompactView?'':'<div style="display:flex;align-items:center;gap:.6rem;padding:.2rem .85rem .35rem;justify-content:flex-end;">'
       +'<span style="display:flex;align-items:center;gap:.22rem;font-size:.58rem;color:var(--text-muted);"><span style="display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>avg or less</span>'
       +'<span style="display:flex;align-items:center;gap:.22rem;font-size:.58rem;color:var(--text-muted);"><span style="display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:#16a34a;flex-shrink:0;"></span>above avg</span>'
       +'<span style="display:flex;align-items:center;gap:.22rem;font-size:.58rem;color:var(--text-muted);"><span style="display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:#ca8a04;flex-shrink:0;"></span>top score</span>'
@@ -8609,6 +8706,18 @@ function renderLeaderboard(){
       const rowCls=(_lbJointRanks?(r===1?'lb-row lb-gold':r===2?'lb-row lb-silver':r===3?'lb-row lb-bronze':'lb-row'):(i===0?'lb-row lb-gold':i===1?'lb-row lb-silver':i===2?'lb-row lb-bronze':'lb-row'))+(isYou?' lb-you':'');
       const onlineDot=_lbOnline[pid]?'<span style="display:inline-block;width:.4rem;height:.4rem;border-radius:50%;background:#10b981;margin-left:.4rem;vertical-align:middle;"></span>':'';
       const nameHtml=streakNameHtml(name,_lbStreaks[name]);
+      const dotColor=d=>{const dayPts=s.days&&s.days[d]!=null?s.days[d]:null;const stat=_lbFormDayStats[d]||{max:0,avg:0};if(dayPts===null)return'var(--border)';return dayPts>0&&dayPts===stat.max?'#ca8a04':dayPts>=stat.avg&&dayPts>0?'#16a34a':'#ef4444';};
+      const dotTitle=d=>{const dayPts=s.days&&s.days[d]!=null?s.days[d]:null;return dayPts===null?'no prediction':`${dayPts} pts`;};
+      const ptsCol=s.total>0?'var(--group-accent)':'var(--text-muted)';
+      if(_lbCompactView){
+        const dots=_lbFormDates.map(d=>`<span title="${dotTitle(d)}" style="display:inline-block;width:.52rem;height:.52rem;border-radius:50%;background:${dotColor(d)};flex-shrink:0;"></span>`).join('');
+        return `<div class="${rowCls}" style="cursor:pointer;padding:.45rem .85rem;display:flex;align-items:center;gap:.5rem;" onclick="lbRowTap(this)" data-pid="${pid}" data-pname="${String(name).replace(/"/g,'&quot;')}">
+          <div class="lb-rank" style="min-width:2rem;font-size:.8rem;">${rankDisplay}</div>
+          <div style="flex:1;font-size:.85rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${nameHtml}${onlineDot}</div>
+          <div style="display:flex;align-items:center;gap:.28rem;">${dots}</div>
+          <div style="font-weight:700;color:${ptsCol};font-size:.85rem;white-space:nowrap;margin-left:.3rem;">${s.total}<span style="font-size:.65rem;font-weight:400;color:var(--text-muted);"> pts</span></div>
+        </div>`;
+      }
       const pills=_lbFormDates.map(d=>{
         const dayPts=s.days&&s.days[d]!=null?s.days[d]:null;
         const stat=_lbFormDayStats[d]||{max:0,avg:0};
@@ -8616,7 +8725,6 @@ function renderLeaderboard(){
         const cls=dayPts>0&&dayPts===stat.max?'form-pill-gold':dayPts>=stat.avg&&dayPts>0?'form-pill-green':'form-pill-red';
         return `<span class="form-pill ${cls}" title="${dayPts} pts">${dayPts>0?'+':''}${dayPts}</span>`;
       }).join('');
-      const ptsCol=s.total>0?'var(--group-accent)':'var(--text-muted)';
       return `<div class="${rowCls}" style="cursor:pointer;" onclick="lbRowTap(this)" data-pid="${pid}" data-pname="${String(name).replace(/"/g,'&quot;')}">
         <div class="lb-rank">${rankDisplay}</div>
         <div><div class="lb-name">${nameHtml}${onlineDot}</div>
@@ -9817,6 +9925,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.3</div>
 </body>
 </html>
