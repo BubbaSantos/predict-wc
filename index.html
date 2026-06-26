@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.61.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.61.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1452,9 +1452,9 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             </div>
           </div>
           <div id="lb-form-window-bar" style="display:none;">
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;display:flex;overflow:hidden;">
-              <button id="lb-form-win-5"  class="lb-filter-btn active" onclick="setLbFormWindow(5)"  style="font-size:.7rem;padding:.25rem .6rem;">Last 5</button>
-              <button id="lb-form-win-10" class="lb-filter-btn"        onclick="setLbFormWindow(10)" style="font-size:.7rem;padding:.25rem .6rem;">Last 10</button>
+            <div class="lb-view-toggle">
+              <button id="lb-form-win-5"  class="lb-view-tab active" onclick="setLbFormWindow(5)">Last 5</button>
+              <button id="lb-form-win-10" class="lb-view-tab"        onclick="setLbFormWindow(10)">Last 10</button>
             </div>
           </div>
         </div>
@@ -4779,6 +4779,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.61.5',date:'26 Jun 2026',notes:['Form leaderboard: Last 5/10 toggle now uses lb-view-tab style to match the Overall/Form toggle exactly.']},
   {v:'1.61.4',date:'26 Jun 2026',notes:['Form leaderboard: Last 5/10 toggle moved into the page header below the Overall/Form tabs (no Window: label). Last 10 view uses smaller, tighter pills and dots so all 10 fit on one line on mobile.']},
   {v:'1.61.3',date:'26 Jun 2026',notes:['Form leaderboard: "Last 5 / Last 10" window toggle. Switches between the last 5 and last 10 completed matchdays without a network round-trip. Preference saved to localStorage.']},
   {v:'1.61.2',date:'26 Jun 2026',notes:['Form leaderboard: compact view now works (double-tap any row). Compact rows show coloured dots instead of pill badges. Colour key hidden in compact mode.']},
@@ -9928,6 +9929,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.5</div>
 </body>
 </html>
