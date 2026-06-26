@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.63.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.63.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4331,6 +4331,7 @@ function renderPredictCard(f,pred,res){
   const isLive = !!(koMs && now>=koMs && now<koMs+LIVE_WIN);
   const isUpdating = !isLive && kicked && !res;
   const hasActualScore = res && res.home!==null && res.away!==null;
+  const roundTag = f.isKnockout && f.group ? `<span class="group-tag" style="margin-left:.35rem;text-transform:none;letter-spacing:0;">${f.group}</span>` : '';
 
   const koHourUK = koTime ? parseInt(koTime.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',hour12:false}),10) : null;
   const isLateUK = koHourUK !== null && koHourUK < 6; // past midnight UK time
@@ -4369,7 +4370,7 @@ function renderPredictCard(f,pred,res){
     const checkClass = isFilled ? 'mc-check done' : 'mc-check';
     return `<div class="${cardClass}" data-predicted="${isFilled}" data-finished="${dataFinished}" onclick="predCardTap('${f.id}',event)" style="cursor:pointer;">
       <div class="mc-header">
-        <span class="mc-ko">KO ${koStr}${lateUKBadge}</span>
+        <span class="mc-ko">KO ${koStr}${lateUKBadge}${roundTag}</span>
         <span class="mc-header-right">
           <span id="cd-${f.id}" class="match-countdown" style="font-size:.6rem;color:rgba(239,68,68,.6);"></span>
         </span>
@@ -4417,7 +4418,7 @@ function renderPredictCard(f,pred,res){
     }
     return `<div class="${cardClass}" data-predicted="${isFilled}" data-finished="${dataFinished}" onclick="predCardTap('${f.id}',event)" style="cursor:pointer;">
       <div class="mc-header">
-        <span class="mc-ko">KO ${koStr}${lateUKBadge}</span>
+        <span class="mc-ko">KO ${koStr}${lateUKBadge}${roundTag}</span>
         <span class="mc-header-right">${ptsBadge}${lockIcon}</span>
       </div>
       <div class="mc-body">
@@ -4898,6 +4899,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.63.1',date:'26 Jun 2026',notes:['Knockout prediction cards now show the round (e.g. "Round of 32", "Quarter-final") as a badge next to the kick-off time.']},
   {v:'1.63.0',date:'26 Jun 2026',notes:['Knockout fixtures (Round of 32 through Final, m073–m104) added to predictions. Predictions page gains Group Stage / Knockouts toggle — admin-only until enabled via Admin → Controls → Polls & Entry → Knockout Stage toggle.']},
   {v:'1.62.5',date:'26 Jun 2026',notes:['MOTM banner: confetti animation fires if you are the MOTM. Sub-text changes to "That\'s you! 🏆". Admin: 🎉 Test Confetti button.']},
   {v:'1.62.4',date:'26 Jun 2026',notes:['MOTM badge only awarded once every game in the matchday has a result — no premature MOTM mid-day.']},
@@ -10187,6 +10189,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.1</div>
 </body>
 </html>
