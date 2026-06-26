@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.62.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.63.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1429,6 +1429,12 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
 
       <div style="font-size:.62rem;color:var(--text-muted);opacity:.5;text-align:center;margin-bottom:.6rem;letter-spacing:.03em;">Single tap to see others picks · Double-tap to toggle compact</div>
+      <div id="predict-stage-tabs" style="display:none;margin-bottom:.75rem;">
+        <div class="lb-view-toggle" style="width:100%;">
+          <button id="predict-tab-group"    class="lb-view-tab active" style="flex:1;" onclick="setPredictStage('group')">⚽ Group Stage</button>
+          <button id="predict-tab-knockout" class="lb-view-tab"        style="flex:1;" onclick="setPredictStage('knockout')">🏆 Knockouts</button>
+        </div>
+      </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
     </div>
 
@@ -1627,6 +1633,18 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <div class="toggle-row">
             <div><div class="toggle-label" id="comp-status-label">Predictions Open</div><div class="toggle-desc" id="comp-status-desc">Players can submit predictions</div></div>
             <label class="toggle-switch"><input type="checkbox" id="comp-open-toggle" checked onchange="toggleCompStatus()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="status-card">
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Knockout Stage</div>
+              <div class="toggle-desc">Show knockout fixture predictions to all players (admin can always see them)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="knockouts-live-toggle" onchange="saveKnockoutsLive()">
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
         <div class="status-card">
@@ -2464,6 +2482,44 @@ const FIXTURES = [
   { id:'m070', date:'2026-06-28', group:'K', home:'Colombia', away:'Portugal', hf:'🇨🇴', af:'🇵🇹', venue:'Boston', matchday:3 },
   { id:'m071', date:'2026-06-27', group:'L', home:'Panama', away:'England', hf:'🇵🇦', af:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', venue:'Monterrey', matchday:3 },
   { id:'m072', date:'2026-06-27', group:'L', home:'Croatia', away:'Ghana', hf:'🇭🇷', af:'🇬🇭', venue:'Vancouver', matchday:3 },
+  // ── ROUND OF 32 ──────────────────────────────────────────────────────────────
+  { id:'m073', date:'2026-06-28', group:'Round of 32', home:'South Africa', away:'Canada',         hf:'🇿🇦', af:'🇨🇦', venue:'Los Angeles',        matchday:4, isKnockout:true },
+  { id:'m074', date:'2026-06-29', group:'Round of 32', home:'Germany',      away:'TBD',             hf:'🇩🇪', af:'',    venue:'Boston',              matchday:4, isKnockout:true },
+  { id:'m075', date:'2026-06-29', group:'Round of 32', home:'Netherlands',  away:'Morocco',         hf:'🇳🇱', af:'🇲🇦', venue:'Monterrey',           matchday:4, isKnockout:true },
+  { id:'m076', date:'2026-06-29', group:'Round of 32', home:'Brazil',       away:'Japan',           hf:'🇧🇷', af:'🇯🇵', venue:'Houston',             matchday:4, isKnockout:true },
+  { id:'m077', date:'2026-06-30', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'New York/New Jersey', matchday:4, isKnockout:true },
+  { id:'m078', date:'2026-06-30', group:'Round of 32', home:'Ivory Coast',  away:'TBD',             hf:'🇨🇮', af:'',    venue:'Dallas',              matchday:4, isKnockout:true },
+  { id:'m079', date:'2026-06-30', group:'Round of 32', home:'Mexico',       away:'TBD',             hf:'🇲🇽', af:'',    venue:'Mexico City',         matchday:4, isKnockout:true },
+  { id:'m080', date:'2026-07-01', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Atlanta',             matchday:4, isKnockout:true },
+  { id:'m081', date:'2026-07-01', group:'Round of 32', home:'USA',          away:'Bosnia & Herz.',  hf:'🇺🇸', af:'🇧🇦', venue:'San Francisco',       matchday:4, isKnockout:true },
+  { id:'m082', date:'2026-07-01', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Seattle',             matchday:4, isKnockout:true },
+  { id:'m083', date:'2026-07-02', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Toronto',             matchday:4, isKnockout:true },
+  { id:'m084', date:'2026-07-02', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Los Angeles',         matchday:4, isKnockout:true },
+  { id:'m085', date:'2026-07-02', group:'Round of 32', home:'Switzerland',  away:'TBD',             hf:'🇨🇭', af:'',    venue:'Vancouver',           matchday:4, isKnockout:true },
+  { id:'m086', date:'2026-07-03', group:'Round of 32', home:'Argentina',    away:'TBD',             hf:'🇦🇷', af:'',    venue:'Miami',               matchday:4, isKnockout:true },
+  { id:'m087', date:'2026-07-03', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Kansas City',         matchday:4, isKnockout:true },
+  { id:'m088', date:'2026-07-03', group:'Round of 32', home:'Australia',    away:'TBD',             hf:'🇦🇺', af:'',    venue:'Dallas',              matchday:4, isKnockout:true },
+  // ── ROUND OF 16 ──────────────────────────────────────────────────────────────
+  { id:'m089', date:'2026-07-04', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Philadelphia',     matchday:5, isKnockout:true },
+  { id:'m090', date:'2026-07-04', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Houston',          matchday:5, isKnockout:true },
+  { id:'m091', date:'2026-07-05', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'New York/New Jersey', matchday:5, isKnockout:true },
+  { id:'m092', date:'2026-07-05', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Mexico City',      matchday:5, isKnockout:true },
+  { id:'m093', date:'2026-07-06', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Dallas',           matchday:5, isKnockout:true },
+  { id:'m094', date:'2026-07-06', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Seattle',          matchday:5, isKnockout:true },
+  { id:'m095', date:'2026-07-07', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Atlanta',          matchday:5, isKnockout:true },
+  { id:'m096', date:'2026-07-07', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Vancouver',        matchday:5, isKnockout:true },
+  // ── QUARTER-FINALS ───────────────────────────────────────────────────────────
+  { id:'m097', date:'2026-07-09', group:'Quarter-Final', home:'TBD', away:'TBD', hf:'', af:'', venue:'Boston',       matchday:6, isKnockout:true },
+  { id:'m098', date:'2026-07-10', group:'Quarter-Final', home:'TBD', away:'TBD', hf:'', af:'', venue:'Los Angeles',  matchday:6, isKnockout:true },
+  { id:'m099', date:'2026-07-11', group:'Quarter-Final', home:'TBD', away:'TBD', hf:'', af:'', venue:'Miami',        matchday:6, isKnockout:true },
+  { id:'m100', date:'2026-07-11', group:'Quarter-Final', home:'TBD', away:'TBD', hf:'', af:'', venue:'Kansas City',  matchday:6, isKnockout:true },
+  // ── SEMI-FINALS ──────────────────────────────────────────────────────────────
+  { id:'m101', date:'2026-07-14', group:'Semi-Final', home:'TBD', away:'TBD', hf:'', af:'', venue:'Dallas',   matchday:7, isKnockout:true },
+  { id:'m102', date:'2026-07-15', group:'Semi-Final', home:'TBD', away:'TBD', hf:'', af:'', venue:'Atlanta',  matchday:7, isKnockout:true },
+  // ── THIRD PLACE ──────────────────────────────────────────────────────────────
+  { id:'m103', date:'2026-07-18', group:'3rd Place Play-off', home:'TBD', away:'TBD', hf:'', af:'', venue:'Miami',              matchday:8, isKnockout:true },
+  // ── FINAL ────────────────────────────────────────────────────────────────────
+  { id:'m104', date:'2026-07-19', group:'Final',             home:'TBD', away:'TBD', hf:'', af:'', venue:'New York/New Jersey', matchday:8, isKnockout:true },
 ];
 
 const STAGE_LABEL = {'ROUND_OF_32':'Round of 32','LAST_16':'Round of 16','QUARTER_FINALS':'Quarter-Final','SEMI_FINALS':'Semi-Final','THIRD_PLACE':'3rd Place Play-off','FINAL':'Final'};
@@ -2507,6 +2563,7 @@ let results        = {};
 let knockoutFixtures = [];
 let autoSyncInterval = null;
 let compactMode    = localStorage.getItem('wc26_compact')==='1';
+let _predictStage  = 'group'; // 'group' | 'knockout'
 let _lastResultHtml = '';
 let _lastResultPredHtml = '';
 let _lastResultF = null;
@@ -3875,6 +3932,44 @@ const KICKOFFS = {
   'm070':'2026-06-27T23:30:00Z', // Colombia vs Portugal - 12:30am BST Sun (simultaneous with m069)
   'm071':'2026-06-27T21:00:00Z', // Panama vs England - 10pm BST
   'm072':'2026-06-27T21:00:00Z', // Croatia vs Ghana - 10pm BST Sat (simultaneous with m071)
+  // ROUND OF 32
+  'm073':'2026-06-28T16:00:00Z', // South Africa v Canada - 12:00 ET
+  'm074':'2026-06-29T20:30:00Z', // Germany v TBD - 16:30 ET
+  'm075':'2026-06-29T23:00:00Z', // Netherlands v Morocco - 19:00 ET
+  'm076':'2026-06-29T16:00:00Z', // Brazil v Japan - 12:00 ET
+  'm077':'2026-06-30T21:00:00Z', // TBD v TBD - 17:00 ET
+  'm078':'2026-06-30T16:00:00Z', // Ivory Coast v TBD - 12:00 ET
+  'm079':'2026-06-30T23:00:00Z', // Mexico v TBD - 19:00 ET
+  'm080':'2026-07-01T16:00:00Z', // TBD v TBD - 12:00 ET
+  'm081':'2026-07-01T21:00:00Z', // USA v Bosnia - 17:00 ET
+  'm082':'2026-07-01T17:00:00Z', // TBD v TBD - 13:00 ET
+  'm083':'2026-07-02T23:00:00Z', // TBD v TBD - 19:00 ET
+  'm084':'2026-07-02T16:00:00Z', // TBD v TBD - 12:00 ET
+  'm085':'2026-07-03T00:00:00Z', // Switzerland v TBD - 20:00 ET Jul 2
+  'm086':'2026-07-03T22:00:00Z', // Argentina v TBD - 18:00 ET
+  'm087':'2026-07-04T00:30:00Z', // TBD v TBD - 20:30 ET Jul 3
+  'm088':'2026-07-03T17:00:00Z', // Australia v TBD - 13:00 ET
+  // ROUND OF 16
+  'm089':'2026-07-04T21:00:00Z', // 17:00 ET
+  'm090':'2026-07-04T16:00:00Z', // 12:00 ET
+  'm091':'2026-07-05T20:00:00Z', // 16:00 ET
+  'm092':'2026-07-05T22:00:00Z', // 18:00 ET
+  'm093':'2026-07-06T18:00:00Z', // 14:00 ET
+  'm094':'2026-07-06T21:00:00Z', // 17:00 ET
+  'm095':'2026-07-07T16:00:00Z', // 12:00 ET
+  'm096':'2026-07-07T17:00:00Z', // 13:00 ET
+  // QUARTER-FINALS
+  'm097':'2026-07-09T20:00:00Z', // 16:00 ET
+  'm098':'2026-07-10T16:00:00Z', // 12:00 ET
+  'm099':'2026-07-11T21:00:00Z', // 17:00 ET
+  'm100':'2026-07-12T00:00:00Z', // 20:00 ET Jul 11
+  // SEMI-FINALS
+  'm101':'2026-07-14T18:00:00Z', // 14:00 ET
+  'm102':'2026-07-15T19:00:00Z', // 15:00 ET
+  // THIRD PLACE
+  'm103':'2026-07-18T21:00:00Z', // 17:00 ET
+  // FINAL
+  'm104':'2026-07-19T19:00:00Z', // 15:00 ET
 };
 
 function getMatchKickoff(f){
@@ -4089,6 +4184,9 @@ async function loadPredictions(){
       else lockTiebreak();
       _tiebreakDone = true;
     }
+    // Show stage tabs if knockouts are enabled or user is admin
+    const stageTabs=document.getElementById('predict-stage-tabs');
+    if(stageTabs) stageTabs.style.display=(currentGroup?.knockouts_live||isAdmin)?'block':'none';
     renderFixtures(list,false);
     if(compactMode) list.classList.add('compact');
     const compactBtn=document.getElementById('compact-btn');
@@ -4128,13 +4226,23 @@ function getMatchDateLabel(f){
   return ko.toLocaleDateString('en-GB',{timeZone:'America/New_York',weekday:'long',day:'numeric',month:'long'});
 }
 
+function setPredictStage(stage){
+  _predictStage=stage;
+  document.getElementById('predict-tab-group')?.classList.toggle('active',stage==='group');
+  document.getElementById('predict-tab-knockout')?.classList.toggle('active',stage==='knockout');
+  const list=document.getElementById('fixtures-list');
+  if(list) renderFixtures(list,false);
+}
+
 function renderFixtures(container,forAdmin=false){
   const grouped={}, keyMap={};
   const prevFixtures=[], liveFixtures=[];
   const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const nowMs=Date.now();
   const LIVE_WIN=130*60*1000;
-  allFixtures().forEach(f=>{
+  // Filter by stage when on predictions page
+  const stageFilter = !forAdmin && (currentGroup?.knockouts_live || isAdmin);
+  allFixtures().filter(f=>!stageFilter||((_predictStage==='knockout')===!!(f.isKnockout))).forEach(f=>{
     const dateKey=getMatchDateKey(f);
     const ko=getMatchKickoff(f);
     const koMs=ko?ko.getTime():null;
@@ -4790,6 +4898,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.63.0',date:'26 Jun 2026',notes:['Knockout fixtures (Round of 32 through Final, m073–m104) added to predictions. Predictions page gains Group Stage / Knockouts toggle — admin-only until enabled via Admin → Controls → Polls & Entry → Knockout Stage toggle.']},
   {v:'1.62.5',date:'26 Jun 2026',notes:['MOTM banner: confetti animation fires if you are the MOTM. Sub-text changes to "That\'s you! 🏆". Admin: 🎉 Test Confetti button.']},
   {v:'1.62.4',date:'26 Jun 2026',notes:['MOTM badge only awarded once every game in the matchday has a result — no premature MOTM mid-day.']},
   {v:'1.62.3',date:'26 Jun 2026',notes:['Home mini-lb and leaderboard: +pts and rank arrows now accumulate from today\'s completed games in real time, rather than being hidden once the day starts. "Current round" = most recent ET date with completed results.']},
@@ -5413,6 +5522,21 @@ async function saveLbShowRankChange(){
     saveSession();
     if(typeof renderLeaderboard==='function') renderLeaderboard();
     flash('Rank change indicator '+(show?'on':'off'),'success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
+function loadKnockoutsLive(){
+  const tog=document.getElementById('knockouts-live-toggle');
+  if(tog) tog.checked = currentGroup?.knockouts_live === true;
+}
+async function saveKnockoutsLive(){
+  if(!currentGroup) return;
+  const live=document.getElementById('knockouts-live-toggle')?.checked ?? false;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{knockouts_live:live}});
+    currentGroup={...currentGroup,knockouts_live:live};
+    saveSession();
+    flash('Knockout stage '+(live?'enabled for everyone':'admin-only'),'success');
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
@@ -7819,7 +7943,7 @@ function switchControlsSubTab(name){
   document.querySelectorAll('.controls-sub-tab').forEach((b,i)=>{
     b.classList.toggle('active', sections[i]===name);
   });
-  if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();}
+  if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();loadKnockoutsLive();}
   if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
   if(name==='data'){loadTiebreakerSettings();}
 }
@@ -10063,6 +10187,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.62.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.0</div>
 </body>
 </html>
