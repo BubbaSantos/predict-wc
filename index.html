@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1453,13 +1453,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <button class="sync-refresh" onclick="loadLeaderboard()" style="font-size:.65rem;padding:.22rem .6rem;">↻ Refresh</button>
         </div>
       </div>
-      <div id="lb-form-explainer" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.45rem .85rem;margin-bottom:.6rem;display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;">
-        <span style="font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);flex-shrink:0;">Points per matchday</span>
-        <span style="display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:var(--text-dim);"><span class="form-pill form-pill-gold">+13</span> day's best</span>
-        <span style="display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:var(--text-dim);"><span class="form-pill form-pill-green">+8</span> above avg</span>
-        <span style="display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:var(--text-dim);"><span class="form-pill form-pill-red">+3</span> below avg</span>
-        <span style="display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:var(--text-dim);"><span class="form-pill form-pill-none">–</span> no pred</span>
-      </div>
+
       <div id="lb-pot-display" style="display:none;background:linear-gradient(135deg,color-mix(in srgb,var(--group-accent) 12%,transparent),color-mix(in srgb,var(--group-accent) 5%,transparent));border:1px solid color-mix(in srgb,var(--group-accent) 25%,transparent);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:.78rem;color:var(--text-muted);">💰 Total pot</div>
         <div style="font-size:1.8rem;color:var(--group-accent);line-height:1;" id="lb-pot-amount">£0</div>
@@ -4763,6 +4757,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.5',date:'26 Jun 2026',notes:['Form view: removed colour key explainer bar and MOTM badge.']},
   {v:'1.60.4',date:'26 Jun 2026',notes:['Form view: removed MOTM badge (not relevant to form ranking).']},
   {v:'1.60.3',date:'26 Jun 2026',notes:['Form view: added colour key explainer bar (day\'s best / above avg / below avg / no pred) shown below the header when Form tab is active.']},
   {v:'1.60.2',date:'26 Jun 2026',notes:['Form view: replaced dots with per-matchday point pills (+10 style). Gold = day\'s top scorer, green = above average, red = below average, dash = no prediction.']},
@@ -8327,8 +8322,6 @@ function setLbFormView(form){
   document.getElementById('lb-tab-form')?.classList.toggle('active', form);
   const sub = document.getElementById('lb-match-subtitle');
   if(sub && form) sub.textContent = `Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}`;
-  const expl = document.getElementById('lb-form-explainer');
-  if(expl) expl.style.display = form ? 'flex' : 'none';
   renderLeaderboard();
 }
 function toggleLbRules(){
@@ -9815,6 +9808,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.5</div>
 </body>
 </html>
