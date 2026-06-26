@@ -1191,7 +1191,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.59.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.59.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4696,6 +4696,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.59.1',date:'26 Jun 2026',notes:['Fix: previous-round stats now correctly accumulate all of yesterday\'s games (US Eastern time) rather than today\'s already-finished games — resolves the issue where only 2 of yesterday\'s 6 fixtures were counted.']},
   {v:'1.59.0',date:'26 Jun 2026',notes:['Home standings card: rank indicator (▲/▼) and round points (+x) now show accumulated movement and points from the previous day\'s fixtures. Round Summary banner appears after the match banners — lists all of the round\'s results, your prediction for each, total round points and rank movement. Man of the Match (MOTM) banner follows the summary, showing the best-performing player this round. Both summary and MOTM show once per round (tracked per-device) and respect the End-of-Game Banner setting.']},
   {v:'1.58.8',date:'25 Jun 2026',notes:['Seamless infinite loop on Yesterday\'s Results and Next Up carousels — swiping past the last slide now wraps smoothly to the first without animating backwards through all slides (clone technique). Next Up now shows all of today\'s upcoming games in US Eastern time (up to 6), falling back to the next 6 if none today.']},
   {v:'1.58.7',date:'24 Jun 2026',notes:['Admin Results: within each date group, games are now sorted most-recent kickoff first.']},
@@ -9672,6 +9673,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.1</div>
 </body>
 </html>
