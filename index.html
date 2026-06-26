@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.61.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.61.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4782,6 +4782,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.61.8',date:'26 Jun 2026',notes:['Fix: Most Man of the Match now appears in the homepage Tournament Stats card — was incorrectly relying on leaderboard data that may not have loaded yet; now computed independently from the stats card\'s own data.']},
   {v:'1.61.7',date:'26 Jun 2026',notes:['Ticker seen-by: Refresh button now labelled "↻ Refresh" for clarity.']},
   {v:'1.61.6',date:'26 Jun 2026',notes:['Ticker seen-by: auto-resets when enabling the ticker (was disabled → enabled) as well as when the text changes. Added ↺ Reset button in admin to manually reset the cutoff to now — useful when creating new news after a gap.']},
   {v:'1.61.5',date:'26 Jun 2026',notes:['Form leaderboard: Last 5/10 toggle now uses lb-view-tab style to match the Overall/Form toggle exactly.']},
@@ -6590,10 +6591,21 @@ async function loadHome(){
       if(topDaysLeaders.length)
         pushCell('days_top', '🏔️', 'Most Days at #1', joinList(topDaysLeaders), `${maxTopDays} matchday${maxTopDays===1?'':'s'} on top${topDaysLeaders.length>1?' each':''}`);
       {
-        if(Object.keys(_lbMotmCounts).length){
-          const pm2={}; (_lbRawPlayers||[]).forEach(p=>pm2[p.id]=p.nickname||p.name);
-          const motmMax=Math.max(...Object.values(_lbMotmCounts));
-          const motmLeaders=Object.entries(_lbMotmCounts).filter(([,c])=>c===motmMax).map(([pid])=>pm2[pid]||pid);
+        const homeMotmCounts={};
+        completedDatesH.forEach(d=>{
+          const dayIds=new Set(allFixtures().filter(f=>_koDateET(f)===d&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id));
+          const dayPts={};
+          gamePreds.filter(p=>dayIds.has(p.match_id)).forEach(p=>{
+            const res=rm[p.match_id]; if(!res) return;
+            dayPts[p.player_id]=(dayPts[p.player_id]||0)+calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+          });
+          if(!Object.keys(dayPts).length) return;
+          const best=Math.max(...Object.values(dayPts));
+          if(best>0) Object.entries(dayPts).forEach(([pid,pts])=>{ if(pts===best) homeMotmCounts[pid]=(homeMotmCounts[pid]||0)+1; });
+        });
+        if(Object.keys(homeMotmCounts).length){
+          const motmMax=Math.max(...Object.values(homeMotmCounts));
+          const motmLeaders=Object.entries(homeMotmCounts).filter(([,c])=>c===motmMax).map(([pid])=>(pm[pid]?.display||pm[pid]?.name||pid));
           if(motmMax>0&&motmLeaders.length)
             pushCell('motm_awards','⚽',`Most Man of the Match${motmLeaders.length>1?'s':''}`,joinList(motmLeaders),`${motmMax} MOTM award${motmMax===1?'':'s'}${motmLeaders.length>1?' each':''}`);
         }
@@ -9943,6 +9955,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.8</div>
 </body>
 </html>
