@@ -1191,7 +1191,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.59.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.59.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4529,15 +4529,17 @@ async function loadLeaderboard(){
       else if(pts===3){scores[name].result++;scores[name].total+=3;}
       else{scores[name].wrong++;}
     });
-    // Snapshot scores as they were before the most recent completed round (for rank-change indicator).
-    // Group by kickoff time so simultaneous games are treated as a single round.
-    const _orderedCompleted = allFixtures()
-      .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
-      .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
-    const _lastRoundKo = _orderedCompleted.length ? (getMatchKickoff(_orderedCompleted[_orderedCompleted.length-1])?.getTime()||0) : null;
-    const _lastRoundIds = _lastRoundKo
-      ? new Set(_orderedCompleted.filter(f=>(getMatchKickoff(f)?.getTime()||0)===_lastRoundKo).map(f=>f.id))
-      : new Set();
+    // Snapshot scores before the previous day's fixtures (all games with KO date in ET < today).
+    // This accumulates all yesterday's games so rank-change arrows and +pts reflect the full day.
+    const _koDateLB=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
+    const _todayLB=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    const _lbCompletedDates=[...new Set(
+      allFixtures().filter(f=>{const d=_koDateLB(f);return d&&d<_todayLB&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateLB(f))
+    )].sort();
+    const _lastRoundDate=_lbCompletedDates.length?_lbCompletedDates[_lbCompletedDates.length-1]:null;
+    const _lastRoundIds=_lastRoundDate
+      ?new Set(allFixtures().filter(f=>_koDateLB(f)===_lastRoundDate&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id))
+      :new Set();
     const prevScores = {};
     Object.entries(scores).forEach(([n,s])=>{ prevScores[n] = {...s}; });
     if(_lastRoundIds.size){
@@ -4696,7 +4698,8 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
-  {v:'1.59.1',date:'26 Jun 2026',notes:['Fix: previous-round stats now correctly accumulate all of yesterday\'s games (US Eastern time) rather than today\'s already-finished games — resolves the issue where only 2 of yesterday\'s 6 fixtures were counted.']},
+  {v:'1.59.2',date:'26 Jun 2026',notes:['Fix: previous-round grouping now uses kickoff date in US Eastern time rather than the f.date field (which uses UK/BST dates). All 6 of yesterday\'s games (Ecuador/Germany, Curaçao/Ivory Coast, Tunisia/Netherlands, Japan/Sweden, Türkiye/USA, Paraguay/Australia) now correctly count as one round for the home standings indicators, leaderboard rank-change arrows, +pts column, round summary banner and MOTM.']},
+  {v:'1.59.1',date:'26 Jun 2026',notes:['Fix: previous-round stats excluded today\'s already-finished games (US Eastern time) so the full previous day is used, not today\'s early results.']},
   {v:'1.59.0',date:'26 Jun 2026',notes:['Home standings card: rank indicator (▲/▼) and round points (+x) now show accumulated movement and points from the previous day\'s fixtures. Round Summary banner appears after the match banners — lists all of the round\'s results, your prediction for each, total round points and rank movement. Man of the Match (MOTM) banner follows the summary, showing the best-performing player this round. Both summary and MOTM show once per round (tracked per-device) and respect the End-of-Game Banner setting.']},
   {v:'1.58.8',date:'25 Jun 2026',notes:['Seamless infinite loop on Yesterday\'s Results and Next Up carousels — swiping past the last slide now wraps smoothly to the first without animating backwards through all slides (clone technique). Next Up now shows all of today\'s upcoming games in US Eastern time (up to 6), falling back to the next 6 if none today.']},
   {v:'1.58.7',date:'24 Jun 2026',notes:['Admin Results: within each date group, games are now sorted most-recent kickoff first.']},
@@ -5990,15 +5993,17 @@ async function loadHome(){
     const miniRankCounts = {};
     miniRanks.forEach(r=>{miniRankCounts[r]=(miniRankCounts[r]||0)+1;});
 
-    // ── Previous round data for home mini-lb (accumulated by calendar date)
+    // ── Previous round data for home mini-lb — group by KO date in US Eastern time
+    // (f.date uses BST/UK dates which mismatch for late-night US games)
+    const _koDateET=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
     const todayUS=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-    const completedDatesH = [...new Set(
-      allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date&&f.date<todayUS).map(f=>f.date)
+    const completedDatesH=[...new Set(
+      allFixtures().filter(f=>{const d=_koDateET(f);return d&&d<todayUS&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateET(f))
     )].sort();
-    const prevRoundDateH = completedDatesH.length ? completedDatesH[completedDatesH.length-1] : null;
-    const prevRoundIdsH = prevRoundDateH
-      ? new Set(allFixtures().filter(f=>f.date===prevRoundDateH&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id))
-      : new Set();
+    const prevRoundDateH=completedDatesH.length?completedDatesH[completedDatesH.length-1]:null;
+    const prevRoundIdsH=prevRoundDateH
+      ?new Set(allFixtures().filter(f=>_koDateET(f)===prevRoundDateH&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id))
+      :new Set();
     const prevRoundPtsByNameH = {};
     if(prevRoundIdsH.size){
       gamePreds.filter(p=>prevRoundIdsH.has(p.match_id)).forEach(p=>{
@@ -7306,15 +7311,16 @@ function _maybeShowRoundSummary(allPreds, allResults){
   if(currentGroup.show_end_banner === false) return;
   const rm={};
   (allResults||[]).forEach(r=>rm[r.match_id]=r);
+  const _koDateETb=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
   const todaySumm=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const completedDates=[...new Set(
-    allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date&&f.date<todaySumm).map(f=>f.date)
+    allFixtures().filter(f=>{const d=_koDateETb(f);return d&&d<todaySumm&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateETb(f))
   )].sort();
   if(!completedDates.length) return;
   const roundDate=completedDates[completedDates.length-1];
   const seenKey='wc26_round_summ_seen_'+roundDate;
   if(localStorage.getItem(seenKey)==='1') return;
-  const roundFixtures=allFixtures().filter(f=>f.date===roundDate&&rm[f.id]&&rm[f.id].home_score!=null);
+  const roundFixtures=allFixtures().filter(f=>_koDateETb(f)===roundDate&&rm[f.id]&&rm[f.id].home_score!=null);
   if(!roundFixtures.length) return;
   const roundMatchIds=new Set(roundFixtures.map(f=>f.id));
   // My predictions for this round
@@ -7348,9 +7354,9 @@ function _maybeShowRoundSummary(allPreds, allResults){
 
 function showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,myPrevRank,myCurRank,onClose){
   const ex=document.getElementById('round-summ-overlay'); if(ex) ex.remove();
-  const todayStr=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+  const todayStr=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const yest=new Date(); yest.setDate(yest.getDate()-1);
-  const yestStr=yest.toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+  const yestStr=yest.toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const dayLabel=roundDate===todayStr?"TODAY'S RESULTS":roundDate===yestStr?"YESTERDAY'S RESULTS":"ROUND RECAP";
   const gameRows=roundFixtures.map(f=>{
     const r=rm[f.id]; const pred=myPredMap[f.id];
@@ -9673,6 +9679,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.2</div>
 </body>
 </html>
