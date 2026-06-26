@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.62.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.62.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4572,8 +4572,9 @@ async function loadLeaderboard(){
     // This accumulates all yesterday's games so rank-change arrows and +pts reflect the full day.
     const _koDateLB=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
     const _todayLB=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    // Include today's completed games — "current round" = most recent ET date with results
     const _lbCompletedDates=[...new Set(
-      allFixtures().filter(f=>{const d=_koDateLB(f);return d&&d<_todayLB&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateLB(f))
+      allFixtures().filter(f=>{const d=_koDateLB(f);return d&&d<=_todayLB&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateLB(f))
     )].sort();
     const _lastRoundDate=_lbCompletedDates.length?_lbCompletedDates[_lbCompletedDates.length-1]:null;
     const _lastRoundIds=_lastRoundDate
@@ -4592,14 +4593,6 @@ async function loadLeaderboard(){
         else if(pts===3){ps.result--;ps.total-=3;}
         else{ps.wrong--;}
       });
-    }
-    // Reset rank arrows once the first game of the next matchday has kicked off
-    if(_lastRoundDate&&_lastRoundIds.size){
-      const _nextKoLB=allFixtures()
-        .filter(f=>{const d=_koDateLB(f);return d&&d>_lastRoundDate;})
-        .map(f=>getMatchKickoff(f)).filter(Boolean)
-        .sort((a,b)=>a-b)[0];
-      if(_nextKoLB&&_nowMs>=_nextKoLB.getTime()) _lastRoundIds.clear();
     }
     _lbPrevGameScores = _lastRoundIds.size ? prevScores : {};
     _lbLastMatchPts = {};
@@ -4793,6 +4786,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.62.3',date:'26 Jun 2026',notes:['Home mini-lb and leaderboard: +pts and rank arrows now accumulate from today\'s completed games in real time, rather than being hidden once the day starts. "Current round" = most recent ET date with completed results.']},
   {v:'1.62.2',date:'26 Jun 2026',notes:['Leaderboard rank-change arrows also reset once the first game of the next matchday kicks off.']},
   {v:'1.62.1',date:'26 Jun 2026',notes:['Home mini-lb: +pts and rank arrows reset once the first game of the next matchday kicks off.']},
   {v:'1.62.0',date:'26 Jun 2026',notes:['Home: two-finger trackpad swipe now navigates the Next Up and Yesterday\'s Results carousels on laptop/desktop.']},
@@ -6126,22 +6120,14 @@ async function loadHome(){
     // (f.date uses BST/UK dates which mismatch for late-night US games)
     const _koDateET=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
     const todayUS=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    // Include today's completed games — "current round" = most recent ET date with results
     const completedDatesH=[...new Set(
-      allFixtures().filter(f=>{const d=_koDateET(f);return d&&d<todayUS&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateET(f))
+      allFixtures().filter(f=>{const d=_koDateET(f);return d&&d<=todayUS&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateET(f))
     )].sort();
     const prevRoundDateH=completedDatesH.length?completedDatesH[completedDatesH.length-1]:null;
     const prevRoundIdsH=prevRoundDateH
       ?new Set(allFixtures().filter(f=>_koDateET(f)===prevRoundDateH&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id))
       :new Set();
-    // Reset +pts display once the first game of the next matchday has kicked off
-    if(prevRoundDateH&&prevRoundIdsH.size){
-      const _nowMs=Date.now();
-      const nextKo=allFixtures()
-        .filter(f=>{const d=_koDateET(f);return d&&d>prevRoundDateH;})
-        .map(f=>getMatchKickoff(f)).filter(Boolean)
-        .sort((a,b)=>a-b)[0];
-      if(nextKo&&_nowMs>=nextKo.getTime()) prevRoundIdsH.clear();
-    }
     const prevRoundPtsByNameH = {};
     if(prevRoundIdsH.size){
       gamePreds.filter(p=>prevRoundIdsH.has(p.match_id)).forEach(p=>{
@@ -10019,6 +10005,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.62.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.62.3</div>
 </body>
 </html>
