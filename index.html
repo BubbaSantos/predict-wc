@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4763,6 +4763,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.4',date:'26 Jun 2026',notes:['Form view: removed MOTM badge (not relevant to form ranking).']},
   {v:'1.60.3',date:'26 Jun 2026',notes:['Form view: added colour key explainer bar (day\'s best / above avg / below avg / no pred) shown below the header when Form tab is active.']},
   {v:'1.60.2',date:'26 Jun 2026',notes:['Form view: replaced dots with per-matchday point pills (+10 style). Gold = day\'s top scorer, green = above average, red = below average, dash = no prediction.']},
   {v:'1.60.1',date:'26 Jun 2026',notes:['Form dots simplified: green = scored any points, red = 0 points, grey = no prediction. Dots slightly larger for clarity.']},
@@ -8606,8 +8607,6 @@ function renderLeaderboard(){
       const rowCls=(_lbJointRanks?(r===1?'lb-row lb-gold':r===2?'lb-row lb-silver':r===3?'lb-row lb-bronze':'lb-row'):(i===0?'lb-row lb-gold':i===1?'lb-row lb-silver':i===2?'lb-row lb-bronze':'lb-row'))+(isYou?' lb-you':'');
       const onlineDot=_lbOnline[pid]?'<span style="display:inline-block;width:.4rem;height:.4rem;border-radius:50%;background:#10b981;margin-left:.4rem;vertical-align:middle;"></span>':'';
       const nameHtml=streakNameHtml(name,_lbStreaks[name]);
-      const isMotm=_lbMotmPids.size&&_lbMotmPids.has(pid);
-      const motmB=isMotm?'<span class="lb-badge lb-badge-motm">⚽ MOTM</span>':'';
       const pills=_lbFormDates.map(d=>{
         const dayPts=s.days&&s.days[d]!=null?s.days[d]:null;
         const stat=_lbFormDayStats[d]||{max:0,avg:0};
@@ -8618,7 +8617,7 @@ function renderLeaderboard(){
       const ptsCol=s.total>0?'var(--group-accent)':'var(--text-muted)';
       return `<div class="${rowCls}" style="cursor:pointer;" onclick="lbRowTap(this)" data-pid="${pid}" data-pname="${String(name).replace(/"/g,'&quot;')}">
         <div class="lb-rank">${rankDisplay}</div>
-        <div><div class="lb-name">${nameHtml}${onlineDot}${motmB}</div>
+        <div><div class="lb-name">${nameHtml}${onlineDot}</div>
           <div class="form-pills">${pills}</div>
         </div>
         <div style="text-align:right;"><div class="lb-points" style="color:${ptsCol};">${s.total}</div><div class="lb-pts-label">pts</div></div>
@@ -9816,6 +9815,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.4</div>
 </body>
 </html>
