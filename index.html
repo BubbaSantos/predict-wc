@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1511,7 +1511,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <span id="lb-timeline-end-label" style="font-size:.65rem;color:var(--text-muted);"></span>
         </div>
       </div>
-      <div style="font-size:.65rem;color:var(--text-muted);text-align:center;opacity:.55;margin-bottom:.4rem;letter-spacing:.03em;">Double-tap any name to switch between compact and full view</div>
+      <div id="lb-compact-hint" style="font-size:.65rem;color:var(--text-muted);text-align:center;opacity:.55;margin-bottom:.4rem;letter-spacing:.03em;">Double-tap any name to switch between compact and full view</div>
       <div id="leaderboard-list"><div class="loading">Loading…</div></div>
     </div>
 
@@ -4757,6 +4757,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.7',date:'26 Jun 2026',notes:['Form leaderboard: hide compact-view hint and remove duplicate "Form — last N matchdays" label.']},
   {v:'1.60.6',date:'26 Jun 2026',notes:['Form subtitle cleared when switching back to overall leaderboard.']},
   {v:'1.60.5',date:'26 Jun 2026',notes:['Form view: removed colour key explainer bar and MOTM badge.']},
   {v:'1.60.4',date:'26 Jun 2026',notes:['Form view: removed MOTM badge (not relevant to form ranking).']},
@@ -8323,6 +8324,8 @@ function setLbFormView(form){
   document.getElementById('lb-tab-form')?.classList.toggle('active', form);
   const sub = document.getElementById('lb-match-subtitle');
   if(sub) sub.textContent = form ? `Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}` : '';
+  const hint = document.getElementById('lb-compact-hint');
+  if(hint) hint.style.display = form ? 'none' : '';
   renderLeaderboard();
 }
 function toggleLbRules(){
@@ -8592,8 +8595,7 @@ function renderLeaderboard(){
     const fRankCounts={};
     fRanks.forEach(r=>{fRankCounts[r]=(fRankCounts[r]||0)+1;});
     const myDisplayName=currentPlayer?(currentPlayer.nickname||currentPlayer.name):null;
-    lb.innerHTML=`<div class="lb-form-label">Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}</div>`
-    +fSorted.map(([name,s],i)=>{
+    lb.innerHTML=fSorted.map(([name,s],i)=>{
       const pid=s.playerId||'';
       const isYou=currentPlayer&&pid===currentPlayer.id;
       const r=fRanks[i];
@@ -9809,6 +9811,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.7</div>
 </body>
 </html>
