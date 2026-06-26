@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4757,6 +4757,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.6',date:'26 Jun 2026',notes:['Form subtitle cleared when switching back to overall leaderboard.']},
   {v:'1.60.5',date:'26 Jun 2026',notes:['Form view: removed colour key explainer bar and MOTM badge.']},
   {v:'1.60.4',date:'26 Jun 2026',notes:['Form view: removed MOTM badge (not relevant to form ranking).']},
   {v:'1.60.3',date:'26 Jun 2026',notes:['Form view: added colour key explainer bar (day\'s best / above avg / below avg / no pred) shown below the header when Form tab is active.']},
@@ -8321,7 +8322,7 @@ function setLbFormView(form){
   document.getElementById('lb-tab-overall')?.classList.toggle('active', !form);
   document.getElementById('lb-tab-form')?.classList.toggle('active', form);
   const sub = document.getElementById('lb-match-subtitle');
-  if(sub && form) sub.textContent = `Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}`;
+  if(sub) sub.textContent = form ? `Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}` : '';
   renderLeaderboard();
 }
 function toggleLbRules(){
@@ -9808,6 +9809,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.6</div>
 </body>
 </html>
