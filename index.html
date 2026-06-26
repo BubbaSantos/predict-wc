@@ -5990,8 +5990,9 @@ async function loadHome(){
     miniRanks.forEach(r=>{miniRankCounts[r]=(miniRankCounts[r]||0)+1;});
 
     // ── Previous round data for home mini-lb (accumulated by calendar date)
+    const todayUS=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     const completedDatesH = [...new Set(
-      allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date).map(f=>f.date)
+      allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date&&f.date<todayUS).map(f=>f.date)
     )].sort();
     const prevRoundDateH = completedDatesH.length ? completedDatesH[completedDatesH.length-1] : null;
     const prevRoundIdsH = prevRoundDateH
@@ -7304,8 +7305,9 @@ function _maybeShowRoundSummary(allPreds, allResults){
   if(currentGroup.show_end_banner === false) return;
   const rm={};
   (allResults||[]).forEach(r=>rm[r.match_id]=r);
+  const todaySumm=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const completedDates=[...new Set(
-    allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date).map(f=>f.date)
+    allFixtures().filter(f=>rm[f.id]&&rm[f.id].home_score!=null&&f.date&&f.date<todaySumm).map(f=>f.date)
   )].sort();
   if(!completedDates.length) return;
   const roundDate=completedDates[completedDates.length-1];
