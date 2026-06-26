@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1449,8 +1449,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <button id="lb-filter-money" class="lb-filter-btn" onclick="setLbFilter('money')">💸 Money</button>
             <button id="lb-filter-fun" class="lb-filter-btn" onclick="setLbFilter('fun')">😄 Fun</button>
           </div>
-          <button class="sync-refresh" id="lb-info-toggle" onclick="toggleLbInfo()" style="font-size:.65rem;padding:.22rem .6rem;">▾ More</button>
-          <button class="sync-refresh" onclick="loadLeaderboard()" style="font-size:.65rem;padding:.22rem .6rem;">↻ Refresh</button>
+          <div id="lb-extra-btns" style="display:flex;gap:.35rem;">
+            <button class="sync-refresh" id="lb-info-toggle" onclick="toggleLbInfo()" style="font-size:.65rem;padding:.22rem .6rem;">▾ More</button>
+            <button class="sync-refresh" onclick="loadLeaderboard()" style="font-size:.65rem;padding:.22rem .6rem;">↻ Refresh</button>
+          </div>
         </div>
       </div>
 
@@ -4757,6 +4759,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.8',date:'26 Jun 2026',notes:['Form leaderboard: hide More and Refresh buttons.']},
   {v:'1.60.7',date:'26 Jun 2026',notes:['Form leaderboard: hide compact-view hint and remove duplicate "Form — last N matchdays" label.']},
   {v:'1.60.6',date:'26 Jun 2026',notes:['Form subtitle cleared when switching back to overall leaderboard.']},
   {v:'1.60.5',date:'26 Jun 2026',notes:['Form view: removed colour key explainer bar and MOTM badge.']},
@@ -8326,6 +8329,8 @@ function setLbFormView(form){
   if(sub) sub.textContent = form ? `Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}` : '';
   const hint = document.getElementById('lb-compact-hint');
   if(hint) hint.style.display = form ? 'none' : '';
+  const extraBtns = document.getElementById('lb-extra-btns');
+  if(extraBtns) extraBtns.style.display = form ? 'none' : 'flex';
   renderLeaderboard();
 }
 function toggleLbRules(){
@@ -9811,6 +9816,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.8</div>
 </body>
 </html>
