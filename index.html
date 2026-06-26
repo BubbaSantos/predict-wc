@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.62.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.62.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4604,7 +4604,10 @@ async function loadLeaderboard(){
       });
     }
     _lbMotmPids=new Set();
-    if(Object.keys(_lbLastMatchPts).length){
+    // Only award MOTM once every fixture on that ET date has a result
+    const _allRoundDayFixtures=_lastRoundDate?allFixtures().filter(f=>_koDateLB(f)===_lastRoundDate):[];
+    const _roundDayComplete=_allRoundDayFixtures.length>0&&_allRoundDayFixtures.every(f=>rm[f.id]&&rm[f.id].home_score!=null);
+    if(_roundDayComplete&&Object.keys(_lbLastMatchPts).length){
       const best=Math.max(...Object.values(_lbLastMatchPts));
       if(best>0) Object.entries(_lbLastMatchPts).forEach(([pid,pts])=>{ if(pts===best) _lbMotmPids.add(pid); });
     }
@@ -4786,6 +4789,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.62.4',date:'26 Jun 2026',notes:['MOTM badge only awarded once every game in the matchday has a result — no premature MOTM mid-day.']},
   {v:'1.62.3',date:'26 Jun 2026',notes:['Home mini-lb and leaderboard: +pts and rank arrows now accumulate from today\'s completed games in real time, rather than being hidden once the day starts. "Current round" = most recent ET date with completed results.']},
   {v:'1.62.2',date:'26 Jun 2026',notes:['Leaderboard rank-change arrows also reset once the first game of the next matchday kicks off.']},
   {v:'1.62.1',date:'26 Jun 2026',notes:['Home mini-lb: +pts and rank arrows reset once the first game of the next matchday kicks off.']},
@@ -10005,6 +10009,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.62.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.62.4</div>
 </body>
 </html>
