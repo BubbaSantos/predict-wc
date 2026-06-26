@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.62.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.62.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1843,6 +1843,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <button class="sync-refresh" onclick="testEndBanner()">🎬 Test Banner</button>
             <button class="sync-refresh" onclick="resetEndBannerSeen()" title="Clear all 'seen' flags on this device so the banner shows again for any Full Time matches">↻ Reset Seen (this device)</button>
             <button class="sync-refresh" onclick="resetRoundSummarySeen()" title="Clear round-summary and MOTM seen flags so the summary shows again">↻ Reset Round Summary</button>
+            <button class="sync-refresh" onclick="launchConfetti();flash('Confetti test 🎉','success')" title="Test confetti animation">🎉 Test Confetti</button>
           </div>
         </div>
         <div class="status-card">
@@ -4789,6 +4790,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.62.5',date:'26 Jun 2026',notes:['MOTM banner: confetti animation fires if you are the MOTM. Sub-text changes to "That\'s you! 🏆". Admin: 🎉 Test Confetti button.']},
   {v:'1.62.4',date:'26 Jun 2026',notes:['MOTM badge only awarded once every game in the matchday has a result — no premature MOTM mid-day.']},
   {v:'1.62.3',date:'26 Jun 2026',notes:['Home mini-lb and leaderboard: +pts and rank arrows now accumulate from today\'s completed games in real time, rather than being hidden once the day starts. "Current round" = most recent ET date with completed results.']},
   {v:'1.62.2',date:'26 Jun 2026',notes:['Leaderboard rank-change arrows also reset once the first game of the next matchday kicks off.']},
@@ -7514,7 +7516,7 @@ function _maybeShowRoundSummary(allPreds, allResults){
   const myPrevRank=_homeRoundPrevRankByName[currentPlayer.nickname||currentPlayer.name];
   const myCurRank=_homeRoundCurRankByName[currentPlayer.nickname||currentPlayer.name];
   showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,myPrevRank,myCurRank,()=>{
-    if(motmName&&motmPts>0) showMOTMBanner(motmName,motmPts,roundFixtures.length);
+    if(motmName&&motmPts>0) showMOTMBanner(motmName,motmPts,roundFixtures.length,motmPid===currentPlayer.id);
   });
 }
 
@@ -7565,7 +7567,52 @@ function showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,
   setTimeout(close,10000);
 }
 
-function showMOTMBanner(motmName,motmPts,gamesInRound){
+function launchConfetti(durationMs=4500){
+  const canvas=document.createElement('canvas');
+  canvas.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10002;';
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx=canvas.getContext('2d');
+  const cols=['#fbbf24','#f59e0b','#fde68a','#10b981','#34d399','#ffffff','#facc15','#fb923c'];
+  const N=180;
+  const pieces=Array.from({length:N},(_,i)=>({
+    x:Math.random()*canvas.width,
+    y:-20-Math.random()*canvas.height*0.5,
+    vx:(Math.random()-0.5)*5,
+    vy:1.5+Math.random()*4,
+    size:5+Math.random()*9,
+    aspect:0.35+Math.random()*0.55,
+    color:cols[Math.floor(Math.random()*cols.length)],
+    rot:Math.random()*Math.PI*2,
+    rotV:(Math.random()-0.5)*0.18,
+    rect:Math.random()>0.4,
+  }));
+  const start=Date.now();
+  let rafId, cancelled=false;
+  function draw(){
+    if(cancelled){canvas.remove();return;}
+    const elapsed=Date.now()-start;
+    if(elapsed>durationMs+600){canvas.remove();return;}
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const alpha=elapsed>durationMs?Math.max(0,1-(elapsed-durationMs)/600):1;
+    ctx.globalAlpha=alpha;
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.09; p.vx*=0.995; p.rot+=p.rotV;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.color;
+      if(p.rect){ ctx.fillRect(-p.size/2,-p.size*p.aspect/2,p.size,p.size*p.aspect); }
+      else{ ctx.beginPath(); ctx.ellipse(0,0,p.size/2,p.size*p.aspect/2,0,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+      if(elapsed<durationMs&&p.y>canvas.height+20){
+        p.y=-10; p.x=Math.random()*canvas.width; p.vy=1.5+Math.random()*4; p.vx=(Math.random()-0.5)*5;
+      }
+    });
+    rafId=requestAnimationFrame(draw);
+  }
+  draw();
+  return ()=>{cancelled=true;cancelAnimationFrame(rafId);};
+}
+
+function showMOTMBanner(motmName,motmPts,gamesInRound,isMe){
   const ex=document.getElementById('motm-overlay'); if(ex) ex.remove();
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const overlay=document.createElement('div');
@@ -7575,15 +7622,22 @@ function showMOTMBanner(motmName,motmPts,gamesInRound){
     <div class="eb-tag">MAN OF THE MATCH</div>
     <div class="motm-icon">⚽</div>
     <div class="motm-name">${esc(motmName)}</div>
-    <div class="motm-sub">top scorer this round</div>
+    <div class="motm-sub">${isMe?'That\'s you! 🏆':'top scorer this round'}</div>
     <div class="eb-pts pts-exact motm-pts">+${motmPts}</div>
     <div class="eb-pts-blurb">${gamesInRound===1?'in this game':`across ${gamesInRound} game${gamesInRound!==1?'s':''}`}</div>
     <div class="eb-dismiss">Tap to dismiss</div>
   </div>`;
   document.body.appendChild(overlay);
   requestAnimationFrame(()=>overlay.classList.add('show'));
+  let cancelConfetti=null;
+  if(isMe) cancelConfetti=launchConfetti();
   let closed=false;
-  const close=()=>{if(closed)return;closed=true;overlay.classList.remove('show');setTimeout(()=>overlay.remove(),350);};
+  const close=()=>{
+    if(closed)return;closed=true;
+    if(cancelConfetti) cancelConfetti();
+    overlay.classList.remove('show');
+    setTimeout(()=>overlay.remove(),350);
+  };
   overlay.addEventListener('click',close);
   setTimeout(close,7000);
 }
@@ -10009,6 +10063,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.62.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.62.5</div>
 </body>
 </html>
