@@ -485,6 +485,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .lb-filter-btn:last-child{border-right:none;}
   .lb-filter-btn:hover{color:var(--text);background:var(--surface2);}
   .lb-filter-btn.active{background:var(--surface2);color:var(--group-accent);}
+  .lb-view-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0;}
+  .lb-view-tab{background:none;border:none;color:var(--text-muted);font-size:.72rem;font-weight:600;padding:.32rem .65rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .lb-view-tab.active{background:var(--surface2);color:var(--group-accent);}
+  .form-dot{display:inline-block;width:.52rem;height:.52rem;border-radius:50%;vertical-align:middle;}
+  .form-dots{display:flex;align-items:center;gap:.22rem;}
+  .lb-form-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;}
 
 
   
@@ -1192,7 +1198,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.59.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1429,7 +1435,11 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <div class="page-title">Leaderboard</div>
           <div id="lb-match-subtitle" style="font-size:.72rem;color:var(--text-muted);margin-top:.1rem;"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:.5rem;">
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;">
+          <div class="lb-view-toggle">
+            <button id="lb-tab-overall" class="lb-view-tab active" onclick="setLbFormView(false)">Overall</button>
+            <button id="lb-tab-form" class="lb-view-tab" onclick="setLbFormView(true)">📈 Form</button>
+          </div>
           <div id="lb-filter-btns" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:7px;display:flex;overflow:hidden;">
             <button id="lb-filter-all" class="lb-filter-btn active" onclick="setLbFilter('all')">All</button>
             <button id="lb-filter-money" class="lb-filter-btn" onclick="setLbFilter('money')">💸 Money</button>
@@ -3903,6 +3913,9 @@ let _lbPrevRanks = {};
 let _lbPrevGameScores = {};
 let _lbLastMatchPts = {};
 let _lbMotmPids = new Set();
+let _lbFormView = false;
+let _lbFormScores = {};
+let _lbFormDates = [];
 let _homeRoundDate = null;
 let _homeRoundPtsByName = {};
 let _homeRoundPrevRankByName = {};
@@ -4505,7 +4518,7 @@ async function loadLeaderboard(){
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     const _lbMatchSubtitle = document.getElementById('lb-match-subtitle');
-    if(_lbMatchSubtitle){
+    if(_lbMatchSubtitle && !_lbFormView){
       const gsIds = new Set(FIXTURES.map(f=>f.id));
       const completedCount = (allResults||[]).filter(r=>gsIds.has(r.match_id)&&r.home_score!=null).length;
       const totalCount = FIXTURES.length;
@@ -4570,6 +4583,29 @@ async function loadLeaderboard(){
       const best=Math.max(...Object.values(_lbLastMatchPts));
       if(best>0) Object.entries(_lbLastMatchPts).forEach(([pid,pts])=>{ if(pts===best) _lbMotmPids.add(pid); });
     }
+    // ── Form table: last 5 completed matchdays (KO date ET, before today)
+    {
+      const _formKoDateET=f=>{const ko=getMatchKickoff(f);return ko?ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'}):null;};
+      const _formToday=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+      _lbFormDates=[...new Set(
+        allFixtures().filter(f=>{const d=_formKoDateET(f);return d&&d<_formToday&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_formKoDateET(f))
+      )].sort().slice(-5);
+      const formIds=new Set(allFixtures().filter(f=>_lbFormDates.includes(_formKoDateET(f))&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id));
+      _lbFormScores={};
+      lbGamePreds.filter(p=>formIds.has(p.match_id)).forEach(p=>{
+        const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
+        if(!_lbFormScores[name]) _lbFormScores[name]={total:0,exact:0,result:0,wrong:0,played:0,playerId:p.player_id,days:{}};
+        const res=rm[p.match_id]; if(!res) return;
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        _lbFormScores[name].total+=pts; _lbFormScores[name].played++;
+        if(pts===8){_lbFormScores[name].exact++;_lbFormScores[name].result++;}
+        else if(pts===5){_lbFormScores[name].exact++;}
+        else if(pts===3){_lbFormScores[name].result++;}
+        else{_lbFormScores[name].wrong++;}
+        const d=_formKoDateET(allFixtures().find(f=>f.id===p.match_id));
+        if(d){_lbFormScores[name].days[d]=(_lbFormScores[name].days[d]||0)+pts;}
+      });
+    }
     const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
     _lbStreaks={};
     Object.entries(playerStreaks).forEach(([pid,s])=>{
@@ -4610,6 +4646,9 @@ async function loadLeaderboard(){
     const timelineChev = document.getElementById('lb-timeline-btn-chevron');
     if(timelineChev){ timelineChev.style.transform = ''; timelineChev.style.color = 'var(--text-muted)'; }
     applyLbInfoVisibility();
+    document.getElementById('lb-tab-overall')?.classList.toggle('active',!_lbFormView);
+    document.getElementById('lb-tab-form')?.classList.toggle('active',_lbFormView);
+    if(_lbFormView){ const sub=document.getElementById('lb-match-subtitle'); if(sub) sub.textContent=`Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}`; }
     renderLeaderboard();
     _initLbTimeline();
     _applyLbCompactBtn();
@@ -4705,6 +4744,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.0',date:'26 Jun 2026',notes:['Form table: "Overall / Form" toggle on the Leaderboard page. Form view ranks players by points from the last 5 completed matchdays (US Eastern time). Each row shows a 5-dot form strip — green (5+ pts), yellow (1–4 pts), red (0 pts), grey (no prediction that day) — plus the form point total. MOTM badge carries over into the form view.']},
   {v:'1.59.4',date:'26 Jun 2026',notes:['MOTM badge: shared by all tied top-scorers — if multiple players score the same highest round total, each gets the ⚽ MOTM badge.']},
   {v:'1.59.3',date:'26 Jun 2026',notes:['MOTM badge: the player who scored the most points in yesterday\'s round gets a ⚽ MOTM badge on the full leaderboard, compact leaderboard, and home standings mini-lb.']},
   {v:'1.59.2',date:'26 Jun 2026',notes:['Fix: previous-round grouping now uses kickoff date in US Eastern time rather than the f.date field (which uses UK/BST dates). All 6 of yesterday\'s games (Ecuador/Germany, Curaçao/Ivory Coast, Tunisia/Netherlands, Japan/Sweden, Türkiye/USA, Paraguay/Australia) now correctly count as one round for the home standings indicators, leaderboard rank-change arrows, +pts column, round summary banner and MOTM.']},
@@ -8258,6 +8298,14 @@ function setLbFilter(filter){
   });
   renderLeaderboard();
 }
+function setLbFormView(form){
+  _lbFormView = form;
+  document.getElementById('lb-tab-overall')?.classList.toggle('active', !form);
+  document.getElementById('lb-tab-form')?.classList.toggle('active', form);
+  const sub = document.getElementById('lb-match-subtitle');
+  if(sub && form) sub.textContent = `Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}`;
+  renderLeaderboard();
+}
 function toggleLbRules(){
   const body = document.getElementById('lb-rules-body');
   const chevron = document.getElementById('lb-rules-chevron');
@@ -8500,6 +8548,60 @@ function renderLeaderboard(){
         forfeitBanner.style.display='none';
       }
     }
+  }
+
+  // ── Form view: rank by last-5-days points
+  if(_lbFormView){
+    if(!_lbFormDates.length){ lb.innerHTML='<div class="empty" style="font-size:.82rem;color:var(--text-muted);">No completed matchdays yet.</div>'; return; }
+    const dotColor=pts=>pts>=8?'#22c55e':pts>=3?'#f59e0b':pts===0?'#ef4444':'#ef4444';
+    const dotTitle=d=>d!=null?`${d} pts`:'no game';
+    // Merge overall players with form scores so everyone appears (0 pts if they played no form games)
+    const allNames=new Set([...Object.keys(_lbScores||{})]);
+    const formEntries=[...allNames].map(name=>{
+      const overall=(_lbScores||{})[name]||{total:0,exact:0,result:0,wrong:0,played:0,playerId:null};
+      const form=_lbFormScores[name]||{total:0,exact:0,result:0,wrong:0,played:0,playerId:overall.playerId,days:{}};
+      return [name,{...form,playerId:form.playerId||overall.playerId}];
+    });
+    let fEntries=formEntries;
+    if(_lbFilter==='money') fEntries=fEntries.filter(([name])=>_lbPayMap[name]==='money');
+    else if(_lbFilter==='fun') fEntries=fEntries.filter(([name])=>_lbPayMap[name]==='fun');
+    const fSorted=fEntries.sort((a,b)=>lbCompare(a,b));
+    if(!fSorted.length){ lb.innerHTML='<div class="empty">No players in this category yet.</div>'; return; }
+    const fRanks=[];
+    for(let i=0;i<fSorted.length;i++){
+      if(i===0||lbCompare(fSorted[i],fSorted[i-1])!==0) fRanks.push(i+1);
+      else fRanks.push(fRanks[i-1]);
+    }
+    const fRankCounts={};
+    fRanks.forEach(r=>{fRankCounts[r]=(fRankCounts[r]||0)+1;});
+    const myDisplayName=currentPlayer?(currentPlayer.nickname||currentPlayer.name):null;
+    lb.innerHTML=`<div class="lb-form-label">Form — last ${_lbFormDates.length} matchday${_lbFormDates.length!==1?'s':''}</div>`
+    +fSorted.map(([name,s],i)=>{
+      const pid=s.playerId||'';
+      const isYou=currentPlayer&&pid===currentPlayer.id;
+      const r=fRanks[i];
+      const rankDisplay=(_lbJointRanks&&fRankCounts[r]>1)?'='+r:String(_lbJointRanks?r:i+1);
+      const rowCls=(_lbJointRanks?(r===1?'lb-row lb-gold':r===2?'lb-row lb-silver':r===3?'lb-row lb-bronze':'lb-row'):(i===0?'lb-row lb-gold':i===1?'lb-row lb-silver':i===2?'lb-row lb-bronze':'lb-row'))+(isYou?' lb-you':'');
+      const onlineDot=_lbOnline[pid]?'<span style="display:inline-block;width:.4rem;height:.4rem;border-radius:50%;background:#10b981;margin-left:.4rem;vertical-align:middle;"></span>':'';
+      const nameHtml=streakNameHtml(name,_lbStreaks[name]);
+      const isMotm=_lbMotmPids.size&&_lbMotmPids.has(pid);
+      const motmB=isMotm?'<span class="lb-badge lb-badge-motm">⚽ MOTM</span>':'';
+      const dots=_lbFormDates.map(d=>{
+        const dayPts=s.days&&s.days[d]!=null?s.days[d]:null;
+        const col=dayPts==null?'var(--border)':dayPts===0?'#ef4444':dayPts<5?'#f59e0b':'#22c55e';
+        const title=dayPts==null?'no prediction':dayPts+' pts';
+        return `<span class="form-dot" style="background:${col};" title="${title}"></span>`;
+      }).join('');
+      const ptsCol=s.total>0?'var(--group-accent)':'var(--text-muted)';
+      return `<div class="${rowCls}" style="cursor:pointer;" onclick="lbRowTap(this)" data-pid="${pid}" data-pname="${String(name).replace(/"/g,'&quot;')}">
+        <div class="lb-rank">${rankDisplay}</div>
+        <div><div class="lb-name">${nameHtml}${onlineDot}${motmB}</div>
+          <div class="form-dots" style="margin-top:.3rem;">${dots}</div>
+        </div>
+        <div style="text-align:right;"><div class="lb-points" style="color:${ptsCol};">${s.total}</div><div class="lb-pts-label">pts</div></div>
+      </div>`;
+    }).join('');
+    return;
   }
 
   let entries = Object.entries(_lbScores||{});
@@ -9691,6 +9793,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.0</div>
 </body>
 </html>
