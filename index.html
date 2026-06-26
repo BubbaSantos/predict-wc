@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.9</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.61.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4755,6 +4755,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.61.0',date:'26 Jun 2026',notes:['Form leaderboard: added small colour key above the #1 card — red dot (avg or less), green dot (above avg), gold dot (top score that day).']},
   {v:'1.60.9',date:'26 Jun 2026',notes:['Leaderboard: removed More and Refresh buttons entirely.']},
   {v:'1.60.8',date:'26 Jun 2026',notes:['Form leaderboard: hide More and Refresh buttons.']},
   {v:'1.60.7',date:'26 Jun 2026',notes:['Form leaderboard: hide compact-view hint and remove duplicate "Form — last N matchdays" label.']},
@@ -8595,7 +8596,12 @@ function renderLeaderboard(){
     const fRankCounts={};
     fRanks.forEach(r=>{fRankCounts[r]=(fRankCounts[r]||0)+1;});
     const myDisplayName=currentPlayer?(currentPlayer.nickname||currentPlayer.name):null;
-    lb.innerHTML=fSorted.map(([name,s],i)=>{
+    const formKey='<div style="display:flex;align-items:center;gap:.6rem;padding:.2rem .85rem .35rem;justify-content:flex-end;">'
+      +'<span style="display:flex;align-items:center;gap:.22rem;font-size:.58rem;color:var(--text-muted);"><span style="display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>avg or less</span>'
+      +'<span style="display:flex;align-items:center;gap:.22rem;font-size:.58rem;color:var(--text-muted);"><span style="display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:#16a34a;flex-shrink:0;"></span>above avg</span>'
+      +'<span style="display:flex;align-items:center;gap:.22rem;font-size:.58rem;color:var(--text-muted);"><span style="display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:#ca8a04;flex-shrink:0;"></span>top score</span>'
+      +'</div>';
+    lb.innerHTML=formKey+fSorted.map(([name,s],i)=>{
       const pid=s.playerId||'';
       const isYou=currentPlayer&&pid===currentPlayer.id;
       const r=fRanks[i];
@@ -9811,6 +9817,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.9</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.0</div>
 </body>
 </html>
