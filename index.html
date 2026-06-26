@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.63.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.63.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1431,8 +1431,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <div style="font-size:.62rem;color:var(--text-muted);opacity:.5;text-align:center;margin-bottom:.6rem;letter-spacing:.03em;">Single tap to see others picks · Double-tap to toggle compact</div>
       <div id="predict-stage-tabs" style="display:none;margin-bottom:.75rem;">
         <div class="lb-view-toggle" style="width:100%;">
-          <button id="predict-tab-group"    class="lb-view-tab active" style="flex:1;" onclick="setPredictStage('group')">⚽ Group Stage</button>
-          <button id="predict-tab-knockout" class="lb-view-tab"        style="flex:1;" onclick="setPredictStage('knockout')">🏆 Knockouts</button>
+          <button id="predict-tab-group"    class="lb-view-tab active" style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('group')">⚽ Group Stage</button>
+          <button id="predict-tab-knockout" class="lb-view-tab"        style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('knockout')">🏆 Knockouts</button>
         </div>
       </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
@@ -4909,6 +4909,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.63.5',date:'26 Jun 2026',notes:['Predictions page: Group Stage / Knockouts toggle buttons made taller and slightly larger for easier tapping.']},
   {v:'1.63.4',date:'26 Jun 2026',notes:["Home: today's finished games stay in Next Up until ET midnight — countdown replaced with \"Finished\", actual score shown, points received shown. They move to Yesterday's Results from midnight."]},
   {v:'1.63.3',date:'26 Jun 2026',notes:['Prediction cards: group stage cards show "Group A/B/C…" badge centred in the header row, matching the knockout round badge.']},
   {v:'1.63.2',date:'26 Jun 2026',notes:['Knockout round badge repositioned to center of the card header row.']},
@@ -10218,6 +10219,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.5</div>
 </body>
 </html>
