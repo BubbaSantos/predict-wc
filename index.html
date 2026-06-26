@@ -323,6 +323,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .lb-badge-hot{background:rgba(239,68,68,.18);color:#ef4444;border-color:rgba(239,68,68,.3);}
 .lb-badge-perfect{background:rgba(125,211,252,.13);color:#38bdf8;border-color:rgba(125,211,252,.28);}
 .lb-badge-cold{background:rgba(180,83,9,.18);color:#b45309;border-color:rgba(180,83,9,.3);}
+.lb-badge-motm{background:rgba(250,204,21,.18);color:#ca8a04;border:1px solid rgba(250,204,21,.35);}
 .lb-name-streak{display:inline-block;padding:.08rem .4rem;border-radius:5px;}
 .lb-name-streak-hot{background:rgba(239,68,68,.18);color:#ef4444;}
 .lb-name-streak-perfect{background:rgba(125,211,252,.13);color:#38bdf8;}
@@ -1191,7 +1192,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.59.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.59.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3901,6 +3902,7 @@ let _lbPlayStepping = false;
 let _lbPrevRanks = {};
 let _lbPrevGameScores = {};
 let _lbLastMatchPts = {};
+let _lbMotmPid = null;
 let _homeRoundDate = null;
 let _homeRoundPtsByName = {};
 let _homeRoundPrevRankByName = {};
@@ -4563,6 +4565,12 @@ async function loadLeaderboard(){
         _lbLastMatchPts[p.player_id]=(_lbLastMatchPts[p.player_id]||0)+pts;
       });
     }
+    _lbMotmPid=null;
+    if(Object.keys(_lbLastMatchPts).length){
+      let best=0;
+      Object.entries(_lbLastMatchPts).forEach(([pid,pts])=>{ if(pts>best){best=pts;_lbMotmPid=pid;} });
+      if(best===0) _lbMotmPid=null;
+    }
     const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
     _lbStreaks={};
     Object.entries(playerStreaks).forEach(([pid,s])=>{
@@ -4698,6 +4706,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.59.3',date:'26 Jun 2026',notes:['MOTM badge: the player who scored the most points in yesterday\'s round gets a ⚽ MOTM badge on the full leaderboard, compact leaderboard, and home standings mini-lb.']},
   {v:'1.59.2',date:'26 Jun 2026',notes:['Fix: previous-round grouping now uses kickoff date in US Eastern time rather than the f.date field (which uses UK/BST dates). All 6 of yesterday\'s games (Ecuador/Germany, Curaçao/Ivory Coast, Tunisia/Netherlands, Japan/Sweden, Türkiye/USA, Paraguay/Australia) now correctly count as one round for the home standings indicators, leaderboard rank-change arrows, +pts column, round summary banner and MOTM.']},
   {v:'1.59.1',date:'26 Jun 2026',notes:['Fix: previous-round stats excluded today\'s already-finished games (US Eastern time) so the full previous day is used, not today\'s early results.']},
   {v:'1.59.0',date:'26 Jun 2026',notes:['Home standings card: rank indicator (▲/▼) and round points (+x) now show accumulated movement and points from the previous day\'s fixtures. Round Summary banner appears after the match banners — lists all of the round\'s results, your prediction for each, total round points and rank movement. Man of the Match (MOTM) banner follows the summary, showing the best-performing player this round. Both summary and MOTM show once per round (tracked per-device) and respect the End-of-Game Banner setting.']},
@@ -6052,6 +6061,7 @@ async function loadHome(){
       lbHtml = '<div style="font-size:.8rem;color:var(--text-muted);">No scores yet.</div>';
     } else {
       const miniDot = pid => _lbOnline[pid] ? '<span title="Online now" style="display:inline-block;width:.38rem;height:.38rem;border-radius:50%;background:#10b981;margin-left:.35rem;vertical-align:middle;"></span>' : '';
+      const miniMotmBadge = pid => (_lbMotmPid && pid===_lbMotmPid) ? '<span class="lb-badge lb-badge-motm" style="font-size:.5rem;padding:.08rem .28rem;">⚽ MOTM</span>' : '';
       sorted.slice(0,3).forEach(([name,s],i)=>{
         const isYou = name===myDisplayName;
         const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
@@ -6062,7 +6072,7 @@ async function loadHome(){
         const cls = rankCls[r] || '';
         lbHtml += `<div class="mini-lb-row ${cls}">
           <div class="mini-lb-rank" style="display:flex;flex-direction:column;align-items:center;">${medal}${miniRankArrow(prevRankByNameH[name],r)}</div>
-          <div class="mini-lb-name">${mNameHtml}${miniDot(s.playerId)}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}</div>
+          <div class="mini-lb-name">${mNameHtml}${miniDot(s.playerId)}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}${miniMotmBadge(s.playerId)}</div>
           <div style="text-align:right;"><div class="mini-lb-pts">${s.total} pts</div>${miniPtsGained(name)}</div>
         </div>`;
       });
@@ -6076,7 +6086,7 @@ async function loadHome(){
         const myRankDisplay = miniRankCounts[myR]>1?'='+myR:String(myR);
         lbHtml += `<div class="mini-lb-row mlb-you">
           <div class="mini-lb-rank" style="display:flex;flex-direction:column;align-items:center;">${myRankDisplay}${miniRankArrow(prevRankByNameH[myName],myR)}</div>
-          <div class="mini-lb-name">${myNameHtml}${miniDot(myS.playerId)} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}</div>
+          <div class="mini-lb-name">${myNameHtml}${miniDot(myS.playerId)} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}${miniMotmBadge(myS.playerId)}</div>
           <div style="text-align:right;"><div class="mini-lb-pts">${myS.total} pts</div>${miniPtsGained(myName)}</div>
         </div>`;
       }
@@ -8556,6 +8566,8 @@ function renderLeaderboard(){
       : (i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row'))
       + (isYou ? ' lb-you' : '');
     const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
+    const isMotm = _lbMotmPid && pid === _lbMotmPid;
+    const motmBadge = isMotm ? '<span class="lb-badge lb-badge-motm">⚽ MOTM</span>' : '';
     const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
     const onlineDot = _lbOnline[pid] ? '<span title="Online now" style="display:inline-block;width:.4rem;height:.4rem;border-radius:50%;background:#10b981;margin-left:.4rem;vertical-align:middle;"></span>' : '';
@@ -8567,7 +8579,7 @@ function renderLeaderboard(){
       const compactRankChange = _showRankChange ? rankChangeHtml(prevRankByName[name], curRank) : '';
       return '<div class="'+rowClass+'" style="cursor:pointer;padding:.45rem .85rem;display:flex;align-items:center;gap:.5rem;" onclick="lbRowTap(this)" data-pid="'+pid+'" data-pname="'+dn+'" '+moveDir+'>'
         +'<div class="lb-rank" style="min-width:2rem;font-size:.8rem;">'+rankDisplay+compactRankChange+'</div>'
-        +'<div style="flex:1;font-size:.85rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+compactNameHtml+onlineDot+'</div>'
+        +'<div style="flex:1;font-size:.85rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+compactNameHtml+onlineDot+motmBadge+'</div>'
         +'<div style="display:flex;align-items:center;gap:.4rem;font-size:.75rem;white-space:nowrap;">'
           +'<span style="color:var(--text-muted);">❌<span style="color:var(--text-dim);">×'+(s.wrong||0)+'</span></span>'
           +'<span style="color:var(--text-muted);">✅<span style="color:var(--text-dim);">×'+s.result+'</span></span>'
@@ -8582,7 +8594,7 @@ function renderLeaderboard(){
     const fullRankChange = _showRankChange ? rankChangeHtml(prevRankByName[name], curRankFull) : '';
     return '<div class="'+rowClass+'" style="cursor:pointer;" onclick="lbRowTap(this)" data-pid="'+pid+'" data-pname="'+dn+'">'
       +'<div class="lb-rank">'+rankDisplay+fullRankChange+'</div>'
-      +'<div><div class="lb-name">'+fullNameHtml+onlineDot+payBadge+'</div>'+(statusBadge?'<div class="lb-badge-row" style="display:flex;gap:.25rem;align-items:center;flex-wrap:wrap;margin-top:.15rem;">'+statusBadge+'</div>':'')+'<div class="lb-breakdown">'+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
+      +'<div><div class="lb-name">'+fullNameHtml+onlineDot+payBadge+motmBadge+'</div>'+(statusBadge?'<div class="lb-badge-row" style="display:flex;gap:.25rem;align-items:center;flex-wrap:wrap;margin-top:.15rem;">'+statusBadge+'</div>':'')+'<div class="lb-breakdown">'+s.exact+' correct scorelines · '+s.result+' correct results</div></div>'
       +(()=>{const lp=_lbLastMatchPts[pid];if(lp==null)return'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div></div>';const lc=lp>=8?'#22c55e':lp>=3?'#f59e0b':'var(--text-muted)';return'<div style="text-align:right;"><div class="lb-points">'+s.total+'</div><div class="lb-pts-label">pts</div><div style="font-size:.6rem;color:'+lc+';">'+(lp>0?'+'+lp:'0')+'</div></div>';})()
       +'</div>';
   }).join('');
@@ -9679,6 +9691,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.3</div>
 </body>
 </html>
