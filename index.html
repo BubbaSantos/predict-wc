@@ -1192,7 +1192,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.59.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.59.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3902,7 +3902,7 @@ let _lbPlayStepping = false;
 let _lbPrevRanks = {};
 let _lbPrevGameScores = {};
 let _lbLastMatchPts = {};
-let _lbMotmPid = null;
+let _lbMotmPids = new Set();
 let _homeRoundDate = null;
 let _homeRoundPtsByName = {};
 let _homeRoundPrevRankByName = {};
@@ -4565,11 +4565,10 @@ async function loadLeaderboard(){
         _lbLastMatchPts[p.player_id]=(_lbLastMatchPts[p.player_id]||0)+pts;
       });
     }
-    _lbMotmPid=null;
+    _lbMotmPids=new Set();
     if(Object.keys(_lbLastMatchPts).length){
-      let best=0;
-      Object.entries(_lbLastMatchPts).forEach(([pid,pts])=>{ if(pts>best){best=pts;_lbMotmPid=pid;} });
-      if(best===0) _lbMotmPid=null;
+      const best=Math.max(...Object.values(_lbLastMatchPts));
+      if(best>0) Object.entries(_lbLastMatchPts).forEach(([pid,pts])=>{ if(pts===best) _lbMotmPids.add(pid); });
     }
     const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
     _lbStreaks={};
@@ -4706,6 +4705,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.59.4',date:'26 Jun 2026',notes:['MOTM badge: shared by all tied top-scorers — if multiple players score the same highest round total, each gets the ⚽ MOTM badge.']},
   {v:'1.59.3',date:'26 Jun 2026',notes:['MOTM badge: the player who scored the most points in yesterday\'s round gets a ⚽ MOTM badge on the full leaderboard, compact leaderboard, and home standings mini-lb.']},
   {v:'1.59.2',date:'26 Jun 2026',notes:['Fix: previous-round grouping now uses kickoff date in US Eastern time rather than the f.date field (which uses UK/BST dates). All 6 of yesterday\'s games (Ecuador/Germany, Curaçao/Ivory Coast, Tunisia/Netherlands, Japan/Sweden, Türkiye/USA, Paraguay/Australia) now correctly count as one round for the home standings indicators, leaderboard rank-change arrows, +pts column, round summary banner and MOTM.']},
   {v:'1.59.1',date:'26 Jun 2026',notes:['Fix: previous-round stats excluded today\'s already-finished games (US Eastern time) so the full previous day is used, not today\'s early results.']},
@@ -6061,7 +6061,7 @@ async function loadHome(){
       lbHtml = '<div style="font-size:.8rem;color:var(--text-muted);">No scores yet.</div>';
     } else {
       const miniDot = pid => _lbOnline[pid] ? '<span title="Online now" style="display:inline-block;width:.38rem;height:.38rem;border-radius:50%;background:#10b981;margin-left:.35rem;vertical-align:middle;"></span>' : '';
-      const miniMotmBadge = pid => (_lbMotmPid && pid===_lbMotmPid) ? '<span class="lb-badge lb-badge-motm" style="font-size:.5rem;padding:.08rem .28rem;">⚽ MOTM</span>' : '';
+      const miniMotmBadge = pid => (_lbMotmPids.size && _lbMotmPids.has(pid)) ? '<span class="lb-badge lb-badge-motm" style="font-size:.5rem;padding:.08rem .28rem;">⚽ MOTM</span>' : '';
       sorted.slice(0,3).forEach(([name,s],i)=>{
         const isYou = name===myDisplayName;
         const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
@@ -8566,7 +8566,7 @@ function renderLeaderboard(){
       : (i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row'))
       + (isYou ? ' lb-you' : '');
     const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
-    const isMotm = _lbMotmPid && pid === _lbMotmPid;
+    const isMotm = _lbMotmPids.size && _lbMotmPids.has(pid);
     const motmBadge = isMotm ? '<span class="lb-badge lb-badge-motm">⚽ MOTM</span>' : '';
     const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
@@ -9691,6 +9691,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.59.4</div>
 </body>
 </html>
