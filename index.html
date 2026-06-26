@@ -1202,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.61.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.61.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1911,7 +1911,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
               <label style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Seen by</label>
               <div style="display:flex;gap:.35rem;">
                 <button class="sync-refresh" style="font-size:.65rem;padding:.2rem .55rem;" onclick="resetTickerSeenAt()" title="Reset — clears all seen-by counts from now">↺ Reset</button>
-                <button class="sync-refresh" style="font-size:.65rem;padding:.2rem .55rem;" onclick="loadTickerSeenBy()">↻</button>
+                <button class="sync-refresh" style="font-size:.65rem;padding:.2rem .55rem;" onclick="loadTickerSeenBy()">↻ Refresh</button>
               </div>
             </div>
             <div id="ticker-seen-list" style="font-size:.8rem;"></div>
@@ -4782,6 +4782,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.61.7',date:'26 Jun 2026',notes:['Ticker seen-by: Refresh button now labelled "↻ Refresh" for clarity.']},
   {v:'1.61.6',date:'26 Jun 2026',notes:['Ticker seen-by: auto-resets when enabling the ticker (was disabled → enabled) as well as when the text changes. Added ↺ Reset button in admin to manually reset the cutoff to now — useful when creating new news after a gap.']},
   {v:'1.61.5',date:'26 Jun 2026',notes:['Form leaderboard: Last 5/10 toggle now uses lb-view-tab style to match the Overall/Form toggle exactly.']},
   {v:'1.61.4',date:'26 Jun 2026',notes:['Form leaderboard: Last 5/10 toggle moved into the page header below the Overall/Form tabs (no Window: label). Last 10 view uses smaller, tighter pills and dots so all 10 fit on one line on mobile.']},
@@ -9942,6 +9943,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.61.7</div>
 </body>
 </html>
