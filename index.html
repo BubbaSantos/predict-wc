@@ -488,8 +488,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
   .lb-view-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0;}
   .lb-view-tab{background:none;border:none;color:var(--text-muted);font-size:.72rem;font-weight:600;padding:.32rem .65rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
   .lb-view-tab.active{background:var(--surface2);color:var(--group-accent);}
-  .form-dot{display:inline-block;width:.62rem;height:.62rem;border-radius:50%;vertical-align:middle;}
-  .form-dots{display:flex;align-items:center;gap:.28rem;}
+  .form-pills{display:flex;align-items:center;gap:.22rem;flex-wrap:wrap;margin-top:.3rem;}
+  .form-pill{display:inline-flex;align-items:center;justify-content:center;min-width:1.55rem;height:1.2rem;border-radius:.55rem;font-size:.54rem;font-weight:700;padding:0 .3rem;letter-spacing:-.01em;}
+  .form-pill-gold{background:rgba(251,191,36,.22);color:#ca8a04;border:1px solid rgba(251,191,36,.4);}
+  .form-pill-green{background:rgba(34,197,94,.16);color:#16a34a;}
+  .form-pill-red{background:rgba(239,68,68,.13);color:#ef4444;}
+  .form-pill-none{background:transparent;color:var(--text-muted);font-size:.6rem;}
   .lb-form-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;}
 
 
@@ -1198,7 +1202,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.60.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.60.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3916,6 +3920,7 @@ let _lbMotmPids = new Set();
 let _lbFormView = false;
 let _lbFormScores = {};
 let _lbFormDates = [];
+let _lbFormDayStats = {}; // date -> {max, avg}
 let _homeRoundDate = null;
 let _homeRoundPtsByName = {};
 let _homeRoundPrevRankByName = {};
@@ -4605,6 +4610,13 @@ async function loadLeaderboard(){
         const d=_formKoDateET(allFixtures().find(f=>f.id===p.match_id));
         if(d){_lbFormScores[name].days[d]=(_lbFormScores[name].days[d]||0)+pts;}
       });
+      _lbFormDayStats={};
+      _lbFormDates.forEach(d=>{
+        const vals=Object.values(_lbFormScores).map(s=>s.days[d]??null).filter(v=>v!==null);
+        const max=vals.length?Math.max(...vals):0;
+        const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+        _lbFormDayStats[d]={max,avg};
+      });
     }
     const playerStreaks=calcPlayerStreaks(lbGamePreds,rm);
     _lbStreaks={};
@@ -4744,6 +4756,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.60.2',date:'26 Jun 2026',notes:['Form view: replaced dots with per-matchday point pills (+10 style). Gold = day\'s top scorer, green = above average, red = below average, dash = no prediction.']},
   {v:'1.60.1',date:'26 Jun 2026',notes:['Form dots simplified: green = scored any points, red = 0 points, grey = no prediction. Dots slightly larger for clarity.']},
   {v:'1.60.0',date:'26 Jun 2026',notes:['Form table: "Overall / Form" toggle on the Leaderboard page. Form view ranks players by points from the last 5 completed matchdays (US Eastern time). Each row shows a 5-dot form strip — green (5+ pts), yellow (1–4 pts), red (0 pts), grey (no prediction that day) — plus the form point total. MOTM badge carries over into the form view.']},
   {v:'1.59.4',date:'26 Jun 2026',notes:['MOTM badge: shared by all tied top-scorers — if multiple players score the same highest round total, each gets the ⚽ MOTM badge.']},
@@ -8585,17 +8598,18 @@ function renderLeaderboard(){
       const nameHtml=streakNameHtml(name,_lbStreaks[name]);
       const isMotm=_lbMotmPids.size&&_lbMotmPids.has(pid);
       const motmB=isMotm?'<span class="lb-badge lb-badge-motm">⚽ MOTM</span>':'';
-      const dots=_lbFormDates.map(d=>{
+      const pills=_lbFormDates.map(d=>{
         const dayPts=s.days&&s.days[d]!=null?s.days[d]:null;
-        const col=dayPts==null?'var(--border)':dayPts>0?'#22c55e':'#ef4444';
-        const title=dayPts==null?'no prediction':dayPts+' pts';
-        return `<span class="form-dot" style="background:${col};" title="${title}"></span>`;
+        const stat=_lbFormDayStats[d]||{max:0,avg:0};
+        if(dayPts===null) return `<span class="form-pill form-pill-none" title="no prediction">–</span>`;
+        const cls=dayPts>0&&dayPts===stat.max?'form-pill-gold':dayPts>=stat.avg&&dayPts>0?'form-pill-green':'form-pill-red';
+        return `<span class="form-pill ${cls}" title="${dayPts} pts">${dayPts>0?'+':''}${dayPts}</span>`;
       }).join('');
       const ptsCol=s.total>0?'var(--group-accent)':'var(--text-muted)';
       return `<div class="${rowCls}" style="cursor:pointer;" onclick="lbRowTap(this)" data-pid="${pid}" data-pname="${String(name).replace(/"/g,'&quot;')}">
         <div class="lb-rank">${rankDisplay}</div>
         <div><div class="lb-name">${nameHtml}${onlineDot}${motmB}</div>
-          <div class="form-dots" style="margin-top:.3rem;">${dots}</div>
+          <div class="form-pills">${pills}</div>
         </div>
         <div style="text-align:right;"><div class="lb-points" style="color:${ptsCol};">${s.total}</div><div class="lb-pts-label">pts</div></div>
       </div>`;
@@ -9792,6 +9806,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.60.2</div>
 </body>
 </html>
