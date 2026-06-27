@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.63.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.63.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4664,16 +4664,22 @@ function calcPlayerStreaks(gamePreds, rm){
     });
     const last3=roundResults.slice(-3);
     if(last3.length<3){streaks[pid]={};return;}
-    // Mixed round (win one, lose one) = anyHot but not allHot → breaks hot/perfect streak and also cold streak
+    // Mixed round (one hit, one miss in simultaneous KOs): treat as hot if any game scored ≥3
     const isPerfect=last3.every(r=>r&&r.allPerfect);
-    const isHot=last3.every(r=>r&&r.allHot);
+    const isHot=last3.every(r=>r&&r.anyHot);
     const isCold=last3.every(r=>r&&!r.anyHot);
     let gameCount=0;
     if(isPerfect||isHot||isCold){
-      const qualify=isPerfect?(r=>r&&r.allPerfect):isHot?(r=>r&&r.allHot):(r=>r&&!r.anyHot);
-      // Count games (not rounds) across the qualifying streak so simultaneous games are included
-      for(let i=roundResults.length-3;i<roundResults.length;i++) gameCount+=rounds[i].length;
-      for(let i=roundResults.length-4;i>=0;i--){if(qualify(roundResults[i]))gameCount+=rounds[i].length;else break;}
+      const qualify=isPerfect?(r=>r&&r.allPerfect):isHot?(r=>r&&r.anyHot):(r=>r&&!r.anyHot);
+      // Count only qualifying games within each round (miss in a simultaneous KO doesn't inflate count)
+      const countQ=ri=>{
+        const ids=rounds[ri];
+        if(isPerfect) return ids.filter(id=>matchPts[id]!=null&&matchPts[id]>=5).length;
+        if(isHot)     return ids.filter(id=>matchPts[id]!=null&&matchPts[id]>=3).length;
+        return ids.length;
+      };
+      for(let i=roundResults.length-3;i<roundResults.length;i++) gameCount+=countQ(i);
+      for(let i=roundResults.length-4;i>=0;i--){if(qualify(roundResults[i]))gameCount+=countQ(i);else break;}
     }
     streaks[pid]={perfect:isPerfect,hot:isHot,cold:isCold,gameCount};
   });
@@ -4959,6 +4965,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.63.7',date:'27 Jun 2026',notes:['Fix: streak now treats a simultaneous-KO round as "hot" if you scored ≥3 in any of the games (was requiring all games to score). Miss in one game of a shared KO no longer breaks the streak, and the miss doesn\'t inflate the game count.']},
   {v:'1.63.6',date:'26 Jun 2026',notes:['Knockout prediction cards: group table replaced with tournament stats panel showing each team\'s W/D/L record, goals for/against, goal difference and clean sheets — useful context for making picks.']},
   {v:'1.63.5',date:'26 Jun 2026',notes:['Predictions page: Group Stage / Knockouts toggle buttons made taller and slightly larger for easier tapping.']},
   {v:'1.63.4',date:'26 Jun 2026',notes:["Home: today's finished games stay in Next Up until ET midnight — countdown replaced with \"Finished\", actual score shown, points received shown. They move to Yesterday's Results from midnight."]},
@@ -10270,6 +10277,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.7</div>
 </body>
 </html>
