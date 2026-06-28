@@ -1219,7 +1219,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.65.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.65.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4054,32 +4054,32 @@ const KICKOFFS = {
   'm070':'2026-06-27T23:30:00Z', // Colombia vs Portugal - 12:30am BST Sun (simultaneous with m069)
   'm071':'2026-06-27T21:00:00Z', // Panama vs England - 10pm BST
   'm072':'2026-06-27T21:00:00Z', // Croatia vs Ghana - 10pm BST Sat (simultaneous with m071)
-  // ROUND OF 32
-  'm073':'2026-06-28T16:00:00Z', // South Africa v Canada - 12:00 ET
-  'm074':'2026-06-29T20:30:00Z', // Germany v TBD - 16:30 ET
-  'm075':'2026-06-29T23:00:00Z', // Netherlands v Morocco - 19:00 ET
-  'm076':'2026-06-29T16:00:00Z', // Brazil v Japan - 12:00 ET
-  'm077':'2026-06-30T21:00:00Z', // TBD v TBD - 17:00 ET
-  'm078':'2026-06-30T16:00:00Z', // Ivory Coast v TBD - 12:00 ET
-  'm079':'2026-06-30T23:00:00Z', // Mexico v TBD - 19:00 ET
-  'm080':'2026-07-01T16:00:00Z', // TBD v TBD - 12:00 ET
-  'm081':'2026-07-01T21:00:00Z', // USA v Bosnia - 17:00 ET
-  'm082':'2026-07-01T17:00:00Z', // TBD v TBD - 13:00 ET
-  'm083':'2026-07-02T23:00:00Z', // TBD v TBD - 19:00 ET
-  'm084':'2026-07-02T16:00:00Z', // TBD v TBD - 12:00 ET
-  'm085':'2026-07-03T00:00:00Z', // Switzerland v TBD - 20:00 ET Jul 2
-  'm086':'2026-07-03T22:00:00Z', // Argentina v TBD - 18:00 ET
-  'm087':'2026-07-04T00:30:00Z', // TBD v TBD - 20:30 ET Jul 3
-  'm088':'2026-07-03T17:00:00Z', // Australia v TBD - 13:00 ET
-  // ROUND OF 16
-  'm089':'2026-07-04T21:00:00Z', // 17:00 ET
-  'm090':'2026-07-04T16:00:00Z', // 12:00 ET
-  'm091':'2026-07-05T20:00:00Z', // 16:00 ET
-  'm092':'2026-07-05T22:00:00Z', // 18:00 ET
-  'm093':'2026-07-06T18:00:00Z', // 14:00 ET
-  'm094':'2026-07-06T21:00:00Z', // 17:00 ET
-  'm095':'2026-07-07T16:00:00Z', // 12:00 ET
-  'm096':'2026-07-07T17:00:00Z', // 13:00 ET
+  // ROUND OF 32 (times in UTC; display in BST = UTC+1)
+  'm073':'2026-06-28T19:00:00Z', // South Africa v Canada    - 20:00 BST / 15:00 ET
+  'm074':'2026-06-29T20:30:00Z', // Germany v Paraguay        - 21:30 BST / 16:30 ET
+  'm075':'2026-06-30T01:00:00Z', // Netherlands v Morocco     - 02:00 BST / 21:00 ET Jun 29
+  'm076':'2026-06-29T17:00:00Z', // Brazil v Japan            - 18:00 BST / 13:00 ET
+  'm077':'2026-06-30T21:00:00Z', // France v Sweden           - 22:00 BST / 17:00 ET
+  'm078':'2026-06-30T17:00:00Z', // Ivory Coast v Norway      - 18:00 BST / 13:00 ET
+  'm079':'2026-07-01T01:00:00Z', // Mexico v Ecuador          - 02:00 BST / 21:00 ET Jun 30
+  'm080':'2026-07-01T16:00:00Z', // England v DR Congo        - 17:00 BST / 12:00 ET
+  'm081':'2026-07-02T00:00:00Z', // USA v Bosnia & Herz.      - 01:00 BST / 20:00 ET Jul 1
+  'm082':'2026-07-01T20:00:00Z', // Belgium v Senegal         - 21:00 BST / 16:00 ET
+  'm083':'2026-07-02T23:00:00Z', // Portugal v Croatia        - 00:00 BST Jul 3 / 19:00 ET
+  'm084':'2026-07-02T19:00:00Z', // Spain v Austria           - 20:00 BST / 15:00 ET
+  'm085':'2026-07-03T03:00:00Z', // Switzerland v Algeria     - 04:00 BST / 23:00 ET Jul 2
+  'm086':'2026-07-03T22:00:00Z', // Argentina v Cape Verde    - 23:00 BST / 18:00 ET
+  'm087':'2026-07-04T01:30:00Z', // Colombia v Ghana          - 02:30 BST / 21:30 ET Jul 3
+  'm088':'2026-07-03T18:00:00Z', // Australia v Egypt         - 19:00 BST / 14:00 ET
+  // ROUND OF 16 (times in UTC; display in BST = UTC+1)
+  'm089':'2026-07-04T21:00:00Z', // W m074 v W m077 - 22:00 BST / 17:00 ET
+  'm090':'2026-07-04T17:00:00Z', // W m073 v W m075 - 18:00 BST / 13:00 ET
+  'm091':'2026-07-05T20:00:00Z', // W m076 v W m078 - 21:00 BST / 16:00 ET
+  'm092':'2026-07-06T00:00:00Z', // W m079 v W m080 - 01:00 BST / 20:00 ET Jul 5
+  'm093':'2026-07-06T19:00:00Z', // W m083 v W m084 - 20:00 BST / 15:00 ET
+  'm094':'2026-07-07T00:00:00Z', // W m081 v W m082 - 01:00 BST / 20:00 ET Jul 6
+  'm095':'2026-07-07T16:00:00Z', // W m086 v W m088 - 17:00 BST / 12:00 ET
+  'm096':'2026-07-07T20:00:00Z', // W m085 v W m087 - 21:00 BST / 16:00 ET
   // QUARTER-FINALS
   'm097':'2026-07-09T20:00:00Z', // 16:00 ET
   'm098':'2026-07-10T16:00:00Z', // 12:00 ET
@@ -5075,6 +5075,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.65.1',date:'28 Jun 2026',notes:['Fixed kickoff UTC timestamps for R32 (m073–m088) and R16 (m089–m096) so times display correctly in BST (UK time). Games are still grouped by US Eastern date.']},
   {v:'1.65.0',date:'28 Jun 2026',notes:['Knockout bracket auto-progression: R16/QF/SF/Final fixtures now show the winner\'s team name as soon as the previous result is saved. Drawn knockout games show a winner picker on the admin card (flag + AET or Pen buttons). Requires: ALTER TABLE results ADD COLUMN ko_winner TEXT DEFAULT NULL; ALTER TABLE results ADD COLUMN ko_method TEXT DEFAULT NULL;']},
   {v:'1.64.5',date:'28 Jun 2026',notes:['Poller interval changed from 60s to 5 minutes.']},
   {v:'1.64.4',date:'28 Jun 2026',notes:['Auto-refresh: predictions and leaderboard now refresh every 60 s even when no scores change (keeps other players\' predictions and group changes current). Also refreshes immediately when you return to the tab/app from background. Prediction refresh is skipped while an input is focused so in-progress typing is never disrupted.']},
@@ -10471,6 +10472,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.1</div>
 </body>
 </html>
