@@ -1222,7 +1222,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.65.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.65.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4504,8 +4504,9 @@ function renderPredictCard(f,pred,res){
   const broadcaster = BROADCASTERS[f.id];
   const broadcasterBadge = broadcaster ? `<span class="broadcaster-badge ${broadcaster.toLowerCase()}">${broadcaster}</span>` : '';
   const centreTag = f.group
-    ? `<div style="position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.1rem;"><span class="group-tag" style="text-transform:none;letter-spacing:0;">${f.isKnockout ? f.group : `Group ${f.group}`}</span>${broadcasterBadge}</div>`
+    ? `<span class="group-tag" style="position:absolute;left:50%;transform:translateX(-50%);text-transform:none;letter-spacing:0;">${f.isKnockout ? f.group : `Group ${f.group}`}</span>`
     : '';
+  const broadcasterRow = broadcasterBadge ? `<div style="text-align:center;margin-top:.25rem;">${broadcasterBadge}</div>` : '';
 
   const koHourUK = koTime ? parseInt(koTime.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',hour12:false}),10) : null;
   const isLateUK = koHourUK !== null && koHourUK < 6; // past midnight UK time
@@ -4561,6 +4562,7 @@ function renderPredictCard(f,pred,res){
             <div class="${checkClass}" id="chk-${f.id}">✓</div>
             <input class="mc-sinput ${pred.away!==''?'filled':''}" type="number" min="0" max="99" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" onfocus="tbGate(this)" oninput="scoreInput(this,null)" data-match-id="${f.id}" />
           </div>
+          ${broadcasterRow}
         </div>
         <div class="mc-team away">
           <div class="mc-flag">${f.af}</div>
@@ -4605,6 +4607,7 @@ function renderPredictCard(f,pred,res){
         <div class="mc-center">${centerHtml}
           <input type="hidden" id="h-${f.id}" value="${pred.home}" data-match-id="${f.id}" disabled />
           <input type="hidden" id="a-${f.id}" value="${pred.away}" data-match-id="${f.id}" disabled />
+          ${broadcasterRow}
         </div>
         <div class="mc-team away">
           <div class="mc-flag">${f.af}</div>
@@ -5088,6 +5091,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.65.5',date:'28 Jun 2026',notes:['Broadcaster badge repositioned into the card body, below the score inputs / tick circle.']},
   {v:'1.65.4',date:'28 Jun 2026',notes:['Broadcaster badge moved below the round label in the card header; made smaller.']},
   {v:'1.65.3',date:'28 Jun 2026',notes:['BBC badge: yellow background, black text. ITV badge: blue background, white text.']},
   {v:'1.65.2',date:'28 Jun 2026',notes:['Prediction cards now show a small BBC or ITV badge next to the kickoff time for R32 matches.']},
@@ -10488,6 +10492,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.5</div>
 </body>
 </html>
