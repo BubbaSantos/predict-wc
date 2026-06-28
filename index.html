@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.64.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.64.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4260,9 +4260,7 @@ async function loadPredictions(){
       else lockTiebreak();
       _tiebreakDone = true;
     }
-    // Show stage tabs if knockouts are enabled or user is admin
-    const stageTabs=document.getElementById('predict-stage-tabs');
-    if(stageTabs) stageTabs.style.display=(currentGroup?.knockouts_live||isAdmin)?'block':'none';
+    document.getElementById('predict-stage-tabs')?.style.setProperty('display','none');
     renderFixtures(list,false);
     if(compactMode) list.classList.add('compact');
     const compactBtn=document.getElementById('compact-btn');
@@ -4316,9 +4314,7 @@ function renderFixtures(container,forAdmin=false){
   const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const nowMs=Date.now();
   const LIVE_WIN=130*60*1000;
-  // Filter by stage when on predictions page
-  const stageFilter = !forAdmin && (currentGroup?.knockouts_live || isAdmin);
-  allFixtures().filter(f=>!stageFilter||((_predictStage==='knockout')===!!(f.isKnockout))).forEach(f=>{
+  allFixtures().forEach(f=>{
     const dateKey=getMatchDateKey(f);
     const ko=getMatchKickoff(f);
     const koMs=ko?ko.getTime():null;
@@ -4979,6 +4975,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.64.2',date:'28 Jun 2026',notes:['Predictions page: Group Stage / Knockouts toggle removed — all fixtures shown together under Today / Tomorrow / date headings with Previous Matches dropdown.']},
   {v:'1.64.1',date:'28 Jun 2026',notes:['MOTM banner: auto-suppressed when more than 3 players are tied for the top score.']},
   {v:'1.64.0',date:'28 Jun 2026',notes:['Admin → Display → End-of-Game Banner: two new toggles — "MOTM Banner" (hides the Man of the Matchday swoop-in overlay) and "MOTM Badge" (hides the ⚽ MOTM badge on leaderboard rows). Requires: ALTER TABLE groups ADD COLUMN show_motm_banner boolean DEFAULT true; ALTER TABLE groups ADD COLUMN show_motm_badge boolean DEFAULT true;']},
   {v:'1.63.9',date:'28 Jun 2026',notes:['MOTM banner: supports shared winners — when multiple players tie for the top score, banner shows all names and title changes to "Men of the Matchday".']},
@@ -10330,6 +10327,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.2</div>
 </body>
 </html>
