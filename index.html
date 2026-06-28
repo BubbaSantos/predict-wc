@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.64.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.64.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3776,14 +3776,18 @@ async function startResultsPoller(){
           return ko && nowMs >= ko + 130*60*1000;
         });
       }
+      const active = document.querySelector('.view.active')?.id;
       if(changed || newFullTime){
-        const active = document.querySelector('.view.active')?.id;
         if(active==='view-home') loadHome();
         else if(active==='view-predict') loadPredictions();
-        // Always load leaderboard when full_time flips or time-based banner may be due,
-        // so maybeShowEndBanner fires regardless of which tab is active.
+        // Always load leaderboard when full_time flips so maybeShowEndBanner fires.
         if(newFullTime) loadLeaderboard();
         else if(active==='view-leaderboard') loadLeaderboard();
+      } else {
+        // No result changes — still refresh predictions/leaderboard so other
+        // players' predictions and group changes stay current.
+        if(active==='view-leaderboard') loadLeaderboard();
+        else if(active==='view-predict' && !document.activeElement?.matches('input,select,textarea')) loadPredictions();
       }
     }catch(e){}
   }, 60000);
@@ -3792,6 +3796,14 @@ function stopResultsPoller(){
   clearInterval(_pollInterval);
   _pollInterval = null;
 }
+// Refresh the active page whenever the tab/app comes back into focus.
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible'||!currentGroup) return;
+  const active=document.querySelector('.view.active')?.id;
+  if(active==='view-home') loadHome();
+  else if(active==='view-leaderboard') loadLeaderboard();
+  else if(active==='view-predict'&&!document.activeElement?.matches('input,select,textarea')) loadPredictions();
+});
 
 function applyTheme(themeId){
   const t = THEMES[themeId] || THEMES.dark;
@@ -4975,6 +4987,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.64.4',date:'28 Jun 2026',notes:['Auto-refresh: predictions and leaderboard now refresh every 60 s even when no scores change (keeps other players\' predictions and group changes current). Also refreshes immediately when you return to the tab/app from background. Prediction refresh is skipped while an input is focused so in-progress typing is never disrupted.']},
   {v:'1.64.3',date:'28 Jun 2026',notes:['Round of 32 fixtures updated with confirmed teams: Germany/Paraguay, France/Sweden, Ivory Coast/Norway, Mexico/Ecuador, England/DR Congo, Belgium/Senegal, Portugal/Croatia, Spain/Austria, Switzerland/Algeria, Argentina/Cape Verde, Colombia/Ghana, Australia/Egypt.']},
   {v:'1.64.2',date:'28 Jun 2026',notes:['Predictions page: Group Stage / Knockouts toggle removed — all fixtures shown together under Today / Tomorrow / date headings with Previous Matches dropdown.']},
   {v:'1.64.1',date:'28 Jun 2026',notes:['MOTM banner: auto-suppressed when more than 3 players are tied for the top score.']},
@@ -10328,6 +10341,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.4</div>
 </body>
 </html>
