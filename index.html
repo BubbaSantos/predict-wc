@@ -3961,6 +3961,8 @@ function navTo(name){ showView(name); }
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
+  // Admin-only until approved for all players
+  if(!isAdmin){card.style.display='none';return;}
   const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
   if(isInstalled){card.style.display='none';return;}
   const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
