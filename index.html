@@ -1222,7 +1222,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1364,6 +1364,35 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
     <!-- HOME -->
     <div id="view-home" class="view active">
+      <!-- PWA install tip — hidden once dismissed or if already installed -->
+      <div id="pwa-tip-card" style="display:none;background:var(--surface);border:1px solid color-mix(in srgb,var(--group-accent) 25%,transparent);border-radius:12px;padding:.85rem 1rem;margin-bottom:.75rem;position:relative;">
+        <button onclick="dismissPwaTip()" style="position:absolute;top:.6rem;right:.7rem;background:none;border:none;font-size:1rem;color:var(--text-muted);cursor:pointer;line-height:1;opacity:.6;" title="Dismiss">✕</button>
+        <div style="font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--group-accent);margin-bottom:.3rem;">📲 Add to Home Screen</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;line-height:1.4;">Works like an app — faster updates, fewer issues and easy one-tap access.</div>
+        <div style="display:flex;flex-direction:column;gap:.45rem;">
+          <div style="display:flex;align-items:center;gap:.6rem;font-size:.74rem;">
+            <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;">1</span>
+            <span style="color:var(--text-muted);">Tap the <strong style="color:var(--text);">menu icon</strong> (≡) next to the address bar</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;font-size:.74rem;">
+            <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;">2</span>
+            <span style="color:var(--text-muted);">Tap <strong style="color:var(--text);">Share</strong></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;font-size:.74rem;">
+            <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;">3</span>
+            <span style="color:var(--text-muted);">Scroll the icons row → tap <strong style="color:var(--text);">View More</strong></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;font-size:.74rem;">
+            <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;">4</span>
+            <span style="color:var(--text-muted);">Tap <strong style="color:var(--text);">Add to Home Screen</strong></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;font-size:.74rem;">
+            <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;">5</span>
+            <span style="color:var(--text-muted);">Tap <strong style="color:var(--text);">Add</strong> — done!</span>
+          </div>
+        </div>
+        <button onclick="dismissPwaTip()" style="margin-top:.8rem;width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:.72rem;padding:.4rem;cursor:pointer;">Got it — don't show again</button>
+      </div>
       <div class="group-hero" id="group-hero-block">
         <div class="group-hero-icon" id="gh-icon">⚽</div>
         <div>
@@ -3360,6 +3389,7 @@ function enterApp(){
   }
   updateGodModeMenuItem();
   showView('home');
+  initPwaTip();
   startCountdown();
   startHeartbeat();
   startResultsPoller();
@@ -3928,6 +3958,21 @@ function leaveGroup(){
 
 // ── VIEW SWITCHING ────────────────────────
 function navTo(name){ showView(name); }
+function initPwaTip(){
+  const card=document.getElementById('pwa-tip-card');
+  if(!card) return;
+  const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+  if(isInstalled){card.style.display='none';return;}
+  const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
+  if(localStorage.getItem(key)){card.style.display='none';return;}
+  card.style.display='block';
+}
+function dismissPwaTip(){
+  const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
+  localStorage.setItem(key,'1');
+  const card=document.getElementById('pwa-tip-card');
+  if(card){card.style.transition='opacity .3s';card.style.opacity='0';setTimeout(()=>card.style.display='none',300);}
+}
 function showView(name){ closeMenu();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
@@ -5117,7 +5162,8 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
-  {v:'1.66.3',date:'28 Jun 2026',notes:['Predictions page: reminder banner — "Predict the score at 90 mins — extra time & penalties don\'t count".']},
+  {v:'1.66.4',date:'28 Jun 2026',notes:['Home screen: "Add to Home Screen" tip card with step-by-step iOS instructions. Auto-hides if already installed as PWA. Dismissible per player (stored in localStorage).']},
+  {v:'1.66.3',date:'28 Jun 2026',notes:['Predictions page: reminder banner — "Predict the 90 min full time score only".']},
   {v:'1.66.2',date:'28 Jun 2026',notes:['Leaderboard subtitle now shows "Round of 32 · Matchday 17" — global WC matchday (days since tournament start) instead of per-round match count. Fixed: finished games no longer appear in both Live Now and Next Up simultaneously.']},
   {v:'1.66.1',date:'28 Jun 2026',notes:['Leaderboard subtitle shows current round and match count. Fixed _nowMs TDZ crash.']},
   {v:'1.66.0',date:'28 Jun 2026',notes:['QF, SF, 3rd place and Final fixtures now show TBD until both teams are confirmed winners — no more "W: TeamA/TeamB" placeholder for those rounds.']},
@@ -10528,6 +10574,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.4</div>
 </body>
 </html>
