@@ -1222,7 +1222,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4852,10 +4852,24 @@ async function loadLeaderboard(){
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
     const _lbMatchSubtitle = document.getElementById('lb-match-subtitle');
     if(_lbMatchSubtitle && !_lbFormView){
-      const gsIds = new Set(FIXTURES.map(f=>f.id));
-      const completedCount = (allResults||[]).filter(r=>gsIds.has(r.match_id)&&r.home_score!=null).length;
-      const totalCount = FIXTURES.length;
-      _lbMatchSubtitle.textContent = completedCount > 0 ? `Group Stage Match ${completedCount} of ${totalCount}` : '';
+      const _ROUND_DEFS=[
+        {name:'Group Stage',       ids:new Set(FIXTURES.map(f=>f.id))},
+        {name:'Round of 32',       ids:new Set(['m073','m074','m075','m076','m077','m078','m079','m080','m081','m082','m083','m084','m085','m086','m087','m088'])},
+        {name:'Round of 16',       ids:new Set(['m089','m090','m091','m092','m093','m094','m095','m096'])},
+        {name:'Quarter-Final',     ids:new Set(['m097','m098','m099','m100'])},
+        {name:'Semi-Final',        ids:new Set(['m101','m102'])},
+        {name:'3rd Place Play-off',ids:new Set(['m103'])},
+        {name:'Final',             ids:new Set(['m104'])},
+      ];
+      const _allFxLB=allFixtures();
+      let _curRound=_ROUND_DEFS[0];
+      for(const rd of _ROUND_DEFS){
+        const kicked=_allFxLB.some(f=>{if(!rd.ids.has(f.id))return false;const ko=getMatchKickoff(f);return ko&&ko.getTime()<=_nowMs;});
+        if(kicked) _curRound=rd;
+      }
+      const _completedInRound=(allResults||[]).filter(r=>_curRound.ids.has(r.match_id)&&r.home_score!=null).length;
+      const _totalInRound=_curRound.ids.size;
+      _lbMatchSubtitle.textContent=_completedInRound>0?`${_curRound.name} · Match ${_completedInRound} of ${_totalInRound}`:_curRound.name;
     }
     const _nowMs = Date.now();
     _lbOnline = {};
@@ -5101,6 +5115,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.66.1',date:'28 Jun 2026',notes:['Leaderboard subtitle now shows the current round name and match count, e.g. "Round of 32 · Match 3 of 16", updating automatically as the tournament progresses.']},
   {v:'1.66.0',date:'28 Jun 2026',notes:['QF, SF, 3rd place and Final fixtures now show TBD until both teams are confirmed winners — no more "W: TeamA/TeamB" placeholder for those rounds.']},
   {v:'1.65.9',date:'28 Jun 2026',notes:['Leaderboard +pts delta resets to 0 when today\'s first game (ET) kicks off, then accumulates today\'s points as results come in.']},
   {v:'1.65.8',date:'28 Jun 2026',notes:['Broadcaster badge: single-game home cards show it inline with the Live Now / Next Up label; multi-game carousels show it top-right per slide.']},
@@ -10506,6 +10521,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.1</div>
 </body>
 </html>
