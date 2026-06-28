@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
 <title>Score Predictor</title>
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fitba">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1224,7 +1229,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5225,6 +5230,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.66.7',date:'28 Jun 2026',notes:['Custom iOS home screen icon (Fitba Predictor logo). Web app manifest added. App name on home screen: "Fitba".']},
   {v:'1.66.6',date:'28 Jun 2026',notes:['Admin players panel: shows PWA tip dismissed status per player. Carousel swipe no longer triggers page navigation. Leaderboard subtitle: adds Match N/104 counter (updates when each game KOs).']},
   {v:'1.66.5',date:'28 Jun 2026',notes:['PWA tip card: swipeable screenshot carousel (5 slides), step 1 updated to mention fitbapredictor.xyz in Safari.']},
   {v:'1.66.4',date:'28 Jun 2026',notes:['Home screen: "Add to Home Screen" tip card with step-by-step iOS instructions. Auto-hides if already installed as PWA. Dismissible per player (stored in localStorage).']},
@@ -10640,6 +10646,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.7</div>
 </body>
 </html>
