@@ -1222,7 +1222,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.65.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.65.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3387,15 +3387,17 @@ function renderMatchCardBody(){
         const hasPred = p&&p.home!==''&&p.home!==null;
         const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
         const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
-        return `<div class="hmc-carousel-slide" style="width:${100/liveGames.length}%">${_pctTeamsHtml(f,'live',score,f.id)}${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${picks}${hasAnyPicks?picksHint:''}${matchExtrasHtml(f)}</div>`;
+        const _sbc=BROADCASTERS[f.id],_sbcH=_sbc?`<span class="broadcaster-badge ${_sbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_sbc}</span>`:'';
+        return `<div class="hmc-carousel-slide" style="width:${100/liveGames.length}%;position:relative;">${_sbcH}${_pctTeamsHtml(f,'live',score,f.id)}${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${picks}${hasAnyPicks?picksHint:''}${matchExtrasHtml(f)}</div>`;
       }).join('');
       const livePct = _liveGamesIdx*(100/liveGames.length);
       html += `<div class="hmc-carousel-wrap" id="hmc-live-wrap"><div class="hmc-carousel-track" id="hmc-live-track" style="width:${liveGames.length*100}%;transform:translateX(-${livePct}%)">${slides}</div></div>`;
       const liveDots = liveGames.map((_,i)=>`<span class="hmc-dot${i===_liveGamesIdx?' active':''}" onclick="hmcLiveGoToSlide(${i});event.stopPropagation()"></span>`).join('');
       html += `<div class="hmc-dots">${liveDots}</div>`;
     } else {
-      html += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
       const f = liveGames[0];
+      const _lbc=BROADCASTERS[f.id];
+      html += `<div class="hmc-label live" style="display:flex;justify-content:space-between;align-items:center;"><span><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</span>${_lbc?`<span class="broadcaster-badge ${_lbc.toLowerCase()}">${_lbc}</span>`:''}</div>`;
       const r = results[f.id];
       const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
       const p = predictions[f.id];
@@ -3432,10 +3434,10 @@ function renderMatchCardBody(){
     };
     if(_nextUpcomingAll.some(item=>item.finished||item.ko.getTime()>now)){
       if(html) html += '<hr class="hmc-sep">';
-      html += `<div class="hmc-label">Next Up</div>`;
       if(_nextUpcomingAll.length > 1){
+        html += `<div class="hmc-label">Next Up</div>`;
         const cn = _nextUpcomingAll.length, cnTN = cn+2;
-        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,item.finished?'result':'upcoming'),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%">${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
+        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,item.finished?'result':'upcoming'),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
         const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
         const pct = (_nextUpcomingIdx+1)*(100/cnTN);
         html += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
@@ -3443,6 +3445,8 @@ function renderMatchCardBody(){
         html += `<div class="hmc-dots">${dots}</div>`;
       } else {
         const nextId = _nextUpcoming.f.id;
+        const _nbc=BROADCASTERS[nextId];
+        html += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">Next Up${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
         const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
         const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,_nextUpcoming.finished?'result':'upcoming');
         const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
@@ -3511,10 +3515,7 @@ function _predPcts(mid){
 function _pctTeamsHtml(f, scoreClass, scoreContent, mid){
   const pct=_predPcts(mid);
   const pctRow=pct?`<div class="hmc-pred-pct"><span class="hmc-pct">${pct.hp}%</span><span class="hmc-pct-draw">${pct.dp}% draw</span><span class="hmc-pct">${pct.ap}%</span></div>`:'';
-  const bc=BROADCASTERS[f.id];
-  const bcBadge=bc?`<span class="broadcaster-badge ${bc.toLowerCase()}" style="position:absolute;top:0;right:0;">${bc}</span>`:'';
-  return `<div class="hmc-teams" style="position:relative;">
-    ${bcBadge}
+  return `<div class="hmc-teams">
     <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
     <div class="hmc-score ${scoreClass}">${scoreContent}</div>
     <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
@@ -5094,6 +5095,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.65.7',date:'28 Jun 2026',notes:['Broadcaster badge: single-game home cards show it inline with the Live Now / Next Up label; multi-game carousels show it top-right per slide.']},
   {v:'1.65.6',date:'28 Jun 2026',notes:['Broadcaster badge added to Live Now and Next Up home cards, top-right corner.']},
   {v:'1.65.5',date:'28 Jun 2026',notes:['Broadcaster badge repositioned into the card body, below the score inputs / tick circle.']},
   {v:'1.65.4',date:'28 Jun 2026',notes:['Broadcaster badge moved below the round label in the card header; made smaller.']},
@@ -10496,6 +10498,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.7</div>
 </body>
 </html>
