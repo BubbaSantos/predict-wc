@@ -1222,7 +1222,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4868,9 +4868,10 @@ async function loadLeaderboard(){
         const kicked=_allFxLB.some(f=>{if(!rd.ids.has(f.id))return false;const ko=getMatchKickoff(f);return ko&&ko.getTime()<=_nowMs;});
         if(kicked) _curRound=rd;
       }
-      const _completedInRound=(allResults||[]).filter(r=>_curRound.ids.has(r.match_id)&&r.home_score!=null).length;
-      const _totalInRound=_curRound.ids.size;
-      _lbMatchSubtitle.textContent=_completedInRound>0?`${_curRound.name} · Match ${_completedInRound} of ${_totalInRound}`:_curRound.name;
+      // Global tournament matchday = calendar days since first fixture kicked off
+      const _firstKo=Math.min(..._allFxLB.map(f=>getMatchKickoff(f)?.getTime()).filter(Boolean));
+      const _matchday=isFinite(_firstKo)?Math.max(1,Math.floor((_nowMs-_firstKo)/86400000)+1):1;
+      _lbMatchSubtitle.textContent=`${_curRound.name} · Matchday ${_matchday}`;
     }
     _lbOnline = {};
     (allPlayers||[]).forEach(p=>{ _lbOnline[p.id] = !!(p.last_seen && (_nowMs - new Date(p.last_seen).getTime() < 120000)); });
@@ -5115,7 +5116,8 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
-  {v:'1.66.1',date:'28 Jun 2026',notes:['Leaderboard subtitle now shows the current round name and match count, e.g. "Round of 32 · Match 3 of 16", updating automatically as the tournament progresses.']},
+  {v:'1.66.2',date:'28 Jun 2026',notes:['Leaderboard subtitle now shows "Round of 32 · Matchday 17" — global WC matchday (days since tournament start) instead of per-round match count. Fixed: finished games no longer appear in both Live Now and Next Up simultaneously.']},
+  {v:'1.66.1',date:'28 Jun 2026',notes:['Leaderboard subtitle shows current round and match count. Fixed _nowMs TDZ crash.']},
   {v:'1.66.0',date:'28 Jun 2026',notes:['QF, SF, 3rd place and Final fixtures now show TBD until both teams are confirmed winners — no more "W: TeamA/TeamB" placeholder for those rounds.']},
   {v:'1.65.9',date:'28 Jun 2026',notes:['Leaderboard +pts delta resets to 0 when today\'s first game (ET) kicks off, then accumulates today\'s points as results come in.']},
   {v:'1.65.8',date:'28 Jun 2026',notes:['Broadcaster badge: single-game home cards show it inline with the Live Now / Next Up label; multi-game carousels show it top-right per slide.']},
@@ -6665,11 +6667,14 @@ async function loadHome(){
       .filter(({ko})=>ko&&ko>now)
       .sort((a,b)=>a.ko-b.ko);
     // Today's already-finished games — stay in Next Up until ET midnight, showing "Finished"
+    // Exclude games still within the live window so they don't appear in both Live Now and Next Up.
+    const LIVE_WIN_NU = 130*60*1000;
     const _etNowKey = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     const _todayDone = allFixtures()
       .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
       .map(f=>({f,ko:getMatchKickoff(f),finished:true}))
       .filter(({ko})=>ko&&ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'})===_etNowKey)
+      .filter(({ko})=>!(ko.getTime()<=now&&now<ko.getTime()+LIVE_WIN_NU))
       .sort((a,b)=>a.ko-b.ko);
     _nextUpcoming = _nextSorted[0]||_todayDone[0]||null;
     if(_nextUpcoming){
@@ -10521,6 +10526,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.2</div>
 </body>
 </html>
