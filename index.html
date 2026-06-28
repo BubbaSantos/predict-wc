@@ -3961,13 +3961,16 @@ function navTo(name){ showView(name); }
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
-  // Admin-only until approved for all players
-  if(!isAdmin){card.style.display='none';return;}
-  const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
-  if(isInstalled){card.style.display='none';return;}
-  const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
-  if(localStorage.getItem(key)){card.style.display='none';return;}
-  card.style.display='block';
+  // Admin always sees it (bypasses standalone + dismiss checks) so they can preview
+  if(isAdmin){card.style.display='block';return;}
+  // Non-admin: hidden until enabled
+  card.style.display='none';
+  // Uncomment below to enable for all players:
+  // const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+  // if(isInstalled){return;}
+  // const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
+  // if(localStorage.getItem(key)){return;}
+  // card.style.display='block';
 }
 function dismissPwaTip(){
   const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
