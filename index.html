@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.9</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4054,16 +4054,14 @@ function initPwaCarousel(){
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
-  // Admin always sees it (bypasses standalone + dismiss checks) so they can preview
-  if(isAdmin){card.style.display='block';initPwaCarousel();return;}
-  // Non-admin: hidden until enabled
-  card.style.display='none';
-  // Uncomment below to enable for all players:
-  // const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
-  // if(isInstalled){return;}
-  // const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
-  // if(localStorage.getItem(key)){return;}
-  // card.style.display='block';initPwaCarousel();
+  // Don't show if already installed as PWA
+  const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+  if(isInstalled){return;}
+  // Don't show if player has already dismissed
+  const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
+  if(localStorage.getItem(key)){return;}
+  card.style.display='block';
+  initPwaCarousel();
 }
 function dismissPwaTip(){
   const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
@@ -5262,6 +5260,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.0',date:'28 Jun 2026',notes:['PWA install tip card now shown to all players (auto-hides if already installed as PWA, or once dismissed).']},
   {v:'1.66.9',date:'28 Jun 2026',notes:['Update banner: controlled via force-refresh.txt counter — only shows when manually triggered for major updates, not on every patch.']},
   {v:'1.66.8',date:'28 Jun 2026',notes:['Auto update detection: app polls version.txt every 5 min. Shows "New version available" banner with one-tap refresh when a new deploy is detected.']},
   {v:'1.66.7',date:'28 Jun 2026',notes:['Custom iOS home screen icon (Fitba Predictor logo). Web app manifest added. App name on home screen: "Fitba".']},
@@ -10680,7 +10679,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.9</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
