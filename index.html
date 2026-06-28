@@ -1222,7 +1222,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1449,6 +1449,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
 
       <div style="font-size:.62rem;color:var(--text-muted);opacity:.5;text-align:center;margin-bottom:.6rem;letter-spacing:.03em;">Single tap to see others picks · Double-tap to toggle compact</div>
+      <div style="font-size:.7rem;color:var(--text-muted);background:color-mix(in srgb,var(--group-accent) 8%,transparent);border:1px solid color-mix(in srgb,var(--group-accent) 18%,transparent);border-radius:8px;padding:.45rem .7rem;margin-bottom:.65rem;text-align:center;line-height:1.45;">⏱ Predict the score at <strong>90 mins</strong> — extra time &amp; penalties don't count</div>
       <div id="predict-stage-tabs" style="display:none;margin-bottom:.75rem;">
         <div class="lb-view-toggle" style="width:100%;">
           <button id="predict-tab-group"    class="lb-view-tab active" style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('group')">⚽ Group Stage</button>
@@ -5116,6 +5117,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.66.3',date:'28 Jun 2026',notes:['Predictions page: reminder banner — "Predict the score at 90 mins — extra time & penalties don\'t count".']},
   {v:'1.66.2',date:'28 Jun 2026',notes:['Leaderboard subtitle now shows "Round of 32 · Matchday 17" — global WC matchday (days since tournament start) instead of per-round match count. Fixed: finished games no longer appear in both Live Now and Next Up simultaneously.']},
   {v:'1.66.1',date:'28 Jun 2026',notes:['Leaderboard subtitle shows current round and match count. Fixed _nowMs TDZ crash.']},
   {v:'1.66.0',date:'28 Jun 2026',notes:['QF, SF, 3rd place and Final fixtures now show TBD until both teams are confirmed winners — no more "W: TeamA/TeamB" placeholder for those rounds.']},
@@ -10526,6 +10528,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.3</div>
 </body>
 </html>
