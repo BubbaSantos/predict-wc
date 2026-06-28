@@ -140,6 +140,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .broadcaster-badge.itv{color:#fff;background:#0047ab;}
 .pwa-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:background .2s;}
 .pwa-dot-active{background:var(--group-accent);}
+#update-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--group-accent);color:#fff;display:none;align-items:center;justify-content:space-between;padding:.6rem 1rem;font-size:.8rem;font-weight:600;gap:.75rem;box-shadow:0 -2px 12px rgba(0,0,0,.3);}
+#update-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;font-weight:700;font-size:.78rem;padding:.3rem .75rem;border-radius:6px;cursor:pointer;white-space:nowrap;}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
 .match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
 .match-card.is-updating{border-color:color-mix(in srgb,var(--group-accent) 35%,transparent) !important;}
@@ -1229,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3433,6 +3435,7 @@ function enterApp(){
   startCountdown();
   startHeartbeat();
   startResultsPoller();
+  startUpdateChecker();
 }
 
 function renderMatchCardBody(){
@@ -3998,6 +4001,21 @@ function leaveGroup(){
 
 // ── VIEW SWITCHING ────────────────────────
 function navTo(name){ showView(name); }
+const _APP_VER='1.66.8';
+let _updateCheckTimer=null;
+async function checkForUpdate(){
+  try{
+    const r=await fetch('version.txt?_='+Date.now());
+    if(!r.ok)return;
+    const v=(await r.text()).trim();
+    if(v&&v!==_APP_VER){const b=document.getElementById('update-banner');if(b)b.style.display='flex';}
+  }catch(e){}
+}
+function startUpdateChecker(){
+  if(_updateCheckTimer)return;
+  checkForUpdate();
+  _updateCheckTimer=setInterval(checkForUpdate,5*60*1000);
+}
 let _pwaSlide=0;
 function pwaGoSlide(n){
   const track=document.getElementById('pwa-carousel-track');
@@ -5230,6 +5248,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.66.8',date:'28 Jun 2026',notes:['Auto update detection: app polls version.txt every 5 min. Shows "New version available" banner with one-tap refresh when a new deploy is detected.']},
   {v:'1.66.7',date:'28 Jun 2026',notes:['Custom iOS home screen icon (Fitba Predictor logo). Web app manifest added. App name on home screen: "Fitba".']},
   {v:'1.66.6',date:'28 Jun 2026',notes:['Admin players panel: shows PWA tip dismissed status per player. Carousel swipe no longer triggers page navigation. Leaderboard subtitle: adds Match N/104 counter (updates when each game KOs).']},
   {v:'1.66.5',date:'28 Jun 2026',notes:['PWA tip card: swipeable screenshot carousel (5 slides), step 1 updated to mention fitbapredictor.xyz in Safari.']},
@@ -10646,6 +10665,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.8</div>
+<div id="update-banner"><span>⚡ New version available</span><button onclick="location.reload(true)">Refresh now</button></div>
 </body>
 </html>
