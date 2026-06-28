@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.8</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4001,15 +4001,29 @@ function leaveGroup(){
 
 // ── VIEW SWITCHING ────────────────────────
 function navTo(name){ showView(name); }
-const _APP_VER='1.66.8';
 let _updateCheckTimer=null;
 async function checkForUpdate(){
   try{
-    const r=await fetch('version.txt?_='+Date.now());
+    const r=await fetch('force-refresh.txt?_='+Date.now());
     if(!r.ok)return;
-    const v=(await r.text()).trim();
-    if(v&&v!==_APP_VER){const b=document.getElementById('update-banner');if(b)b.style.display='flex';}
+    const gen=parseInt((await r.text()).trim())||0;
+    if(gen===0)return;
+    const seen=parseInt(localStorage.getItem('frg')||'0');
+    if(gen>seen){const b=document.getElementById('update-banner');if(b)b.style.display='flex';}
   }catch(e){}
+}
+function dismissUpdateBanner(){
+  // store current gen so banner doesn't reappear until next forced bump
+  fetch('force-refresh.txt?_='+Date.now()).then(r=>r.text()).then(t=>{
+    localStorage.setItem('frg',parseInt(t.trim())||0);
+  }).catch(()=>{});
+  const b=document.getElementById('update-banner');if(b)b.style.display='none';
+}
+function applyUpdateRefresh(){
+  fetch('force-refresh.txt?_='+Date.now()).then(r=>r.text()).then(t=>{
+    localStorage.setItem('frg',parseInt(t.trim())||0);
+    location.reload(true);
+  }).catch(()=>location.reload(true));
 }
 function startUpdateChecker(){
   if(_updateCheckTimer)return;
@@ -5248,6 +5262,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.66.9',date:'28 Jun 2026',notes:['Update banner: controlled via force-refresh.txt counter — only shows when manually triggered for major updates, not on every patch.']},
   {v:'1.66.8',date:'28 Jun 2026',notes:['Auto update detection: app polls version.txt every 5 min. Shows "New version available" banner with one-tap refresh when a new deploy is detected.']},
   {v:'1.66.7',date:'28 Jun 2026',notes:['Custom iOS home screen icon (Fitba Predictor logo). Web app manifest added. App name on home screen: "Fitba".']},
   {v:'1.66.6',date:'28 Jun 2026',notes:['Admin players panel: shows PWA tip dismissed status per player. Carousel swipe no longer triggers page navigation. Leaderboard subtitle: adds Match N/104 counter (updates when each game KOs).']},
@@ -10665,7 +10680,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.8</div>
-<div id="update-banner"><span>⚡ New version available</span><button onclick="location.reload(true)">Refresh now</button></div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.9</div>
+<div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
