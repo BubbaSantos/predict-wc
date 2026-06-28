@@ -4850,6 +4850,7 @@ async function loadLeaderboard(){
     ]);
     const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     const pm={}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
+    const _nowMs = Date.now();
     const _lbMatchSubtitle = document.getElementById('lb-match-subtitle');
     if(_lbMatchSubtitle && !_lbFormView){
       const _ROUND_DEFS=[
@@ -4871,7 +4872,6 @@ async function loadLeaderboard(){
       const _totalInRound=_curRound.ids.size;
       _lbMatchSubtitle.textContent=_completedInRound>0?`${_curRound.name} · Match ${_completedInRound} of ${_totalInRound}`:_curRound.name;
     }
-    const _nowMs = Date.now();
     _lbOnline = {};
     (allPlayers||[]).forEach(p=>{ _lbOnline[p.id] = !!(p.last_seen && (_nowMs - new Date(p.last_seen).getTime() < 120000)); });
     _lbTiebreaks={}; (allTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
