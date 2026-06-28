@@ -133,6 +133,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .broadcaster-badge{font-size:.48rem;font-weight:800;letter-spacing:.05em;padding:.08rem .28rem;border-radius:3px;line-height:1;}
 .broadcaster-badge.bbc{color:#000;background:#ffd700;}
 .broadcaster-badge.itv{color:#fff;background:#0047ab;}
+.pwa-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:background .2s;}
+.pwa-dot-active{background:var(--group-accent);}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
 .match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
 .match-card.is-updating{border-color:color-mix(in srgb,var(--group-accent) 35%,transparent) !important;}
@@ -1222,7 +1224,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.66.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.66.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1369,10 +1371,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button onclick="dismissPwaTip()" style="position:absolute;top:.6rem;right:.7rem;background:none;border:none;font-size:1rem;color:var(--text-muted);cursor:pointer;line-height:1;opacity:.6;" title="Dismiss">✕</button>
         <div style="font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--group-accent);margin-bottom:.3rem;">📲 Add to Home Screen</div>
         <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;line-height:1.4;">Works like an app — faster updates, fewer issues and easy one-tap access.</div>
-        <div style="display:flex;flex-direction:column;gap:.45rem;">
-          <div style="display:flex;align-items:center;gap:.6rem;font-size:.74rem;">
-            <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;">1</span>
-            <span style="color:var(--text-muted);">Tap the <strong style="color:var(--text);">menu icon</strong> (≡) next to the address bar</span>
+        <div style="display:flex;flex-direction:column;gap:.45rem;margin-bottom:.8rem;">
+          <div style="display:flex;align-items:flex-start;gap:.6rem;font-size:.74rem;">
+            <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;margin-top:.05rem;">1</span>
+            <span style="color:var(--text-muted);">Go to <strong style="color:var(--text);">fitbapredictor.xyz</strong> in Safari, then tap the <strong style="color:var(--text);">menu icon</strong> (≡) next to the address bar</span>
           </div>
           <div style="display:flex;align-items:center;gap:.6rem;font-size:.74rem;">
             <span style="background:var(--group-accent);color:#fff;border-radius:50%;width:1.3rem;height:1.3rem;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0;">2</span>
@@ -1391,7 +1393,40 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <span style="color:var(--text-muted);">Tap <strong style="color:var(--text);">Add</strong> — done!</span>
           </div>
         </div>
-        <button onclick="dismissPwaTip()" style="margin-top:.8rem;width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:.72rem;padding:.4rem;cursor:pointer;">Got it — don't show again</button>
+        <!-- Screenshot carousel -->
+        <div style="position:relative;overflow:hidden;border-radius:8px;background:#000;margin-bottom:.6rem;" id="pwa-carousel-wrap">
+          <div id="pwa-carousel-track" style="display:flex;transition:transform .3s ease;will-change:transform;">
+            <div style="min-width:100%;display:flex;flex-direction:column;align-items:center;">
+              <img src="img/pwa-step4.jpg" alt="Step 1 — menu icon" style="width:100%;max-height:200px;object-fit:contain;display:block;">
+              <div style="font-size:.65rem;color:#aaa;padding:.3rem 0 .35rem;text-align:center;">Step 1 — tap the ≡ menu icon</div>
+            </div>
+            <div style="min-width:100%;display:flex;flex-direction:column;align-items:center;">
+              <img src="img/pwa-step5.jpg" alt="Step 2 — tap Share" style="width:100%;max-height:200px;object-fit:contain;display:block;">
+              <div style="font-size:.65rem;color:#aaa;padding:.3rem 0 .35rem;text-align:center;">Step 2 — tap Share</div>
+            </div>
+            <div style="min-width:100%;display:flex;flex-direction:column;align-items:center;">
+              <img src="img/pwa-step6.jpg" alt="Step 3 — View More" style="width:100%;max-height:200px;object-fit:contain;display:block;">
+              <div style="font-size:.65rem;color:#aaa;padding:.3rem 0 .35rem;text-align:center;">Step 3 — tap View More (↓)</div>
+            </div>
+            <div style="min-width:100%;display:flex;flex-direction:column;align-items:center;">
+              <img src="img/pwa-step7.jpg" alt="Step 4 — Add to Home Screen" style="width:100%;max-height:200px;object-fit:contain;display:block;">
+              <div style="font-size:.65rem;color:#aaa;padding:.3rem 0 .35rem;text-align:center;">Step 4 — Add to Home Screen</div>
+            </div>
+            <div style="min-width:100%;display:flex;flex-direction:column;align-items:center;">
+              <img src="img/pwa-step8.jpg" alt="Step 5 — tap Add" style="width:100%;max-height:200px;object-fit:contain;display:block;">
+              <div style="font-size:.65rem;color:#aaa;padding:.3rem 0 .35rem;text-align:center;">Step 5 — tap Add</div>
+            </div>
+          </div>
+        </div>
+        <!-- Carousel dots -->
+        <div id="pwa-carousel-dots" style="display:flex;justify-content:center;gap:.35rem;margin-bottom:.7rem;">
+          <span class="pwa-dot pwa-dot-active" onclick="pwaGoSlide(0)"></span>
+          <span class="pwa-dot" onclick="pwaGoSlide(1)"></span>
+          <span class="pwa-dot" onclick="pwaGoSlide(2)"></span>
+          <span class="pwa-dot" onclick="pwaGoSlide(3)"></span>
+          <span class="pwa-dot" onclick="pwaGoSlide(4)"></span>
+        </div>
+        <button onclick="dismissPwaTip()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:.72rem;padding:.4rem;cursor:pointer;">Got it — don't show again</button>
       </div>
       <div class="group-hero" id="group-hero-block">
         <div class="group-hero-icon" id="gh-icon">⚽</div>
@@ -3958,11 +3993,31 @@ function leaveGroup(){
 
 // ── VIEW SWITCHING ────────────────────────
 function navTo(name){ showView(name); }
+let _pwaSlide=0;
+function pwaGoSlide(n){
+  const track=document.getElementById('pwa-carousel-track');
+  const dots=document.querySelectorAll('.pwa-dot');
+  if(!track)return;
+  _pwaSlide=Math.max(0,Math.min(4,n));
+  track.style.transform=`translateX(-${_pwaSlide*100}%)`;
+  dots.forEach((d,i)=>{d.classList.toggle('pwa-dot-active',i===_pwaSlide);});
+}
+function initPwaCarousel(){
+  const wrap=document.getElementById('pwa-carousel-wrap');
+  if(!wrap)return;
+  let _tx=0,_sx=0,_dragging=false;
+  wrap.addEventListener('touchstart',e=>{_sx=e.touches[0].clientX;_dragging=true;},{passive:true});
+  wrap.addEventListener('touchend',e=>{
+    if(!_dragging)return;_dragging=false;
+    _tx=_sx-e.changedTouches[0].clientX;
+    if(Math.abs(_tx)>40)pwaGoSlide(_pwaSlide+(_tx>0?1:-1));
+  },{passive:true});
+}
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
   // Admin always sees it (bypasses standalone + dismiss checks) so they can preview
-  if(isAdmin){card.style.display='block';return;}
+  if(isAdmin){card.style.display='block';initPwaCarousel();return;}
   // Non-admin: hidden until enabled
   card.style.display='none';
   // Uncomment below to enable for all players:
@@ -3970,7 +4025,7 @@ function initPwaTip(){
   // if(isInstalled){return;}
   // const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
   // if(localStorage.getItem(key)){return;}
-  // card.style.display='block';
+  // card.style.display='block';initPwaCarousel();
 }
 function dismissPwaTip(){
   const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
@@ -5167,6 +5222,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.66.5',date:'28 Jun 2026',notes:['PWA tip card: swipeable screenshot carousel (5 slides), step 1 updated to mention fitbapredictor.xyz in Safari.']},
   {v:'1.66.4',date:'28 Jun 2026',notes:['Home screen: "Add to Home Screen" tip card with step-by-step iOS instructions. Auto-hides if already installed as PWA. Dismissible per player (stored in localStorage).']},
   {v:'1.66.3',date:'28 Jun 2026',notes:['Predictions page: reminder banner — "Predict the 90 min full time score only".']},
   {v:'1.66.2',date:'28 Jun 2026',notes:['Leaderboard subtitle now shows "Round of 32 · Matchday 17" — global WC matchday (days since tournament start) instead of per-round match count. Fixed: finished games no longer appear in both Live Now and Next Up simultaneously.']},
@@ -10579,6 +10635,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.66.5</div>
 </body>
 </html>
