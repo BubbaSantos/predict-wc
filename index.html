@@ -387,6 +387,12 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .ft-btn:hover{background:rgba(34,197,94,.07);}
 .ft-btn.on{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:rgba(34,197,94,.75);}
 .admin-match.is-fulltime{border-color:rgba(34,197,94,.35);background:color-mix(in srgb,#22c55e 4%,transparent);}
+.ko-winner-row{grid-column:1/-1;display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;padding-top:.5rem;border-top:1px solid var(--border);margin-top:.1rem;}
+.ko-winner-label{font-size:.68rem;color:var(--text-muted);margin-right:.1rem;}
+.ko-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:.72rem;padding:.28rem .55rem;border-radius:6px;cursor:pointer;transition:all .15s;}
+.ko-btn:hover{border-color:var(--group-accent);color:var(--text);}
+.ko-btn.active{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.5);color:#22c55e;font-weight:700;}
+.ko-win-label{font-size:.68rem;color:#22c55e;font-weight:600;text-align:center;}
 .danger-btn{background:none;border:1px solid rgba(239,68,68,.4);color:var(--accent2);font-size:.82rem;font-weight:600;padding:.5rem 1rem;border-radius:7px;cursor:pointer;transition:all .15s;}
 .danger-btn:hover{background:rgba(239,68,68,.08);}
 .player-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.4rem;position:relative;}
@@ -1213,7 +1219,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.64.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.65.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2553,6 +2559,33 @@ const FIXTURES = [
   { id:'m104', date:'2026-07-19', group:'Final',             home:'TBD', away:'TBD', hf:'', af:'', venue:'New York/New Jersey', matchday:8, isKnockout:true },
 ];
 
+// Bracket: maps each fixture → which fixture's winner/loser fills home/away.
+// Entries must be in topological order (R16 before QF, QF before SF, etc.)
+// so enrichment propagates correctly in a single pass.
+const KO_BRACKET = {
+  // Round of 16 ← Round of 32 winners
+  'm090':{home:'m073',away:'m075'}, // S.Africa/Canada v Netherlands/Morocco  Jul 4 16:00
+  'm089':{home:'m074',away:'m077'}, // Germany/Paraguay v France/Sweden       Jul 4 21:00
+  'm091':{home:'m076',away:'m078'}, // Brazil/Japan v Ivory Coast/Norway      Jul 5 20:00
+  'm092':{home:'m079',away:'m080'}, // Mexico/Ecuador v England/DR Congo      Jul 5 22:00
+  'm093':{home:'m083',away:'m084'}, // Portugal/Croatia v Spain/Austria       Jul 6 18:00
+  'm094':{home:'m081',away:'m082'}, // USA/Bosnia v Belgium/Senegal           Jul 6 21:00
+  'm095':{home:'m086',away:'m088'}, // Argentina/Cape Verde v Australia/Egypt Jul 7 16:00
+  'm096':{home:'m085',away:'m087'}, // Switzerland/Algeria v Colombia/Ghana   Jul 7 17:00
+  // Quarter-Finals ← Round of 16 winners
+  'm097':{home:'m090',away:'m091'}, // Jul 9
+  'm098':{home:'m089',away:'m092'}, // Jul 10
+  'm099':{home:'m093',away:'m094'}, // Jul 11
+  'm100':{home:'m095',away:'m096'}, // Jul 11
+  // Semi-Finals ← QF winners
+  'm101':{home:'m097',away:'m098'}, // Jul 14
+  'm102':{home:'m099',away:'m100'}, // Jul 15
+  // 3rd Place ← SF losers
+  'm103':{home:{loser:'m101'},away:{loser:'m102'}}, // Jul 18
+  // Final ← SF winners
+  'm104':{home:'m101',away:'m102'}, // Jul 19
+};
+
 const STAGE_LABEL = {'ROUND_OF_32':'Round of 32','LAST_16':'Round of 16','QUARTER_FINALS':'Quarter-Final','SEMI_FINALS':'Semi-Final','THIRD_PLACE':'3rd Place Play-off','FINAL':'Final'};
 
 const FLAG = {
@@ -3747,15 +3780,16 @@ async function startResultsPoller(){
   _pollInterval = setInterval(async ()=>{
     if(!currentGroup) return;
     try{
-      const fresh = await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`);
+      const fresh = await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`);
       if(!fresh) return;
       let changed = false;
       let newFullTime = false;
       fresh.forEach(r=>{
         const ex = results[r.match_id];
         const ftNow = !!r.full_time;
-        if(!ex || ex.home!==r.home_score || ex.away!==r.away_score){
-          results[r.match_id] = {home:r.home_score, away:r.away_score, fullTime:ftNow};
+        const kowNow = r.ko_winner||null;
+        if(!ex || ex.home!==r.home_score || ex.away!==r.away_score || ex.ko_winner!==kowNow){
+          results[r.match_id] = {home:r.home_score, away:r.away_score, fullTime:ftNow, ko_winner:kowNow, ko_method:r.ko_method||null};
           changed = true;
         } else if(ex.fullTime !== ftNow){
           results[r.match_id].fullTime = ftNow;
@@ -4198,11 +4232,52 @@ function startTiebreakCountdown(){
   setInterval(update, 1000);
 }
 
+// Returns 'home', 'away', or null (not yet determined / draw with no ko_winner set).
+function getKoWinner(matchId){
+  const r=results[matchId];
+  if(!r||r.home==null||r.away==null) return null;
+  if(r.home>r.away) return 'home';
+  if(r.away>r.home) return 'away';
+  return r.ko_winner||null; // draw: rely on admin-set ko_winner
+}
+
 function allFixtures(){
   // Always return fixtures ordered by kickoff time so every list (predict,
   // results, god mode, admin, etc.) shows games chronologically. TBD/unknown
   // kickoffs sort to the end.
-  return [...FIXTURES,...knockoutFixtures].sort((a,b)=>{
+  const raw=[...FIXTURES,...knockoutFixtures].sort((a,b)=>{
+    const ta=getMatchKickoff(a)?.getTime();
+    const tb=getMatchKickoff(b)?.getTime();
+    if(ta==null&&tb==null) return 0;
+    if(ta==null) return 1;
+    if(tb==null) return -1;
+    return ta-tb;
+  });
+  // Enrich knockout fixtures with winner names from KO_BRACKET.
+  // Build a mutable index; KO_BRACKET is in topological order so a single pass propagates correctly.
+  const byId={};
+  raw.forEach(f=>{ byId[f.id]={...f}; });
+  Object.entries(KO_BRACKET).forEach(([fid,bracket])=>{
+    const f=byId[fid]; if(!f) return;
+    const resolveTeam=(src,wantLoser)=>{
+      const id=typeof src==='string'?src:src.loser;
+      const loser=typeof src!=='string';
+      const sf=byId[id]; if(!sf) return null;
+      const w=getKoWinner(id);
+      if(w){ const isHome=wantLoser||loser?(w==='home'):(w==='home'); // winner side
+        if(loser) return {name:w==='home'?sf.away:sf.home, flag:w==='home'?sf.af:sf.hf};
+        return {name:w==='home'?sf.home:sf.away, flag:w==='home'?sf.hf:sf.af};
+      }
+      if(sf.home&&sf.home!=='TBD'&&sf.away&&sf.away!=='TBD')
+        return {name:`W: ${sf.home}/${sf.away}`,flag:''};
+      return null;
+    };
+    const ht=resolveTeam(bracket.home,false);
+    const at=resolveTeam(bracket.away,false);
+    if(ht){f.home=ht.name;f.hf=ht.flag;}
+    if(at){f.away=at.name;f.af=at.flag;}
+  });
+  return Object.values(byId).sort((a,b)=>{
     const ta=getMatchKickoff(a)?.getTime();
     const tb=getMatchKickoff(b)?.getTime();
     if(ta==null&&tb==null) return 0;
@@ -4247,13 +4322,13 @@ async function loadPredictions(){
     if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem(); saveSession(); }
 
     const [res,preds,tb,allGroupPreds,allPlayers]=await Promise.all([
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,ko_winner,ko_method`),
       sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=top_scorer,goals`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
     ]);
-    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score});
+    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
     predictions={}; (preds||[]).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score});
     const _pm={}; (allPlayers||[]).forEach(p=>_pm[p.id]={name:p.name,display:p.nickname||p.name});
     _matchPredsMap={};
@@ -4534,6 +4609,17 @@ function renderAdminCard(f,res){
   const grpLabel=f.isKnockout?(f.group||'KO'):`Grp ${f.group}`;
   const hasScore = h!==null&&h!==undefined&&h!=='';
   const ftOn = !!(res && res.fullTime);
+  const isDraw = hasScore && +h===+a;
+  const koW = res?.ko_winner||null, koM = res?.ko_method||null;
+  const koPickerHtml = (f.isKnockout && isDraw) ? `
+    <div class="ko-winner-row">
+      <span class="ko-winner-label">Winner:</span>
+      <button class="ko-btn${koW==='home'&&koM==='aet'?' active':''}" onclick="saveKoWinner('${f.id}','home','aet')">${f.hf||'🏠'} AET</button>
+      <button class="ko-btn${koW==='away'&&koM==='aet'?' active':''}" onclick="saveKoWinner('${f.id}','away','aet')">${f.af||'✈️'} AET</button>
+      <button class="ko-btn${koW==='home'&&koM==='pen'?' active':''}" onclick="saveKoWinner('${f.id}','home','pen')">${f.hf||'🏠'} Pen</button>
+      <button class="ko-btn${koW==='away'&&koM==='pen'?' active':''}" onclick="saveKoWinner('${f.id}','away','pen')">${f.af||'✈️'} Pen</button>
+    </div>` : '';
+  const winLabel = (hasScore && koW) ? `<span class="ko-win-label">${koW==='home'?f.home:f.away} wins ${(koM||'').toUpperCase()}</span>` : '';
   return `<div class="admin-match ${ftOn?'is-fulltime':''}" id="acard-${f.id}">
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
@@ -4542,7 +4628,8 @@ function renderAdminCard(f,res){
         <span class="score-sep">–</span>
         <input class="actual-input" type="number" min="0" max="99" id="ra-${f.id}" value="${a!==null&&a!==undefined?a:''}" placeholder="–" inputmode="numeric" oninput="adminScoreInput(this,null)" />
       </div>
-      ${hasScore? `<span class="result-badge">${h}–${a}</span>`:''}
+      ${hasScore? `<span class="result-badge">${h}–${a}${koW?` (${(koM||'').toUpperCase()})`:''}</span>`:''}
+      ${winLabel}
     </div>
     <div class="team away"><span class="team-name">${f.away}</span><span class="team-flag">${f.af}</span></div>
     <div class="match-meta">
@@ -4552,6 +4639,7 @@ function renderAdminCard(f,res){
         ${hasScore ? `<button class="actual-save-btn" onclick="clearResult('${f.id}')" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;font-size:.7rem;padding:.3rem .6rem;">✕ Clear</button>` : ''}
       </div>
     </div>
+    ${koPickerHtml}
   </div>`;
 }
 
@@ -4733,7 +4821,7 @@ async function loadLeaderboard(){
   try{
     const [allPreds,allResults,allPlayers,allTiebreaks]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
@@ -4987,6 +5075,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.65.0',date:'28 Jun 2026',notes:['Knockout bracket auto-progression: R16/QF/SF/Final fixtures now show the winner\'s team name as soon as the previous result is saved. Drawn knockout games show a winner picker on the admin card (flag + AET or Pen buttons). Requires: ALTER TABLE results ADD COLUMN ko_winner TEXT DEFAULT NULL; ALTER TABLE results ADD COLUMN ko_method TEXT DEFAULT NULL;']},
   {v:'1.64.5',date:'28 Jun 2026',notes:['Poller interval changed from 60s to 5 minutes.']},
   {v:'1.64.4',date:'28 Jun 2026',notes:['Auto-refresh: predictions and leaderboard now refresh every 60 s even when no scores change (keeps other players\' predictions and group changes current). Also refreshes immediately when you return to the tab/app from background. Prediction refresh is skipped while an input is focused so in-progress typing is never disrupted.']},
   {v:'1.64.3',date:'28 Jun 2026',notes:['Round of 32 fixtures updated with confirmed teams: Germany/Paraguay, France/Sweden, Ivory Coast/Norway, Mexico/Ecuador, England/DR Congo, Belgium/Senegal, Portugal/Croatia, Spain/Austria, Switzerland/Algeria, Argentina/Cape Verde, Colombia/Ghana, Australia/Egypt.']},
@@ -6282,7 +6371,7 @@ async function loadHome(){
   try{
     const [allPreds, allResults, allPlayers, homeTiebreaks] = await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,ko_winner,ko_method`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
@@ -6303,7 +6392,7 @@ async function loadHome(){
 
     const rm = {}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     // Keep global results/predictions fresh for the countdown card
-    (allResults||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score});
+    (allResults||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
     if(currentPlayer){ (gamePreds||[]).filter(p=>p.player_id===currentPlayer.id).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score}); }
     const pm = {}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
 
@@ -8173,8 +8262,8 @@ async function loadAdminFixtures(){
   const list=document.getElementById('admin-fixtures-list');
   list.innerHTML='<div class="loading">Loading…</div>';
   try{
-    const res=await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`);
-    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,fullTime:!!r.full_time});
+    const res=await sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`);
+    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,fullTime:!!r.full_time,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
     renderFixtures(list,true);
   }catch(e){list.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
@@ -8214,6 +8303,8 @@ async function adminAutoSave(matchId){
   if(isNaN(+h)||isNaN(+a)) return;
   const existing = results[matchId];
   if(existing && existing.home===+h && existing.away===+a) return;
+  // Preserve ko_winner/ko_method if score is still a draw
+  const keepKo = (+h===+a) ? {ko_winner:existing?.ko_winner||null, ko_method:existing?.ko_method||null} : {ko_winner:null,ko_method:null};
   try{
     const godcast = _godcastOn && userHasGodAccess();
     if(godcast){
@@ -8221,19 +8312,19 @@ async function adminAutoSave(matchId){
       if(!groups||!groups.length) throw new Error('No groups found');
       await sb('results?match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
       const ft = !!(existing&&existing.fullTime);
-      const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a,full_time:ft}));
+      const rows = groups.map(g=>({group_id:g.id,match_id:matchId,home_score:+h,away_score:+a,full_time:ft,...keepKo}));
       await sb('results',{method:'POST',prefer:'return=minimal',body:rows});
     } else {
       await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+matchId,{method:'DELETE',prefer:'return=minimal'});
-      await sb('results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a,full_time:!!(existing&&existing.fullTime)}});
+      await sb('results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a,full_time:!!(existing&&existing.fullTime),...keepKo}});
     }
-    results[matchId]={home:+h,away:+a,fullTime:!!(existing&&existing.fullTime)};
+    results[matchId]={home:+h,away:+a,fullTime:!!(existing&&existing.fullTime),...keepKo};
     flash(godcast?`⚡ Saved ${h}–${a} (all groups)`:`Saved: ${h}–${a}`,'success');
+    // Re-render affected cards (the saved card + any downstream bracket cards)
+    const fix = allFixtures().find(f=>f.id===matchId);
     const card = document.getElementById('acard-'+matchId);
-    if(card){
-      const f = allFixtures().find(f=>f.id===matchId);
-      if(f) card.outerHTML = renderAdminCard(f, {home:+h,away:+a});
-    }
+    if(card && fix) card.outerHTML = renderAdminCard(fix, results[matchId]);
+    if(fix?.isKnockout) refreshAdminBracketCards(matchId);
     adminAdvanceToNext(matchId);
   }catch(e){ console.warn('admin auto-save failed',matchId,e); }
 }
@@ -8252,6 +8343,44 @@ function adminAdvanceToNext(currentMatchId){
   }
 }
 
+
+// Re-render all admin cards that are downstream of a changed knockout result.
+function refreshAdminBracketCards(changedId){
+  const affected=new Set();
+  const queue=[changedId];
+  while(queue.length){
+    const id=queue.shift();
+    Object.entries(KO_BRACKET).forEach(([fid,br])=>{
+      const refs=[typeof br.home==='string'?br.home:br.home?.loser, typeof br.away==='string'?br.away:br.away?.loser];
+      if(refs.includes(id)&&!affected.has(fid)){ affected.add(fid); queue.push(fid); }
+    });
+  }
+  const fixtures=allFixtures();
+  affected.forEach(fid=>{
+    const card=document.getElementById('acard-'+fid);
+    const f=fixtures.find(x=>x.id===fid);
+    if(card&&f) card.outerHTML=renderAdminCard(f,results[fid]);
+  });
+}
+
+async function saveKoWinner(matchId,winner,method){
+  if(!currentGroup) return;
+  const body={ko_winner:winner,ko_method:method};
+  try{
+    const godcast=_godcastOn&&userHasGodAccess();
+    if(godcast){
+      await sb('results?match_id=eq.'+matchId,{method:'PATCH',prefer:'return=minimal',body});
+    } else {
+      await sb('results?group_id=eq.'+currentGroup.id+'&match_id=eq.'+matchId,{method:'PATCH',prefer:'return=minimal',body});
+    }
+    results[matchId]={...(results[matchId]||{}),ko_winner:winner,ko_method:method};
+    flash((winner==='home'?'Home':'Away')+' team wins via '+method.toUpperCase(),'success');
+    const fix=allFixtures().find(f=>f.id===matchId);
+    const card=document.getElementById('acard-'+matchId);
+    if(card&&fix) card.outerHTML=renderAdminCard(fix,results[matchId]);
+    refreshAdminBracketCards(matchId);
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
 
 async function clearResult(id){
   if(!currentGroup) return;
@@ -10342,6 +10471,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.0</div>
 </body>
 </html>
