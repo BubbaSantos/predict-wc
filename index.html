@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.63.8</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.63.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4959,6 +4959,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.63.9',date:'28 Jun 2026',notes:['MOTM banner: supports shared winners — when multiple players tie for the top score, banner shows all names and title changes to "Men of the Matchday".']},
   {v:'1.63.8',date:'27 Jun 2026',notes:['Revert streak change — reverted to original logic: mixed simultaneous-KO round (win one, lose one) breaks the hot streak.']},
   {v:'1.63.7',date:'27 Jun 2026',notes:['Fix: streak now treats a simultaneous-KO round as "hot" if you scored ≥3 in any of the games (was requiring all games to score). Miss in one game of a shared KO no longer breaks the streak, and the miss doesn\'t inflate the game count.']},
   {v:'1.63.6',date:'26 Jun 2026',notes:['Knockout prediction cards: group table replaced with tournament stats panel showing each team\'s W/D/L record, goals for/against, goal difference and clean sheets — useful context for making picks.']},
@@ -7718,14 +7719,15 @@ function _maybeShowRoundSummary(allPreds, allResults){
     const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
     roundPtsByPid[p.player_id]=(roundPtsByPid[p.player_id]||0)+pts;
   });
-  let motmPid=null, motmPts=0;
-  Object.entries(roundPtsByPid).forEach(([pid,pts])=>{ if(pts>motmPts){motmPts=pts;motmPid=pid;} });
-  const motmName=motmPid?pidToName[motmPid]||null:null;
+  let motmPts=0;
+  Object.values(roundPtsByPid).forEach(pts=>{ if(pts>motmPts) motmPts=pts; });
+  const motmPids=motmPts>0?Object.entries(roundPtsByPid).filter(([,pts])=>pts===motmPts).map(([pid])=>pid):[];
+  const motmNames=motmPids.map(pid=>pidToName[pid]||pid).filter(Boolean);
   localStorage.setItem(seenKey,'1');
   const myPrevRank=_homeRoundPrevRankByName[currentPlayer.nickname||currentPlayer.name];
   const myCurRank=_homeRoundCurRankByName[currentPlayer.nickname||currentPlayer.name];
   showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,myPrevRank,myCurRank,()=>{
-    if(motmName&&motmPts>0) showMOTMBanner(motmName,motmPts,roundFixtures.length,motmPid===currentPlayer.id);
+    if(motmNames.length&&motmPts>0) showMOTMBanner(motmNames,motmPts,roundFixtures.length,motmPids.includes(currentPlayer.id));
   });
 }
 
@@ -7821,17 +7823,24 @@ function launchConfetti(durationMs=4500){
   return ()=>{cancelled=true;cancelAnimationFrame(rafId);};
 }
 
-function showMOTMBanner(motmName,motmPts,gamesInRound,isMe){
+function showMOTMBanner(motmNames,motmPts,gamesInRound,isMe){
   const ex=document.getElementById('motm-overlay'); if(ex) ex.remove();
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const names=Array.isArray(motmNames)?motmNames:[motmNames];
+  const shared=names.length>1;
+  const nameHtml=shared
+    ?names.map(n=>`<div class="motm-name" style="font-size:${names.length>2?'1.2rem':'1.4rem'};">${esc(n)}</div>`).join('')
+    :`<div class="motm-name">${esc(names[0])}</div>`;
+  const subText=isMe?(shared?'Including you! 🏆':'That\'s you! 🏆'):(shared?'shared top scorers this round':'top scorer this round');
+  const tagText=shared?'MEN OF THE MATCHDAY':'MAN OF THE MATCHDAY';
   const overlay=document.createElement('div');
   overlay.id='motm-overlay';
   overlay.className='end-banner-overlay';
   overlay.innerHTML=`<div class="end-banner-card">
-    <div class="eb-tag">MAN OF THE MATCH</div>
+    <div class="eb-tag">${tagText}</div>
     <div class="motm-icon">⚽</div>
-    <div class="motm-name">${esc(motmName)}</div>
-    <div class="motm-sub">${isMe?'That\'s you! 🏆':'top scorer this round'}</div>
+    ${nameHtml}
+    <div class="motm-sub">${subText}</div>
     <div class="eb-pts pts-exact motm-pts">+${motmPts}</div>
     <div class="eb-pts-blurb">${gamesInRound===1?'in this game':`across ${gamesInRound} game${gamesInRound!==1?'s':''}`}</div>
     <div class="eb-dismiss">Tap to dismiss</div>
@@ -10272,6 +10281,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.8</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.9</div>
 </body>
 </html>
