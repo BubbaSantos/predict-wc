@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.64.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.64.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4979,6 +4979,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.64.1',date:'28 Jun 2026',notes:['MOTM banner: auto-suppressed when more than 3 players are tied for the top score.']},
   {v:'1.64.0',date:'28 Jun 2026',notes:['Admin → Display → End-of-Game Banner: two new toggles — "MOTM Banner" (hides the Man of the Matchday swoop-in overlay) and "MOTM Badge" (hides the ⚽ MOTM badge on leaderboard rows). Requires: ALTER TABLE groups ADD COLUMN show_motm_banner boolean DEFAULT true; ALTER TABLE groups ADD COLUMN show_motm_badge boolean DEFAULT true;']},
   {v:'1.63.9',date:'28 Jun 2026',notes:['MOTM banner: supports shared winners — when multiple players tie for the top score, banner shows all names and title changes to "Men of the Matchday".']},
   {v:'1.63.8',date:'27 Jun 2026',notes:['Revert streak change — reverted to original logic: mixed simultaneous-KO round (win one, lose one) breaks the hot streak.']},
@@ -7775,7 +7776,7 @@ function _maybeShowRoundSummary(allPreds, allResults){
   const myPrevRank=_homeRoundPrevRankByName[currentPlayer.nickname||currentPlayer.name];
   const myCurRank=_homeRoundCurRankByName[currentPlayer.nickname||currentPlayer.name];
   showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,myPrevRank,myCurRank,()=>{
-    if(motmNames.length&&motmPts>0&&currentGroup?.show_motm_banner!==false) showMOTMBanner(motmNames,motmPts,roundFixtures.length,motmPids.includes(currentPlayer.id));
+    if(motmNames.length&&motmNames.length<=3&&motmPts>0&&currentGroup?.show_motm_banner!==false) showMOTMBanner(motmNames,motmPts,roundFixtures.length,motmPids.includes(currentPlayer.id));
   });
 }
 
@@ -10329,6 +10330,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.1</div>
 </body>
 </html>
