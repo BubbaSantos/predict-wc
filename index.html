@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.64.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.64.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3790,7 +3790,7 @@ async function startResultsPoller(){
         else if(active==='view-predict' && !document.activeElement?.matches('input,select,textarea')) loadPredictions();
       }
     }catch(e){}
-  }, 60000);
+  }, 300000);
 }
 function stopResultsPoller(){
   clearInterval(_pollInterval);
@@ -4987,6 +4987,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.64.5',date:'28 Jun 2026',notes:['Poller interval changed from 60s to 5 minutes.']},
   {v:'1.64.4',date:'28 Jun 2026',notes:['Auto-refresh: predictions and leaderboard now refresh every 60 s even when no scores change (keeps other players\' predictions and group changes current). Also refreshes immediately when you return to the tab/app from background. Prediction refresh is skipped while an input is focused so in-progress typing is never disrupted.']},
   {v:'1.64.3',date:'28 Jun 2026',notes:['Round of 32 fixtures updated with confirmed teams: Germany/Paraguay, France/Sweden, Ivory Coast/Norway, Mexico/Ecuador, England/DR Congo, Belgium/Senegal, Portugal/Croatia, Spain/Austria, Switzerland/Algeria, Argentina/Cape Verde, Colombia/Ghana, Australia/Egypt.']},
   {v:'1.64.2',date:'28 Jun 2026',notes:['Predictions page: Group Stage / Knockouts toggle removed — all fixtures shown together under Today / Tomorrow / date headings with Previous Matches dropdown.']},
@@ -10341,6 +10342,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.5</div>
 </body>
 </html>
