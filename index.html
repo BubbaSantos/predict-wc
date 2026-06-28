@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.63.9</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.64.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1865,6 +1865,26 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="end-banner-toggle" onchange="saveEndBannerToggle()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row" style="margin-top:.75rem;">
+            <div>
+              <div class="toggle-label">MOTM Banner</div>
+              <div class="toggle-desc">Show the Man of the Matchday swoop-in banner after the round summary.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="motm-banner-toggle" onchange="saveMotmBannerToggle()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row" style="margin-top:.75rem;">
+            <div>
+              <div class="toggle-label">MOTM Badge</div>
+              <div class="toggle-desc">Show the ⚽ MOTM badge next to the top scorer's name on the leaderboard.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="motm-badge-toggle" onchange="saveMotmBadgeToggle()">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -4959,6 +4979,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.64.0',date:'28 Jun 2026',notes:['Admin → Display → End-of-Game Banner: two new toggles — "MOTM Banner" (hides the Man of the Matchday swoop-in overlay) and "MOTM Badge" (hides the ⚽ MOTM badge on leaderboard rows). Requires: ALTER TABLE groups ADD COLUMN show_motm_banner boolean DEFAULT true; ALTER TABLE groups ADD COLUMN show_motm_badge boolean DEFAULT true;']},
   {v:'1.63.9',date:'28 Jun 2026',notes:['MOTM banner: supports shared winners — when multiple players tie for the top score, banner shows all names and title changes to "Men of the Matchday".']},
   {v:'1.63.8',date:'27 Jun 2026',notes:['Revert streak change — reverted to original logic: mixed simultaneous-KO round (win one, lose one) breaks the hot streak.']},
   {v:'1.63.7',date:'27 Jun 2026',notes:['Fix: streak now treats a simultaneous-KO round as "hot" if you scored ≥3 in any of the games (was requiring all games to score). Miss in one game of a shared KO no longer breaks the streak, and the miss doesn\'t inflate the game count.']},
@@ -6376,7 +6397,7 @@ async function loadHome(){
       lbHtml = '<div style="font-size:.8rem;color:var(--text-muted);">No scores yet.</div>';
     } else {
       const miniDot = pid => _lbOnline[pid] ? '<span title="Online now" style="display:inline-block;width:.38rem;height:.38rem;border-radius:50%;background:#10b981;margin-left:.35rem;vertical-align:middle;"></span>' : '';
-      const miniMotmBadge = pid => (_lbMotmPids.size && _lbMotmPids.has(pid)) ? '<span class="lb-badge lb-badge-motm" style="font-size:.5rem;padding:.08rem .28rem;">⚽ MOTM</span>' : '';
+      const miniMotmBadge = pid => (currentGroup?.show_motm_badge!==false && _lbMotmPids.size && _lbMotmPids.has(pid)) ? '<span class="lb-badge lb-badge-motm" style="font-size:.5rem;padding:.08rem .28rem;">⚽ MOTM</span>' : '';
       sorted.slice(0,3).forEach(([name,s],i)=>{
         const isYou = name===myDisplayName;
         const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
@@ -7593,6 +7614,33 @@ function resetRoundSummarySeen(){
   }
   flash(`Cleared ${n} round summary flag${n===1?'':'s'} on this device`,'success');
 }
+function loadMotmToggles(){
+  const bt=document.getElementById('motm-banner-toggle');
+  const bge=document.getElementById('motm-badge-toggle');
+  if(bt) bt.checked = currentGroup ? currentGroup.show_motm_banner !== false : true;
+  if(bge) bge.checked = currentGroup ? currentGroup.show_motm_badge !== false : true;
+}
+async function saveMotmBannerToggle(){
+  if(!currentGroup) return;
+  const on = document.getElementById('motm-banner-toggle')?.checked ?? true;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_motm_banner:on}});
+    currentGroup = {...currentGroup, show_motm_banner:on};
+    saveSession();
+    flash('MOTM banner '+(on?'on':'off'),'success');
+  }catch(e){ flash('Save failed: '+e.message,'error'); }
+}
+async function saveMotmBadgeToggle(){
+  if(!currentGroup) return;
+  const on = document.getElementById('motm-badge-toggle')?.checked ?? true;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_motm_badge:on}});
+    currentGroup = {...currentGroup, show_motm_badge:on};
+    saveSession();
+    flash('MOTM badge '+(on?'on':'off'),'success');
+    renderLeaderboard();
+  }catch(e){ flash('Save failed: '+e.message,'error'); }
+}
 
 function maybeShowEndBanner(allPreds, allResults){
   if(!currentPlayer || !currentGroup) return;
@@ -7727,7 +7775,7 @@ function _maybeShowRoundSummary(allPreds, allResults){
   const myPrevRank=_homeRoundPrevRankByName[currentPlayer.nickname||currentPlayer.name];
   const myCurRank=_homeRoundCurRankByName[currentPlayer.nickname||currentPlayer.name];
   showRoundSummaryBanner(roundDate,roundFixtures,rm,myPredMap,myRoundPts,myPrevRank,myCurRank,()=>{
-    if(motmNames.length&&motmPts>0) showMOTMBanner(motmNames,motmPts,roundFixtures.length,motmPids.includes(currentPlayer.id));
+    if(motmNames.length&&motmPts>0&&currentGroup?.show_motm_banner!==false) showMOTMBanner(motmNames,motmPts,roundFixtures.length,motmPids.includes(currentPlayer.id));
   });
 }
 
@@ -8038,7 +8086,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();loadKnockoutsLive();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -9116,7 +9164,7 @@ function renderLeaderboard(){
       : (i===0 ? 'lb-row lb-gold' : i===1 ? 'lb-row lb-silver' : i===2 ? 'lb-row lb-bronze' : isLast ? 'lb-row lb-last' : 'lb-row'))
       + (isYou ? ' lb-you' : '');
     const forfeitWinner = (currentGroup.forfeit_poll_ended && currentGroup.forfeit_poll_winner) ? ' · '+currentGroup.forfeit_poll_winner : '';
-    const isMotm = _lbMotmPids.size && _lbMotmPids.has(pid);
+    const isMotm = currentGroup?.show_motm_badge!==false && _lbMotmPids.size && _lbMotmPids.has(pid);
     const motmBadge = isMotm ? '<span class="lb-badge lb-badge-motm">⚽ MOTM</span>' : '';
     const statusBadge = isItm ? '<span class="lb-badge lb-badge-money">In the Money'+prizeText+'</span>' : isForfeit ? '<span class="lb-badge lb-badge-forfeit">Forfeit</span>' : '';
     const rankDisplay = (_lbJointRanks && rankCounts[ranks[i]]>1) ? '='+ranks[i] : ''+(_lbJointRanks ? ranks[i] : i+1);
@@ -10281,6 +10329,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.63.9</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.0</div>
 </body>
 </html>
