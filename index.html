@@ -140,7 +140,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .broadcaster-badge.itv{color:#fff;background:#0047ab;}
 .pwa-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:background .2s;}
 .pwa-dot-active{background:var(--group-accent);}
-#update-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--group-accent);color:#fff;display:none;align-items:center;justify-content:space-between;padding:.6rem 1rem;font-size:.8rem;font-weight:600;gap:.75rem;box-shadow:0 -2px 12px rgba(0,0,0,.3);}
+#update-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--group-accent);color:#fff;display:none;align-items:center;justify-content:space-between;padding:.6rem 1rem;padding-bottom:calc(.6rem + env(safe-area-inset-bottom));font-size:.8rem;font-weight:600;gap:.75rem;box-shadow:0 -2px 12px rgba(0,0,0,.3);}
 #update-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;font-weight:700;font-size:.78rem;padding:.3rem .75rem;border-radius:6px;cursor:pointer;white-space:nowrap;}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
 .match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.67.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4054,18 +4054,14 @@ function initPwaCarousel(){
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
-  // Don't show if already installed as PWA
   const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
   if(isInstalled){return;}
-  // Don't show if player has already dismissed
-  const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
-  if(localStorage.getItem(key)){return;}
+  if(localStorage.getItem('pwa_tip_dismissed')){return;}
   card.style.display='block';
   initPwaCarousel();
 }
 function dismissPwaTip(){
-  const key='pwa_tip_dismissed'+(currentPlayer?'_'+currentPlayer.id:'');
-  localStorage.setItem(key,'1');
+  localStorage.setItem('pwa_tip_dismissed','1');
   if(currentPlayer){sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pwa_tip_dismissed:true}}).catch(()=>{});}
   const card=document.getElementById('pwa-tip-card');
   if(card){card.style.transition='opacity .3s';card.style.opacity='0';setTimeout(()=>card.style.display='none',300);}
@@ -5260,6 +5256,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.1',date:'28 Jun 2026',notes:['Fix: PWA tip card reappearing after dismiss (localStorage key mismatch). Update banner now clears iPhone home indicator (safe-area-inset-bottom).']},
   {v:'1.67.0',date:'28 Jun 2026',notes:['PWA install tip card now shown to all players (auto-hides if already installed as PWA, or once dismissed).']},
   {v:'1.66.9',date:'28 Jun 2026',notes:['Update banner: controlled via force-refresh.txt counter — only shows when manually triggered for major updates, not on every patch.']},
   {v:'1.66.8',date:'28 Jun 2026',notes:['Auto update detection: app polls version.txt every 5 min. Shows "New version available" banner with one-tap refresh when a new deploy is detected.']},
@@ -10679,7 +10676,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
