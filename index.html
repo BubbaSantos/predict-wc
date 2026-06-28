@@ -1222,7 +1222,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.65.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.65.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4882,7 +4882,10 @@ async function loadLeaderboard(){
     const _lbCompletedDates=[...new Set(
       allFixtures().filter(f=>{const d=_koDateLB(f);return d&&d<=_todayLB&&rm[f.id]&&rm[f.id].home_score!=null;}).map(f=>_koDateLB(f))
     )].sort();
-    const _lastRoundDate=_lbCompletedDates.length?_lbCompletedDates[_lbCompletedDates.length-1]:null;
+    // Once the first game of today (ET) has kicked off, switch the delta window to today.
+    // This resets +pts to 0 at kick-off and accumulates today's points as results come in.
+    const _todayHasKickedOff=allFixtures().some(f=>{if(_koDateLB(f)!==_todayLB)return false;const ko=getMatchKickoff(f);return ko&&ko.getTime()<=_nowMs;});
+    const _lastRoundDate=_todayHasKickedOff?_todayLB:(_lbCompletedDates.length?_lbCompletedDates[_lbCompletedDates.length-1]:null);
     const _lastRoundIds=_lastRoundDate
       ?new Set(allFixtures().filter(f=>_koDateLB(f)===_lastRoundDate&&rm[f.id]&&rm[f.id].home_score!=null).map(f=>f.id))
       :new Set();
@@ -5095,7 +5098,8 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
-  {v:'1.65.7',date:'28 Jun 2026',notes:['Broadcaster badge: single-game home cards show it inline with the Live Now / Next Up label; multi-game carousels show it top-right per slide.']},
+  {v:'1.65.9',date:'28 Jun 2026',notes:['Leaderboard +pts delta resets to 0 when today\'s first game (ET) kicks off, then accumulates today\'s points as results come in.']},
+  {v:'1.65.8',date:'28 Jun 2026',notes:['Broadcaster badge: single-game home cards show it inline with the Live Now / Next Up label; multi-game carousels show it top-right per slide.']},
   {v:'1.65.6',date:'28 Jun 2026',notes:['Broadcaster badge added to Live Now and Next Up home cards, top-right corner.']},
   {v:'1.65.5',date:'28 Jun 2026',notes:['Broadcaster badge repositioned into the card body, below the score inputs / tick circle.']},
   {v:'1.65.4',date:'28 Jun 2026',notes:['Broadcaster badge moved below the round label in the card header; made smaller.']},
@@ -10498,6 +10502,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.65.9</div>
 </body>
 </html>
