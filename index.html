@@ -1213,7 +1213,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.64.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.64.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2515,21 +2515,21 @@ const FIXTURES = [
   { id:'m072', date:'2026-06-27', group:'L', home:'Croatia', away:'Ghana', hf:'🇭🇷', af:'🇬🇭', venue:'Vancouver', matchday:3 },
   // ── ROUND OF 32 ──────────────────────────────────────────────────────────────
   { id:'m073', date:'2026-06-28', group:'Round of 32', home:'South Africa', away:'Canada',         hf:'🇿🇦', af:'🇨🇦', venue:'Los Angeles',        matchday:4, isKnockout:true },
-  { id:'m074', date:'2026-06-29', group:'Round of 32', home:'Germany',      away:'TBD',             hf:'🇩🇪', af:'',    venue:'Boston',              matchday:4, isKnockout:true },
+  { id:'m074', date:'2026-06-29', group:'Round of 32', home:'Germany',      away:'Paraguay',        hf:'🇩🇪', af:'🇵🇾', venue:'Boston',              matchday:4, isKnockout:true },
   { id:'m075', date:'2026-06-29', group:'Round of 32', home:'Netherlands',  away:'Morocco',         hf:'🇳🇱', af:'🇲🇦', venue:'Monterrey',           matchday:4, isKnockout:true },
   { id:'m076', date:'2026-06-29', group:'Round of 32', home:'Brazil',       away:'Japan',           hf:'🇧🇷', af:'🇯🇵', venue:'Houston',             matchday:4, isKnockout:true },
-  { id:'m077', date:'2026-06-30', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'New York/New Jersey', matchday:4, isKnockout:true },
-  { id:'m078', date:'2026-06-30', group:'Round of 32', home:'Ivory Coast',  away:'TBD',             hf:'🇨🇮', af:'',    venue:'Dallas',              matchday:4, isKnockout:true },
-  { id:'m079', date:'2026-06-30', group:'Round of 32', home:'Mexico',       away:'TBD',             hf:'🇲🇽', af:'',    venue:'Mexico City',         matchday:4, isKnockout:true },
-  { id:'m080', date:'2026-07-01', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Atlanta',             matchday:4, isKnockout:true },
+  { id:'m077', date:'2026-06-30', group:'Round of 32', home:'France',        away:'Sweden',          hf:'🇫🇷', af:'🇸🇪', venue:'New York/New Jersey', matchday:4, isKnockout:true },
+  { id:'m078', date:'2026-06-30', group:'Round of 32', home:'Ivory Coast',  away:'Norway',          hf:'🇨🇮', af:'🇳🇴', venue:'Dallas',              matchday:4, isKnockout:true },
+  { id:'m079', date:'2026-06-30', group:'Round of 32', home:'Mexico',       away:'Ecuador',         hf:'🇲🇽', af:'🇪🇨', venue:'Mexico City',         matchday:4, isKnockout:true },
+  { id:'m080', date:'2026-07-01', group:'Round of 32', home:'England',       away:'DR Congo',        hf:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', af:'🇨🇩', venue:'Atlanta',             matchday:4, isKnockout:true },
   { id:'m081', date:'2026-07-01', group:'Round of 32', home:'USA',          away:'Bosnia & Herz.',  hf:'🇺🇸', af:'🇧🇦', venue:'San Francisco',       matchday:4, isKnockout:true },
-  { id:'m082', date:'2026-07-01', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Seattle',             matchday:4, isKnockout:true },
-  { id:'m083', date:'2026-07-02', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Toronto',             matchday:4, isKnockout:true },
-  { id:'m084', date:'2026-07-02', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Los Angeles',         matchday:4, isKnockout:true },
-  { id:'m085', date:'2026-07-02', group:'Round of 32', home:'Switzerland',  away:'TBD',             hf:'🇨🇭', af:'',    venue:'Vancouver',           matchday:4, isKnockout:true },
-  { id:'m086', date:'2026-07-03', group:'Round of 32', home:'Argentina',    away:'TBD',             hf:'🇦🇷', af:'',    venue:'Miami',               matchday:4, isKnockout:true },
-  { id:'m087', date:'2026-07-03', group:'Round of 32', home:'TBD',          away:'TBD',             hf:'',    af:'',    venue:'Kansas City',         matchday:4, isKnockout:true },
-  { id:'m088', date:'2026-07-03', group:'Round of 32', home:'Australia',    away:'TBD',             hf:'🇦🇺', af:'',    venue:'Dallas',              matchday:4, isKnockout:true },
+  { id:'m082', date:'2026-07-01', group:'Round of 32', home:'Belgium',       away:'Senegal',         hf:'🇧🇪', af:'🇸🇳', venue:'Seattle',             matchday:4, isKnockout:true },
+  { id:'m083', date:'2026-07-02', group:'Round of 32', home:'Portugal',      away:'Croatia',         hf:'🇵🇹', af:'🇭🇷', venue:'Toronto',             matchday:4, isKnockout:true },
+  { id:'m084', date:'2026-07-02', group:'Round of 32', home:'Spain',         away:'Austria',         hf:'🇪🇸', af:'🇦🇹', venue:'Los Angeles',         matchday:4, isKnockout:true },
+  { id:'m085', date:'2026-07-02', group:'Round of 32', home:'Switzerland',  away:'Algeria',         hf:'🇨🇭', af:'🇩🇿', venue:'Vancouver',           matchday:4, isKnockout:true },
+  { id:'m086', date:'2026-07-03', group:'Round of 32', home:'Argentina',    away:'Cape Verde',      hf:'🇦🇷', af:'🇨🇻', venue:'Miami',               matchday:4, isKnockout:true },
+  { id:'m087', date:'2026-07-03', group:'Round of 32', home:'Colombia',      away:'Ghana',           hf:'🇨🇴', af:'🇬🇭', venue:'Kansas City',         matchday:4, isKnockout:true },
+  { id:'m088', date:'2026-07-03', group:'Round of 32', home:'Australia',    away:'Egypt',           hf:'🇦🇺', af:'🇪🇬', venue:'Dallas',              matchday:4, isKnockout:true },
   // ── ROUND OF 16 ──────────────────────────────────────────────────────────────
   { id:'m089', date:'2026-07-04', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Philadelphia',     matchday:5, isKnockout:true },
   { id:'m090', date:'2026-07-04', group:'Round of 16', home:'TBD', away:'TBD', hf:'', af:'', venue:'Houston',          matchday:5, isKnockout:true },
@@ -4975,6 +4975,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.64.3',date:'28 Jun 2026',notes:['Round of 32 fixtures updated with confirmed teams: Germany/Paraguay, France/Sweden, Ivory Coast/Norway, Mexico/Ecuador, England/DR Congo, Belgium/Senegal, Portugal/Croatia, Spain/Austria, Switzerland/Algeria, Argentina/Cape Verde, Colombia/Ghana, Australia/Egypt.']},
   {v:'1.64.2',date:'28 Jun 2026',notes:['Predictions page: Group Stage / Knockouts toggle removed — all fixtures shown together under Today / Tomorrow / date headings with Previous Matches dropdown.']},
   {v:'1.64.1',date:'28 Jun 2026',notes:['MOTM banner: auto-suppressed when more than 3 players are tied for the top score.']},
   {v:'1.64.0',date:'28 Jun 2026',notes:['Admin → Display → End-of-Game Banner: two new toggles — "MOTM Banner" (hides the Man of the Matchday swoop-in overlay) and "MOTM Badge" (hides the ⚽ MOTM badge on leaderboard rows). Requires: ALTER TABLE groups ADD COLUMN show_motm_banner boolean DEFAULT true; ALTER TABLE groups ADD COLUMN show_motm_badge boolean DEFAULT true;']},
@@ -10327,6 +10328,6 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.64.3</div>
 </body>
 </html>
