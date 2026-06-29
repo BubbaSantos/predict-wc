@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.67.8</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2051,20 +2051,9 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
         <div class="status-card">
           <h3>Add to Home Screen Tip</h3>
-          <div class="toggle-row">
-            <div>
-              <div class="toggle-label">Show Install Tip Card</div>
-              <div class="toggle-desc">Displays the "Add to Home Screen" instruction card on the home page for players who haven't dismissed it</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="pwa-tip-toggle" onchange="savePwaTipToggle()">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div style="margin-top:.75rem;">
-            <button class="btn-save-all" style="width:auto;padding:.5rem 1.2rem;font-size:.8rem;" onclick="resetPwaTipForAll()">↺ Re-show tip for all players</button>
-            <div style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem;">Clears "Got it" dismissals so every player sees the card again</div>
-          </div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">The Install Tip card toggle is in the <strong>Home Page Cards</strong> section above. Use the button below to reset dismissals so all players see it again.</div>
+          <button class="btn-save-all" style="width:auto;padding:.5rem 1.2rem;font-size:.8rem;" onclick="resetPwaTipForAll()">↺ Re-show tip for all players</button>
+          <div style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem;">Clears "Got it" dismissals so every player sees the card again</div>
         </div>
         <div class="status-card">
           <h3>Push Update Notification</h3>
@@ -5226,6 +5215,7 @@ const PAIDPLACES_OPTIONS = [
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
 const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const HOME_CARD_DEFS = [
+  {key:'pwa-tip',   id:'pwa-tip-card',        label:'Install Tip Card',   toggleId:'pwa-tip-toggle',             flag:'show_pwa_tip'},
   {key:'hero',      id:'group-hero-block',    label:'Group Hero',         toggleId:'home-show-hero-toggle',      flag:'home_show_hero'},
   {key:'next',      id:'home-next-card',       label:'Match Card',         toggleId:'home-show-next-toggle',      flag:'home_show_next'},
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
@@ -5280,7 +5270,11 @@ function getHomeCardOrder(){
   const arr = typeof stored==='string' ? stored.split(',') : stored;
   const valid = arr.filter(k=>HOME_CARD_DEFS.some(c=>c.key===k));
   const missing = def.filter(k=>!valid.includes(k));
-  return [...valid,...missing];
+  const order = [...valid,...missing];
+  // pwa-tip always pinned first regardless of saved order
+  const idx = order.indexOf('pwa-tip');
+  if(idx > 0){ order.splice(idx,1); order.unshift('pwa-tip'); }
+  return order;
 }
 function applyHomeCardOrder(){
   const homeView = document.getElementById('view-home');
@@ -5291,6 +5285,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.9',date:'29 Jun 2026',notes:['Fix: PWA install tip card now properly managed by the Home Page Cards system — always pinned first, ordered with other cards via applyHomeCardOrder(), toggle visible in Admin → Display → Home Page Cards. initPwaTip() runs last so per-player dismissed state wins.']},
   {v:'1.67.8',date:'29 Jun 2026',notes:['Rework: PWA tip dismiss state moved from localStorage to player DB record (pwa_tip_dismissed) — no more version-key issues. Card shows to any player who hasn\'t dismissed it in DB. Admin: "Re-show tip for all players" button resets dismissals. Requires: ALTER TABLE players ADD COLUMN IF NOT EXISTS pwa_tip_dismissed boolean DEFAULT false;']},
   {v:'1.67.7',date:'29 Jun 2026',notes:['Fix: PWA install tip card now shows again — bumped dismiss key to pwa_tip_v3 (clears all previous dismissals). Admin toggle now updates locally first so it works even before the DB column is created; enabling also clears the dismiss key on the admin\'s own device.']},
   {v:'1.67.6',date:'29 Jun 2026',notes:['Admin → Display: toggle to show/hide PWA install tip card; "Push refresh banner to all players" button (uses Supabase force_refresh_gen). Update banner redesigned as floating pill. Requires: ALTER TABLE groups ADD COLUMN show_pwa_tip boolean DEFAULT true; ALTER TABLE groups ADD COLUMN force_refresh_gen integer DEFAULT 0;']},
@@ -7246,7 +7241,6 @@ async function loadHome(){
     if(statsEl) statsEl.innerHTML = errHtml;
   }
   applyHomeCardOrder();
-  initPwaTip();
   startCountdown();
   // Apply home card visibility toggles (after startCountdown so we can override countdown display)
   HOME_CARD_DEFS.forEach(def=>{
@@ -7258,6 +7252,8 @@ async function loadHome(){
     else if(def.key !== 'countdown') el.style.display = '';
     // countdown display left to startCountdown() when shown
   });
+  // Run after the forEach so per-player dismissed/installed state wins over the admin flag
+  initPwaTip();
 }
 
 // ── PROFILE MENU (robust wiring) ──────────────────────
@@ -7947,21 +7943,6 @@ async function saveEndBannerToggle(){
     flash('End-of-game banner '+(on?'on':'off'),'success');
   }catch(e){ flash('Save failed: '+e.message,'error'); }
 }
-function loadPwaTipToggle(){
-  const tog=document.getElementById('pwa-tip-toggle');
-  if(tog) tog.checked = currentGroup ? currentGroup.show_pwa_tip !== false : true;
-}
-async function savePwaTipToggle(){
-  if(!currentGroup) return;
-  const on=document.getElementById('pwa-tip-toggle')?.checked ?? true;
-  currentGroup={...currentGroup,show_pwa_tip:on};
-  saveSession();
-  initPwaTip();
-  try{
-    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_pwa_tip:on}});
-    flash('Install tip card '+(on?'on':'off'),'success');
-  }catch(e){ flash('Install tip card '+(on?'on':'off')+' (saved locally — run SQL to persist)','info'); }
-}
 async function resetPwaTipForAll(){
   if(!currentGroup) return;
   try{
@@ -8469,7 +8450,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();loadKnockoutsLive();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();loadPwaTipToggle();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -10753,7 +10734,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.8</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.9</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
