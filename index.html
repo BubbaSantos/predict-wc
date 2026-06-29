@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.68.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.68.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4026,20 +4026,11 @@ async function checkForUpdate(){
       if(sbGen>0&&sbGen>parseInt(localStorage.getItem('frg_sb')||'0')){currentGroup={...currentGroup,force_refresh_gen:sbGen};show=true;}
     }catch(e){}
   }
-  // suppress if player clicked "don't show again" for this exact generation
-  const suppressed=parseInt(localStorage.getItem('frg_suppress')||'0');
-  const maxGen=Math.max(fileGen,sbGen);
-  if(show&&maxGen>0&&maxGen<=suppressed) show=false;
   if(show){const b=document.getElementById('update-banner');if(b)b.style.display='flex';}
 }
 function dismissUpdateBanner(){
   if(_lastFrg>0) localStorage.setItem('frg',String(_lastFrg));
   if(currentGroup?.force_refresh_gen) localStorage.setItem('frg_sb',String(currentGroup.force_refresh_gen));
-  const b=document.getElementById('update-banner');if(b)b.style.display='none';
-}
-function suppressUpdateBanner(){
-  const maxGen=Math.max(_lastFrg,currentGroup?.force_refresh_gen||0);
-  if(maxGen>0) localStorage.setItem('frg_suppress',String(maxGen));
   const b=document.getElementById('update-banner');if(b)b.style.display='none';
 }
 function applyUpdateRefresh(){
@@ -5274,6 +5265,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.68.7',date:'29 Jun 2026',notes:['Remove "Don\'t show" button from update banner — just Refresh now and ✕.']},
   {v:'1.68.6',date:'29 Jun 2026',notes:['"Got it — don\'t show again" button on PWA install tip card. Sets pwa_tip_hide in localStorage; checked synchronously at startup before any async calls so nothing can re-show it.']},
   {v:'1.68.5',date:'29 Jun 2026',notes:['"Don\'t show" button on update banner: saves the current generation to frg_suppress in localStorage so the banner stays hidden across reloads. Reappears automatically when a newer forced refresh is pushed.']},
   {v:'1.68.4',date:'29 Jun 2026',notes:['Fix: "New version available" banner reappeared after clicking Refresh because fetch() in _markRefreshSeen() was async and never completed before location.reload(). Now caches the file generation when detected and writes to localStorage synchronously before reloading.']},
@@ -10721,7 +10713,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.6</div>
-<div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="suppressUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.25rem .55rem;font-size:.7rem;">Don't show</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.7</div>
+<div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
