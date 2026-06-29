@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.67.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2054,12 +2054,16 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <div class="toggle-row">
             <div>
               <div class="toggle-label">Show Install Tip Card</div>
-              <div class="toggle-desc">Displays the "Add to Home Screen" instruction card on the home page for players who haven't installed the app yet</div>
+              <div class="toggle-desc">Displays the "Add to Home Screen" instruction card on the home page for players who haven't dismissed it</div>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="pwa-tip-toggle" onchange="savePwaTipToggle()">
               <span class="toggle-slider"></span>
             </label>
+          </div>
+          <div style="margin-top:.75rem;">
+            <button class="btn-save-all" style="width:auto;padding:.5rem 1.2rem;font-size:.8rem;" onclick="resetPwaTipForAll()">↺ Re-show tip for all players</button>
+            <div style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem;">Clears "Got it" dismissals so every player sees the card again</div>
           </div>
         </div>
         <div class="status-card">
@@ -3344,20 +3348,20 @@ async function loginPlayer(){
     }
 
     // Find player by login name, then nickname, then previous names
-    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
+    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,pwa_tip_dismissed`);
     if(!players||!players.length){
-      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
+      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,pwa_tip_dismissed`);
     }
     if(!players||!players.length){
       // Check previous_names array (for players whose login name was changed)
-      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,previous_names`).catch(()=>[]);
+      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,pwa_tip_dismissed,previous_names`).catch(()=>[]);
       players = (all||[]).filter(p=>(p.previous_names||[]).some(n=>n.toLowerCase()===name.toLowerCase()));
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
     const player = players[0];
     if(player.pin!==pin){showErr(errEl,'Wrong PIN. Try again.');return;}
 
-    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false,god_mode:player.god_mode||false};
+    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false,god_mode:player.god_mode||false,pwa_tip_dismissed:player.pwa_tip_dismissed||false};
 
     // Admin if they have the is_admin flag on their player record, or know the group password
     isAdmin = !!(player.is_admin) || (currentGroup.admin_password === pin);
@@ -3434,7 +3438,6 @@ function enterApp(){
       loadHome();
     }
   });
-  initPwaTip(); // run before screen-app shown so card visibility is set before paint
   document.getElementById('screen-landing').style.display='none';
   document.getElementById('screen-app').style.display='block';
   // Show admin tab if already authenticated as admin
@@ -4079,19 +4082,22 @@ function initPwaCarousel(){
     e.stopPropagation();
   },{passive:true});
 }
-const _PWA_TIP_KEY='pwa_tip_v3';
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
   const isInstalled=!!(window.navigator.standalone||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches));
-  const adminOff=currentGroup&&currentGroup.show_pwa_tip===false;
-  if(isInstalled||adminOff||localStorage.getItem(_PWA_TIP_KEY)){card.style.display='none';return;}
+  const adminHidden=currentGroup?.show_pwa_tip===false;
+  const dismissed=currentPlayer?.pwa_tip_dismissed===true;
+  if(isInstalled||adminHidden||dismissed){card.style.display='none';return;}
   card.style.display='';
   initPwaCarousel();
 }
 function dismissPwaTip(){
-  localStorage.setItem(_PWA_TIP_KEY,'1');
-  if(currentPlayer){sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pwa_tip_dismissed:true}}).catch(()=>{});}
+  if(currentPlayer){
+    currentPlayer={...currentPlayer,pwa_tip_dismissed:true};
+    saveSession();
+    sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pwa_tip_dismissed:true}}).catch(()=>{});
+  }
   const card=document.getElementById('pwa-tip-card');
   if(card){card.style.transition='opacity .3s';card.style.opacity='0';setTimeout(()=>card.style.display='none',300);}
 }
@@ -4504,7 +4510,7 @@ async function loadPredictions(){
   list.innerHTML='<div class="loading">Loading…</div>';
   try{
     // Refresh player data to get latest pay_choice and nickname
-    const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice,god_mode,is_admin').catch(()=>null);
+    const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice,god_mode,is_admin,pwa_tip_dismissed').catch(()=>null);
     if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem(); saveSession(); }
 
     const [res,preds,tb,allGroupPreds,allPlayers]=await Promise.all([
@@ -5285,6 +5291,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.8',date:'29 Jun 2026',notes:['Rework: PWA tip dismiss state moved from localStorage to player DB record (pwa_tip_dismissed) — no more version-key issues. Card shows to any player who hasn\'t dismissed it in DB. Admin: "Re-show tip for all players" button resets dismissals. Requires: ALTER TABLE players ADD COLUMN IF NOT EXISTS pwa_tip_dismissed boolean DEFAULT false;']},
   {v:'1.67.7',date:'29 Jun 2026',notes:['Fix: PWA install tip card now shows again — bumped dismiss key to pwa_tip_v3 (clears all previous dismissals). Admin toggle now updates locally first so it works even before the DB column is created; enabling also clears the dismiss key on the admin\'s own device.']},
   {v:'1.67.6',date:'29 Jun 2026',notes:['Admin → Display: toggle to show/hide PWA install tip card; "Push refresh banner to all players" button (uses Supabase force_refresh_gen). Update banner redesigned as floating pill. Requires: ALTER TABLE groups ADD COLUMN show_pwa_tip boolean DEFAULT true; ALTER TABLE groups ADD COLUMN force_refresh_gen integer DEFAULT 0;']},
   {v:'1.67.5',date:'29 Jun 2026',notes:['Fix: PWA tip card now visible by default — inverted show/hide logic so any JS glitch keeps it visible rather than hidden. initPwaTip runs before screen-app paint.']},
@@ -7239,7 +7246,7 @@ async function loadHome(){
     if(statsEl) statsEl.innerHTML = errHtml;
   }
   applyHomeCardOrder();
-  initPwaTip(); // re-check after card order is set — pwa-tip-card stays pinned at top
+  initPwaTip();
   startCountdown();
   // Apply home card visibility toggles (after startCountdown so we can override countdown display)
   HOME_CARD_DEFS.forEach(def=>{
@@ -7947,8 +7954,6 @@ function loadPwaTipToggle(){
 async function savePwaTipToggle(){
   if(!currentGroup) return;
   const on=document.getElementById('pwa-tip-toggle')?.checked ?? true;
-  // Apply locally first so the card responds immediately regardless of DB availability
-  if(on) localStorage.removeItem(_PWA_TIP_KEY);
   currentGroup={...currentGroup,show_pwa_tip:on};
   saveSession();
   initPwaTip();
@@ -7956,6 +7961,15 @@ async function savePwaTipToggle(){
     await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_pwa_tip:on}});
     flash('Install tip card '+(on?'on':'off'),'success');
   }catch(e){ flash('Install tip card '+(on?'on':'off')+' (saved locally — run SQL to persist)','info'); }
+}
+async function resetPwaTipForAll(){
+  if(!currentGroup) return;
+  try{
+    await sb(`players?group_id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{pwa_tip_dismissed:false}});
+    if(currentPlayer){currentPlayer={...currentPlayer,pwa_tip_dismissed:false};saveSession();}
+    initPwaTip();
+    flash('Install tip reset — all players will see the card again','success');
+  }catch(e){ flash('Reset failed (run SQL first: ALTER TABLE players ADD COLUMN IF NOT EXISTS pwa_tip_dismissed boolean DEFAULT false)','error'); }
 }
 async function triggerForceRefresh(){
   if(!currentGroup) return;
@@ -10739,7 +10753,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.8</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
