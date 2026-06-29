@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.68.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.68.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2047,10 +2047,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           </div>
         </div>
 
-        <div class="status-card">
-          <h3>Add to Home Screen Tip</h3>
-          <div style="font-size:.75rem;color:var(--text-muted);">The install tip card shows to all players automatically. It disappears once someone adds the app to their home screen. You can reorder it in <strong>Home Page Cards</strong> above.</div>
-        </div>
         <div class="status-card">
           <h3>Push Update Notification</h3>
           <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">Shows the "New version available" banner to all players. Use after significant updates.</div>
@@ -4067,14 +4063,6 @@ function initPwaCarousel(){
     e.stopPropagation();
   },{passive:true});
 }
-function initPwaTip(){
-  const card=document.getElementById('pwa-tip-card');
-  if(!card) return;
-  const isInstalled=!!(window.navigator.standalone||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches));
-  if(isInstalled){card.style.display='none';return;}
-  card.style.display='';
-  initPwaCarousel();
-}
 function showView(name){ closeMenu();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
@@ -5270,6 +5258,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.68.3',date:'29 Jun 2026',notes:['Simplify: PWA install tip is now a plain static card — no initPwaTip(), no show/hide JS. initPwaCarousel() called once at startup. Card sits in HOME_CARD_DEFS (flag:null) so it is ordered with other home cards but never touched by the visibility loop.']},
   {v:'1.68.2',date:'29 Jun 2026',notes:['Fix: PWA tip card was being hidden by show_pwa_tip=false stored in DB — the second loadHome() (triggered by refreshGroup().then()) was reading that fresh DB value. Fix: removed show_pwa_tip flag from HOME_CARD_DEFS (forEach loop no longer touches the card) and removed adminHidden check from initPwaTip(). Card now shows unconditionally unless already installed as PWA.']},
   {v:'1.68.1',date:'29 Jun 2026',notes:['Simplify: removed dismiss feature from PWA install tip card entirely — no more "Got it" button, no localStorage/DB tracking. Card shows to all players while admin toggle is on; hides automatically once installed as PWA.']},
   {v:'1.68.0',date:'29 Jun 2026',notes:['Fix: PWA tip card was being hidden by stale pwa_tip_dismissed=true baked into localStorage session from earlier testing. Now stripped from session on load — DB is the only persistent source, in-session dismiss uses a module variable (_pwaTipDismissed) that resets on page reload.']},
@@ -7240,8 +7229,6 @@ async function loadHome(){
     else if(def.key !== 'countdown') el.style.display = '';
     // countdown display left to startCountdown() when shown
   });
-  // Run after the forEach so per-player dismissed/installed state wins over the admin flag
-  initPwaTip();
 }
 
 // ── PROFILE MENU (robust wiring) ──────────────────────
@@ -10066,6 +10053,7 @@ function initTheme(){
 
 initTheme();
 initProfileMenu();
+initPwaCarousel();
 // Restore session
 loadSession();
 if(localStorage.getItem('wc26_god_unlocked')==='1') _godUnlocked = true;
@@ -10712,7 +10700,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.3</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
