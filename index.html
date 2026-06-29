@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.67.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4057,17 +4057,18 @@ function initPwaCarousel(){
     e.stopPropagation();
   },{passive:true});
 }
+const _PWA_TIP_KEY='pwa_tip_v2'; // bump suffix to force re-show for all players
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
   const isInstalled=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
   if(isInstalled){return;}
-  if(localStorage.getItem('pwa_tip_dismissed')){return;}
+  if(localStorage.getItem(_PWA_TIP_KEY)){return;}
   card.style.display='block';
   initPwaCarousel();
 }
 function dismissPwaTip(){
-  localStorage.setItem('pwa_tip_dismissed','1');
+  localStorage.setItem(_PWA_TIP_KEY,'1');
   if(currentPlayer){sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pwa_tip_dismissed:true}}).catch(()=>{});}
   const card=document.getElementById('pwa-tip-card');
   if(card){card.style.transition='opacity .3s';card.style.opacity='0';setTimeout(()=>card.style.display='none',300);}
@@ -5262,6 +5263,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.4',date:'29 Jun 2026',notes:['Fix: PWA tip card now reliably shows for all players — versioned dismiss key (pwa_tip_v2) invalidates any old dismissals; card re-checked after home card order is applied.']},
   {v:'1.67.3',date:'29 Jun 2026',notes:['Unconfirmed knockout fixtures now show both potential teams stacked with "or" between them instead of "W: TeamA/TeamB".']},
   {v:'1.67.2',date:'28 Jun 2026',notes:['Fix: add viewport-fit=cover so env(safe-area-inset-bottom) works on iPhone — update banner now clears the home indicator properly.']},
   {v:'1.67.1',date:'28 Jun 2026',notes:['Fix: PWA tip card reappearing after dismiss (localStorage key mismatch). Update banner now clears iPhone home indicator (safe-area-inset-bottom).']},
@@ -7212,6 +7214,7 @@ async function loadHome(){
     if(statsEl) statsEl.innerHTML = errHtml;
   }
   applyHomeCardOrder();
+  initPwaTip(); // re-check after card order is set — pwa-tip-card stays pinned at top
   startCountdown();
   // Apply home card visibility toggles (after startCountdown so we can override countdown display)
   HOME_CARD_DEFS.forEach(def=>{
@@ -10684,7 +10687,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.4</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
