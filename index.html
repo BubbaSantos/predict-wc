@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.67.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3586,13 +3586,19 @@ function _predPcts(mid){
   const ap=Math.round(preds.filter(p=>p.predHome<p.predAway).length/t*100);
   return {hp,dp,ap};
 }
+function _orTeamHtml(name,size){
+  if(!name||!name.includes('\n'))return name||'TBD';
+  const[t1,t2]=name.split('\n');
+  const s=size||'.6em';
+  return `${t1}<br><span style="font-size:${s};color:var(--text-muted);line-height:2;">or</span><br>${t2}`;
+}
 function _pctTeamsHtml(f, scoreClass, scoreContent, mid){
   const pct=_predPcts(mid);
   const pctRow=pct?`<div class="hmc-pred-pct"><span class="hmc-pct">${pct.hp}%</span><span class="hmc-pct-draw">${pct.dp}% draw</span><span class="hmc-pct">${pct.ap}%</span></div>`:'';
   return `<div class="hmc-teams">
-    <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname">${f.home}</div></div>
+    <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname" style="line-height:1.3;">${_orTeamHtml(f.home)}</div></div>
     <div class="hmc-score ${scoreClass}">${scoreContent}</div>
-    <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname">${f.away}</div></div>
+    <div class="hmc-team"><div class="hmc-flag">${f.af}</div><div class="hmc-tname" style="line-height:1.3;">${_orTeamHtml(f.away)}</div></div>
   </div>${pctRow}`;
 }
 
@@ -4426,7 +4432,7 @@ function allFixtures(){
       const QF_PLUS=new Set(['m097','m098','m099','m100','m101','m102','m103','m104']);
       if(QF_PLUS.has(fid)) return null;
       if(sf.home&&sf.home!=='TBD'&&sf.away&&sf.away!=='TBD')
-        return {name:`W: ${sf.home}/${sf.away}`,flag:''};
+        return {name:`${sf.home}\n${sf.away}`,flag:''};
       return null;
     };
     const ht=resolveTeam(bracket.home,false);
@@ -4700,7 +4706,7 @@ function renderPredictCard(f,pred,res){
       <div class="mc-body">
         <div class="mc-team">
           <div class="mc-flag">${f.hf}</div>
-          <div class="mc-name">${f.home}</div>
+          <div class="mc-name" style="line-height:1.3;">${_orTeamHtml(f.home,'.55em')}</div>
         </div>
         <div class="mc-center">
           <div class="mc-score-row">
@@ -4712,7 +4718,7 @@ function renderPredictCard(f,pred,res){
         </div>
         <div class="mc-team away">
           <div class="mc-flag">${f.af}</div>
-          <div class="mc-name">${f.away}</div>
+          <div class="mc-name" style="line-height:1.3;">${_orTeamHtml(f.away,'.55em')}</div>
         </div>
       </div>
       <div id="pred-picks-${f.id}" class="pred-picks-panel" style="display:none;"></div>
@@ -4748,7 +4754,7 @@ function renderPredictCard(f,pred,res){
       <div class="mc-body">
         <div class="mc-team">
           <div class="mc-flag">${f.hf}</div>
-          <div class="mc-name">${f.home}</div>
+          <div class="mc-name" style="line-height:1.3;">${_orTeamHtml(f.home,'.55em')}</div>
         </div>
         <div class="mc-center">${centerHtml}
           <input type="hidden" id="h-${f.id}" value="${pred.home}" data-match-id="${f.id}" disabled />
@@ -4757,7 +4763,7 @@ function renderPredictCard(f,pred,res){
         </div>
         <div class="mc-team away">
           <div class="mc-flag">${f.af}</div>
-          <div class="mc-name">${f.away}</div>
+          <div class="mc-name" style="line-height:1.3;">${_orTeamHtml(f.away,'.55em')}</div>
         </div>
       </div>
       <div id="pred-picks-${f.id}" class="pred-picks-panel" style="display:none;"></div>
@@ -5256,6 +5262,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.3',date:'29 Jun 2026',notes:['Unconfirmed knockout fixtures now show both potential teams stacked with "or" between them instead of "W: TeamA/TeamB".']},
   {v:'1.67.2',date:'28 Jun 2026',notes:['Fix: add viewport-fit=cover so env(safe-area-inset-bottom) works on iPhone — update banner now clears the home indicator properly.']},
   {v:'1.67.1',date:'28 Jun 2026',notes:['Fix: PWA tip card reappearing after dismiss (localStorage key mismatch). Update banner now clears iPhone home indicator (safe-area-inset-bottom).']},
   {v:'1.67.0',date:'28 Jun 2026',notes:['PWA install tip card now shown to all players (auto-hides if already installed as PWA, or once dismissed).']},
@@ -10677,7 +10684,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.3</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
