@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.68.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.68.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1432,6 +1432,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <span class="pwa-dot" onclick="pwaGoSlide(3)"></span>
           <span class="pwa-dot" onclick="pwaGoSlide(4)"></span>
         </div>
+        <button onclick="hidePwaTipForever()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:.72rem;padding:.4rem;cursor:pointer;">Got it — don't show again</button>
       </div>
       <div class="group-hero" id="group-hero-block">
         <div class="group-hero-icon" id="gh-icon">⚽</div>
@@ -4052,6 +4053,11 @@ function startUpdateChecker(){
   checkForUpdate();
   _updateCheckTimer=setInterval(checkForUpdate,5*60*1000);
 }
+function hidePwaTipForever(){
+  localStorage.setItem('pwa_tip_hide','1');
+  const c=document.getElementById('pwa-tip-card');
+  if(c){c.style.transition='opacity .3s';c.style.opacity='0';setTimeout(()=>c.style.display='none',300);}
+}
 let _pwaSlide=0;
 function pwaGoSlide(n){
   const track=document.getElementById('pwa-carousel-track');
@@ -5268,6 +5274,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.68.6',date:'29 Jun 2026',notes:['"Got it — don\'t show again" button on PWA install tip card. Sets pwa_tip_hide in localStorage; checked synchronously at startup before any async calls so nothing can re-show it.']},
   {v:'1.68.5',date:'29 Jun 2026',notes:['"Don\'t show" button on update banner: saves the current generation to frg_suppress in localStorage so the banner stays hidden across reloads. Reappears automatically when a newer forced refresh is pushed.']},
   {v:'1.68.4',date:'29 Jun 2026',notes:['Fix: "New version available" banner reappeared after clicking Refresh because fetch() in _markRefreshSeen() was async and never completed before location.reload(). Now caches the file generation when detected and writes to localStorage synchronously before reloading.']},
   {v:'1.68.3',date:'29 Jun 2026',notes:['Simplify: PWA install tip is now a plain static card — no initPwaTip(), no show/hide JS. initPwaCarousel() called once at startup. Card sits in HOME_CARD_DEFS (flag:null) so it is ordered with other home cards but never touched by the visibility loop.']},
@@ -10066,6 +10073,8 @@ function initTheme(){
 initTheme();
 initProfileMenu();
 initPwaCarousel();
+// Hide PWA tip immediately if player previously dismissed it — synchronous so nothing can re-show it
+if(localStorage.getItem('pwa_tip_hide')){const _c=document.getElementById('pwa-tip-card');if(_c)_c.style.display='none';}
 // Restore session
 loadSession();
 if(localStorage.getItem('wc26_god_unlocked')==='1') _godUnlocked = true;
@@ -10712,7 +10721,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.6</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="suppressUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.25rem .55rem;font-size:.7rem;">Don't show</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
