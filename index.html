@@ -140,8 +140,8 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .broadcaster-badge.itv{color:#fff;background:#0047ab;}
 .pwa-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:background .2s;}
 .pwa-dot-active{background:var(--group-accent);}
-#update-banner{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--group-accent);color:#fff;display:none;align-items:center;justify-content:space-between;padding:.6rem 1rem;padding-bottom:calc(.6rem + env(safe-area-inset-bottom));font-size:.8rem;font-weight:600;gap:.75rem;box-shadow:0 -2px 12px rgba(0,0,0,.3);}
-#update-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;font-weight:700;font-size:.78rem;padding:.3rem .75rem;border-radius:6px;cursor:pointer;white-space:nowrap;}
+#update-banner{position:fixed;bottom:calc(1.2rem + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:9999;background:var(--group-accent);color:#fff;display:none;align-items:center;gap:.5rem;padding:.45rem .6rem .45rem .9rem;border-radius:99px;box-shadow:0 4px 20px rgba(0,0,0,.45);font-size:.78rem;font-weight:600;white-space:nowrap;}
+#update-banner button{background:rgba(255,255,255,.22);border:none;color:#fff;font-weight:700;font-size:.75rem;padding:.25rem .65rem;border-radius:99px;cursor:pointer;}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
 .match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
 .match-card.is-updating{border-color:color-mix(in srgb,var(--group-accent) 35%,transparent) !important;}
@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.67.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2049,6 +2049,24 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           </div>
         </div>
 
+        <div class="status-card">
+          <h3>Add to Home Screen Tip</h3>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Show Install Tip Card</div>
+              <div class="toggle-desc">Displays the "Add to Home Screen" instruction card on the home page for players who haven't installed the app yet</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="pwa-tip-toggle" onchange="savePwaTipToggle()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="status-card">
+          <h3>Push Update Notification</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">Shows the "New version available" banner to all players. Use after significant updates.</div>
+          <button class="btn-save-all" style="width:auto;padding:.6rem 1.5rem;font-size:.85rem;" onclick="triggerForceRefresh()">⚡ Push refresh banner to all players</button>
+        </div>
         </div><!-- /ctrl-section-display -->
 
         <div id="ctrl-section-data" style="display:none;">
@@ -4008,28 +4026,32 @@ function leaveGroup(){
 // ── VIEW SWITCHING ────────────────────────
 function navTo(name){ showView(name); }
 let _updateCheckTimer=null;
+function _markRefreshSeen(){
+  fetch('force-refresh.txt?_='+Date.now()).then(r=>r.text()).then(t=>{localStorage.setItem('frg',parseInt(t.trim())||0);}).catch(()=>{});
+  if(currentGroup?.force_refresh_gen) localStorage.setItem('frg_sb',String(currentGroup.force_refresh_gen));
+}
 async function checkForUpdate(){
+  let show=false;
   try{
     const r=await fetch('force-refresh.txt?_='+Date.now());
-    if(!r.ok)return;
-    const gen=parseInt((await r.text()).trim())||0;
-    if(gen===0)return;
-    const seen=parseInt(localStorage.getItem('frg')||'0');
-    if(gen>seen){const b=document.getElementById('update-banner');if(b)b.style.display='flex';}
+    if(r.ok){const gen=parseInt((await r.text()).trim())||0;if(gen>0&&gen>parseInt(localStorage.getItem('frg')||'0'))show=true;}
   }catch(e){}
+  if(!show&&currentGroup){
+    try{
+      const rows=await sb(`groups?id=eq.${currentGroup.id}&select=force_refresh_gen`);
+      const gen=rows?.[0]?.force_refresh_gen||0;
+      if(gen>0&&gen>parseInt(localStorage.getItem('frg_sb')||'0')){currentGroup={...currentGroup,force_refresh_gen:gen};show=true;}
+    }catch(e){}
+  }
+  if(show){const b=document.getElementById('update-banner');if(b)b.style.display='flex';}
 }
 function dismissUpdateBanner(){
-  // store current gen so banner doesn't reappear until next forced bump
-  fetch('force-refresh.txt?_='+Date.now()).then(r=>r.text()).then(t=>{
-    localStorage.setItem('frg',parseInt(t.trim())||0);
-  }).catch(()=>{});
+  _markRefreshSeen();
   const b=document.getElementById('update-banner');if(b)b.style.display='none';
 }
 function applyUpdateRefresh(){
-  fetch('force-refresh.txt?_='+Date.now()).then(r=>r.text()).then(t=>{
-    localStorage.setItem('frg',parseInt(t.trim())||0);
-    location.reload(true);
-  }).catch(()=>location.reload(true));
+  _markRefreshSeen();
+  location.reload(true);
 }
 function startUpdateChecker(){
   if(_updateCheckTimer)return;
@@ -4061,10 +4083,9 @@ const _PWA_TIP_KEY='pwa_tip_v2';
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
-  // Hide card if already installed as PWA or player dismissed it
   const isInstalled=!!(window.navigator.standalone||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches));
-  if(isInstalled||localStorage.getItem(_PWA_TIP_KEY)){card.style.display='none';return;}
-  // Card is visible by default — just wire up the carousel
+  const adminOff=currentGroup&&currentGroup.show_pwa_tip===false;
+  if(isInstalled||adminOff||localStorage.getItem(_PWA_TIP_KEY)){card.style.display='none';return;}
   card.style.display='';
   initPwaCarousel();
 }
@@ -5264,6 +5285,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.6',date:'29 Jun 2026',notes:['Admin → Display: toggle to show/hide PWA install tip card; "Push refresh banner to all players" button (uses Supabase force_refresh_gen). Update banner redesigned as floating pill. Requires: ALTER TABLE groups ADD COLUMN show_pwa_tip boolean DEFAULT true; ALTER TABLE groups ADD COLUMN force_refresh_gen integer DEFAULT 0;']},
   {v:'1.67.5',date:'29 Jun 2026',notes:['Fix: PWA tip card now visible by default — inverted show/hide logic so any JS glitch keeps it visible rather than hidden. initPwaTip runs before screen-app paint.']},
   {v:'1.67.4',date:'29 Jun 2026',notes:['Fix: PWA tip card now reliably shows for all players — versioned dismiss key (pwa_tip_v2) invalidates any old dismissals; card re-checked after home card order is applied.']},
   {v:'1.67.3',date:'29 Jun 2026',notes:['Unconfirmed knockout fixtures now show both potential teams stacked with "or" between them instead of "W: TeamA/TeamB".']},
@@ -7917,6 +7939,31 @@ async function saveEndBannerToggle(){
     flash('End-of-game banner '+(on?'on':'off'),'success');
   }catch(e){ flash('Save failed: '+e.message,'error'); }
 }
+function loadPwaTipToggle(){
+  const tog=document.getElementById('pwa-tip-toggle');
+  if(tog) tog.checked = currentGroup ? currentGroup.show_pwa_tip !== false : true;
+}
+async function savePwaTipToggle(){
+  if(!currentGroup) return;
+  const on=document.getElementById('pwa-tip-toggle')?.checked ?? true;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_pwa_tip:on}});
+    currentGroup={...currentGroup,show_pwa_tip:on};
+    saveSession();
+    initPwaTip();
+    flash('Install tip card '+(on?'on':'off'),'success');
+  }catch(e){ flash('Save failed: '+e.message,'error'); }
+}
+async function triggerForceRefresh(){
+  if(!currentGroup) return;
+  const gen=(currentGroup.force_refresh_gen||0)+1;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{force_refresh_gen:gen}});
+    currentGroup={...currentGroup,force_refresh_gen:gen};
+    saveSession();
+    flash('Refresh notification pushed to all players','success');
+  }catch(e){ flash('Failed: '+e.message,'error'); }
+}
 function resetEndBannerSeen(){
   let n=0;
   for(let i=localStorage.length-1; i>=0; i--){
@@ -8405,7 +8452,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();loadKnockoutsLive();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();loadPwaTipToggle();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -10689,7 +10736,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.6</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
