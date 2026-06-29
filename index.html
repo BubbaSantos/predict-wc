@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.67.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.67.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4079,7 +4079,7 @@ function initPwaCarousel(){
     e.stopPropagation();
   },{passive:true});
 }
-const _PWA_TIP_KEY='pwa_tip_v2';
+const _PWA_TIP_KEY='pwa_tip_v3';
 function initPwaTip(){
   const card=document.getElementById('pwa-tip-card');
   if(!card) return;
@@ -5285,6 +5285,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.67.7',date:'29 Jun 2026',notes:['Fix: PWA install tip card now shows again — bumped dismiss key to pwa_tip_v3 (clears all previous dismissals). Admin toggle now updates locally first so it works even before the DB column is created; enabling also clears the dismiss key on the admin\'s own device.']},
   {v:'1.67.6',date:'29 Jun 2026',notes:['Admin → Display: toggle to show/hide PWA install tip card; "Push refresh banner to all players" button (uses Supabase force_refresh_gen). Update banner redesigned as floating pill. Requires: ALTER TABLE groups ADD COLUMN show_pwa_tip boolean DEFAULT true; ALTER TABLE groups ADD COLUMN force_refresh_gen integer DEFAULT 0;']},
   {v:'1.67.5',date:'29 Jun 2026',notes:['Fix: PWA tip card now visible by default — inverted show/hide logic so any JS glitch keeps it visible rather than hidden. initPwaTip runs before screen-app paint.']},
   {v:'1.67.4',date:'29 Jun 2026',notes:['Fix: PWA tip card now reliably shows for all players — versioned dismiss key (pwa_tip_v2) invalidates any old dismissals; card re-checked after home card order is applied.']},
@@ -7946,13 +7947,15 @@ function loadPwaTipToggle(){
 async function savePwaTipToggle(){
   if(!currentGroup) return;
   const on=document.getElementById('pwa-tip-toggle')?.checked ?? true;
+  // Apply locally first so the card responds immediately regardless of DB availability
+  if(on) localStorage.removeItem(_PWA_TIP_KEY);
+  currentGroup={...currentGroup,show_pwa_tip:on};
+  saveSession();
+  initPwaTip();
   try{
     await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_pwa_tip:on}});
-    currentGroup={...currentGroup,show_pwa_tip:on};
-    saveSession();
-    initPwaTip();
     flash('Install tip card '+(on?'on':'off'),'success');
-  }catch(e){ flash('Save failed: '+e.message,'error'); }
+  }catch(e){ flash('Install tip card '+(on?'on':'off')+' (saved locally — run SQL to persist)','info'); }
 }
 async function triggerForceRefresh(){
   if(!currentGroup) return;
@@ -10736,7 +10739,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.67.7</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
