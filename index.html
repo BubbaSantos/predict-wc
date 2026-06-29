@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.68.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.68.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1373,9 +1373,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
     <!-- HOME -->
     <div id="view-home" class="view active">
-      <!-- PWA install tip — hidden once dismissed or if already installed -->
+      <!-- PWA install tip — hidden only if admin toggles off or already installed as PWA -->
       <div id="pwa-tip-card" style="background:var(--surface);border:1px solid color-mix(in srgb,var(--group-accent) 25%,transparent);border-radius:12px;padding:.85rem 1rem;margin-bottom:.75rem;position:relative;">
-        <button onclick="dismissPwaTip()" style="position:absolute;top:.6rem;right:.7rem;background:none;border:none;font-size:1rem;color:var(--text-muted);cursor:pointer;line-height:1;opacity:.6;" title="Dismiss">✕</button>
         <div style="font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--group-accent);margin-bottom:.3rem;">📲 Add to Home Screen</div>
         <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;line-height:1.4;">Works like an app — faster updates, fewer issues and easy one-tap access.</div>
         <div style="display:flex;flex-direction:column;gap:.45rem;margin-bottom:.8rem;">
@@ -1433,7 +1432,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <span class="pwa-dot" onclick="pwaGoSlide(3)"></span>
           <span class="pwa-dot" onclick="pwaGoSlide(4)"></span>
         </div>
-        <button onclick="dismissPwaTip()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:.72rem;padding:.4rem;cursor:pointer;">Got it — don't show again</button>
       </div>
       <div class="group-hero" id="group-hero-block">
         <div class="group-hero-icon" id="gh-icon">⚽</div>
@@ -2051,9 +2049,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
         <div class="status-card">
           <h3>Add to Home Screen Tip</h3>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem;">The Install Tip card toggle is in the <strong>Home Page Cards</strong> section above. Use the button below to reset dismissals so all players see it again.</div>
-          <button class="btn-save-all" style="width:auto;padding:.5rem 1.2rem;font-size:.8rem;" onclick="resetPwaTipForAll()">↺ Re-show tip for all players</button>
-          <div style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem;">Clears "Got it" dismissals so every player sees the card again</div>
+          <div style="font-size:.75rem;color:var(--text-muted);">Toggle the Install Tip card on/off in the <strong>Home Page Cards</strong> section above. The card shows to all players while enabled.</div>
         </div>
         <div class="status-card">
           <h3>Push Update Notification</h3>
@@ -2703,7 +2699,6 @@ function getFlag(n){return FLAG[norm(n)]||'🏳️';}
 let currentGroup   = null; // {id, name, tagline, key, admin_password, accent, emoji}
 let currentPlayer  = null; // {id, name, group_id}
 let isAdmin        = false;
-let _pwaTipDismissed = false; // in-session dismiss flag — resets on page reload, not stored in session
 let _godUnlocked   = false;
 let _inGodSession  = false;
 let _godcastOn     = localStorage.getItem('wc26_godcast')==='1';
@@ -2773,7 +2768,7 @@ function loadSession(){
     const p = localStorage.getItem('wc26_player');
     const a = localStorage.getItem('wc26_isAdmin');
     if(g) currentGroup  = JSON.parse(g);
-    if(p) { currentPlayer = JSON.parse(p); delete currentPlayer.pwa_tip_dismissed; }
+    if(p) currentPlayer = JSON.parse(p);
     if(a) isAdmin = a==='1';
     // Also restore from player record in case localStorage flag is missing
     if(currentPlayer?.is_admin) isAdmin = true;
@@ -3338,20 +3333,20 @@ async function loginPlayer(){
     }
 
     // Find player by login name, then nickname, then previous names
-    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,pwa_tip_dismissed`);
+    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
     if(!players||!players.length){
-      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,pwa_tip_dismissed`);
+      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
     }
     if(!players||!players.length){
       // Check previous_names array (for players whose login name was changed)
-      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,pwa_tip_dismissed,previous_names`).catch(()=>[]);
+      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,previous_names`).catch(()=>[]);
       players = (all||[]).filter(p=>(p.previous_names||[]).some(n=>n.toLowerCase()===name.toLowerCase()));
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
     const player = players[0];
     if(player.pin!==pin){showErr(errEl,'Wrong PIN. Try again.');return;}
 
-    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false,god_mode:player.god_mode||false,pwa_tip_dismissed:player.pwa_tip_dismissed||false};
+    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false,god_mode:player.god_mode||false};
 
     // Admin if they have the is_admin flag on their player record, or know the group password
     isAdmin = !!(player.is_admin) || (currentGroup.admin_password === pin);
@@ -4077,19 +4072,9 @@ function initPwaTip(){
   if(!card) return;
   const isInstalled=!!(window.navigator.standalone||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches));
   const adminHidden=currentGroup?.show_pwa_tip===false;
-  const dismissed=_pwaTipDismissed||currentPlayer?.pwa_tip_dismissed===true;
-  if(isInstalled||adminHidden||dismissed){card.style.display='none';return;}
+  if(isInstalled||adminHidden){card.style.display='none';return;}
   card.style.display='';
   initPwaCarousel();
-}
-function dismissPwaTip(){
-  _pwaTipDismissed=true;
-  if(currentPlayer){
-    currentPlayer={...currentPlayer,pwa_tip_dismissed:true};
-    sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:{pwa_tip_dismissed:true}}).catch(()=>{});
-  }
-  const card=document.getElementById('pwa-tip-card');
-  if(card){card.style.transition='opacity .3s';card.style.opacity='0';setTimeout(()=>card.style.display='none',300);}
 }
 function showView(name){ closeMenu();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -4500,7 +4485,7 @@ async function loadPredictions(){
   list.innerHTML='<div class="loading">Loading…</div>';
   try{
     // Refresh player data to get latest pay_choice and nickname
-    const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice,god_mode,is_admin,pwa_tip_dismissed').catch(()=>null);
+    const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice,god_mode,is_admin').catch(()=>null);
     if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem(); saveSession(); }
 
     const [res,preds,tb,allGroupPreds,allPlayers]=await Promise.all([
@@ -5286,6 +5271,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.68.1',date:'29 Jun 2026',notes:['Simplify: removed dismiss feature from PWA install tip card entirely — no more "Got it" button, no localStorage/DB tracking. Card shows to all players while admin toggle is on; hides automatically once installed as PWA.']},
   {v:'1.68.0',date:'29 Jun 2026',notes:['Fix: PWA tip card was being hidden by stale pwa_tip_dismissed=true baked into localStorage session from earlier testing. Now stripped from session on load — DB is the only persistent source, in-session dismiss uses a module variable (_pwaTipDismissed) that resets on page reload.']},
   {v:'1.67.9',date:'29 Jun 2026',notes:['Fix: PWA install tip card now properly managed by the Home Page Cards system — always pinned first, ordered with other cards via applyHomeCardOrder(), toggle visible in Admin → Display → Home Page Cards. initPwaTip() runs last so per-player dismissed state wins.']},
   {v:'1.67.8',date:'29 Jun 2026',notes:['Rework: PWA tip dismiss state moved from localStorage to player DB record (pwa_tip_dismissed) — no more version-key issues. Card shows to any player who hasn\'t dismissed it in DB. Admin: "Re-show tip for all players" button resets dismissals. Requires: ALTER TABLE players ADD COLUMN IF NOT EXISTS pwa_tip_dismissed boolean DEFAULT false;']},
@@ -7945,16 +7931,6 @@ async function saveEndBannerToggle(){
     flash('End-of-game banner '+(on?'on':'off'),'success');
   }catch(e){ flash('Save failed: '+e.message,'error'); }
 }
-async function resetPwaTipForAll(){
-  if(!currentGroup) return;
-  _pwaTipDismissed=false;
-  if(currentPlayer) currentPlayer={...currentPlayer,pwa_tip_dismissed:false};
-  initPwaTip();
-  try{
-    await sb(`players?group_id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{pwa_tip_dismissed:false}});
-    flash('Install tip reset — all players will see the card again','success');
-  }catch(e){ flash('Reset locally — run SQL to persist: ALTER TABLE players ADD COLUMN IF NOT EXISTS pwa_tip_dismissed boolean DEFAULT false','info'); }
-}
 async function triggerForceRefresh(){
   if(!currentGroup) return;
   const gen=(currentGroup.force_refresh_gen||0)+1;
@@ -8692,7 +8668,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,theme,light_mode,pwa_tip_dismissed`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,theme,light_mode`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -8701,7 +8677,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,theme:p.theme||null,light_mode:p.light_mode,pwa_dismissed:p.pwa_tip_dismissed||false};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,theme:p.theme||null,light_mode:p.light_mode};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -8716,7 +8692,6 @@ async function loadPlayersPanel(){
           <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode)}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
-          <div style="font-size:.7rem;margin-top:.2rem;color:${p.pwa_dismissed?'#10b981':'var(--text-muted)'};">📲 App installed: ${p.pwa_dismissed?'✓ dismissed install tip':'not yet'}</div>
         </div>
         <div style="flex-shrink:0;position:relative;">
           <button class="player-options-btn" onclick="togglePlayerMenu(this)" data-id="${id}">⋮ Options</button>
@@ -10737,7 +10712,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
