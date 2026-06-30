@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.69.8</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.69.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1541,7 +1541,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <div class="lb-view-toggle">
               <button id="lb-tab-overall" class="lb-view-tab active" onclick="setLbFormView(false)">Overall</button>
               <button id="lb-tab-form" class="lb-view-tab" onclick="setLbFormView(true)">Form</button>
-              <button id="lb-timeline-btn" class="lb-view-tab" onclick="toggleLbTimeline()" title="Replay the leaderboard match-by-match">⏱ Timeline</button>
+              <button id="lb-timeline-btn" class="lb-view-tab" onclick="toggleLbTimeline()" title="Replay the leaderboard match-by-match">Timeline</button>
             </div>
             <div id="lb-filter-btns" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:7px;display:flex;overflow:hidden;">
               <button id="lb-filter-all" class="lb-filter-btn active" onclick="setLbFilter('all')">All</button>
@@ -1597,7 +1597,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
       <div id="lb-timeline-wrap" style="display:none;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-          <span style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);">⏱ Timeline</span>
+          <span style="font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);">Timeline</span>
           <span id="lb-timeline-label" style="font-size:.75rem;color:var(--group-accent);font-weight:600;flex:1;text-align:center;"></span>
           <button id="lb-timeline-play" onclick="lbTimelineTogglePlay()" style="background:var(--group-accent);color:#fff;border:none;border-radius:6px;width:2rem;height:1.6rem;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
         </div>
@@ -5271,6 +5271,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.69.9',date:'1 Jul 2026',notes:['Leaderboard: removed the ⏱ emoji from the Timeline button/header — plain text label now.']},
   {v:'1.69.8',date:'1 Jul 2026',notes:['Fixed: "Live Now" on the home card stayed live for the full 130-minute window even after admin marked a match Full Time — the home/predict refresh was reloading results without the full_time flag, wiping it out. Leaderboard: ⏱ Timeline button restored as a tab next to Overall/Form (was buried in a collapsible panel with no way to open it) — removed the 📈 emoji from Form to make room. New Admin → Display → Leaderboard Views toggle to hide the Timeline button group-wide. Requires: ALTER TABLE groups ADD COLUMN show_lb_timeline boolean DEFAULT true;']},
   {v:'1.69.7',date:'30 Jun 2026',notes:['Group/named picks order: away-win scores now sort smallest-margin first, biggest blowout last (mirrors home-win ordering, which already goes biggest first).']},
   {v:'1.69.6',date:'30 Jun 2026',notes:['Named picks view: wraps to a new line every 5 entries instead of one long flowing line; same home/away-goals ordering fix applied here too.']},
@@ -10756,7 +10757,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.8</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.9</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
