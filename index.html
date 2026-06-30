@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.69.9</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.70.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1603,7 +1603,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         </div>
         <input id="lb-timeline-slider" type="range" min="0" max="0" value="0"
           style="width:100%;accent-color:var(--group-accent);cursor:pointer;"
-          oninput="onLbTimelineSlide(this.value)">
+          oninput="onLbTimelineSlide(this.value)"
+          onpointerdown="_lbScrubbing=true" onpointerup="_lbScrubbing=false" onpointercancel="_lbScrubbing=false" onchange="_lbScrubbing=false">
         <div style="display:flex;justify-content:space-between;margin-top:.3rem;">
           <span style="font-size:.65rem;color:var(--text-muted);">Match 1</span>
           <span id="lb-timeline-end-label" style="font-size:.65rem;color:var(--text-muted);"></span>
@@ -4310,6 +4311,9 @@ let _lbRawResults = [];
 let _lbRawPlayers = [];
 let _lbTimelineActive = false;
 let _lbTimelineOpen = false;
+let _lbScrubbing = false;
+let _lbSlideRAF = null;
+let _lbSlidePendingVal = null;
 let _lbCompactView = localStorage.getItem('wc26_lb_compact')==='1';
 let _lbPlayInterval = null;
 let _lbPlayStepping = false;
@@ -5271,6 +5275,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.70.0',date:'1 Jul 2026',notes:['Fixed: dragging the leaderboard Timeline slider on mobile could also trigger the page-swipe navigation underneath it, fighting with the drag. Timeline scrubbing is now throttled to one render per frame and uses a quicker, non-bouncy transition while actively dragging so player cards reorder more fluidly instead of jump-cutting between matches. Player prediction modal: each match row now shows the league position they were in right after that match.']},
   {v:'1.69.9',date:'1 Jul 2026',notes:['Leaderboard: removed the ⏱ emoji from the Timeline button/header — plain text label now.']},
   {v:'1.69.8',date:'1 Jul 2026',notes:['Fixed: "Live Now" on the home card stayed live for the full 130-minute window even after admin marked a match Full Time — the home/predict refresh was reloading results without the full_time flag, wiping it out. Leaderboard: ⏱ Timeline button restored as a tab next to Overall/Form (was buried in a collapsible panel with no way to open it) — removed the 📈 emoji from Form to make room. New Admin → Display → Leaderboard Views toggle to hide the Timeline button group-wide. Requires: ALTER TABLE groups ADD COLUMN show_lb_timeline boolean DEFAULT true;']},
   {v:'1.69.7',date:'30 Jun 2026',notes:['Group/named picks order: away-win scores now sort smallest-margin first, biggest blowout last (mirrors home-win ordering, which already goes biggest first).']},
@@ -9252,9 +9257,15 @@ function _updateLbTimelineLabel(val, completed){
 
 function onLbTimelineSlide(val){
   if(!_lbPlayStepping) lbTimelinePause();
-  _lbTimelineActive = parseInt(val) < parseInt(document.getElementById('lb-timeline-slider').max);
-  _updateLbTimelineLabel(parseInt(val));
-  _renderLeaderboardAtMatchIdx(parseInt(val));
+  const v = parseInt(val);
+  _lbTimelineActive = v < parseInt(document.getElementById('lb-timeline-slider').max);
+  _updateLbTimelineLabel(v);
+  _lbSlidePendingVal = v;
+  if(_lbSlideRAF) return;
+  _lbSlideRAF = requestAnimationFrame(()=>{
+    _lbSlideRAF = null;
+    _renderLeaderboardAtMatchIdx(_lbSlidePendingVal);
+  });
 }
 
 function lbTimelineTogglePlay(){
@@ -9638,10 +9649,13 @@ function renderLeaderboard(){
       toAnimate.push({el, rise: el.hasAttribute('data-rise'), fall: el.hasAttribute('data-fall')});
     });
     if(toAnimate.length){
+      const moveTransition = _lbScrubbing
+        ? 'transform 0.16s ease-out, background-color 0.2s'
+        : 'transform 0.55s cubic-bezier(0.34,1.06,0.64,1), background-color 0.2s';
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
           toAnimate.forEach(({el, rise, fall})=>{
-            el.style.transition = 'transform 0.55s cubic-bezier(0.34,1.06,0.64,1), background-color 0.2s';
+            el.style.transition = moveTransition;
             el.style.transform = 'translateY(0)';
             if(rise){
               el.style.backgroundColor = 'rgba(34,197,94,0.18)';
@@ -9693,13 +9707,52 @@ function calcSinglePlayerStreakHistory(predMap, rm){
   return{perfect:pc,hot:hc,cold:cc};
 }
 
+// Joint-rank standings after each completed match, for every player who has predicted so far.
+// Mirrors lbCompare's tie-break (total points, then correct-result count).
+function calcLbRankHistory(allPreds, allResults){
+  const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
+  const byMatch={};
+  (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id)).forEach(p=>{ (byMatch[p.match_id]=byMatch[p.match_id]||[]).push(p); });
+  const completed = allFixtures()
+    .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
+    .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  const totals={};
+  const history={};
+  completed.forEach(f=>{
+    const res=rm[f.id];
+    (byMatch[f.id]||[]).forEach(p=>{
+      if(!totals[p.player_id]) totals[p.player_id]={total:0,result:0};
+      const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+      const t=totals[p.player_id];
+      if(pts===8){t.result++;t.total+=8;}
+      else if(pts===5){t.total+=5;}
+      else if(pts===3){t.result++;t.total+=3;}
+    });
+    const arr=Object.entries(totals).sort((a,b)=>b[1].total-a[1].total||b[1].result-a[1].result);
+    const ranks={}, counts={};
+    let rank=1;
+    arr.forEach(([pid,s],i)=>{
+      if(i>0){
+        const prev=arr[i-1][1];
+        if(!(s.total===prev.total&&s.result===prev.result)) rank=i+1;
+      }
+      ranks[pid]=rank;
+      counts[rank]=(counts[rank]||0)+1;
+    });
+    history[f.id]={ranks,counts,total:arr.length};
+  });
+  return history;
+}
+
 async function viewPlayerPredictions(playerId,name){
   try{
-    const [preds,res,tbs]=await Promise.all([
+    const [preds,res,tbs,allPreds]=await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}&select=match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}&select=top_scorer,goals`),
+      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
     ]);
+    const rankHistory = calcLbRankHistory(allPreds, res);
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const predMap={}; (preds||[]).forEach(p=>predMap[p.match_id]={h:p.home_score,a:p.away_score});
     let totalPts=0,statExact=0,statResult=0,statWrong=0;
@@ -9720,7 +9773,11 @@ async function viewPlayerPredictions(playerId,name){
       }
       const ptsTxt=pts===null?'<span style="color:var(--text-muted)">—</span>':pts===8?'<span style="color:var(--green)">+8⭐</span>':pts===5?'<span style="color:var(--green)">+5</span>':pts===3?'<span style="color:#f59e0b">+3 ✅</span>':'<span style="color:var(--text-muted)">0 ❌</span>';
       const resTxt=r?` <span style="color:var(--text-muted);font-size:.7rem;">(${r.home_score}–${r.away_score})</span>`:'';
-      const html=`<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span></div>`;
+      const rh=rankHistory[f.id];
+      const rankNum=rh?rh.ranks[playerId]:null;
+      const rankTxt=rankNum!=null?(rh.counts[rankNum]>1?'=':'#')+rankNum+'/'+rh.total:'';
+      const rankBadge=`<span style="font-size:.68rem;color:var(--text-muted);min-width:2.6rem;text-align:right;" title="League position after this match">${rankTxt}</span>`;
+      const html=`<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span>${rankBadge}</div>`;
       const isOldPast = r && f.date && f.date < yesterdayKey;
       if(isOldPast) oldRows.push(html); else recentRows.push(html);
     });
@@ -10733,6 +10790,7 @@ async function godCreateGroup(){
   }
   document.addEventListener('touchstart', e=>{
     if(window.innerWidth > 768) return;
+    if(e.target.closest('input[type="range"], #lb-timeline-wrap')){ _swX = null; _swY = null; return; }
     const t = e.touches[0];
     _swX = t.clientX; _swY = t.clientY;
   },{passive:true});
@@ -10757,7 +10815,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.9</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
