@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.68.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.68.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5265,6 +5265,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.68.8',date:'30 Jun 2026',notes:['Next Up card: shows which players haven\'t predicted yet — names listed below your prediction. If you\'re one of the missing names, a "predict now" link appears. Shows for all upcoming (not finished) games.']},
   {v:'1.68.7',date:'29 Jun 2026',notes:['Remove "Don\'t show" button from update banner — just Refresh now and ✕.']},
   {v:'1.68.6',date:'29 Jun 2026',notes:['"Got it — don\'t show again" button on PWA install tip card. Sets pwa_tip_hide in localStorage; checked synchronously at startup before any async calls so nothing can re-show it.']},
   {v:'1.68.5',date:'29 Jun 2026',notes:['"Don\'t show" button on update banner: saves the current generation to frg_suppress in localStorage so the banner stays hidden across reloads. Reappears automatically when a newer forced refresh is pushed.']},
@@ -6859,8 +6860,16 @@ async function loadHome(){
       if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
       _nextGamePredHtmlAll = _nextUpcomingAll.map(({f,finished})=>{
         const pred=myPredMap[f.id];
+        // Who hasn't predicted for this match
+        const predictedIds=new Set((gamePreds||[]).filter(p=>p.match_id===f.id&&p.home_score!=null).map(p=>p.player_id));
+        const allPlayerIds=Object.keys(pm);
+        const missingNames=allPlayerIds.filter(pid=>!predictedIds.has(pid)).map(pid=>pm[pid]?.display||pm[pid]?.name).filter(Boolean);
+        const iAmMissing=currentPlayer&&missingNames.length&&!predictedIds.has(currentPlayer.id);
+        const missingHtml=missingNames.length
+          ?`<div style="font-size:.67rem;color:var(--text-muted);margin-top:.45rem;line-height:1.5;">Not predicted yet: <span style="color:var(--text);">${missingNames.join(', ')}</span>${iAmMissing?` — <span style="cursor:pointer;color:var(--group-accent);text-decoration:underline;font-weight:600;" onclick="event.stopPropagation();showView('predict')">predict now</span>`:''}</div>`
+          :'';
         if(finished){
-          if(!pred) return '';
+          if(!pred) return missingHtml;
           const r=rm[f.id];
           const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
           const ptsNum=pts===8?8:pts===5?5:pts===3?3:0;
@@ -6868,9 +6877,10 @@ async function loadHome(){
           const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'#f59e0b':'#22c55e';
           return `<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received <span style="color:${ptsColor};font-weight:700;">${ptsDisplay}</span></div>`;
         }
-        return pred
+        return (pred
           ?`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div>`
-          :`<div class="hmc-meta" style="font-style:italic;">Not predicted yet — <span style="cursor:pointer;text-decoration:underline;color:var(--group-accent);" onclick="showView('predict')">predict now</span></div>`;
+          :`<div class="hmc-meta" style="font-style:italic;">Not predicted yet — <span style="cursor:pointer;text-decoration:underline;color:var(--group-accent);" onclick="event.stopPropagation();showView('predict')">predict now</span></div>`)
+          +missingHtml;
       });
       _nextGameStaticHtml='';
       _nextGamePredHtml = _nextGamePredHtmlAll[0]||'';
@@ -10713,7 +10723,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.68.8</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
