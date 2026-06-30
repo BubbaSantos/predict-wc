@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.69.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.69.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3625,7 +3625,7 @@ function namedPicksHtml(mid, mode){
     const nameHtml = color ? `<span style="color:${color}">${p.display}</span>` : p.display;
     const pType = p.predHome>p.predAway?0:p.predHome===p.predAway?1:2;
     const entry = `${nameHtml}: ${p.predHome}–${p.predAway}`;
-    return { html: isMe ? `<strong>${entry}</strong>` : entry, pType, predHome:p.predHome, predAway:p.predAway };
+    return { html: isMe ? `<strong style="text-decoration:underline;">${entry}</strong>` : entry, pType, predHome:p.predHome, predAway:p.predAway };
   });
   scored.sort((a,b)=>{
     if(a.pType!==b.pType) return a.pType-b.pType;
@@ -5267,6 +5267,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.69.3',date:'30 Jun 2026',notes:['Group picks: own entry now bold and underlined.']},
   {v:'1.69.2',date:'30 Jun 2026',notes:['Group picks list: your own name and score shown in bold so it stands out from other players.']},
   {v:'1.69.1',date:'30 Jun 2026',notes:['"You predicted X–Y" on home cards bumped to font-weight:800.']},
   {v:'1.69.0',date:'30 Jun 2026',notes:['Fix: duplicate "not predicted yet / predict now" on Next Up card — removed the old standalone line, missingHtml now handles both cases.']},
@@ -10726,7 +10727,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.3</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
