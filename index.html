@@ -214,7 +214,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .hmc-score.live{color:#ef4444;}
 .hmc-score.vs{font-size:1rem;font-weight:700;color:var(--text-muted);}
 .hmc-meta{font-size:.68rem;color:var(--text-muted);text-align:center;margin-top:.35rem;}
-.hmc-pred{font-size:.7rem;font-weight:600;color:var(--group-accent);text-align:center;margin-top:.3rem;}
+.hmc-pred{font-size:.7rem;font-weight:800;color:var(--group-accent);text-align:center;margin-top:.3rem;}
 .hmc-others{font-size:.63rem;color:var(--text-muted);text-align:center;margin-top:.28rem;line-height:1.6;}
 .hmc-pred-pct{display:flex;align-items:center;gap:.5rem;font-size:.6rem;color:var(--text-muted);opacity:.7;margin-top:.1rem;}
 .hmc-pct{flex:1;min-width:0;text-align:center;}
@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.69.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.69.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5265,6 +5265,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.69.1',date:'30 Jun 2026',notes:['"You predicted X–Y" on home cards bumped to font-weight:800.']},
   {v:'1.69.0',date:'30 Jun 2026',notes:['Fix: duplicate "not predicted yet / predict now" on Next Up card — removed the old standalone line, missingHtml now handles both cases.']},
   {v:'1.68.9',date:'30 Jun 2026',notes:['"Not predicted yet" line on Next Up card: centred, "predict now" on its own line below the names.']},
   {v:'1.68.8',date:'30 Jun 2026',notes:['Next Up card: shows which players haven\'t predicted yet — names listed below your prediction. If you\'re one of the missing names, a "predict now" link appears. Shows for all upcoming (not finished) games.']},
@@ -10722,7 +10723,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
