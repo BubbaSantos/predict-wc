@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.69.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.69.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3650,9 +3650,9 @@ function coloredGroupedPicksHtml(mid, resHome, resAway){
   const parts = Object.values(ct).sort((a,b)=>{
     const aType=a.ph>a.pa?0:a.ph===a.pa?1:2, bType=b.ph>b.pa?0:b.ph===b.pa?1:2;
     if(aType!==bType) return aType-bType;
-    if(aType===0) return b.ph-a.ph;
+    if(aType===0) return b.ph-a.ph || b.pa-a.pa;
     if(aType===1) return b.ph-a.ph;
-    return b.pa-a.pa;
+    return b.pa-a.pa || b.ph-a.ph;
   }).map(({ph,pa,n})=>{
     const sc=`${ph}–${pa}`;
     let color=null;
@@ -5267,6 +5267,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.69.5',date:'30 Jun 2026',notes:['Group picks ordering fix: home-win scores tied on home goals (e.g. 3–0 vs 3–1) now sort by away goals too, so 3–1 comes before 3–0.']},
   {v:'1.69.4',date:'30 Jun 2026',notes:['Group picks: own entry font-weight:900, no underline.']},
   {v:'1.69.3',date:'30 Jun 2026',notes:['Group picks: own entry now bold and underlined.']},
   {v:'1.69.2',date:'30 Jun 2026',notes:['Group picks list: your own name and score shown in bold so it stands out from other players.']},
@@ -6784,9 +6785,9 @@ async function loadHome(){
         const [ah,aa]=a[0].split('–').map(Number), [bh,ba]=b[0].split('–').map(Number);
         const aType=ah>aa?0:ah===aa?1:2, bType=bh>ba?0:bh===ba?1:2;
         if(aType!==bType) return aType-bType;
-        if(aType===0) return bh-ah;
+        if(aType===0) return (bh-ah) || (ba-aa);
         if(aType===1) return bh-ah;
-        return ba-aa;
+        return (ba-aa) || (bh-ah);
       }).map(([sc,n])=>`${sc}<span style="opacity:.55"> ×${n}</span>`).join(' &nbsp;·&nbsp; ');
       return `<div class="hmc-others">Group picks: ${parts}</div>`;
     };
@@ -10728,7 +10729,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.5</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
