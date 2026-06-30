@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.69.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.69.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1540,7 +1540,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;">
             <div class="lb-view-toggle">
               <button id="lb-tab-overall" class="lb-view-tab active" onclick="setLbFormView(false)">Overall</button>
-              <button id="lb-tab-form" class="lb-view-tab" onclick="setLbFormView(true)">📈 Form</button>
+              <button id="lb-tab-form" class="lb-view-tab" onclick="setLbFormView(true)">Form</button>
+              <button id="lb-timeline-btn" class="lb-view-tab" onclick="toggleLbTimeline()" title="Replay the leaderboard match-by-match">⏱ Timeline</button>
             </div>
             <div id="lb-filter-btns" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:7px;display:flex;overflow:hidden;">
               <button id="lb-filter-all" class="lb-filter-btn active" onclick="setLbFilter('all')">All</button>
@@ -1592,12 +1593,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;"><strong>1.</strong> Most correct results — whoever predicted the correct outcome (win/draw/loss) in the most matches wins</div>
             <div style="font-size:.78rem;color:var(--text-dim);line-height:1.7;margin-top:.35rem;"><strong>2.</strong> Top scorer prediction — whoever predicted the tournament's top scorer wins. If neither did, whoever's chosen player scored the most goals overall wins</div>
           </div>
-        </div>
-        <div id="lb-action-btns">
-          <button id="lb-timeline-btn" onclick="toggleLbTimeline()" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem 1rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-size:.82rem;font-weight:600;transition:border-color .15s,color .15s;overflow:hidden;-webkit-appearance:none;appearance:none;">
-            <span id="lb-timeline-btn-inner">⏱ Timeline</span>
-            <span id="lb-timeline-btn-chevron" style="font-size:.7rem;color:var(--text-muted);transition:transform .2s;">▼</span>
-          </button>
         </div>
       </div>
       <div id="lb-timeline-wrap" style="display:none;margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;">
@@ -1931,6 +1926,16 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="lb-show-rank-change-toggle" onchange="saveLbShowRankChange()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row" style="margin-top:.75rem;">
+            <div>
+              <div class="toggle-label">Timeline Button</div>
+              <div class="toggle-desc">Show the ⏱ Timeline button next to Overall/Form — lets players replay the leaderboard match-by-match</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="lb-show-timeline-toggle" onchange="saveLbShowTimeline()">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -3445,12 +3450,8 @@ function renderMatchCardBody(){
   const el = document.getElementById('hmc-body');
   if(!el) return;
   const now = Date.now();
-  const LIVE_WIN = 130*60*1000;
   const fixtures = allFixtures();
-  const liveGames = fixtures.filter(f=>{
-    const ko = getMatchKickoff(f);
-    return ko && now >= ko.getTime() && now < ko.getTime()+LIVE_WIN;
-  });
+  const liveGames = fixtures.filter(isLiveGame);
   let html = '';
   const picksHint = `<div style="font-size:.55rem;color:var(--text-muted);opacity:.4;text-align:center;margin-top:.3rem;letter-spacing:.04em;">tap to ${_picksViewMode==='grouped'?'view by name':'view grouped'}</div>`;
   if(liveGames.length){
@@ -3560,8 +3561,7 @@ function hmcLastGoToSlide(idx){
 }
 function hmcLiveGoToSlide(idx){
   const fixtures = allFixtures();
-  const now = Date.now(), LIVE_WIN = 130*60*1000;
-  const liveGames = fixtures.filter(f=>{ const ko=getMatchKickoff(f); return ko&&now>=ko.getTime()&&now<ko.getTime()+LIVE_WIN; });
+  const liveGames = fixtures.filter(isLiveGame);
   if(idx<0||idx>=liveGames.length) return;
   _liveGamesIdx = idx;
   const track = document.getElementById('hmc-live-track');
@@ -4264,6 +4264,14 @@ function getMatchKickoff(f){
   return null;
 }
 
+function isLiveGame(f){
+  const ko = getMatchKickoff(f);
+  if(!ko) return false;
+  const now = Date.now();
+  if(!(now >= ko.getTime() && now < ko.getTime()+130*60*1000)) return false;
+  return !(results[f.id] && results[f.id].fullTime);
+}
+
 function isMatchLocked(f){
   if(results[f.id]) return true;
   const ko = getMatchKickoff(f);
@@ -4488,13 +4496,13 @@ async function loadPredictions(){
     if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem(); saveSession(); }
 
     const [res,preds,tb,allGroupPreds,allPlayers]=await Promise.all([
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,ko_winner,ko_method`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
       sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=top_scorer,goals`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
     ]);
-    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
+    results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,fullTime:!!r.full_time,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
     predictions={}; (preds||[]).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score});
     const _pm={}; (allPlayers||[]).forEach(p=>_pm[p.id]={name:p.name,display:p.nickname||p.name});
     _matchPredsMap={};
@@ -5157,14 +5165,7 @@ async function loadLeaderboard(){
     _lbTimelineActive = false;
     _lbTimelineOpen = false;
     _lbPrevRanks = {};
-    const timelineBtn = document.getElementById('lb-timeline-btn');
-    if(timelineBtn){
-      timelineBtn.style.background = 'var(--surface)';
-      timelineBtn.style.borderColor = 'var(--border)';
-      timelineBtn.style.color = 'var(--text)';
-    }
-    const timelineChev = document.getElementById('lb-timeline-btn-chevron');
-    if(timelineChev){ timelineChev.style.transform = ''; timelineChev.style.color = 'var(--text-muted)'; }
+    document.getElementById('lb-timeline-btn')?.classList.remove('active');
     applyLbInfoVisibility();
     document.getElementById('lb-tab-overall')?.classList.toggle('active',!_lbFormView);
     document.getElementById('lb-tab-form')?.classList.toggle('active',_lbFormView);
@@ -5270,6 +5271,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.69.8',date:'1 Jul 2026',notes:['Fixed: "Live Now" on the home card stayed live for the full 130-minute window even after admin marked a match Full Time — the home/predict refresh was reloading results without the full_time flag, wiping it out. Leaderboard: ⏱ Timeline button restored as a tab next to Overall/Form (was buried in a collapsible panel with no way to open it) — removed the 📈 emoji from Form to make room. New Admin → Display → Leaderboard Views toggle to hide the Timeline button group-wide.']},
   {v:'1.69.7',date:'30 Jun 2026',notes:['Group/named picks order: away-win scores now sort smallest-margin first, biggest blowout last (mirrors home-win ordering, which already goes biggest first).']},
   {v:'1.69.6',date:'30 Jun 2026',notes:['Named picks view: wraps to a new line every 5 entries instead of one long flowing line; same home/away-goals ordering fix applied here too.']},
   {v:'1.69.5',date:'30 Jun 2026',notes:['Group picks ordering fix: home-win scores tied on home goals (e.g. 3–0 vs 3–1) now sort by away goals too, so 3–1 comes before 3–0.']},
@@ -5959,6 +5961,22 @@ async function saveLbShowRankChange(){
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
+function loadLbShowTimeline(){
+  const tog=document.getElementById('lb-show-timeline-toggle');
+  if(tog) tog.checked = currentGroup ? currentGroup.show_lb_timeline !== false : true;
+}
+async function saveLbShowTimeline(){
+  if(!currentGroup) return;
+  const show = document.getElementById('lb-show-timeline-toggle')?.checked ?? true;
+  try{
+    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{show_lb_timeline:show}});
+    currentGroup={...currentGroup,show_lb_timeline:show};
+    saveSession();
+    _initLbTimeline();
+    flash('Timeline button '+(show?'on':'off'),'success');
+  }catch(e){flash('Save failed: '+e.message,'error');}
+}
+
 function loadKnockoutsLive(){
   const tog=document.getElementById('knockouts-live-toggle');
   if(tog) tog.checked = currentGroup?.knockouts_live === true;
@@ -6612,7 +6630,7 @@ async function loadHome(){
   try{
     const [allPreds, allResults, allPlayers, homeTiebreaks] = await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,ko_winner,ko_method`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
@@ -6633,7 +6651,7 @@ async function loadHome(){
 
     const rm = {}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     // Keep global results/predictions fresh for the countdown card
-    (allResults||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
+    (allResults||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,fullTime:!!r.full_time,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
     if(currentPlayer){ (gamePreds||[]).filter(p=>p.player_id===currentPlayer.id).forEach(p=>predictions[p.match_id]={home:p.home_score,away:p.away_score}); }
     const pm = {}; (allPlayers||[]).forEach(p=>pm[p.id]={name:p.name,display:p.nickname||p.name});
 
@@ -6856,14 +6874,14 @@ async function loadHome(){
       .filter(({ko})=>ko&&ko>now)
       .sort((a,b)=>a.ko-b.ko);
     // Today's already-finished games — stay in Next Up until ET midnight, showing "Finished"
-    // Exclude games still within the live window so they don't appear in both Live Now and Next Up.
-    const LIVE_WIN_NU = 130*60*1000;
+    // Exclude games still within the live window (and not yet marked Full Time) so they
+    // don't appear in both Live Now and Next Up.
     const _etNowKey = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     const _todayDone = allFixtures()
       .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
       .map(f=>({f,ko:getMatchKickoff(f),finished:true}))
       .filter(({ko})=>ko&&ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'})===_etNowKey)
-      .filter(({ko})=>!(ko.getTime()<=now&&now<ko.getTime()+LIVE_WIN_NU))
+      .filter(({f})=>!isLiveGame(f))
       .sort((a,b)=>a.ko-b.ko);
     _nextUpcoming = _nextSorted[0]||_todayDone[0]||null;
     if(_nextUpcoming){
@@ -8448,7 +8466,7 @@ function switchControlsSubTab(name){
     b.classList.toggle('active', sections[i]===name);
   });
   if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();loadKnockoutsLive();}
-  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
+  if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadLbShowTimeline();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
   if(name==='data'){loadTiebreakerSettings();}
 }
 
@@ -9164,14 +9182,20 @@ function toggleLbRules(){
 function _initLbTimeline(){
   const wrap = document.getElementById('lb-timeline-wrap');
   const slider = document.getElementById('lb-timeline-slider');
-  const btn = document.getElementById('lb-timeline-btn');
+  const timelineBtn = document.getElementById('lb-timeline-btn');
   if(!wrap || !slider) return;
+  const timelineEnabled = currentGroup?.show_lb_timeline !== false;
+  if(!timelineEnabled){
+    wrap.style.display='none';
+    if(timelineBtn) timelineBtn.style.display='none';
+    _lbTimelineOpen = false;
+    return;
+  }
   const rm = {};
   (_lbRawResults||[]).forEach(r=>rm[r.match_id]=r);
   const completed = allFixtures()
     .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
     .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
-  const timelineBtn = document.getElementById('lb-timeline-btn');
   if(completed.length === 0){ wrap.style.display='none'; if(timelineBtn) timelineBtn.style.display='none'; return; }
   if(timelineBtn) timelineBtn.style.display='';
   slider.max = completed.length;
@@ -9186,10 +9210,8 @@ function toggleLbTimeline(){
   _lbTimelineOpen = !_lbTimelineOpen;
   const wrap = document.getElementById('lb-timeline-wrap');
   const btn = document.getElementById('lb-timeline-btn');
-  const chevron = document.getElementById('lb-timeline-btn-chevron');
   if(wrap) wrap.style.display = _lbTimelineOpen ? '' : 'none';
-  if(btn){ btn.style.borderColor = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--border)'; btn.style.color = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--text)'; }
-  if(chevron){ chevron.style.transform = _lbTimelineOpen ? 'rotate(180deg)' : ''; chevron.style.color = _lbTimelineOpen ? 'var(--group-accent)' : 'var(--text-muted)'; }
+  if(btn) btn.classList.toggle('active', _lbTimelineOpen);
   if(!_lbTimelineOpen){
     lbTimelinePause();
     _lbTimelineActive = false;
@@ -10734,7 +10756,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.69.8</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
