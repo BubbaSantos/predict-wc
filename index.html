@@ -5271,7 +5271,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
-  {v:'1.69.8',date:'1 Jul 2026',notes:['Fixed: "Live Now" on the home card stayed live for the full 130-minute window even after admin marked a match Full Time — the home/predict refresh was reloading results without the full_time flag, wiping it out. Leaderboard: ⏱ Timeline button restored as a tab next to Overall/Form (was buried in a collapsible panel with no way to open it) — removed the 📈 emoji from Form to make room. New Admin → Display → Leaderboard Views toggle to hide the Timeline button group-wide.']},
+  {v:'1.69.8',date:'1 Jul 2026',notes:['Fixed: "Live Now" on the home card stayed live for the full 130-minute window even after admin marked a match Full Time — the home/predict refresh was reloading results without the full_time flag, wiping it out. Leaderboard: ⏱ Timeline button restored as a tab next to Overall/Form (was buried in a collapsible panel with no way to open it) — removed the 📈 emoji from Form to make room. New Admin → Display → Leaderboard Views toggle to hide the Timeline button group-wide. Requires: ALTER TABLE groups ADD COLUMN show_lb_timeline boolean DEFAULT true;']},
   {v:'1.69.7',date:'30 Jun 2026',notes:['Group/named picks order: away-win scores now sort smallest-margin first, biggest blowout last (mirrors home-win ordering, which already goes biggest first).']},
   {v:'1.69.6',date:'30 Jun 2026',notes:['Named picks view: wraps to a new line every 5 entries instead of one long flowing line; same home/away-goals ordering fix applied here too.']},
   {v:'1.69.5',date:'30 Jun 2026',notes:['Group picks ordering fix: home-win scores tied on home goals (e.g. 3–0 vs 3–1) now sort by away goals too, so 3–1 comes before 3–0.']},
