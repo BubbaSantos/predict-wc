@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.71.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.71.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4080,6 +4080,7 @@ function initPwaCarousel(){
   },{passive:true});
 }
 function showView(name){ closeMenu();
+  window.scrollTo(0,0);
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
@@ -5344,6 +5345,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.71.4',date:'1 Jul 2026',notes:['Fixed: switching tabs while scrolled down on another page (e.g. Home) carried that page-level scroll position into the Predict page, hiding its heading/Today button above the fold even though the fixture box itself was correctly scrolled to today internally. showView() now resets the page scroll to the top on every tab switch.']},
   {v:'1.71.3',date:'1 Jul 2026',notes:['Predict page: added a 📅 Today button above the fixture list — smoothly scrolls the list back to today\'s matches from wherever you\'ve scrolled to.']},
   {v:'1.71.2',date:'1 Jul 2026',notes:['Predict page: each knockout round now gets its own pill colour — Round of 32 blue, Round of 16 purple, Quarter-Final pink, Semi-Final orange, 3rd Place grey, Final gold — instead of every round sharing the same plain tag.']},
   {v:'1.71.1',date:'1 Jul 2026',notes:['Predict page: fixture list is now a bounded box showing ~4 games at a time with its own scroll — date headings stick to the top as you scroll instead of disappearing, and a faded half-game peeks at the bottom (top too, subtly) to hint there\'s more.']},
@@ -10932,7 +10934,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.4</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
