@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.75.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.76.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1454,6 +1454,24 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <span class="pwa-dot" onclick="pwaGoSlide(4)"></span>
         </div>
         <button onclick="hidePwaTipForever()" style="width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:.72rem;padding:.4rem;cursor:pointer;">Got it — don't show again</button>
+      </div>
+      <div class="home-card" id="home-bg-onboard-card" style="display:none;">
+        <div class="home-card-title">🎨 Pick a Background</div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem;">Swipe through and tap one to preview it live.</div>
+        <div id="hbo-swipe-row" style="display:flex;gap:.6rem;overflow-x:auto;padding-bottom:.5rem;-webkit-overflow-scrolling:touch;"></div>
+        <div id="hbo-step2" style="display:none;margin-top:.85rem;padding-top:.85rem;border-top:1px solid var(--border);">
+          <div style="font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Accent Colour</div>
+          <div id="hbo-accent-swatches" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.85rem;"></div>
+          <div style="font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Edge Style</div>
+          <div style="display:flex;gap:.5rem;margin-bottom:.85rem;">
+            <button id="hbo-curved-btn" onclick="homeOnboardEdgesPick('curved',this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">⬭ Curved</button>
+            <button id="hbo-square-btn" onclick="homeOnboardEdgesPick('square',this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">⬜ Square</button>
+          </div>
+          <div style="font-size:.72rem;color:var(--text-muted);line-height:1.4;">💡 You can change any of this later — tap your name (top right) → <strong style="color:var(--text);">Theme</strong>.</div>
+        </div>
+        <div style="text-align:center;margin-top:.7rem;">
+          <span onclick="homeOnboardSkip()" style="font-size:.68rem;color:var(--text-muted);cursor:pointer;text-decoration:underline;">Skip for now</span>
+        </div>
       </div>
       <div class="group-hero" id="group-hero-block">
         <div class="group-hero-icon" id="gh-icon">⚽</div>
@@ -4072,13 +4090,14 @@ function applyTheme(themeId){
 function getPlayerThemeKey(){ return currentPlayer ? `wc26_player_theme_${currentPlayer.id}` : null; }
 function getPlayerEdgesKey(){ return currentPlayer ? `wc26_player_edges_${currentPlayer.id}` : null; }
 function getPlayerBgKey(){ return currentPlayer ? `wc26_player_bg_${currentPlayer.id}` : null; }
-function getPlayerCardOpacityKey(){ return currentPlayer ? `wc26_player_cardopacity_${currentPlayer.id}` : null; }
-
 function applyCardOpacity(pct){
   const val = (pct==null || pct==='') ? 100 : Number(pct);
   document.documentElement.style.setProperty('--card-opacity', (isNaN(val)?100:val)+'%');
 }
 
+// Card opacity isn't a separate user setting — it's just 60% whenever a
+// background image is active (so the photo shows through) and 100%
+// otherwise, so it always follows applyPlayerBackground automatically.
 function applyPlayerBackground(bgId){
   const layer = document.getElementById('bg-photo-layer');
   if(!layer) return;
@@ -4090,6 +4109,7 @@ function applyPlayerBackground(bgId){
     layer.style.backgroundImage = `url('${bg.file}')`;
     layer.style.opacity = String(bg.opacity);
   }
+  applyCardOpacity(bg ? 60 : 100);
   const fixturesList = document.getElementById('fixtures-list');
   if(fixturesList) _capFixturesListHeight(fixturesList);
 }
@@ -4117,11 +4137,9 @@ function applyBranding(){
   const playerAccent = getPlayerAccentKey() ? localStorage.getItem(getPlayerAccentKey()) : null;
   const playerEdges = getPlayerEdgesKey() ? localStorage.getItem(getPlayerEdgesKey()) : null;
   const playerBg = getPlayerBgKey() ? localStorage.getItem(getPlayerBgKey()) : null;
-  const playerCardOpacity = getPlayerCardOpacityKey() ? localStorage.getItem(getPlayerCardOpacityKey()) : null;
   applyTheme(playerTheme || currentGroup.theme||'dark');
   applyEdges(playerEdges||'curved');
-  applyPlayerBackground(playerBg);
-  applyCardOpacity(playerCardOpacity);
+  applyPlayerBackground(playerBg); // also sets --card-opacity based on whether a background is active
   const accent = playerAccent || currentGroup.accent||'#6d5cff';
   document.documentElement.style.setProperty('--group-accent', accent);
   const emoji = currentGroup.emoji||'⚽';
@@ -5534,6 +5552,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.76.0',date:'1 Jul 2026',notes:['Home: new "Pick a Background" card — swipe through the available backgrounds and tap one to preview it live. Picking one sets the theme to Smoke and reveals Accent Colour + Edge Style pickers, with a note that all of this can be changed later from your name → Theme. Shows once per player, then disappears (or tap "Skip for now").','Removed the Card Transparency slider — card opacity is no longer a manual setting, it\'s just 60% whenever a background image is active and 100% when it isn\'t.']},
   {v:'1.75.2',date:'1 Jul 2026',notes:['Appearance: moved Background up to sit right below Accent Colour instead of after Theme.']},
   {v:'1.75.1',date:'1 Jul 2026',notes:['Added 6 more backgrounds — Poster Goal, Aerial Pitch, Golden Trophy, Trophy Night, Trophy Sky and Stadium Crowd — bringing the total to 15.','Fixed: pages using the players table (login, the admin Players tab) would break entirely on groups where the score_master column hasn\'t been added to Supabase yet. They now retry without it and keep working, with Score Master features just staying unavailable until the column exists.']},
   {v:'1.75.0',date:'1 Jul 2026',notes:['Admin: toggle switches across settings are now smaller/more mobile-appropriate (was 44×24, now 34×19).','Admin: settings cards (Branding, Fixtures, Controls) are now collapsed to just their heading until tapped — Current Votes\' refresh button and Knockout Fixtures\' count badge still work while collapsed.','Admin: removed the standalone Data sub-tab — its Tiebreaker Data card (top scorer, ITM/Forfeit overrides) moved into Polls & Entry instead of being lost.','Admin: added a new Score Master role — a player can be given access to just the Results tab (enter match scores) without full admin rights. Grant/revoke it from a player\'s ⋮ Options menu; they get a one-time explainer popup the next time they open the app after being granted it. Requires a new score_master boolean column on the players table in Supabase.','Background images no longer auto-switch your colour theme when picked — pick the theme separately if you want to change colours.','Hid scrollbars app-wide (scrolling still works, just no visible track/thumb).']},
@@ -6903,6 +6922,7 @@ async function loadPredictVotes(){
 
 async function loadHome(){
   if(!currentGroup) return;
+  initHomeBgOnboard();
   const lbEl = document.getElementById('home-mini-lb');
   const nextEl = document.getElementById('home-next-game');
   const forfeitEl = document.getElementById('home-forfeit');
@@ -8175,9 +8195,7 @@ function showPlayerThemeModal(){
     <div onclick="playerBgPick('${b.id}',this)" data-bid="${b.id}" title="${b.label}" style="cursor:pointer;border-radius:10px;overflow:hidden;position:relative;border:2px solid ${currentBg===b.id?'var(--group-accent)':'var(--border)'};aspect-ratio:3/4;background:var(--surface2) url('${b.thumb}') center/cover;transition:border-color .15s;">
       <span style="position:absolute;left:0;right:0;bottom:0;padding:.3rem .35rem;font-size:.6rem;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));text-shadow:0 1px 2px rgba(0,0,0,.6);">${b.label}</span>
     </div>`).join('');
-  const cardOpacityKey = getPlayerCardOpacityKey();
-  const currentCardOpacity = (cardOpacityKey && localStorage.getItem(cardOpacityKey)) || 100;
-  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey))||(bgKey&&localStorage.getItem(bgKey))||(cardOpacityKey&&localStorage.getItem(cardOpacityKey));
+  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey))||(bgKey&&localStorage.getItem(bgKey));
   modal.innerHTML=`<div class="pred-modal" style="max-width:480px;">
     <div class="pred-modal-header">
       <div class="pred-modal-title">Appearance</div>
@@ -8201,11 +8219,6 @@ function showPlayerThemeModal(){
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
-    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Card Transparency</div>
-    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;">
-      <input type="range" id="ptm-card-opacity" min="40" max="100" step="5" value="${currentCardOpacity}" oninput="playerCardOpacityPick(this.value)" style="flex:1;accent-color:var(--group-accent);">
-      <span id="ptm-card-opacity-val" style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:2.8rem;text-align:right;flex-shrink:0;">${currentCardOpacity}%</span>
-    </div>
     ${hasOverride?`<button class="btn-ghost" style="font-size:.78rem;" onclick="clearPlayerAppearance(this)">Reset to group defaults</button>`:''}
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -8242,12 +8255,96 @@ function playerBgPick(id, el){
   applyBranding();
 }
 
-function playerCardOpacityPick(val){
-  const key = getPlayerCardOpacityKey();
-  if(key) localStorage.setItem(key, val);
-  applyCardOpacity(val);
-  const label = document.getElementById('ptm-card-opacity-val');
-  if(label) label.textContent = val+'%';
+// ── HOME BACKGROUND ONBOARDING CARD ──────
+// One-time swipe-to-preview background picker shown on Home until a player
+// completes (or skips) it once. Picking a background sets card opacity to
+// 60% and the theme to Smoke so the photo reads clearly, then reveals an
+// Accent Colour + Edge Style step; the card auto-hides once both are set.
+function getHomeBgOnboardKey(){ return currentPlayer ? `wc26_home_bg_onboard_seen_${currentPlayer.id}` : null; }
+let _hboAccentSet = false, _hboEdgesSet = false;
+
+function initHomeBgOnboard(){
+  const card = document.getElementById('home-bg-onboard-card');
+  if(!card) return;
+  const key = getHomeBgOnboardKey();
+  if(!key || localStorage.getItem(key)){ card.style.display='none'; return; }
+  _hboAccentSet = false; _hboEdgesSet = false;
+  document.getElementById('hbo-step2').style.display='none';
+  const currentBg = getPlayerBgKey() ? localStorage.getItem(getPlayerBgKey()) : null;
+  document.getElementById('hbo-swipe-row').innerHTML = BACKGROUNDS.map(b=>`
+    <div class="hbo-tile" data-bid="${b.id}" onclick="homeOnboardPickBg('${b.id}')" title="${b.label}" style="flex-shrink:0;width:76px;aspect-ratio:3/4;border-radius:10px;overflow:hidden;position:relative;cursor:pointer;border:2px solid ${currentBg===b.id?'var(--group-accent)':'var(--border)'};background:var(--surface2) url('${b.thumb}') center/cover;">
+      <span style="position:absolute;left:0;right:0;bottom:0;padding:.25rem .3rem;font-size:.55rem;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));">${b.label}</span>
+    </div>`).join('');
+  card.style.display='';
+  card.style.opacity=''; card.style.maxHeight=''; card.style.marginBottom=''; card.style.paddingTop=''; card.style.paddingBottom=''; card.style.overflow='';
+}
+
+function homeOnboardPickBg(id){
+  const bgKey = getPlayerBgKey(); if(bgKey) localStorage.setItem(bgKey, id);
+  const themeKey = getPlayerThemeKey(); if(themeKey) localStorage.setItem(themeKey, 'smoke');
+  applyBranding(); // also sets card opacity to 60% now that a background is set
+  savePlayerAppearancePref({theme:'smoke'});
+  document.querySelectorAll('#hbo-swipe-row [data-bid]').forEach(t=>{
+    t.style.borderColor = t.dataset.bid===id ? 'var(--group-accent)' : 'var(--border)';
+  });
+  const step2 = document.getElementById('hbo-step2');
+  const accentKey = getPlayerAccentKey();
+  const currentAccent = (accentKey && localStorage.getItem(accentKey)) || currentGroup?.accent || '#6d5cff';
+  document.getElementById('hbo-accent-swatches').innerHTML = ACCENT_COLOURS.map(c=>`
+    <div onclick="homeOnboardAccentPick('${c.val}',this)" data-aval="${c.val}" title="${c.name}"
+      style="width:28px;height:28px;border-radius:50%;background:${c.val};cursor:pointer;border:3px solid ${c.val===currentAccent?'#fff':'transparent'};box-sizing:border-box;transition:border-color .15s;"></div>
+  `).join('');
+  step2.style.display='';
+  step2.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function homeOnboardAccentPick(val, el){
+  const accentKey = getPlayerAccentKey();
+  if(accentKey) localStorage.setItem(accentKey, val);
+  el.closest('#hbo-accent-swatches').querySelectorAll('[data-aval]').forEach(s=>{
+    s.style.borderColor = s.dataset.aval===val ? '#fff' : 'transparent';
+  });
+  document.documentElement.style.setProperty('--group-accent', val);
+  _hboAccentSet = true;
+  maybeFinishHomeOnboard();
+}
+
+function homeOnboardEdgesPick(style, el){
+  const edgesKey = getPlayerEdgesKey();
+  if(edgesKey) localStorage.setItem(edgesKey, style);
+  document.getElementById('hbo-curved-btn').style.borderColor = style==='curved' ? 'var(--group-accent)' : 'var(--border)';
+  document.getElementById('hbo-square-btn').style.borderColor = style==='square' ? 'var(--group-accent)' : 'var(--border)';
+  applyEdges(style);
+  _hboEdgesSet = true;
+  maybeFinishHomeOnboard();
+}
+
+function maybeFinishHomeOnboard(){
+  if(!_hboAccentSet || !_hboEdgesSet) return;
+  const key = getHomeBgOnboardKey();
+  if(key) localStorage.setItem(key, '1');
+  const card = document.getElementById('home-bg-onboard-card');
+  if(card){
+    card.style.transition = 'opacity .3s ease, max-height .3s ease, margin-bottom .3s ease, padding .3s ease';
+    card.style.maxHeight = card.scrollHeight + 'px';
+    card.style.overflow = 'hidden';
+    requestAnimationFrame(()=>{
+      card.style.opacity = '0';
+      card.style.maxHeight = '0';
+      card.style.marginBottom = '0';
+      card.style.paddingTop = '0';
+      card.style.paddingBottom = '0';
+    });
+    setTimeout(()=>{ card.style.display='none'; }, 320);
+  }
+  flash('All set — change this anytime from your name → Theme','success');
+}
+
+function homeOnboardSkip(){
+  const key = getHomeBgOnboardKey();
+  if(key) localStorage.setItem(key, '1');
+  const card = document.getElementById('home-bg-onboard-card');
+  if(card) card.style.display='none';
 }
 
 function playerEdgesPick(style, el){
@@ -8634,12 +8731,10 @@ function clearPlayerAppearance(btn){
   const accentKey = getPlayerAccentKey();
   const edgesKey = getPlayerEdgesKey();
   const bgKey = getPlayerBgKey();
-  const cardOpacityKey = getPlayerCardOpacityKey();
   if(themeKey) localStorage.removeItem(themeKey);
   if(accentKey) localStorage.removeItem(accentKey);
   if(edgesKey) localStorage.removeItem(edgesKey);
   if(bgKey) localStorage.removeItem(bgKey);
-  if(cardOpacityKey) localStorage.removeItem(cardOpacityKey);
   applyBranding();
   btn.closest('.modal-overlay').remove();
   savePlayerAppearancePref({theme:null, light_mode:null});
@@ -11245,7 +11340,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.75.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.76.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
