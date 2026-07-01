@@ -106,6 +106,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .matchday-label{font-size:1.1rem;font-weight:800;color:var(--text);margin:.9rem 0 .4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem;}
 #fixtures-list{overflow-y:auto;padding:0 .6rem;margin:0 -.6rem;}
 #fixtures-list .matchday-label{position:sticky;top:0;z-index:5;background:var(--bg);margin:0;padding:.5rem 0 .4rem;}
+body.has-bg-image #fixtures-list .matchday-label{background:none;}
 #fixtures-list.compact .matchday-label{padding:.3rem 0 .2rem;}
 /* Predict page: prevent the outer page from scrolling — #fixtures-list keeps
    its own bounded height + scroll (see _capFixturesListHeight), so as long as
@@ -1238,7 +1239,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.73.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.73.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3979,6 +3980,7 @@ function applyPlayerBackground(bgId){
   const layer = document.getElementById('bg-photo-layer');
   if(!layer) return;
   const bg = BACKGROUNDS.find(b=>b.id===bgId);
+  document.body.classList.toggle('has-bg-image', !!bg);
   if(!bg){
     layer.style.opacity = '0';
     return;
@@ -5405,6 +5407,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.73.5',date:'1 Jul 2026',notes:['Predict page: the matchday date header now only gets a solid background when there\'s no background image set — with a photo background active it goes transparent instead.']},
   {v:'1.73.4',date:'1 Jul 2026',notes:['Reverted v1.73.3\'s matchday date header restyle (frosted glass + accent tint) — back to the plain solid background.']},
   {v:'1.73.3',date:'1 Jul 2026',notes:['Predict page: the sticky matchday date header always rendered as a flat, plain-black bar regardless of theme. It now uses the same frosted-glass treatment as the app header (blurred, translucent) tinted with the group\'s accent colour, so it actually reflects the chosen theme instead of looking like an unstyled block.']},
   {v:'1.73.2',date:'1 Jul 2026',notes:['Fixed: the Forfeit badge on the leaderboard and home mini standings had the same translucent-tint problem as the medal rows — now an opaque blend so it stays solid and readable.']},
@@ -11037,7 +11040,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.5</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
