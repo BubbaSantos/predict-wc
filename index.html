@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5562,6 +5562,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.2',date:'1 Jul 2026',notes:['Appearance: moved the "None" background option to the end of the grid, after the photo backdrops, instead of first.']},
   {v:'1.78.1',date:'1 Jul 2026',notes:['Removed swipe left/right to navigate between Home, Leaderboard and Predict on mobile — tabs are tap-only now.']},
   {v:'1.78.0',date:'1 Jul 2026',notes:['Appearance: added Saved Setups — save your current theme/accent/edges/background/opacity combo under a name, then tap it any time to switch back instantly. Personal, saved per player on this device.']},
   {v:'1.77.4',date:'1 Jul 2026',notes:['Home background-picker card: reappears for every player one more time (bumped its "seen" storage key) so everyone sees the background/theme picker again, even if they already dismissed or completed it before.']},
@@ -8272,12 +8273,12 @@ function showPlayerThemeModal(){
   `).join('');
   const bgKey = getPlayerBgKey();
   const currentBg = (bgKey && localStorage.getItem(bgKey)) || null;
-  const bgGrid = `<div onclick="playerBgPick(null,this)" data-bid="none" style="cursor:pointer;border-radius:10px;border:2px solid ${!currentBg?'var(--group-accent)':'var(--border)'};background:var(--surface2);aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;transition:border-color .15s;">
-      <span style="font-size:.68rem;color:var(--text-muted);font-weight:600;">None</span>
-    </div>` + BACKGROUNDS.map(b=>`
+  const bgGrid = BACKGROUNDS.map(b=>`
     <div onclick="playerBgPick('${b.id}',this)" data-bid="${b.id}" title="${b.label}" style="cursor:pointer;border-radius:10px;overflow:hidden;position:relative;border:2px solid ${currentBg===b.id?'var(--group-accent)':'var(--border)'};aspect-ratio:3/4;background:var(--surface2) url('${b.thumb}') center/cover;transition:border-color .15s;">
       <span style="position:absolute;left:0;right:0;bottom:0;padding:.3rem .35rem;font-size:.6rem;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));text-shadow:0 1px 2px rgba(0,0,0,.6);">${b.label}</span>
-    </div>`).join('');
+    </div>`).join('') + `<div onclick="playerBgPick(null,this)" data-bid="none" style="cursor:pointer;border-radius:10px;border:2px solid ${!currentBg?'var(--group-accent)':'var(--border)'};background:var(--surface2);aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;transition:border-color .15s;">
+      <span style="font-size:.68rem;color:var(--text-muted);font-weight:600;">None</span>
+    </div>`;
   const cardOpacityKey = getPlayerCardOpacityKey();
   const cardOpacityOverride = cardOpacityKey && localStorage.getItem(cardOpacityKey);
   const currentCardOpacity = cardOpacityOverride!=null ? cardOpacityOverride : (currentBg ? 60 : 100);
@@ -11460,7 +11461,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
