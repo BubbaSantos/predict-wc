@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.77.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.77.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5562,6 +5562,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.77.3',date:'1 Jul 2026',notes:['Home background-picker card: "Skip for now" now also shows the popup pointing to name → Theme, same as tapping Set Theme — so it always tells you where to find the settings, whether you set something or skipped.']},
   {v:'1.77.2',date:'1 Jul 2026',notes:['Hardened the Home background-picker card\'s "Skip for now" so it can\'t ever also show the "Theme set!" popup — stops event propagation and force-closes any stray modal.','Bumped force-refresh.txt so everyone gets the "New version available" banner and picks up the latest fixes.']},
   {v:'1.77.1',date:'1 Jul 2026',notes:['Home "Pick a Background" card: the "change this later from your name → Theme" message after tapping Set Theme is now a dismissible popup instead of a toast that faded on its own.']},
   {v:'1.77.0',date:'1 Jul 2026',notes:['Appearance: brought back the Card Transparency slider (only in the name → Theme modal — the Home onboarding card stays automatic) so it can override the 60%/100% default when wanted.','The name-menu dropdown (top right) now only ever gets slightly transparent — floored at 90% opacity regardless of how low Card Transparency is set, so navigation stays legible.','Admin → Players: each player\'s appearance chip now shows their background, accent colour and card opacity on hover, not just theme/mode. Requires new accent, background_id and card_opacity columns on players in Supabase (same pattern as score_master — the app degrades gracefully until they\'re added).']},
@@ -8358,7 +8359,7 @@ function homeOnboardEdgesPick(style, el){
   applyEdges(style);
 }
 
-function finishHomeOnboard(){
+function hideHomeOnboardCard(){
   const key = getHomeBgOnboardKey();
   if(key) localStorage.setItem(key, '1');
   const card = document.getElementById('home-bg-onboard-card');
@@ -8375,25 +8376,31 @@ function finishHomeOnboard(){
     });
     setTimeout(()=>{ card.style.display='none'; }, 320);
   }
+}
+
+function showAppearanceHintPopup(title){
+  document.querySelector('.modal-overlay')?.remove();
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `<div class="pred-modal" style="max-width:380px;text-align:center;">
     <div style="font-size:2.2rem;margin-bottom:.5rem;">🎨</div>
-    <div style="font-size:1.1rem;font-weight:700;margin-bottom:.6rem;">Theme set!</div>
-    <div style="font-size:.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem;">To change it later, tap your name (top right) → <strong style="color:var(--text);">Theme</strong>.</div>
+    <div style="font-size:1.1rem;font-weight:700;margin-bottom:.6rem;">${title}</div>
+    <div style="font-size:.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem;">You can change it later — tap your name (top right) → <strong style="color:var(--text);">Theme</strong>.</div>
     <button class="btn" onclick="this.closest('.modal-overlay').remove()">Got it</button>
   </div>`;
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
 }
 
+function finishHomeOnboard(){
+  hideHomeOnboardCard();
+  showAppearanceHintPopup('Theme set!');
+}
+
 function homeOnboardSkip(e){
   if(e){ e.preventDefault(); e.stopPropagation(); }
-  const key = getHomeBgOnboardKey();
-  if(key) localStorage.setItem(key, '1');
-  const card = document.getElementById('home-bg-onboard-card');
-  if(card) card.style.display='none';
-  document.querySelector('.modal-overlay')?.remove(); // in case the "Theme set!" popup is somehow already open
+  hideHomeOnboardCard();
+  showAppearanceHintPopup('No problem!');
 }
 
 function playerEdgesPick(style, el){
@@ -11407,7 +11414,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.77.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.77.3</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
