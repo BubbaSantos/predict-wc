@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5562,6 +5562,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.1',date:'1 Jul 2026',notes:['Removed swipe left/right to navigate between Home, Leaderboard and Predict on mobile — tabs are tap-only now.']},
   {v:'1.78.0',date:'1 Jul 2026',notes:['Appearance: added Saved Setups — save your current theme/accent/edges/background/opacity combo under a name, then tap it any time to switch back instantly. Personal, saved per player on this device.']},
   {v:'1.77.4',date:'1 Jul 2026',notes:['Home background-picker card: reappears for every player one more time (bumped its "seen" storage key) so everyone sees the background/theme picker again, even if they already dismissed or completed it before.']},
   {v:'1.77.3',date:'1 Jul 2026',notes:['Home background-picker card: "Skip for now" now also shows the popup pointing to name → Theme, same as tapping Set Theme — so it always tells you where to find the settings, whether you set something or skipped.']},
@@ -11414,35 +11415,6 @@ async function godCreateGroup(){
   },{passive:true});
 })();
 
-// Mobile swipe navigation between Home / Leaderboard / Predict
-(function(){
-  const VIEWS = ['home','leaderboard','predict'];
-  let _swX = null, _swY = null;
-  function activeView(){
-    for(const v of VIEWS){ if(document.getElementById('view-'+v)?.classList.contains('active')) return v; }
-    return null;
-  }
-  document.addEventListener('touchstart', e=>{
-    if(window.innerWidth > 768) return;
-    if(e.target.closest('input[type="range"], #lb-timeline-wrap')){ _swX = null; _swY = null; return; }
-    const t = e.touches[0];
-    _swX = t.clientX; _swY = t.clientY;
-  },{passive:true});
-  document.addEventListener('touchend', e=>{
-    if(window.innerWidth > 768 || _swX === null) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - _swX;
-    const dy = t.clientY - _swY;
-    _swX = null; _swY = null;
-    if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    const cur = activeView();
-    if(!cur) return;
-    const idx = VIEWS.indexOf(cur);
-    const next = dx < 0 ? VIEWS[(idx+1) % VIEWS.length] : VIEWS[(idx-1+VIEWS.length) % VIEWS.length];
-    showView(next);
-  },{passive:true});
-})();
-
 // Lock background scroll while any .modal-overlay (player card, stats, etc.) is open.
 // Plain overflow:hidden on body doesn't stop touch/rubber-band scrolling on iOS Safari,
 // so pin body in place with position:fixed and restore the scroll offset on close.
@@ -11488,7 +11460,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
