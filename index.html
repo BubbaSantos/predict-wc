@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.70.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.70.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4407,6 +4407,8 @@ function startTiebreakCountdown(){
   setInterval(update, 1000);
 }
 
+function koMethodLabel(m){ return m==='pen' ? 'AP' : m==='aet' ? 'AET' : ''; }
+
 // Returns 'home', 'away', or null (not yet determined / draw with no ko_winner set).
 function getKoWinner(matchId){
   const r=results[matchId];
@@ -4748,8 +4750,13 @@ function renderPredictCard(f,pred,res){
     let centerHtml;
     if(hasActualScore){
       const predText = isFilled ? `you predicted ${ph}–${pa}` : 'not predicted';
+      const koWinner = (f.isKnockout && res.home===res.away) ? (res.ko_winner||null) : null;
+      const koWinnerName = koWinner==='home'?f.home:koWinner==='away'?f.away:null;
+      const koLabel = koMethodLabel(res.ko_method);
+      const koLabelHtml = (koWinnerName && koLabel) ? `<div style="font-size:.62rem;color:var(--text-muted);font-weight:600;margin-top:.15rem;">${koWinnerName} ${koLabel}</div>` : '';
       centerHtml = `${ptsAbove}
           <div class="mc-actual-score">${res.home}–${res.away}</div>
+          ${koLabelHtml}
           <div class="mc-pred-under">${predText}</div>`;
     } else {
       centerHtml = `
@@ -4802,7 +4809,7 @@ function renderAdminCard(f,res){
       <button class="ko-btn${koW==='home'&&koM==='pen'?' active':''}" onclick="saveKoWinner('${f.id}','home','pen')">${f.hf||'🏠'} Pen</button>
       <button class="ko-btn${koW==='away'&&koM==='pen'?' active':''}" onclick="saveKoWinner('${f.id}','away','pen')">${f.af||'✈️'} Pen</button>
     </div>` : '';
-  const winLabel = (hasScore && koW) ? `<span class="ko-win-label">${koW==='home'?f.home:f.away} wins ${(koM||'').toUpperCase()}</span>` : '';
+  const winLabel = (hasScore && koW) ? `<span class="ko-win-label">${koW==='home'?f.home:f.away} wins ${koMethodLabel(koM)}</span>` : '';
   return `<div class="admin-match ${ftOn?'is-fulltime':''}" id="acard-${f.id}">
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
@@ -4811,7 +4818,7 @@ function renderAdminCard(f,res){
         <span class="score-sep">–</span>
         <input class="actual-input" type="number" min="0" max="99" id="ra-${f.id}" value="${a!==null&&a!==undefined?a:''}" placeholder="–" inputmode="numeric" oninput="adminScoreInput(this,null)" />
       </div>
-      ${hasScore? `<span class="result-badge">${h}–${a}${koW?` (${(koM||'').toUpperCase()})`:''}</span>`:''}
+      ${hasScore? `<span class="result-badge">${h}–${a}${koW?` (${koMethodLabel(koM)})`:''}</span>`:''}
       ${winLabel}
     </div>
     <div class="team away"><span class="team-name">${f.away}</span><span class="team-flag">${f.af}</span></div>
@@ -5275,6 +5282,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.70.4',date:'1 Jul 2026',notes:['Knockout draws now show who actually won: predict page score card shows "Paraguay AET" / "Paraguay AP" under the 90-min scoreline when it went to extra time or penalties. Admin results card label changed from "PEN" to "AP" to match.']},
   {v:'1.70.3',date:'1 Jul 2026',notes:['Fixed: background scroll lock didn\'t actually stop touch-scrolling behind a modal on mobile — overflow:hidden alone doesn\'t block iOS Safari\'s rubber-band scroll. Now pins the body in place with position:fixed and restores your scroll position when the modal closes.']},
   {v:'1.70.2',date:'1 Jul 2026',notes:['Background page no longer scrolls behind an open modal (player card, stats, etc.) — locked until you close it.']},
   {v:'1.70.1',date:'1 Jul 2026',notes:['Player prediction modal: removed the "Previous Results" collapse button — match history is now one reverse-chronological list, capped to ~10.5 rows tall with a fade at the bottom hinting there\'s more to scroll to (only kicks in once there are more than 10 games).']},
@@ -10866,7 +10874,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.4</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
