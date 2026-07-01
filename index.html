@@ -437,8 +437,8 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .config-input{font-family:'Plus Jakarta Sans',sans-serif;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:.9rem;padding:.65rem .9rem;border-radius:8px;outline:none;transition:border-color .15s;width:100%;}
 .config-input:focus{border-color:var(--group-accent);}
 .colour-grid{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;}
-.colour-swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s;}
-.colour-swatch.selected{border-color:#fff;transform:scale(1.15);}
+.colour-swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;box-shadow:inset 0 0 0 1px rgba(128,128,128,.35);box-sizing:border-box;transition:all .15s;}
+.colour-swatch.selected{transform:scale(1.15);}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;}
 .home-card-sort-row{display:flex;align-items:center;gap:.6rem;padding:.4rem .55rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);user-select:none;}
 .home-card-sort-row.dragging{opacity:.35;}
@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.8</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.9</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2445,7 +2445,16 @@ const ACCENT_COLOURS = [
   {name:'Cyan',     val:'#06b6d4'},
   {name:'Yellow',   val:'#eab308'},
   {name:'Fuchsia',  val:'#d946ef'},
+  {name:'Grey',     val:'#6b7280'},
+  {name:'White',    val:'#ffffff'},
+  {name:'Black',    val:'#000000'},
 ];
+// White/pale swatches need a dark selection ring instead of the usual white one, or the ring disappears into the swatch.
+function accentRingColor(hex){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return (0.299*r + 0.587*g + 0.114*b)/255 > 0.7 ? '#0f172a' : '#fff';
+}
 
 const THEMES = {
   dark:{
@@ -5567,6 +5576,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.9',date:'2 Jul 2026',notes:['Appearance: added Grey, White and Black accent colours. White swatches now get a dark selection ring instead of the usual white one (so "selected" is still visible), and every swatch has a subtle permanent outline so pale colours stand out against the modal background.']},
   {v:'1.78.8',date:'2 Jul 2026',notes:['Appearance: added 6 more accent colours — Red, Indigo, Teal, Cyan, Yellow and Fuchsia — alongside the existing 8.']},
   {v:'1.78.7',date:'1 Jul 2026',notes:['Appearance: moved Card Transparency to sit right under Accent Colour, ahead of Background and Theme.']},
   {v:'1.78.6',date:'1 Jul 2026',notes:['Appearance: Saved Setups name field is now full-width on its own line above the Save button instead of squeezed next to it.']},
@@ -8280,7 +8290,7 @@ function showPlayerThemeModal(){
   }).join('');
   const accentSwatches = ACCENT_COLOURS.map(c=>`
     <div onclick="playerAccentPick('${c.val}',this)" data-aval="${c.val}" title="${c.name}"
-      style="width:30px;height:30px;border-radius:50%;background:${c.val};cursor:pointer;border:3px solid ${c.val===currentAccent?'#fff':'transparent'};box-sizing:border-box;transition:border-color .15s;flex-shrink:0;"></div>
+      style="width:30px;height:30px;border-radius:50%;background:${c.val};cursor:pointer;border:3px solid ${c.val===currentAccent?accentRingColor(c.val):'transparent'};box-shadow:inset 0 0 0 1px rgba(128,128,128,.35);box-sizing:border-box;transition:border-color .15s;flex-shrink:0;"></div>
   `).join('');
   const bgKey = getPlayerBgKey();
   const currentBg = (bgKey && localStorage.getItem(bgKey)) || null;
@@ -8427,7 +8437,7 @@ function homeOnboardPickBg(id){
   const currentAccent = (accentKey && localStorage.getItem(accentKey)) || currentGroup?.accent || '#6d5cff';
   document.getElementById('hbo-accent-swatches').innerHTML = ACCENT_COLOURS.map(c=>`
     <div onclick="homeOnboardAccentPick('${c.val}',this)" data-aval="${c.val}" title="${c.name}"
-      style="width:28px;height:28px;border-radius:50%;background:${c.val};cursor:pointer;border:3px solid ${c.val===currentAccent?'#fff':'transparent'};box-sizing:border-box;transition:border-color .15s;"></div>
+      style="width:28px;height:28px;border-radius:50%;background:${c.val};cursor:pointer;border:3px solid ${c.val===currentAccent?accentRingColor(c.val):'transparent'};box-shadow:inset 0 0 0 1px rgba(128,128,128,.35);box-sizing:border-box;transition:border-color .15s;"></div>
   `).join('');
   step2.style.display='';
   step2.scrollIntoView({behavior:'smooth', block:'nearest'});
@@ -8437,7 +8447,7 @@ function homeOnboardAccentPick(val, el){
   const accentKey = getPlayerAccentKey();
   if(accentKey) localStorage.setItem(accentKey, val);
   el.closest('#hbo-accent-swatches').querySelectorAll('[data-aval]').forEach(s=>{
-    s.style.borderColor = s.dataset.aval===val ? '#fff' : 'transparent';
+    s.style.borderColor = s.dataset.aval===val ? accentRingColor(val) : 'transparent';
   });
   document.documentElement.style.setProperty('--group-accent', val);
   savePlayerAppearancePref({accent:val});
@@ -8879,7 +8889,7 @@ function playerAccentPick(val, el){
   const accentKey = getPlayerAccentKey();
   if(accentKey) localStorage.setItem(accentKey, val);
   el.closest('#player-accent-swatches').querySelectorAll('[data-aval]').forEach(s=>{
-    s.style.borderColor = s.dataset.aval===val ? '#fff' : 'transparent';
+    s.style.borderColor = s.dataset.aval===val ? accentRingColor(val) : 'transparent';
   });
   document.documentElement.style.setProperty('--group-accent', val);
   savePlayerAppearancePref({accent:val});
@@ -10470,7 +10480,7 @@ function loadBrandingPanel(){
   const grid=document.getElementById('colour-grid');
   grid.innerHTML=ACCENT_COLOURS.map(c=>`
     <div class="colour-swatch ${currentGroup.accent===c.val?'selected':''}"
-      style="background:${c.val};" title="${c.name}"
+      style="background:${c.val};border-color:${currentGroup.accent===c.val?accentRingColor(c.val):'transparent'};" title="${c.name}"
       onclick="selectColour('${c.val}',this)"></div>`).join('');
   renderThemePicker();
 }
@@ -10517,8 +10527,9 @@ async function saveTheme(){
 let selectedColour = null;
 function selectColour(val,el){
   selectedColour=val;
-  document.querySelectorAll('.colour-swatch').forEach(s=>s.classList.remove('selected'));
+  document.querySelectorAll('.colour-swatch').forEach(s=>{s.classList.remove('selected'); s.style.borderColor='transparent';});
   el.classList.add('selected');
+  el.style.borderColor=accentRingColor(val);
 }
 
 async function saveBranding(){
@@ -11477,7 +11488,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.8</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.9</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
