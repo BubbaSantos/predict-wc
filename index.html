@@ -105,7 +105,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .matchday-group{margin-bottom:1.5rem;}
 .matchday-label{font-size:1.1rem;font-weight:800;color:var(--text);margin:.9rem 0 .4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem;}
 #fixtures-list{overflow-y:auto;padding:0 .6rem;margin:0 -.6rem;}
-#fixtures-list .matchday-label{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--group-accent) 10%,var(--header-bg));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin:0;padding:.5rem 0 .4rem;}
+#fixtures-list .matchday-label{position:sticky;top:0;z-index:5;background:var(--bg);margin:0;padding:.5rem 0 .4rem;}
 #fixtures-list.compact .matchday-label{padding:.3rem 0 .2rem;}
 /* Predict page: prevent the outer page from scrolling — #fixtures-list keeps
    its own bounded height + scroll (see _capFixturesListHeight), so as long as
@@ -1238,7 +1238,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.73.3</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.73.4</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5405,6 +5405,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.73.4',date:'1 Jul 2026',notes:['Reverted v1.73.3\'s matchday date header restyle (frosted glass + accent tint) — back to the plain solid background.']},
   {v:'1.73.3',date:'1 Jul 2026',notes:['Predict page: the sticky matchday date header always rendered as a flat, plain-black bar regardless of theme. It now uses the same frosted-glass treatment as the app header (blurred, translucent) tinted with the group\'s accent colour, so it actually reflects the chosen theme instead of looking like an unstyled block.']},
   {v:'1.73.2',date:'1 Jul 2026',notes:['Fixed: the Forfeit badge on the leaderboard and home mini standings had the same translucent-tint problem as the medal rows — now an opaque blend so it stays solid and readable.']},
   {v:'1.73.1',date:'1 Jul 2026',notes:['Fixed: gold/silver/bronze leaderboard rows (both the full leaderboard and the home dashboard mini standings) used a translucent tint that let whatever was behind the page bleed through and look muddy — especially with a background image set. They\'re now solid, opaque colours blended from the theme\'s medal colours.']},
@@ -11036,7 +11037,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.3</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.4</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
