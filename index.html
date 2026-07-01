@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.75.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.75.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5534,6 +5534,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.75.2',date:'1 Jul 2026',notes:['Appearance: moved Background up to sit right below Accent Colour instead of after Theme.']},
   {v:'1.75.1',date:'1 Jul 2026',notes:['Added 6 more backgrounds — Poster Goal, Aerial Pitch, Golden Trophy, Trophy Night, Trophy Sky and Stadium Crowd — bringing the total to 15.','Fixed: pages using the players table (login, the admin Players tab) would break entirely on groups where the score_master column hasn\'t been added to Supabase yet. They now retry without it and keep working, with Score Master features just staying unavailable until the column exists.']},
   {v:'1.75.0',date:'1 Jul 2026',notes:['Admin: toggle switches across settings are now smaller/more mobile-appropriate (was 44×24, now 34×19).','Admin: settings cards (Branding, Fixtures, Controls) are now collapsed to just their heading until tapped — Current Votes\' refresh button and Knockout Fixtures\' count badge still work while collapsed.','Admin: removed the standalone Data sub-tab — its Tiebreaker Data card (top scorer, ITM/Forfeit overrides) moved into Polls & Entry instead of being lost.','Admin: added a new Score Master role — a player can be given access to just the Results tab (enter match scores) without full admin rights. Grant/revoke it from a player\'s ⋮ Options menu; they get a one-time explainer popup the next time they open the app after being granted it. Requires a new score_master boolean column on the players table in Supabase.','Background images no longer auto-switch your colour theme when picked — pick the theme separately if you want to change colours.','Hid scrollbars app-wide (scrolling still works, just no visible track/thumb).']},
   {v:'1.74.2',date:'1 Jul 2026',notes:['Predict page, background image active: the previous fix still let the scroll-hint fade wash out the first line of the next card below the date. There\'s no safe spot for that fade to sit without touching some piece of text, so it\'s now dropped entirely at the top (bottom peek fade is unaffected) — the date and every card stay fully crisp.','Fixed: predicted (\'saved\') match cards had a green border/glow that, combined with a green-toned background image, made them look like a different, inconsistent colour from not-yet-predicted cards. That green tint is now dropped whenever a background image is active, so all cards match.']},
@@ -8195,11 +8196,11 @@ function showPlayerThemeModal(){
     </div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">Accent Colour</div>
     <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem;" id="player-accent-swatches">${accentSwatches}</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Background</div>
+    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Adds a photo backdrop behind the app — pick a Theme below to set the colours.</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
-    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Background</div>
-    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Adds a photo backdrop behind the app — pick a Theme above to set the colours.</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Card Transparency</div>
     <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;">
       <input type="range" id="ptm-card-opacity" min="40" max="100" step="5" value="${currentCardOpacity}" oninput="playerCardOpacityPick(this.value)" style="flex:1;accent-color:var(--group-accent);">
@@ -11244,7 +11245,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.75.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.75.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
