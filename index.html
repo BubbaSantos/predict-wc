@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.7</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5561,6 +5561,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.7',date:'1 Jul 2026',notes:['Appearance: moved Card Transparency to sit right under Accent Colour, ahead of Background and Theme.']},
   {v:'1.78.6',date:'1 Jul 2026',notes:['Appearance: Saved Setups name field is now full-width on its own line above the Save button instead of squeezed next to it.']},
   {v:'1.78.5',date:'1 Jul 2026',notes:['Appearance: moved Saved Setups to the top of the modal (right below the Personal note) and made its name text box bigger and easier to type into.']},
   {v:'1.78.4',date:'1 Jul 2026',notes:['Removed the "Diagonal" background option.']},
@@ -8309,17 +8310,17 @@ function showPlayerThemeModal(){
     </div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.6rem;">Accent Colour</div>
     <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem;" id="player-accent-swatches">${accentSwatches}</div>
-    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Background</div>
-    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Adds a photo backdrop behind the app — pick a Theme below to set the colours.</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
-    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Card Transparency</div>
     <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Defaults to 60% with a background, 100% without — drag to override.</div>
     <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;">
       <input type="range" id="ptm-card-opacity" min="40" max="100" step="5" value="${currentCardOpacity}" oninput="playerCardOpacityPick(this.value)" style="flex:1;accent-color:var(--group-accent);">
       <span id="ptm-card-opacity-val" style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:2.8rem;text-align:right;flex-shrink:0;">${currentCardOpacity}%</span>
     </div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Background</div>
+    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Adds a photo backdrop behind the app — pick a Theme below to set the colours.</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
     ${hasOverride?`<button class="btn-ghost" style="font-size:.78rem;" onclick="clearPlayerAppearance(this)">Reset to group defaults</button>`:''}
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -11469,7 +11470,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.7</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
