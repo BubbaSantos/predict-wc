@@ -28,6 +28,7 @@ input, select, textarea { font-size: 16px !important; }
 body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:-.005em;
   background-image:radial-gradient(ellipse at 20% 0%,color-mix(in srgb,var(--group-accent) 7%,transparent) 0%,transparent 50%),
   radial-gradient(ellipse at 80% 100%,rgba(16,185,129,.04) 0%,transparent 50%);}
+#bg-photo-layer{position:fixed;inset:0;z-index:-1;pointer-events:none;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity .4s ease,background-image .2s ease;}
 
 /* ── LANDING ── */
 .landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
@@ -1230,12 +1231,14 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 </head>
 <body>
 
+<div id="bg-photo-layer"></div>
+
 <!-- ══ LANDING ══ -->
 <button class="theme-btn" onclick="toggleTheme()" id="theme-btn-landing" style="position:fixed;top:1rem;right:1rem;z-index:50;" title="Toggle light/dark">🌙</button>
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.72.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.73.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2530,6 +2533,18 @@ const THEMES = {
     `
   },
 };
+
+const BACKGROUNDS = [
+  {id:'goal-illustration-green', label:'Goal Line',    file:'img/backgrounds/goal-illustration-green.webp', thumb:'img/backgrounds/goal-illustration-green-thumb.webp', theme:'forest', opacity:.16},
+  {id:'pitch-pattern-green',     label:'Matchday',      file:'img/backgrounds/pitch-pattern-green.webp',     thumb:'img/backgrounds/pitch-pattern-green-thumb.webp',     theme:'forest', opacity:.32},
+  {id:'grass-circle-green',      label:'Centre Circle', file:'img/backgrounds/grass-circle-green.webp',      thumb:'img/backgrounds/grass-circle-green-thumb.webp',      theme:'forest', opacity:.18},
+  {id:'grass-stripes-green',     label:'Fresh Cut',     file:'img/backgrounds/grass-stripes-green.webp',     thumb:'img/backgrounds/grass-stripes-green-thumb.webp',     theme:'forest', opacity:.18},
+  {id:'swirl-green',             label:'Emerald Swirl', file:'img/backgrounds/swirl-green.webp',             thumb:'img/backgrounds/swirl-green-thumb.webp',             theme:'forest', opacity:.26},
+  {id:'diagonal-green',          label:'Diagonal',      file:'img/backgrounds/diagonal-green.webp',          thumb:'img/backgrounds/diagonal-green-thumb.webp',          theme:'forest', opacity:.24},
+  {id:'ball-net-blue',           label:'Top Corner',    file:'img/backgrounds/ball-net-blue.webp',           thumb:'img/backgrounds/ball-net-blue-thumb.webp',           theme:'ocean',  opacity:.18},
+  {id:'sky-net-blue',            label:'Clear Skies',   file:'img/backgrounds/sky-net-blue.webp',            thumb:'img/backgrounds/sky-net-blue-thumb.webp',            theme:'ocean',  opacity:.20},
+  {id:'stadium-seats-blue',      label:'Matchday Seats',file:'img/backgrounds/stadium-seats-blue.webp',      thumb:'img/backgrounds/stadium-seats-blue-thumb.webp',      theme:'ocean',  opacity:.16},
+];
 
 const FIXTURES = [
   // MATCHDAY 1
@@ -3958,6 +3973,19 @@ function applyTheme(themeId){
 
 function getPlayerThemeKey(){ return currentPlayer ? `wc26_player_theme_${currentPlayer.id}` : null; }
 function getPlayerEdgesKey(){ return currentPlayer ? `wc26_player_edges_${currentPlayer.id}` : null; }
+function getPlayerBgKey(){ return currentPlayer ? `wc26_player_bg_${currentPlayer.id}` : null; }
+
+function applyPlayerBackground(bgId){
+  const layer = document.getElementById('bg-photo-layer');
+  if(!layer) return;
+  const bg = BACKGROUNDS.find(b=>b.id===bgId);
+  if(!bg){
+    layer.style.opacity = '0';
+    return;
+  }
+  layer.style.backgroundImage = `url('${bg.file}')`;
+  layer.style.opacity = String(bg.opacity);
+}
 
 const SQUARE_EDGES_CSS=`
   .match-card,.home-card,.tie-break-section,.predict-toggle-bar,.group-hero,.lb-row,.status-card,.sync-bar,.admin-match,.rules-card,.rules-full{border-radius:3px!important;}
@@ -3981,8 +4009,10 @@ function applyBranding(){
   const playerTheme = getPlayerThemeKey() ? localStorage.getItem(getPlayerThemeKey()) : null;
   const playerAccent = getPlayerAccentKey() ? localStorage.getItem(getPlayerAccentKey()) : null;
   const playerEdges = getPlayerEdgesKey() ? localStorage.getItem(getPlayerEdgesKey()) : null;
+  const playerBg = getPlayerBgKey() ? localStorage.getItem(getPlayerBgKey()) : null;
   applyTheme(playerTheme || currentGroup.theme||'dark');
   applyEdges(playerEdges||'curved');
+  applyPlayerBackground(playerBg);
   const accent = playerAccent || currentGroup.accent||'#6d5cff';
   document.documentElement.style.setProperty('--group-accent', accent);
   const emoji = currentGroup.emoji||'⚽';
@@ -5375,6 +5405,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.73.0',date:'1 Jul 2026',notes:['Appearance: added a Background picker with 9 football-themed photo backdrops (pitch patterns, grass close-ups, goal nets, stadium seats). Picking one blends it subtly into the page at low opacity and auto-matches the colour theme (green shots → Forest, blue shots → Ocean) so it stays legible. Personal preference, saved per player on this device.']},
   {v:'1.72.2',date:'1 Jul 2026',notes:['Predict page: double-tapping to toggle Compact/Full no longer jumps the fixture list to a different date — it now tracks whichever date was pinned at the top and re-aligns to that same date after the row heights change. Fixed: the pulsing green "Today" dot was getting clipped on its left edge by the fixture box\'s scroll clipping — added breathing-room padding so the glow isn\'t cut off.']},
   {v:'1.72.1',date:'1 Jul 2026',notes:['Fixed v1.72.0: the flex-fill redesign broke #fixtures-list\'s own scroll entirely (missing link in the flex chain at #screen-app). Reverted to the previous working approach — #fixtures-list keeps a fixed, JS-computed height with its own scroll, and the outer page just gets overflow:hidden on top of that. Compact mode still shows ~2x the rows of Full mode, now via an explicit multiplier instead of relying on flex-fill.']},
   {v:'1.72.0',date:'1 Jul 2026',notes:['Predict page overhaul: the page itself no longer scrolls — header, votes and hints keep their natural height and only the fixture list scrolls, filling whatever space is left (body.predict-scroll-lock). Because it\'s no longer capped to a fixed ~4-game height, Compact mode now fits roughly twice as many games as Full mode automatically, since its rows are shorter. Tidied up the layout: the "90 min score only" hint now shares a row with the 📅 Today button instead of two stacked lines.']},
@@ -7996,7 +8027,15 @@ function showPlayerThemeModal(){
     <div onclick="playerAccentPick('${c.val}',this)" data-aval="${c.val}" title="${c.name}"
       style="width:30px;height:30px;border-radius:50%;background:${c.val};cursor:pointer;border:3px solid ${c.val===currentAccent?'#fff':'transparent'};box-sizing:border-box;transition:border-color .15s;flex-shrink:0;"></div>
   `).join('');
-  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey));
+  const bgKey = getPlayerBgKey();
+  const currentBg = (bgKey && localStorage.getItem(bgKey)) || null;
+  const bgGrid = `<div onclick="playerBgPick(null,this)" data-bid="none" style="cursor:pointer;border-radius:10px;border:2px solid ${!currentBg?'var(--group-accent)':'var(--border)'};background:var(--surface2);aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;transition:border-color .15s;">
+      <span style="font-size:.68rem;color:var(--text-muted);font-weight:600;">None</span>
+    </div>` + BACKGROUNDS.map(b=>`
+    <div onclick="playerBgPick('${b.id}',this)" data-bid="${b.id}" title="${b.label}" style="cursor:pointer;border-radius:10px;overflow:hidden;position:relative;border:2px solid ${currentBg===b.id?'var(--group-accent)':'var(--border)'};aspect-ratio:3/4;background:var(--surface2) url('${b.thumb}') center/cover;transition:border-color .15s;">
+      <span style="position:absolute;left:0;right:0;bottom:0;padding:.3rem .35rem;font-size:.6rem;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));text-shadow:0 1px 2px rgba(0,0,0,.6);">${b.label}</span>
+    </div>`).join('');
+  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey))||(bgKey&&localStorage.getItem(bgKey));
   modal.innerHTML=`<div class="pred-modal" style="max-width:480px;">
     <div class="pred-modal-header">
       <div class="pred-modal-title">Appearance</div>
@@ -8017,6 +8056,9 @@ function showPlayerThemeModal(){
     <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem;" id="player-accent-swatches">${accentSwatches}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Background</div>
+    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Picks a photo backdrop and matches the theme to it.</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
     ${hasOverride?`<button class="btn-ghost" style="font-size:.78rem;" onclick="clearPlayerAppearance(this)">Reset to group defaults</button>`:''}
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -8042,6 +8084,24 @@ function playerThemePick(id, el){
   });
   applyBranding();
   savePlayerAppearancePref({theme:id});
+}
+
+function playerBgPick(id, el){
+  const bgKey = getPlayerBgKey();
+  if(bgKey){ if(id) localStorage.setItem(bgKey, id); else localStorage.removeItem(bgKey); }
+  el.closest('#player-bg-grid').querySelectorAll('[data-bid]').forEach(c=>{
+    c.style.borderColor = c.dataset.bid===(id||'none') ? 'var(--group-accent)' : 'var(--border)';
+  });
+  const bg = BACKGROUNDS.find(b=>b.id===id);
+  if(bg && bg.theme){
+    const themeKey = getPlayerThemeKey();
+    if(themeKey) localStorage.setItem(themeKey, bg.theme);
+    document.querySelectorAll('#player-theme-grid [data-tid]').forEach(c=>{
+      c.style.borderColor = c.dataset.tid===bg.theme ? 'var(--group-accent)' : 'var(--border)';
+    });
+    savePlayerAppearancePref({theme:bg.theme});
+  }
+  applyBranding();
 }
 
 function playerEdgesPick(style, el){
@@ -8427,9 +8487,11 @@ function clearPlayerAppearance(btn){
   const themeKey = getPlayerThemeKey();
   const accentKey = getPlayerAccentKey();
   const edgesKey = getPlayerEdgesKey();
+  const bgKey = getPlayerBgKey();
   if(themeKey) localStorage.removeItem(themeKey);
   if(accentKey) localStorage.removeItem(accentKey);
   if(edgesKey) localStorage.removeItem(edgesKey);
+  if(bgKey) localStorage.removeItem(bgKey);
   applyBranding();
   btn.closest('.modal-overlay').remove();
   savePlayerAppearancePref({theme:null, light_mode:null});
@@ -10971,7 +11033,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.72.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
