@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.70.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.70.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5275,6 +5275,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.70.2',date:'1 Jul 2026',notes:['Background page no longer scrolls behind an open modal (player card, stats, etc.) — locked until you close it.']},
   {v:'1.70.1',date:'1 Jul 2026',notes:['Player prediction modal: removed the "Previous Results" collapse button — match history is now one reverse-chronological list, capped to ~10.5 rows tall with a fade at the bottom hinting there\'s more to scroll to (only kicks in once there are more than 10 games).']},
   {v:'1.70.0',date:'1 Jul 2026',notes:['Fixed: dragging the leaderboard Timeline slider on mobile could also trigger the page-swipe navigation underneath it, fighting with the drag. Timeline scrubbing is now throttled to one render per frame and uses a quicker, non-bouncy transition while actively dragging so player cards reorder more fluidly instead of jump-cutting between matches. Player prediction modal: each match row now shows the league position they were in right after that match.']},
   {v:'1.69.9',date:'1 Jul 2026',notes:['Leaderboard: removed the ⏱ emoji from the Timeline button/header — plain text label now.']},
@@ -10819,13 +10820,33 @@ async function godCreateGroup(){
   },{passive:true});
 })();
 
+// Lock background scroll while any .modal-overlay (player card, stats, etc.) is open
+(function(){
+  let openCount = 0;
+  const isOverlay = n => n.nodeType===1 && n.classList && n.classList.contains('modal-overlay');
+  new MutationObserver(muts=>{
+    muts.forEach(m=>{
+      m.addedNodes.forEach(n=>{
+        if(!isOverlay(n)) return;
+        openCount++;
+        document.body.style.overflow = 'hidden';
+      });
+      m.removedNodes.forEach(n=>{
+        if(!isOverlay(n)) return;
+        openCount = Math.max(0, openCount-1);
+        if(openCount===0) document.body.style.overflow = '';
+      });
+    });
+  }).observe(document.body, {childList:true});
+})();
+
 // Patch sb to no-op in test mode
 const _sbOrig = window.sb || null;
 
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
