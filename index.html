@@ -103,6 +103,9 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact-toggle:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .matchday-group{margin-bottom:1.5rem;}
 .matchday-label{font-size:1.1rem;font-weight:800;color:var(--text);margin:.9rem 0 .4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem;}
+#fixtures-list{overflow-y:auto;}
+#fixtures-list .matchday-label{position:sticky;top:0;z-index:5;background:var(--bg);margin:0;padding:.5rem 0 .4rem;}
+#fixtures-list.compact .matchday-label{padding:.3rem 0 .2rem;}
 .match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .85rem;margin-bottom:.5rem;transition:border-color .15s;position:relative;}
 .match-card:hover{border-color:color-mix(in srgb,var(--group-accent) 20%,transparent);}
 .match-card.locked{opacity:.65;} .match-card.saved{border-color:rgba(16,185,129,.25);}
@@ -1228,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.71.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.71.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4489,8 +4492,29 @@ function calcPoints(ph,pa,ah,aa){
 }
 
 // ── LOAD PREDICTIONS ─────────────────────
+// Bounds #fixtures-list to ~4 match-cards tall with its own internal scroll,
+// so date headings can stick to the top while cards scroll up behind them.
+// Fades the top/bottom edge (a half-card peek) to hint there's more to scroll
+// to either way. The top fade zone is kept small so the sticky heading's own
+// text stays legible — it only softens the outer padding, not the label itself.
+function _capFixturesListHeight(list){
+  if(!list) return;
+  const card = list.querySelector('.match-card');
+  if(!card){ list.style.maxHeight=''; list.style.webkitMaskImage=''; list.style.maskImage=''; return; }
+  const slotH = card.getBoundingClientRect().height + parseFloat(getComputedStyle(card).marginBottom||0);
+  const heading = list.querySelector('.matchday-label');
+  const headingH = heading ? heading.getBoundingClientRect().height : 0;
+  const bottomFade = slotH*0.5;
+  const topFade = 14;
+  list.style.maxHeight = (headingH + slotH*4 + bottomFade) + 'px';
+  const mask = `linear-gradient(to bottom, transparent 0, black ${topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`;
+  list.style.webkitMaskImage = mask;
+  list.style.maskImage = mask;
+}
+
 // Opens the predict page scrolled to today's matches — scroll up for previous
 // days, down for upcoming ones. Falls back to the nearest future/past day.
+// Leaves a faded peek of the previous day above today's heading as a hint.
 function _scrollPredictToToday(list){
   requestAnimationFrame(()=>{
     const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
@@ -4500,16 +4524,16 @@ function _scrollPredictToToday(list){
       || groups.find(g=>g.dataset.datekey!=='zz-tbd'&&g.dataset.datekey>todayKey)
       || groups[groups.length-1];
     if(!target) return;
-    target.scrollIntoView({block:'start'});
-    const headerH=(document.querySelector('header')?.getBoundingClientRect().height||56)
-      + (document.getElementById('ticker-sticky-wrap')?.getBoundingClientRect().height||0);
-    window.scrollBy(0, -(headerH+8));
+    const peek = (list.querySelector('.match-card')?.getBoundingClientRect().height||80) * 0.5;
+    const delta = target.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    list.scrollTop = Math.max(0, list.scrollTop + delta - peek);
   });
 }
 
 async function loadPredictions(scrollToToday){
   if(!currentPlayer||!currentGroup)return;
   const list=document.getElementById('fixtures-list');
+  const _prevScrollTop = list.scrollTop;
   list.innerHTML='<div class="loading">Loading…</div>';
   try{
     // Refresh player data to get latest pay_choice and nickname
@@ -4544,8 +4568,10 @@ async function loadPredictions(scrollToToday){
     }
     document.getElementById('predict-stage-tabs')?.style.setProperty('display','none');
     renderFixtures(list,false);
-    if(scrollToToday) _scrollPredictToToday(list);
     if(compactMode) list.classList.add('compact');
+    _capFixturesListHeight(list);
+    if(scrollToToday) _scrollPredictToToday(list);
+    else list.scrollTop = _prevScrollTop;
     const compactBtn=document.getElementById('compact-btn');
     if(compactBtn) compactBtn.textContent=compactMode?'⊞ Full':'⊟ Compact';
     updatePredictTotalPts();
@@ -4588,7 +4614,7 @@ function setPredictStage(stage){
   document.getElementById('predict-tab-group')?.classList.toggle('active',stage==='group');
   document.getElementById('predict-tab-knockout')?.classList.toggle('active',stage==='knockout');
   const list=document.getElementById('fixtures-list');
-  if(list) renderFixtures(list,false);
+  if(list){ renderFixtures(list,false); _capFixturesListHeight(list); }
 }
 
 function renderFixtures(container,forAdmin=false){
@@ -5291,6 +5317,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.71.1',date:'1 Jul 2026',notes:['Predict page: fixture list is now a bounded box showing ~4 games at a time with its own scroll — date headings stick to the top as you scroll instead of disappearing, and a faded half-game peeks at the bottom (top too, subtly) to hint there\'s more.']},
   {v:'1.71.0',date:'1 Jul 2026',notes:['Predict page: removed the "Previous Matches" dropdown — every date is now one continuous list, scroll up for previous days and down for upcoming ones. Opening the tab now scrolls straight to today\'s games automatically.']},
   {v:'1.70.4',date:'1 Jul 2026',notes:['Knockout draws now show who actually won: predict page score card shows "Paraguay AET" / "Paraguay AP" under the 90-min scoreline when it went to extra time or penalties. Admin results card label changed from "PEN" to "AP" to match.']},
   {v:'1.70.3',date:'1 Jul 2026',notes:['Fixed: background scroll lock didn\'t actually stop touch-scrolling behind a modal on mobile — overflow:hidden alone doesn\'t block iOS Safari\'s rubber-band scroll. Now pins the body in place with position:fixed and restores your scroll position when the modal closes.']},
@@ -8402,6 +8429,7 @@ function toggleCompact(){
   const btn=document.getElementById('compact-btn');
   if(list)list.classList.toggle('compact',compactMode);
   if(btn)btn.textContent=compactMode?'⊞ Full':'⊟ Compact';
+  if(list) _capFixturesListHeight(list);
 }
 
 // ── FOOTBALL-DATA.ORG ─────────────────────
@@ -10875,7 +10903,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
