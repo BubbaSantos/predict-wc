@@ -103,17 +103,13 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact-toggle:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .matchday-group{margin-bottom:1.5rem;}
 .matchday-label{font-size:1.1rem;font-weight:800;color:var(--text);margin:.9rem 0 .4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem;}
-#fixtures-list{overflow-y:auto;flex:1;min-height:0;}
+#fixtures-list{overflow-y:auto;}
 #fixtures-list .matchday-label{position:sticky;top:0;z-index:5;background:var(--bg);margin:0;padding:.5rem 0 .4rem;}
 #fixtures-list.compact .matchday-label{padding:.3rem 0 .2rem;}
-/* Predict page: lock the page itself so only #fixtures-list scrolls —
-   everything above it (header, votes, hints) keeps its natural height. */
-body.predict-scroll-lock{height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
-body.predict-scroll-lock header{flex-shrink:0;}
-body.predict-scroll-lock #ticker-sticky-wrap{flex-shrink:0;}
-body.predict-scroll-lock .container{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-top:1rem;padding-bottom:.5rem;}
-body.predict-scroll-lock .view.active{display:flex;flex-direction:column;flex:1;min-height:0;}
-.predict-fixed-top{flex-shrink:0;}
+/* Predict page: prevent the outer page from scrolling — #fixtures-list keeps
+   its own bounded height + scroll (see _capFixturesListHeight), so as long as
+   the fixed content above it fits, nothing else needs to move. */
+body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .85rem;margin-bottom:.5rem;transition:border-color .15s;position:relative;}
 .match-card:hover{border-color:color-mix(in srgb,var(--group-accent) 20%,transparent);}
 .match-card.locked{opacity:.65;} .match-card.saved{border-color:rgba(16,185,129,.25);}
@@ -1239,7 +1235,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.72.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.72.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1493,7 +1489,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
     <!-- RULES -->
     <!-- PREDICT -->
     <div id="view-predict" class="view">
-      <div class="predict-fixed-top">
       <div class="page-header">
         <div class="page-title">Predictions</div>
         <div id="predict-total-pts-wrap" style="display:none;">
@@ -1535,7 +1530,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <button id="predict-tab-group"    class="lb-view-tab active" style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('group')">⚽ Group Stage</button>
           <button id="predict-tab-knockout" class="lb-view-tab"        style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('knockout')">🏆 Knockouts</button>
         </div>
-      </div>
       </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
     </div>
@@ -4520,19 +4514,23 @@ function calcPoints(ph,pa,ah,aa){
 }
 
 // ── LOAD PREDICTIONS ─────────────────────
-// #fixtures-list fills whatever vertical space is left after the header/votes/
-// hints above it (see body.predict-scroll-lock CSS) — it doesn't get a fixed
-// game count, so compact mode naturally fits more rows than full mode.
-// This just adds the top/bottom fade (a half-card peek) hinting there's more
-// to scroll to either way. The top fade zone is kept small so the sticky
-// heading's own text stays legible — it only softens the outer padding.
+// Bounds #fixtures-list to a fixed number of match-cards tall with its own
+// internal scroll, so date headings can stick to the top while cards scroll
+// up behind them. Compact mode shows roughly twice as many rows as Full mode
+// since its cards are shorter. Fades the top/bottom edge (a half-card peek)
+// to hint there's more to scroll to either way — the top fade zone is kept
+// small so the sticky heading's own text stays legible.
 function _capFixturesListHeight(list){
   if(!list) return;
   const card = list.querySelector('.match-card');
-  if(!card){ list.style.webkitMaskImage=''; list.style.maskImage=''; return; }
+  if(!card){ list.style.maxHeight=''; list.style.webkitMaskImage=''; list.style.maskImage=''; return; }
   const slotH = card.getBoundingClientRect().height + parseFloat(getComputedStyle(card).marginBottom||0);
+  const heading = list.querySelector('.matchday-label');
+  const headingH = heading ? heading.getBoundingClientRect().height : 0;
+  const fullSlots = list.classList.contains('compact') ? 8 : 4;
   const bottomFade = slotH*0.5;
   const topFade = 14;
+  list.style.maxHeight = (headingH + slotH*fullSlots + bottomFade) + 'px';
   const mask = `linear-gradient(to bottom, transparent 0, black ${topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`;
   list.style.webkitMaskImage = mask;
   list.style.maskImage = mask;
@@ -5352,6 +5350,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.72.1',date:'1 Jul 2026',notes:['Fixed v1.72.0: the flex-fill redesign broke #fixtures-list\'s own scroll entirely (missing link in the flex chain at #screen-app). Reverted to the previous working approach — #fixtures-list keeps a fixed, JS-computed height with its own scroll, and the outer page just gets overflow:hidden on top of that. Compact mode still shows ~2x the rows of Full mode, now via an explicit multiplier instead of relying on flex-fill.']},
   {v:'1.72.0',date:'1 Jul 2026',notes:['Predict page overhaul: the page itself no longer scrolls — header, votes and hints keep their natural height and only the fixture list scrolls, filling whatever space is left (body.predict-scroll-lock). Because it\'s no longer capped to a fixed ~4-game height, Compact mode now fits roughly twice as many games as Full mode automatically, since its rows are shorter. Tidied up the layout: the "90 min score only" hint now shares a row with the 📅 Today button instead of two stacked lines.']},
   {v:'1.71.4',date:'1 Jul 2026',notes:['Fixed: switching tabs while scrolled down on another page (e.g. Home) carried that page-level scroll position into the Predict page, hiding its heading/Today button above the fold even though the fixture box itself was correctly scrolled to today internally. showView() now resets the page scroll to the top on every tab switch.']},
   {v:'1.71.3',date:'1 Jul 2026',notes:['Predict page: added a 📅 Today button above the fixture list — smoothly scrolls the list back to today\'s matches from wherever you\'ve scrolled to.']},
@@ -10942,7 +10941,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.72.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.72.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
