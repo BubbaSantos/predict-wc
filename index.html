@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.75.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.75.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2576,6 +2576,12 @@ const BACKGROUNDS = [
   {id:'ball-net-blue',           label:'Top Corner',    file:'img/backgrounds/ball-net-blue.webp',           thumb:'img/backgrounds/ball-net-blue-thumb.webp',           opacity:.18},
   {id:'sky-net-blue',            label:'Clear Skies',   file:'img/backgrounds/sky-net-blue.webp',            thumb:'img/backgrounds/sky-net-blue-thumb.webp',            opacity:.20},
   {id:'stadium-seats-blue',      label:'Matchday Seats',file:'img/backgrounds/stadium-seats-blue.webp',      thumb:'img/backgrounds/stadium-seats-blue-thumb.webp',      opacity:.16},
+  {id:'poster-goal-sage',        label:'Poster Goal',   file:'img/backgrounds/poster-goal-sage.webp',        thumb:'img/backgrounds/poster-goal-sage-thumb.webp',        opacity:.22},
+  {id:'aerial-pitch-green',      label:'Aerial Pitch',  file:'img/backgrounds/aerial-pitch-green.webp',      thumb:'img/backgrounds/aerial-pitch-green-thumb.webp',      opacity:.24},
+  {id:'trophy-black-gold',       label:'Golden Trophy', file:'img/backgrounds/trophy-black-gold.webp',       thumb:'img/backgrounds/trophy-black-gold-thumb.webp',       opacity:.26},
+  {id:'trophy-stadium-night',    label:'Trophy Night',  file:'img/backgrounds/trophy-stadium-night.webp',    thumb:'img/backgrounds/trophy-stadium-night-thumb.webp',    opacity:.16},
+  {id:'trophy-sky-blue',         label:'Trophy Sky',    file:'img/backgrounds/trophy-sky-blue.webp',         thumb:'img/backgrounds/trophy-sky-blue-thumb.webp',         opacity:.20},
+  {id:'stadium-crowd-pop',       label:'Stadium Crowd', file:'img/backgrounds/stadium-crowd-pop.webp',       thumb:'img/backgrounds/stadium-crowd-pop-thumb.webp',       opacity:.14},
 ];
 
 const FIXTURES = [
@@ -2803,6 +2809,20 @@ async function sb(path, opts={}){
   const txt = await r.text();
   if(!txt||!txt.trim()) return null;
   try{ return JSON.parse(txt); }catch(e){ return null; }
+}
+
+// score_master is a newer players column — groups whose Supabase instance
+// hasn't had it added yet would otherwise fail every query that selects it
+// (including login). Retries once with the column stripped out of the
+// select list so everything else still works; score_master just reads as
+// false until the column is added.
+function sbSelectScoreMaster(path){
+  return sb(path).catch(e=>{
+    if(String(e.message||'').includes('score_master')){
+      return sb(path.replace(',score_master',''));
+    }
+    throw e;
+  });
 }
 
 // ── SESSION PERSISTENCE ──────────────────
@@ -3390,13 +3410,13 @@ async function loginPlayer(){
     }
 
     // Find player by login name, then nickname, then previous names
-    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
+    let players = await sbSelectScoreMaster(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
     if(!players||!players.length){
-      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
+      players = await sbSelectScoreMaster(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
     }
     if(!players||!players.length){
       // Check previous_names array (for players whose login name was changed)
-      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,score_master,previous_names`).catch(()=>[]);
+      const all = await sbSelectScoreMaster(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,score_master,previous_names`).catch(()=>[]);
       players = (all||[]).filter(p=>(p.previous_names||[]).some(n=>n.toLowerCase()===name.toLowerCase()));
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
@@ -3472,7 +3492,7 @@ async function refreshGroup(){
 async function refreshPlayerSelf(){
   if(!currentPlayer?.id) return;
   try{
-    const rows = await sb('players?id=eq.'+currentPlayer.id+'&select=is_admin,god_mode,score_master');
+    const rows = await sbSelectScoreMaster('players?id=eq.'+currentPlayer.id+'&select=is_admin,god_mode,score_master');
     if(rows && rows.length){
       const row = rows[0];
       const wasScoreMaster = !!currentPlayer.score_master;
@@ -5514,6 +5534,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.75.1',date:'1 Jul 2026',notes:['Added 6 more backgrounds — Poster Goal, Aerial Pitch, Golden Trophy, Trophy Night, Trophy Sky and Stadium Crowd — bringing the total to 15.','Fixed: pages using the players table (login, the admin Players tab) would break entirely on groups where the score_master column hasn\'t been added to Supabase yet. They now retry without it and keep working, with Score Master features just staying unavailable until the column exists.']},
   {v:'1.75.0',date:'1 Jul 2026',notes:['Admin: toggle switches across settings are now smaller/more mobile-appropriate (was 44×24, now 34×19).','Admin: settings cards (Branding, Fixtures, Controls) are now collapsed to just their heading until tapped — Current Votes\' refresh button and Knockout Fixtures\' count badge still work while collapsed.','Admin: removed the standalone Data sub-tab — its Tiebreaker Data card (top scorer, ITM/Forfeit overrides) moved into Polls & Entry instead of being lost.','Admin: added a new Score Master role — a player can be given access to just the Results tab (enter match scores) without full admin rights. Grant/revoke it from a player\'s ⋮ Options menu; they get a one-time explainer popup the next time they open the app after being granted it. Requires a new score_master boolean column on the players table in Supabase.','Background images no longer auto-switch your colour theme when picked — pick the theme separately if you want to change colours.','Hid scrollbars app-wide (scrolling still works, just no visible track/thumb).']},
   {v:'1.74.2',date:'1 Jul 2026',notes:['Predict page, background image active: the previous fix still let the scroll-hint fade wash out the first line of the next card below the date. There\'s no safe spot for that fade to sit without touching some piece of text, so it\'s now dropped entirely at the top (bottom peek fade is unaffected) — the date and every card stay fully crisp.','Fixed: predicted (\'saved\') match cards had a green border/glow that, combined with a green-toned background image, made them look like a different, inconsistent colour from not-yet-predicted cards. That green tint is now dropped whenever a background image is active, so all cards match.']},
   {v:'1.74.1',date:'1 Jul 2026',notes:['Predict page: when a background image is active, the sticky matchday date header no longer gets extra-faded by the fixture list\'s top scroll-hint gradient — that fade now starts just below the date, over the first match card, instead of overlapping the date text itself.','Appearance: added three new mid-tone colour themes — Dusk (mauve), Stone (taupe) and Mist (blue-grey) — for something between the existing near-black themes and full light mode.']},
@@ -9046,7 +9067,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode`),
+      sbSelectScoreMaster(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -11223,7 +11244,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.75.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.75.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
