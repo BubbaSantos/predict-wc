@@ -103,7 +103,7 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact-toggle:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .matchday-group{margin-bottom:1.5rem;}
 .matchday-label{font-size:1.1rem;font-weight:800;color:var(--text);margin:.9rem 0 .4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem;}
-#fixtures-list{overflow-y:auto;}
+#fixtures-list{overflow-y:auto;padding:0 .6rem;margin:0 -.6rem;}
 #fixtures-list .matchday-label{position:sticky;top:0;z-index:5;background:var(--bg);margin:0;padding:.5rem 0 .4rem;}
 #fixtures-list.compact .matchday-label{padding:.3rem 0 .2rem;}
 /* Predict page: prevent the outer page from scrolling — #fixtures-list keeps
@@ -1235,7 +1235,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.72.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.72.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4540,20 +4540,45 @@ function _capFixturesListHeight(list){
 // days, down for upcoming ones. Falls back to the nearest future/past day.
 // Leaves a faded peek of the previous day above today's heading as a hint.
 function _scrollPredictToToday(list, smooth){
+  const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+  const groups=Array.from(list.querySelectorAll('.matchday-group[data-datekey]'));
+  if(!groups.length) return;
+  const target=groups.find(g=>g.dataset.datekey===todayKey)
+    || groups.find(g=>g.dataset.datekey!=='zz-tbd'&&g.dataset.datekey>todayKey)
+    || groups[groups.length-1];
+  if(!target) return;
+  const peek = (list.querySelector('.match-card')?.getBoundingClientRect().height||80) * 0.5;
+  _scrollFixturesToDateKey(list, target.dataset.datekey, {smooth, peek});
+}
+
+// Low-level scroller shared by "jump to today" and "keep the same date
+// visible across a compact-mode toggle". Aligns the given date's heading
+// with the top of the scrollport (minus an optional peek offset).
+function _scrollFixturesToDateKey(list, dateKey, {smooth=false, peek=0}={}){
   requestAnimationFrame(()=>{
-    const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     const groups=Array.from(list.querySelectorAll('.matchday-group[data-datekey]'));
     if(!groups.length) return;
-    const target=groups.find(g=>g.dataset.datekey===todayKey)
-      || groups.find(g=>g.dataset.datekey!=='zz-tbd'&&g.dataset.datekey>todayKey)
-      || groups[groups.length-1];
+    const target=groups.find(g=>g.dataset.datekey===dateKey) || groups[0];
     if(!target) return;
-    const peek = (list.querySelector('.match-card')?.getBoundingClientRect().height||80) * 0.5;
     const delta = target.getBoundingClientRect().top - list.getBoundingClientRect().top;
     const top = Math.max(0, list.scrollTop + delta - peek);
     if(smooth) list.scrollTo({top, behavior:'smooth'});
     else list.scrollTop = top;
   });
+}
+
+// Which date's heading is currently pinned at the top of the scrollport —
+// used to keep the same date visible when Compact mode changes row heights.
+function _currentTopDateKey(list){
+  const groups=Array.from(list.querySelectorAll('.matchday-group[data-datekey]'));
+  if(!groups.length) return null;
+  const listTop = list.getBoundingClientRect().top;
+  let current = groups[0];
+  for(const g of groups){
+    if(g.getBoundingClientRect().top - listTop <= 1) current = g;
+    else break;
+  }
+  return current.dataset.datekey;
 }
 
 // "Today" button on the predict page — re-centres the scroll box on today
@@ -5350,6 +5375,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.72.2',date:'1 Jul 2026',notes:['Predict page: double-tapping to toggle Compact/Full no longer jumps the fixture list to a different date — it now tracks whichever date was pinned at the top and re-aligns to that same date after the row heights change. Fixed: the pulsing green "Today" dot was getting clipped on its left edge by the fixture box\'s scroll clipping — added breathing-room padding so the glow isn\'t cut off.']},
   {v:'1.72.1',date:'1 Jul 2026',notes:['Fixed v1.72.0: the flex-fill redesign broke #fixtures-list\'s own scroll entirely (missing link in the flex chain at #screen-app). Reverted to the previous working approach — #fixtures-list keeps a fixed, JS-computed height with its own scroll, and the outer page just gets overflow:hidden on top of that. Compact mode still shows ~2x the rows of Full mode, now via an explicit multiplier instead of relying on flex-fill.']},
   {v:'1.72.0',date:'1 Jul 2026',notes:['Predict page overhaul: the page itself no longer scrolls — header, votes and hints keep their natural height and only the fixture list scrolls, filling whatever space is left (body.predict-scroll-lock). Because it\'s no longer capped to a fixed ~4-game height, Compact mode now fits roughly twice as many games as Full mode automatically, since its rows are shorter. Tidied up the layout: the "90 min score only" hint now shares a row with the 📅 Today button instead of two stacked lines.']},
   {v:'1.71.4',date:'1 Jul 2026',notes:['Fixed: switching tabs while scrolled down on another page (e.g. Home) carried that page-level scroll position into the Predict page, hiding its heading/Today button above the fold even though the fixture box itself was correctly scrolled to today internally. showView() now resets the page scroll to the top on every tab switch.']},
@@ -8461,13 +8487,17 @@ function closeMenu(){
 }
 
 function toggleCompact(){
+  const list=document.getElementById('fixtures-list');
+  const keepDateKey = list ? _currentTopDateKey(list) : null;
   compactMode=!compactMode;
   localStorage.setItem('wc26_compact', compactMode?'1':'0');
-  const list=document.getElementById('fixtures-list');
   const btn=document.getElementById('compact-btn');
   if(list)list.classList.toggle('compact',compactMode);
   if(btn)btn.textContent=compactMode?'⊞ Full':'⊟ Compact';
-  if(list) _capFixturesListHeight(list);
+  if(list){
+    _capFixturesListHeight(list);
+    if(keepDateKey) _scrollFixturesToDateKey(list, keepDateKey);
+  }
 }
 
 // ── FOOTBALL-DATA.ORG ─────────────────────
@@ -10941,7 +10971,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.72.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.72.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
