@@ -25,6 +25,8 @@
   --shadow-lg:0 18px 50px -16px rgba(10,15,30,.45);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
+*{scrollbar-width:none;-ms-overflow-style:none;}
+*::-webkit-scrollbar{display:none;width:0;height:0;}
 input, select, textarea { font-size: 16px !important; }
 body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:-.005em;
   background-image:radial-gradient(ellipse at 20% 0%,color-mix(in srgb,var(--group-accent) 7%,transparent) 0%,transparent 50%),
@@ -388,6 +390,11 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .admin-tab.active{background:var(--surface2);border-color:var(--group-accent);color:var(--group-accent);}
 .admin-panel{display:none;} .admin-panel.active{display:block;}
 .status-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem;}
+.status-card-toggle{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.5rem;user-select:none;-webkit-user-select:none;}
+.status-card-chevron{font-size:.7rem;color:var(--text-muted);transition:transform .2s ease;flex-shrink:0;}
+.status-card.collapsed .status-card-chevron{transform:rotate(-90deg);}
+.status-card-body{overflow:hidden;max-height:2000px;transition:max-height .25s ease,opacity .2s ease,margin-top .2s ease;margin-top:.85rem;}
+.status-card.collapsed .status-card-body{max-height:0;opacity:0;margin-top:0!important;pointer-events:none;}
 .status-card h3{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.75rem;}
 .sync-bar{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;margin-bottom:1.25rem;font-size:.78rem;color:var(--text-muted);}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);display:inline-block;margin-right:.4rem;vertical-align:middle;}
@@ -441,12 +448,12 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .sort-label{flex:1;font-size:.85rem;}
 .toggle-label{font-size:.9rem;font-weight:600;}
 .toggle-desc{font-size:.78rem;color:var(--text-muted);margin-top:.2rem;}
-.toggle-switch{position:relative;width:44px;height:24px;cursor:pointer;}
+.toggle-switch{position:relative;width:34px;height:19px;cursor:pointer;flex-shrink:0;}
 .toggle-switch input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:24px;transition:.2s;}
-.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;bottom:2px;background:var(--text-muted);border-radius:50%;transition:.2s;}
+.toggle-slider{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:19px;transition:.2s;}
+.toggle-slider:before{content:'';position:absolute;width:13px;height:13px;left:2px;bottom:2px;background:var(--text-muted);border-radius:50%;transition:.2s;}
 .toggle-switch input:checked + .toggle-slider{background:rgba(16,185,129,.2);border-color:var(--green);}
-.toggle-switch input:checked + .toggle-slider:before{transform:translateX(20px);background:var(--green);}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(15px);background:var(--green);}
 
 /* ── CONFIRM MODAL ── */
 .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9500;display:none;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .15s;pointer-events:none;}
@@ -1245,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.74.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.75.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1706,7 +1713,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <button class="controls-sub-tab active" onclick="switchControlsSubTab('group')">Group</button>
           <button class="controls-sub-tab" onclick="switchControlsSubTab('polls')">Polls &amp; Entry</button>
           <button class="controls-sub-tab" onclick="switchControlsSubTab('display')">Display</button>
-          <button class="controls-sub-tab" onclick="switchControlsSubTab('data')">Data</button>
           <button class="controls-sub-tab" onclick="switchControlsSubTab('tools')">Tools</button>
           <button class="controls-sub-tab" onclick="switchControlsSubTab('danger')" style="color:#ef4444;">Danger</button>
         </div>
@@ -1882,6 +1888,33 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <button class="sync-refresh" onclick="loadPollVoteBreakdown()" style="padding:.3rem .65rem;font-size:.75rem;">↻ Refresh</button>
           </div>
           <div id="poll-vote-breakdown"><div class="loading">Loading…</div></div>
+        </div>
+
+        <div class="status-card">
+          <h3>Tiebreaker Data</h3>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Used to break ties on the leaderboard. Leave blank if the tournament isn't finished.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Actual Top Scorer</label>
+              <input id="actual-top-scorer" type="text" class="config-input" placeholder="e.g. Mbappé, Mbappe, Kylian Mbappe" maxlength="300" />
+              <div style="font-size:.65rem;color:var(--text-muted);margin-top:.3rem;">Separate multiple accepted spellings with commas</div>
+            </div>
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Goals Scored</label>
+              <input id="actual-top-goals" type="number" min="0" class="config-input" placeholder="e.g. 8" />
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem;">
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">In the Money Override</label>
+              <input id="itm-override" type="text" class="config-input" placeholder="Auto — leave blank" maxlength="60" />
+            </div>
+            <div>
+              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Forfeit Override</label>
+              <input id="forfeit-override" type="text" class="config-input" placeholder="Auto — leave blank" maxlength="60" />
+            </div>
+          </div>
+          <button class="sync-refresh" onclick="saveTiebreakerSettings()">Save Tiebreaker Settings</button>
         </div>
 
         </div><!-- /ctrl-section-polls -->
@@ -2076,35 +2109,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         </div>
         </div><!-- /ctrl-section-display -->
 
-        <div id="ctrl-section-data" style="display:none;">
-        <div class="status-card">
-          <h3>Tiebreaker Data</h3>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.85rem;">Used to break ties on the leaderboard. Leave blank if the tournament isn't finished.</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
-            <div>
-              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Actual Top Scorer</label>
-              <input id="actual-top-scorer" type="text" class="config-input" placeholder="e.g. Mbappé, Mbappe, Kylian Mbappe" maxlength="300" />
-              <div style="font-size:.65rem;color:var(--text-muted);margin-top:.3rem;">Separate multiple accepted spellings with commas</div>
-            </div>
-            <div>
-              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Goals Scored</label>
-              <input id="actual-top-goals" type="number" min="0" class="config-input" placeholder="e.g. 8" />
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem;">
-            <div>
-              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">In the Money Override</label>
-              <input id="itm-override" type="text" class="config-input" placeholder="Auto — leave blank" maxlength="60" />
-            </div>
-            <div>
-              <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Forfeit Override</label>
-              <input id="forfeit-override" type="text" class="config-input" placeholder="Auto — leave blank" maxlength="60" />
-            </div>
-          </div>
-          <button class="sync-refresh" onclick="saveTiebreakerSettings()">Save Tiebreaker Settings</button>
-        </div>
-
-        </div><!-- /ctrl-section-data -->
 
         <div id="ctrl-section-tools" style="display:none;">
         <div class="status-card">
@@ -2563,15 +2567,15 @@ const THEMES = {
 };
 
 const BACKGROUNDS = [
-  {id:'goal-illustration-green', label:'Goal Line',    file:'img/backgrounds/goal-illustration-green.webp', thumb:'img/backgrounds/goal-illustration-green-thumb.webp', theme:'forest', opacity:.16},
-  {id:'pitch-pattern-green',     label:'Matchday',      file:'img/backgrounds/pitch-pattern-green.webp',     thumb:'img/backgrounds/pitch-pattern-green-thumb.webp',     theme:'forest', opacity:.32},
-  {id:'grass-circle-green',      label:'Centre Circle', file:'img/backgrounds/grass-circle-green.webp',      thumb:'img/backgrounds/grass-circle-green-thumb.webp',      theme:'forest', opacity:.18},
-  {id:'grass-stripes-green',     label:'Fresh Cut',     file:'img/backgrounds/grass-stripes-green.webp',     thumb:'img/backgrounds/grass-stripes-green-thumb.webp',     theme:'forest', opacity:.18},
-  {id:'swirl-green',             label:'Emerald Swirl', file:'img/backgrounds/swirl-green.webp',             thumb:'img/backgrounds/swirl-green-thumb.webp',             theme:'forest', opacity:.26},
-  {id:'diagonal-green',          label:'Diagonal',      file:'img/backgrounds/diagonal-green.webp',          thumb:'img/backgrounds/diagonal-green-thumb.webp',          theme:'forest', opacity:.24},
-  {id:'ball-net-blue',           label:'Top Corner',    file:'img/backgrounds/ball-net-blue.webp',           thumb:'img/backgrounds/ball-net-blue-thumb.webp',           theme:'ocean',  opacity:.18},
-  {id:'sky-net-blue',            label:'Clear Skies',   file:'img/backgrounds/sky-net-blue.webp',            thumb:'img/backgrounds/sky-net-blue-thumb.webp',            theme:'ocean',  opacity:.20},
-  {id:'stadium-seats-blue',      label:'Matchday Seats',file:'img/backgrounds/stadium-seats-blue.webp',      thumb:'img/backgrounds/stadium-seats-blue-thumb.webp',      theme:'ocean',  opacity:.16},
+  {id:'goal-illustration-green', label:'Goal Line',    file:'img/backgrounds/goal-illustration-green.webp', thumb:'img/backgrounds/goal-illustration-green-thumb.webp', opacity:.16},
+  {id:'pitch-pattern-green',     label:'Matchday',      file:'img/backgrounds/pitch-pattern-green.webp',     thumb:'img/backgrounds/pitch-pattern-green-thumb.webp',     opacity:.32},
+  {id:'grass-circle-green',      label:'Centre Circle', file:'img/backgrounds/grass-circle-green.webp',      thumb:'img/backgrounds/grass-circle-green-thumb.webp',      opacity:.18},
+  {id:'grass-stripes-green',     label:'Fresh Cut',     file:'img/backgrounds/grass-stripes-green.webp',     thumb:'img/backgrounds/grass-stripes-green-thumb.webp',     opacity:.18},
+  {id:'swirl-green',             label:'Emerald Swirl', file:'img/backgrounds/swirl-green.webp',             thumb:'img/backgrounds/swirl-green-thumb.webp',             opacity:.26},
+  {id:'diagonal-green',          label:'Diagonal',      file:'img/backgrounds/diagonal-green.webp',          thumb:'img/backgrounds/diagonal-green-thumb.webp',          opacity:.24},
+  {id:'ball-net-blue',           label:'Top Corner',    file:'img/backgrounds/ball-net-blue.webp',           thumb:'img/backgrounds/ball-net-blue-thumb.webp',           opacity:.18},
+  {id:'sky-net-blue',            label:'Clear Skies',   file:'img/backgrounds/sky-net-blue.webp',            thumb:'img/backgrounds/sky-net-blue-thumb.webp',            opacity:.20},
+  {id:'stadium-seats-blue',      label:'Matchday Seats',file:'img/backgrounds/stadium-seats-blue.webp',      thumb:'img/backgrounds/stadium-seats-blue-thumb.webp',      opacity:.16},
 ];
 
 const FIXTURES = [
@@ -2750,6 +2754,7 @@ function getFlag(n){return FLAG[norm(n)]||'🏳️';}
 let currentGroup   = null; // {id, name, tagline, key, admin_password, accent, emoji}
 let currentPlayer  = null; // {id, name, group_id}
 let isAdmin        = false;
+let isScoreMaster  = false; // restricted admin — Results tab only, granted by a full admin
 let _godUnlocked   = false;
 let _inGodSession  = false;
 let _godcastOn     = localStorage.getItem('wc26_godcast')==='1';
@@ -2823,6 +2828,7 @@ function loadSession(){
     if(a) isAdmin = a==='1';
     // Also restore from player record in case localStorage flag is missing
     if(currentPlayer?.is_admin) isAdmin = true;
+    isScoreMaster = !!currentPlayer?.score_master;
   } catch(e){}
 }
 
@@ -3384,23 +3390,24 @@ async function loginPlayer(){
     }
 
     // Find player by login name, then nickname, then previous names
-    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
+    let players = await sb(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
     if(!players||!players.length){
-      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode`);
+      players = await sb(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
     }
     if(!players||!players.length){
       // Check previous_names array (for players whose login name was changed)
-      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,previous_names`).catch(()=>[]);
+      const all = await sb(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,score_master,previous_names`).catch(()=>[]);
       players = (all||[]).filter(p=>(p.previous_names||[]).some(n=>n.toLowerCase()===name.toLowerCase()));
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
     const player = players[0];
     if(player.pin!==pin){showErr(errEl,'Wrong PIN. Try again.');return;}
 
-    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false,god_mode:player.god_mode||false};
+    currentPlayer = {id:player.id,name:player.name,group_id:player.group_id,is_admin:player.is_admin||false,god_mode:player.god_mode||false,score_master:player.score_master||false};
 
     // Admin if they have the is_admin flag on their player record, or know the group password
     isAdmin = !!(player.is_admin) || (currentGroup.admin_password === pin);
+    isScoreMaster = !!player.score_master;
 
     saveSession();
     saveLastLogin(groupKey, name);
@@ -3459,6 +3466,46 @@ async function refreshGroup(){
   }catch(e){ console.warn('refreshGroup failed',e); }
 }
 
+// Re-fetches this player's own role flags so a permission grant (admin,
+// god mode, score master) made on another device shows up without needing
+// to log out and back in — called on every app entry and heartbeat tick.
+async function refreshPlayerSelf(){
+  if(!currentPlayer?.id) return;
+  try{
+    const rows = await sb('players?id=eq.'+currentPlayer.id+'&select=is_admin,god_mode,score_master');
+    if(rows && rows.length){
+      const row = rows[0];
+      const wasScoreMaster = !!currentPlayer.score_master;
+      currentPlayer = {...currentPlayer, is_admin:row.is_admin||false, god_mode:row.god_mode||false, score_master:row.score_master||false};
+      if(row.is_admin) isAdmin = true;
+      isScoreMaster = !!row.score_master;
+      saveSession();
+      const adminBtn = document.getElementById('nav-admin');
+      if(adminBtn) adminBtn.style.display = (isAdmin || isScoreMaster) ? 'inline-block' : 'none';
+      if(isScoreMaster && !wasScoreMaster) maybeShowScoreMasterExplainer();
+    }
+  }catch(e){ console.warn('refreshPlayerSelf failed',e); }
+}
+
+function maybeShowScoreMasterExplainer(){
+  if(!currentPlayer?.id || !currentPlayer.score_master) return;
+  const seenKey = `wc26_scoremaster_seen_${currentPlayer.id}`;
+  if(localStorage.getItem(seenKey)) return;
+  localStorage.setItem(seenKey, '1');
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:400px;text-align:center;">
+    <div style="font-size:2.4rem;margin-bottom:.5rem;">📊</div>
+    <div style="font-size:1.15rem;font-weight:700;margin-bottom:.6rem;">You're now a Score Master</div>
+    <div style="font-size:.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem;">
+      An admin has given you access to enter match results. Open the <strong style="color:var(--text);">Admin</strong> tab — you'll only see the <strong style="color:var(--text);">Results</strong> section, where you can fill in scores as matches finish.
+    </div>
+    <button class="btn" onclick="this.closest('.modal-overlay').remove()">Got it</button>
+  </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
 function enterApp(){
   syncHeaderHeight();
   window.addEventListener('resize', syncHeaderHeight, {passive:true});
@@ -3474,11 +3521,12 @@ function enterApp(){
       loadHome();
     }
   });
+  refreshPlayerSelf().then(()=>maybeShowScoreMasterExplainer());
   document.getElementById('screen-landing').style.display='none';
   document.getElementById('screen-app').style.display='block';
-  // Show admin tab if already authenticated as admin
+  // Show admin tab if already authenticated as admin or a restricted score master
   const adminBtn = document.getElementById('nav-admin');
-  if(adminBtn) adminBtn.style.display = isAdmin ? 'inline-block' : 'none';
+  if(adminBtn) adminBtn.style.display = (isAdmin || isScoreMaster) ? 'inline-block' : 'none';
 
   if(currentPlayer){
     document.getElementById('h-player-chip').innerHTML='<strong>'+currentPlayer.name+'</strong>';
@@ -4077,7 +4125,7 @@ function applyBranding(){
 
 function leaveGroup(){
   // No confirm needed - just log out
-  currentGroup=null; currentPlayer=null; isAdmin=false;
+  currentGroup=null; currentPlayer=null; isAdmin=false; isScoreMaster=false;
   predictions={}; results={}; knockoutFixtures=[];
   if(autoSyncInterval){clearInterval(autoSyncInterval);autoSyncInterval=null;}
   stopHeartbeat();
@@ -4164,9 +4212,22 @@ function showView(name){ closeMenu();
   if(name==='predict') loadPredictions(true);
   if(name==='leaderboard') loadLeaderboard();
   if(name==='admin'){
-    if(!isAdmin){ showView('home'); flash('Triple-click the version number to access admin','error'); return; }
+    if(!isAdmin && !isScoreMaster){ showView('home'); flash('Triple-click the version number to access admin','error'); return; }
+    applyAdminRoleVisibility();
     loadAdminFixtures();
   }
+}
+
+// Score Masters (score_master flag, not a full admin) only get the Results
+// tab — every other Admin tab button is hidden and switchAdminTab bounces
+// them back to Results if they somehow land elsewhere.
+function applyAdminRoleVisibility(){
+  const restricted = !isAdmin && isScoreMaster;
+  document.querySelectorAll('.admin-tab').forEach(btn=>{
+    const isResultsTab = btn.getAttribute('onclick')==="switchAdminTab('results')";
+    btn.style.display = restricted && !isResultsTab ? 'none' : '';
+  });
+  if(restricted) switchAdminTab('results');
 }
 
 // ── PIN HELPERS ───────────────────────────
@@ -5453,6 +5514,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.75.0',date:'1 Jul 2026',notes:['Admin: toggle switches across settings are now smaller/more mobile-appropriate (was 44×24, now 34×19).','Admin: settings cards (Branding, Fixtures, Controls) are now collapsed to just their heading until tapped — Current Votes\' refresh button and Knockout Fixtures\' count badge still work while collapsed.','Admin: removed the standalone Data sub-tab — its Tiebreaker Data card (top scorer, ITM/Forfeit overrides) moved into Polls & Entry instead of being lost.','Admin: added a new Score Master role — a player can be given access to just the Results tab (enter match scores) without full admin rights. Grant/revoke it from a player\'s ⋮ Options menu; they get a one-time explainer popup the next time they open the app after being granted it. Requires a new score_master boolean column on the players table in Supabase.','Background images no longer auto-switch your colour theme when picked — pick the theme separately if you want to change colours.','Hid scrollbars app-wide (scrolling still works, just no visible track/thumb).']},
   {v:'1.74.2',date:'1 Jul 2026',notes:['Predict page, background image active: the previous fix still let the scroll-hint fade wash out the first line of the next card below the date. There\'s no safe spot for that fade to sit without touching some piece of text, so it\'s now dropped entirely at the top (bottom peek fade is unaffected) — the date and every card stay fully crisp.','Fixed: predicted (\'saved\') match cards had a green border/glow that, combined with a green-toned background image, made them look like a different, inconsistent colour from not-yet-predicted cards. That green tint is now dropped whenever a background image is active, so all cards match.']},
   {v:'1.74.1',date:'1 Jul 2026',notes:['Predict page: when a background image is active, the sticky matchday date header no longer gets extra-faded by the fixture list\'s top scroll-hint gradient — that fade now starts just below the date, over the first match card, instead of overlapping the date text itself.','Appearance: added three new mid-tone colour themes — Dusk (mauve), Stone (taupe) and Mist (blue-grey) — for something between the existing near-black themes and full light mode.']},
   {v:'1.74.0',date:'1 Jul 2026',notes:['Appearance: added a Card Transparency slider (40–100%) — controls how see-through every card, row and panel is (home cards, match cards, leaderboard rows, etc.), so you can let a background image show through them instead of always sitting on a fully solid surface. Personal, saved per player on this device.']},
@@ -8115,7 +8177,7 @@ function showPlayerThemeModal(){
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Background</div>
-    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Picks a photo backdrop and matches the theme to it.</div>
+    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Adds a photo backdrop behind the app — pick a Theme above to set the colours.</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Card Transparency</div>
     <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;">
@@ -8155,15 +8217,6 @@ function playerBgPick(id, el){
   el.closest('#player-bg-grid').querySelectorAll('[data-bid]').forEach(c=>{
     c.style.borderColor = c.dataset.bid===(id||'none') ? 'var(--group-accent)' : 'var(--border)';
   });
-  const bg = BACKGROUNDS.find(b=>b.id===id);
-  if(bg && bg.theme){
-    const themeKey = getPlayerThemeKey();
-    if(themeKey) localStorage.setItem(themeKey, bg.theme);
-    document.querySelectorAll('#player-theme-grid [data-tid]').forEach(c=>{
-      c.style.borderColor = c.dataset.tid===bg.theme ? 'var(--group-accent)' : 'var(--border)';
-    });
-    savePlayerAppearancePref({theme:bg.theme});
-  }
   applyBranding();
 }
 
@@ -8706,7 +8759,7 @@ function checkAdminPass(){
 }
 
 function switchControlsSubTab(name){
-  const sections = ['group','polls','display','data','tools','danger'];
+  const sections = ['group','polls','display','tools','danger'];
   sections.forEach(s=>{
     const el = document.getElementById('ctrl-section-'+s);
     if(el) el.style.display = s===name ? '' : 'none';
@@ -8714,9 +8767,8 @@ function switchControlsSubTab(name){
   document.querySelectorAll('.controls-sub-tab').forEach((b,i)=>{
     b.classList.toggle('active', sections[i]===name);
   });
-  if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();loadKnockoutsLive();}
+  if(name==='polls'){loadForfeitSettings();loadEntryModeStatus();loadPaidPlacesSettings();loadVotesSettings();loadPaidPlacesPollStatus();loadPollVoteBreakdown();loadKnockoutsLive();loadTiebreakerSettings();}
   if(name==='display'){loadExtrasDefault();loadLbViewSettings();loadLbShowRankChange();loadLbShowTimeline();loadEndBannerToggle();loadMotmToggles();loadTickerSettings();loadHomeCardSettings();loadTiebreakRequired();loadExtrasConfig();}
-  if(name==='data'){loadTiebreakerSettings();}
 }
 
 function loadPaidPlacesPollStatus(){
@@ -8769,13 +8821,53 @@ async function reopenPaidPlacesPoll(){
   }catch(e){flash('Failed: '+e.message,'error');}
 }
 
+// Collapses every settings card in Admin down to just its heading until tapped.
+// Cards are static markup, so this only ever needs to run once per card — a
+// data-attribute guard makes repeat calls (e.g. on every tab switch) a no-op.
+// A card's "header" is whichever direct child of .status-card contains its
+// <h3> (the h3 itself, or a wrapper div around it + an action button) — that
+// element is left completely untouched internally and just gets a chevron
+// appended after it, so nothing inside an existing header layout breaks.
+function initCollapsibleAdminCards(){
+  document.querySelectorAll('.admin-panel .status-card').forEach(card=>{
+    if(card.dataset.collapsibleInit) return;
+    const h3 = card.querySelector('h3');
+    if(!h3) return; // headerless single-toggle cards are already maximally compact
+    card.dataset.collapsibleInit = '1';
+    let headerEl = h3;
+    while(headerEl.parentElement !== card) headerEl = headerEl.parentElement;
+    const headerRow = document.createElement('div');
+    headerRow.className = 'status-card-toggle';
+    card.insertBefore(headerRow, headerEl);
+    headerRow.appendChild(headerEl);
+    const chevron = document.createElement('span');
+    chevron.className = 'status-card-chevron';
+    chevron.textContent = '▾';
+    headerRow.appendChild(chevron);
+    const bodyChildren = Array.from(card.children).filter(el=>el!==headerRow);
+    if(bodyChildren.length){
+      const body = document.createElement('div');
+      body.className = 'status-card-body';
+      bodyChildren.forEach(el=>body.appendChild(el));
+      card.appendChild(body);
+    }
+    headerRow.addEventListener('click', e=>{
+      if(e.target.closest('button,a,input,select,textarea,label')) return;
+      card.classList.toggle('collapsed');
+    });
+    card.classList.add('collapsed');
+  });
+}
+
 function switchAdminTab(name){
+  if(!isAdmin && isScoreMaster && name!=='results') name='results'; // Score Masters: Results only
   document.querySelectorAll('.admin-tab').forEach((b,i)=>{
     const tabs=['results','players','fixtures','branding','controls','changelog'];
     b.classList.toggle('active',tabs[i]===name);
   });
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('admin-panel-'+name).classList.add('active');
+  initCollapsibleAdminCards();
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
@@ -8954,7 +9046,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,theme,light_mode`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode`),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -8963,7 +9055,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,theme:p.theme||null,light_mode:p.light_mode};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -8975,7 +9067,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode)}</span></div>
+          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${p.score_master ? ' <span title="Score Master" style="font-size:.75rem;margin-left:.15rem;">📊</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode)}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
@@ -8994,6 +9086,10 @@ async function loadPlayersPanel(){
             ${p.god_mode
               ? `<button class="player-options-item" onclick="revokeGodMode('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">⚡ Revoke God Mode</button>`
               : `<button class="player-options-item" onclick="grantGodMode('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">⚡ Grant God Mode</button>`
+            }
+            ${p.is_admin ? '' : p.score_master
+              ? `<button class="player-options-item" onclick="revokeScoreMaster('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">📊 Revoke Score Master</button>`
+              : `<button class="player-options-item" onclick="grantScoreMaster('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">📊 Make Score Master</button>`
             }
             <hr class="player-options-divider">
             <button class="player-options-item danger" onclick="removePlayer('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🗑️ Remove Player</button>
@@ -9258,6 +9354,26 @@ async function revokeAdmin(playerId, name){
     try{
       await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{is_admin:false}});
       flash(name+' is no longer an admin','success');
+      loadPlayersPanel();
+    }catch(e){flash('Error: '+e.message,'error');}
+  });
+}
+
+async function grantScoreMaster(playerId, name){
+  showConfirm('📊','Make Score Master','Give '+name+' access to enter match results? They\'ll see a restricted Admin tab — Results only — and get a one-time popup explaining it next time they open the app.','Make Score Master', async ()=>{
+    try{
+      await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{score_master:true}});
+      flash(name+' is now a Score Master','success');
+      loadPlayersPanel();
+    }catch(e){flash('Error: '+e.message,'error');}
+  });
+}
+
+async function revokeScoreMaster(playerId, name){
+  showConfirm('📊','Revoke Score Master','Remove result-entry access from '+name+'? They will no longer see the Admin tab (unless they\'re a full admin).','Revoke', async ()=>{
+    try{
+      await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{score_master:false}});
+      flash(name+' is no longer a Score Master','success');
       loadPlayersPanel();
     }catch(e){flash('Error: '+e.message,'error');}
   });
@@ -10851,12 +10967,13 @@ function exitGodModeToProfile(){
     currentPlayer = _godOriginalPlayer;
     currentGroup  = _godOriginalGroup;
     isAdmin = _godOriginalPlayer.is_admin || false;
+    isScoreMaster = _godOriginalPlayer.score_master || false;
     _godOriginalPlayer = null;
     _godOriginalGroup  = null;
     saveSession();
     enterApp();
   } else {
-    currentGroup=null; currentPlayer=null; isAdmin=false;
+    currentGroup=null; currentPlayer=null; isAdmin=false; isScoreMaster=false;
     _godOriginalPlayer=null; _godOriginalGroup=null;
     localStorage.removeItem('wc26_group');
     localStorage.removeItem('wc26_player');
@@ -11106,7 +11223,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.74.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.75.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
