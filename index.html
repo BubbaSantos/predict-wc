@@ -103,9 +103,17 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 .compact-toggle:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .matchday-group{margin-bottom:1.5rem;}
 .matchday-label{font-size:1.1rem;font-weight:800;color:var(--text);margin:.9rem 0 .4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.4rem;}
-#fixtures-list{overflow-y:auto;}
+#fixtures-list{overflow-y:auto;flex:1;min-height:0;}
 #fixtures-list .matchday-label{position:sticky;top:0;z-index:5;background:var(--bg);margin:0;padding:.5rem 0 .4rem;}
 #fixtures-list.compact .matchday-label{padding:.3rem 0 .2rem;}
+/* Predict page: lock the page itself so only #fixtures-list scrolls —
+   everything above it (header, votes, hints) keeps its natural height. */
+body.predict-scroll-lock{height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
+body.predict-scroll-lock header{flex-shrink:0;}
+body.predict-scroll-lock #ticker-sticky-wrap{flex-shrink:0;}
+body.predict-scroll-lock .container{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-top:1rem;padding-bottom:.5rem;}
+body.predict-scroll-lock .view.active{display:flex;flex-direction:column;flex:1;min-height:0;}
+.predict-fixed-top{flex-shrink:0;}
 .match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .85rem;margin-bottom:.5rem;transition:border-color .15s;position:relative;}
 .match-card:hover{border-color:color-mix(in srgb,var(--group-accent) 20%,transparent);}
 .match-card.locked{opacity:.65;} .match-card.saved{border-color:rgba(16,185,129,.25);}
@@ -1231,7 +1239,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.71.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.72.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1485,6 +1493,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
     <!-- RULES -->
     <!-- PREDICT -->
     <div id="view-predict" class="view">
+      <div class="predict-fixed-top">
       <div class="page-header">
         <div class="page-title">Predictions</div>
         <div id="predict-total-pts-wrap" style="display:none;">
@@ -1516,18 +1525,17 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <div class="predict-vote-desc" id="predict-paidplaces-question" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.65rem;">How many places should be paid out?</div>
         <div id="predict-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
-
-
-      <div style="font-size:.62rem;color:var(--text-muted);opacity:.5;text-align:center;margin-bottom:.6rem;letter-spacing:.03em;">Single tap to see others picks · Double-tap to toggle compact</div>
-      <div style="font-size:.7rem;color:var(--text-muted);background:color-mix(in srgb,var(--group-accent) 8%,transparent);border:1px solid color-mix(in srgb,var(--group-accent) 18%,transparent);border-radius:8px;padding:.45rem .7rem;margin-bottom:.65rem;text-align:center;line-height:1.45;">Predict the <strong>90 min full time score</strong> only</div>
+      <div style="font-size:.62rem;color:var(--text-muted);opacity:.5;text-align:center;margin-bottom:.45rem;letter-spacing:.03em;">Single tap to see others picks · Double-tap to toggle compact</div>
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem;">
+        <div style="flex:1;min-width:180px;font-size:.7rem;color:var(--text-muted);background:color-mix(in srgb,var(--group-accent) 8%,transparent);border:1px solid color-mix(in srgb,var(--group-accent) 18%,transparent);border-radius:8px;padding:.45rem .7rem;text-align:center;line-height:1.45;">Predict the <strong>90 min full time score</strong> only</div>
+        <button id="predict-today-btn" class="compact-toggle" onclick="jumpToPredictToday()">📅 Today</button>
+      </div>
       <div id="predict-stage-tabs" style="display:none;margin-bottom:.75rem;">
         <div class="lb-view-toggle" style="width:100%;">
           <button id="predict-tab-group"    class="lb-view-tab active" style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('group')">⚽ Group Stage</button>
           <button id="predict-tab-knockout" class="lb-view-tab"        style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('knockout')">🏆 Knockouts</button>
         </div>
       </div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem;">
-        <button id="predict-today-btn" class="compact-toggle" onclick="jumpToPredictToday()">📅 Today</button>
       </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
     </div>
@@ -4081,6 +4089,7 @@ function initPwaCarousel(){
 }
 function showView(name){ closeMenu();
   window.scrollTo(0,0);
+  document.body.classList.toggle('predict-scroll-lock', name==='predict');
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
@@ -4511,21 +4520,19 @@ function calcPoints(ph,pa,ah,aa){
 }
 
 // ── LOAD PREDICTIONS ─────────────────────
-// Bounds #fixtures-list to ~4 match-cards tall with its own internal scroll,
-// so date headings can stick to the top while cards scroll up behind them.
-// Fades the top/bottom edge (a half-card peek) to hint there's more to scroll
-// to either way. The top fade zone is kept small so the sticky heading's own
-// text stays legible — it only softens the outer padding, not the label itself.
+// #fixtures-list fills whatever vertical space is left after the header/votes/
+// hints above it (see body.predict-scroll-lock CSS) — it doesn't get a fixed
+// game count, so compact mode naturally fits more rows than full mode.
+// This just adds the top/bottom fade (a half-card peek) hinting there's more
+// to scroll to either way. The top fade zone is kept small so the sticky
+// heading's own text stays legible — it only softens the outer padding.
 function _capFixturesListHeight(list){
   if(!list) return;
   const card = list.querySelector('.match-card');
-  if(!card){ list.style.maxHeight=''; list.style.webkitMaskImage=''; list.style.maskImage=''; return; }
+  if(!card){ list.style.webkitMaskImage=''; list.style.maskImage=''; return; }
   const slotH = card.getBoundingClientRect().height + parseFloat(getComputedStyle(card).marginBottom||0);
-  const heading = list.querySelector('.matchday-label');
-  const headingH = heading ? heading.getBoundingClientRect().height : 0;
   const bottomFade = slotH*0.5;
   const topFade = 14;
-  list.style.maxHeight = (headingH + slotH*4 + bottomFade) + 'px';
   const mask = `linear-gradient(to bottom, transparent 0, black ${topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`;
   list.style.webkitMaskImage = mask;
   list.style.maskImage = mask;
@@ -5345,6 +5352,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.72.0',date:'1 Jul 2026',notes:['Predict page overhaul: the page itself no longer scrolls — header, votes and hints keep their natural height and only the fixture list scrolls, filling whatever space is left (body.predict-scroll-lock). Because it\'s no longer capped to a fixed ~4-game height, Compact mode now fits roughly twice as many games as Full mode automatically, since its rows are shorter. Tidied up the layout: the "90 min score only" hint now shares a row with the 📅 Today button instead of two stacked lines.']},
   {v:'1.71.4',date:'1 Jul 2026',notes:['Fixed: switching tabs while scrolled down on another page (e.g. Home) carried that page-level scroll position into the Predict page, hiding its heading/Today button above the fold even though the fixture box itself was correctly scrolled to today internally. showView() now resets the page scroll to the top on every tab switch.']},
   {v:'1.71.3',date:'1 Jul 2026',notes:['Predict page: added a 📅 Today button above the fixture list — smoothly scrolls the list back to today\'s matches from wherever you\'ve scrolled to.']},
   {v:'1.71.2',date:'1 Jul 2026',notes:['Predict page: each knockout round now gets its own pill colour — Round of 32 blue, Round of 16 purple, Quarter-Final pink, Semi-Final orange, 3rd Place grey, Final gold — instead of every round sharing the same plain tag.']},
@@ -10934,7 +10942,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.72.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
