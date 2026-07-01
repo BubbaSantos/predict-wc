@@ -191,9 +191,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .home-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;margin-bottom:1rem;}
 .home-card-title{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.85rem;font-weight:600;}
 .mini-lb-row{display:grid;grid-template-columns:2.2rem 1fr auto;align-items:center;gap:.75rem;padding:.55rem .5rem;border-radius:8px;margin-bottom:.3rem;transition:background .15s;}
-.mini-lb-row.mlb-gold{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);}
-.mini-lb-row.mlb-silver{background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.3);}
-.mini-lb-row.mlb-bronze{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.3);}
+.mini-lb-row.mlb-gold{background:color-mix(in srgb,var(--gold) 16%,var(--surface));border:1px solid rgba(251,191,36,.35);}
+.mini-lb-row.mlb-silver{background:color-mix(in srgb,var(--silver) 14%,var(--surface));border:1px solid rgba(148,163,184,.3);}
+.mini-lb-row.mlb-bronze{background:color-mix(in srgb,var(--bronze) 14%,var(--surface));border:1px solid rgba(217,119,6,.3);}
 .mini-lb-row.mlb-you{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.3);}
 .mini-lb-rank{font-size:1.1rem;font-weight:700;text-align:center;color:var(--text-muted);}
 .mlb-gold .mini-lb-rank{color:var(--gold);}
@@ -335,9 +335,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 /* ── LEADERBOARD ── */
 .lb-row{display:grid;grid-template-columns:3rem 1fr auto;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.5rem;transition:border-color .15s;-webkit-tap-highlight-color:transparent;}
 @media(hover:hover){.lb-row:hover{border-color:var(--group-accent);}}
-.lb-row.lb-gold{background:rgba(251,191,36,.13);border-color:rgba(251,191,36,.45);}
-.lb-row.lb-silver{background:rgba(148,163,184,.13);border-color:rgba(148,163,184,.45);}
-.lb-row.lb-bronze{background:rgba(217,119,6,.13);border-color:rgba(217,119,6,.45);}
+.lb-row.lb-gold{background:color-mix(in srgb,var(--gold) 18%,var(--surface));border-color:rgba(251,191,36,.45);}
+.lb-row.lb-silver{background:color-mix(in srgb,var(--silver) 16%,var(--surface));border-color:rgba(148,163,184,.45);}
+.lb-row.lb-bronze{background:color-mix(in srgb,var(--bronze) 16%,var(--surface));border-color:rgba(217,119,6,.45);}
 .lb-row.lb-last{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);}
 .lb-row.lb-you{border-color:var(--group-accent);box-shadow:0 0 0 1px var(--group-accent);}
 .lb-rank{font-size:1.6rem;line-height:1;color:var(--text-muted);text-align:center;}
@@ -1238,7 +1238,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.73.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.73.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5405,6 +5405,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.73.1',date:'1 Jul 2026',notes:['Fixed: gold/silver/bronze leaderboard rows (both the full leaderboard and the home dashboard mini standings) used a translucent tint that let whatever was behind the page bleed through and look muddy — especially with a background image set. They\'re now solid, opaque colours blended from the theme\'s medal colours.']},
   {v:'1.73.0',date:'1 Jul 2026',notes:['Appearance: added a Background picker with 9 football-themed photo backdrops (pitch patterns, grass close-ups, goal nets, stadium seats). Picking one blends it subtly into the page at low opacity and auto-matches the colour theme (green shots → Forest, blue shots → Ocean) so it stays legible. Personal preference, saved per player on this device.']},
   {v:'1.72.2',date:'1 Jul 2026',notes:['Predict page: double-tapping to toggle Compact/Full no longer jumps the fixture list to a different date — it now tracks whichever date was pinned at the top and re-aligns to that same date after the row heights change. Fixed: the pulsing green "Today" dot was getting clipped on its left edge by the fixture box\'s scroll clipping — added breathing-room padding so the glow isn\'t cut off.']},
   {v:'1.72.1',date:'1 Jul 2026',notes:['Fixed v1.72.0: the flex-fill redesign broke #fixtures-list\'s own scroll entirely (missing link in the flex chain at #screen-app). Reverted to the previous working approach — #fixtures-list keeps a fixed, JS-computed height with its own scroll, and the outer page just gets overflow:hidden on top of that. Compact mode still shows ~2x the rows of Full mode, now via an explicit multiplier instead of relying on flex-fill.']},
@@ -11033,7 +11034,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
