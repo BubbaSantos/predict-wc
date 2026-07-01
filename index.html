@@ -18,6 +18,7 @@
   --gold:#fbbf24;--silver:#94a3b8;--bronze:#d97706;
   --group-accent:#6d5cff;
   --header-bg:rgba(11,17,32,.82);
+  --card-opacity:100%;
   --radius-lg:20px;--radius-md:14px;--radius-sm:11px;
   --shadow-sm:0 1px 2px rgba(10,15,30,.18);
   --shadow-md:0 6px 22px -8px rgba(10,15,30,.28);
@@ -1239,7 +1240,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.73.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.74.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -3962,6 +3963,8 @@ function applyTheme(themeId){
   const isLight = document.body.classList.contains('light');
   const vars = (isLight && t.lightVars) ? {...t.vars,...t.lightVars} : t.vars;
   Object.entries(vars).forEach(([k,v])=>root.style.setProperty(k,v));
+  if(vars['--surface']) root.style.setProperty('--surface', `color-mix(in srgb, ${vars['--surface']} var(--card-opacity,100%), transparent)`);
+  if(vars['--surface2']) root.style.setProperty('--surface2', `color-mix(in srgb, ${vars['--surface2']} var(--card-opacity,100%), transparent)`);
   document.body.style.backgroundImage = t.bodyGradient==='none' ? 'none' : t.bodyGradient;
   let extraEl = document.getElementById('theme-extra-css');
   if(t.extraCss){
@@ -3975,6 +3978,12 @@ function applyTheme(themeId){
 function getPlayerThemeKey(){ return currentPlayer ? `wc26_player_theme_${currentPlayer.id}` : null; }
 function getPlayerEdgesKey(){ return currentPlayer ? `wc26_player_edges_${currentPlayer.id}` : null; }
 function getPlayerBgKey(){ return currentPlayer ? `wc26_player_bg_${currentPlayer.id}` : null; }
+function getPlayerCardOpacityKey(){ return currentPlayer ? `wc26_player_cardopacity_${currentPlayer.id}` : null; }
+
+function applyCardOpacity(pct){
+  const val = (pct==null || pct==='') ? 100 : Number(pct);
+  document.documentElement.style.setProperty('--card-opacity', (isNaN(val)?100:val)+'%');
+}
 
 function applyPlayerBackground(bgId){
   const layer = document.getElementById('bg-photo-layer');
@@ -4012,9 +4021,11 @@ function applyBranding(){
   const playerAccent = getPlayerAccentKey() ? localStorage.getItem(getPlayerAccentKey()) : null;
   const playerEdges = getPlayerEdgesKey() ? localStorage.getItem(getPlayerEdgesKey()) : null;
   const playerBg = getPlayerBgKey() ? localStorage.getItem(getPlayerBgKey()) : null;
+  const playerCardOpacity = getPlayerCardOpacityKey() ? localStorage.getItem(getPlayerCardOpacityKey()) : null;
   applyTheme(playerTheme || currentGroup.theme||'dark');
   applyEdges(playerEdges||'curved');
   applyPlayerBackground(playerBg);
+  applyCardOpacity(playerCardOpacity);
   const accent = playerAccent || currentGroup.accent||'#6d5cff';
   document.documentElement.style.setProperty('--group-accent', accent);
   const emoji = currentGroup.emoji||'⚽';
@@ -5407,6 +5418,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.74.0',date:'1 Jul 2026',notes:['Appearance: added a Card Transparency slider (40–100%) — controls how see-through every card, row and panel is (home cards, match cards, leaderboard rows, etc.), so you can let a background image show through them instead of always sitting on a fully solid surface. Personal, saved per player on this device.']},
   {v:'1.73.5',date:'1 Jul 2026',notes:['Predict page: the matchday date header now only gets a solid background when there\'s no background image set — with a photo background active it goes transparent instead.']},
   {v:'1.73.4',date:'1 Jul 2026',notes:['Reverted v1.73.3\'s matchday date header restyle (frosted glass + accent tint) — back to the plain solid background.']},
   {v:'1.73.3',date:'1 Jul 2026',notes:['Predict page: the sticky matchday date header always rendered as a flat, plain-black bar regardless of theme. It now uses the same frosted-glass treatment as the app header (blurred, translucent) tinted with the group\'s accent colour, so it actually reflects the chosen theme instead of looking like an unstyled block.']},
@@ -8042,7 +8054,9 @@ function showPlayerThemeModal(){
     <div onclick="playerBgPick('${b.id}',this)" data-bid="${b.id}" title="${b.label}" style="cursor:pointer;border-radius:10px;overflow:hidden;position:relative;border:2px solid ${currentBg===b.id?'var(--group-accent)':'var(--border)'};aspect-ratio:3/4;background:var(--surface2) url('${b.thumb}') center/cover;transition:border-color .15s;">
       <span style="position:absolute;left:0;right:0;bottom:0;padding:.3rem .35rem;font-size:.6rem;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));text-shadow:0 1px 2px rgba(0,0,0,.6);">${b.label}</span>
     </div>`).join('');
-  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey))||(bgKey&&localStorage.getItem(bgKey));
+  const cardOpacityKey = getPlayerCardOpacityKey();
+  const currentCardOpacity = (cardOpacityKey && localStorage.getItem(cardOpacityKey)) || 100;
+  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey))||(bgKey&&localStorage.getItem(bgKey))||(cardOpacityKey&&localStorage.getItem(cardOpacityKey));
   modal.innerHTML=`<div class="pred-modal" style="max-width:480px;">
     <div class="pred-modal-header">
       <div class="pred-modal-title">Appearance</div>
@@ -8066,6 +8080,11 @@ function showPlayerThemeModal(){
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Background</div>
     <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Picks a photo backdrop and matches the theme to it.</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Card Transparency</div>
+    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;">
+      <input type="range" id="ptm-card-opacity" min="40" max="100" step="5" value="${currentCardOpacity}" oninput="playerCardOpacityPick(this.value)" style="flex:1;accent-color:var(--group-accent);">
+      <span id="ptm-card-opacity-val" style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:2.8rem;text-align:right;flex-shrink:0;">${currentCardOpacity}%</span>
+    </div>
     ${hasOverride?`<button class="btn-ghost" style="font-size:.78rem;" onclick="clearPlayerAppearance(this)">Reset to group defaults</button>`:''}
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -8109,6 +8128,14 @@ function playerBgPick(id, el){
     savePlayerAppearancePref({theme:bg.theme});
   }
   applyBranding();
+}
+
+function playerCardOpacityPick(val){
+  const key = getPlayerCardOpacityKey();
+  if(key) localStorage.setItem(key, val);
+  applyCardOpacity(val);
+  const label = document.getElementById('ptm-card-opacity-val');
+  if(label) label.textContent = val+'%';
 }
 
 function playerEdgesPick(style, el){
@@ -8495,10 +8522,12 @@ function clearPlayerAppearance(btn){
   const accentKey = getPlayerAccentKey();
   const edgesKey = getPlayerEdgesKey();
   const bgKey = getPlayerBgKey();
+  const cardOpacityKey = getPlayerCardOpacityKey();
   if(themeKey) localStorage.removeItem(themeKey);
   if(accentKey) localStorage.removeItem(accentKey);
   if(edgesKey) localStorage.removeItem(edgesKey);
   if(bgKey) localStorage.removeItem(bgKey);
+  if(cardOpacityKey) localStorage.removeItem(cardOpacityKey);
   applyBranding();
   btn.closest('.modal-overlay').remove();
   savePlayerAppearancePref({theme:null, light_mode:null});
@@ -11040,7 +11069,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.73.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.74.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
