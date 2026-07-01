@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.71.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.71.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1525,6 +1525,9 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <button id="predict-tab-group"    class="lb-view-tab active" style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('group')">⚽ Group Stage</button>
           <button id="predict-tab-knockout" class="lb-view-tab"        style="flex:1;padding:.65rem .65rem;font-size:.8rem;" onclick="setPredictStage('knockout')">🏆 Knockouts</button>
         </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem;">
+        <button id="predict-today-btn" class="compact-toggle" onclick="jumpToPredictToday()">📅 Today</button>
       </div>
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
     </div>
@@ -4530,7 +4533,7 @@ function _capFixturesListHeight(list){
 // Opens the predict page scrolled to today's matches — scroll up for previous
 // days, down for upcoming ones. Falls back to the nearest future/past day.
 // Leaves a faded peek of the previous day above today's heading as a hint.
-function _scrollPredictToToday(list){
+function _scrollPredictToToday(list, smooth){
   requestAnimationFrame(()=>{
     const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
     const groups=Array.from(list.querySelectorAll('.matchday-group[data-datekey]'));
@@ -4541,8 +4544,17 @@ function _scrollPredictToToday(list){
     if(!target) return;
     const peek = (list.querySelector('.match-card')?.getBoundingClientRect().height||80) * 0.5;
     const delta = target.getBoundingClientRect().top - list.getBoundingClientRect().top;
-    list.scrollTop = Math.max(0, list.scrollTop + delta - peek);
+    const top = Math.max(0, list.scrollTop + delta - peek);
+    if(smooth) list.scrollTo({top, behavior:'smooth'});
+    else list.scrollTop = top;
   });
+}
+
+// "Today" button on the predict page — re-centres the scroll box on today
+// without reloading data.
+function jumpToPredictToday(){
+  const list=document.getElementById('fixtures-list');
+  if(list) _scrollPredictToToday(list, true);
 }
 
 async function loadPredictions(scrollToToday){
@@ -5332,6 +5344,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.71.3',date:'1 Jul 2026',notes:['Predict page: added a 📅 Today button above the fixture list — smoothly scrolls the list back to today\'s matches from wherever you\'ve scrolled to.']},
   {v:'1.71.2',date:'1 Jul 2026',notes:['Predict page: each knockout round now gets its own pill colour — Round of 32 blue, Round of 16 purple, Quarter-Final pink, Semi-Final orange, 3rd Place grey, Final gold — instead of every round sharing the same plain tag.']},
   {v:'1.71.1',date:'1 Jul 2026',notes:['Predict page: fixture list is now a bounded box showing ~4 games at a time with its own scroll — date headings stick to the top as you scroll instead of disappearing, and a faded half-game peeks at the bottom (top too, subtly) to hint there\'s more.']},
   {v:'1.71.0',date:'1 Jul 2026',notes:['Predict page: removed the "Previous Matches" dropdown — every date is now one continuous list, scroll up for previous days and down for upcoming ones. Opening the tab now scrolls straight to today\'s games automatically.']},
@@ -10919,7 +10932,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.3</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
