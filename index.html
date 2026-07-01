@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.70.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.70.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5275,6 +5275,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.70.1',date:'1 Jul 2026',notes:['Player prediction modal: removed the "Previous Results" collapse button — match history is now one reverse-chronological list, capped to ~10.5 rows tall with a fade at the bottom hinting there\'s more to scroll to (only kicks in once there are more than 10 games).']},
   {v:'1.70.0',date:'1 Jul 2026',notes:['Fixed: dragging the leaderboard Timeline slider on mobile could also trigger the page-swipe navigation underneath it, fighting with the drag. Timeline scrubbing is now throttled to one render per frame and uses a quicker, non-bouncy transition while actively dragging so player cards reorder more fluidly instead of jump-cutting between matches. Player prediction modal: each match row now shows the league position they were in right after that match.']},
   {v:'1.69.9',date:'1 Jul 2026',notes:['Leaderboard: removed the ⏱ emoji from the Timeline button/header — plain text label now.']},
   {v:'1.69.8',date:'1 Jul 2026',notes:['Fixed: "Live Now" on the home card stayed live for the full 130-minute window even after admin marked a match Full Time — the home/predict refresh was reloading results without the full_time flag, wiping it out. Leaderboard: ⏱ Timeline button restored as a tab next to Overall/Form (was buried in a collapsible panel with no way to open it) — removed the 📈 emoji from Form to make room. New Admin → Display → Leaderboard Views toggle to hide the Timeline button group-wide. Requires: ALTER TABLE groups ADD COLUMN show_lb_timeline boolean DEFAULT true;']},
@@ -9756,11 +9757,7 @@ async function viewPlayerPredictions(playerId,name){
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
     const predMap={}; (preds||[]).forEach(p=>predMap[p.match_id]={h:p.home_score,a:p.away_score});
     let totalPts=0,statExact=0,statResult=0,statWrong=0;
-    const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
-    const td=new Date(todayKey+'T12:00:00');
-    const yd=new Date(td); yd.setDate(yd.getDate()-2);
-    const yesterdayKey=yd.toLocaleDateString('en-CA');
-    const recentRows=[], oldRows=[];
+    const rowsArr=[];
     allFixtures().forEach(f=>{
       const p=predMap[f.id],r=rm[f.id];
       if(!p)return;
@@ -9778,12 +9775,11 @@ async function viewPlayerPredictions(playerId,name){
       const rankTxt=rankNum!=null?(rh.counts[rankNum]>1?'=':'#')+rankNum+'/'+rh.total:'';
       const rankBadge=`<span style="font-size:.68rem;color:var(--text-muted);min-width:2.6rem;text-align:right;" title="League position after this match">${rankTxt}</span>`;
       const html=`<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span>${rankBadge}</div>`;
-      const isOldPast = r && f.date && f.date < yesterdayKey;
-      if(isOldPast) oldRows.push(html); else recentRows.push(html);
+      const ts=getMatchKickoff(f)?.getTime() ?? (f.date?new Date(f.date).getTime():0);
+      rowsArr.push({html,ts});
     });
-    const oldCount=oldRows.length;
-    const oldDropdown=oldCount>0?`<div style="margin-bottom:.75rem;"><button id="vpred-old-btn" onclick="(function(btn){const d=document.getElementById('vpred-old-div');const open=d.style.display!=='none';d.style.display=open?'none':'block';btn.textContent=open?'▸ Previous Results (${oldCount})':'▾ Previous Results (${oldCount})'})(this)" style="background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.78rem;padding:.35rem .65rem;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">▸ Previous Results (${oldCount})</button><div id="vpred-old-div" style="display:none;">${oldRows.join('')}</div></div>`:'';
-    const rows=(oldDropdown+(recentRows.join(''))) || '';
+    rowsArr.sort((a,b)=>b.ts-a.ts);
+    const rows = rowsArr.length ? `<div id="vpred-rows">${rowsArr.map(r=>r.html).join('')}</div>` : '';
     const tb=tbs&&tbs[0];
     const tbHtml=tb&&tb.top_scorer
       ?`<div style="display:flex;align-items:center;gap:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;">⚽ <span style="color:var(--text-muted);">Top scorer:</span>&nbsp;<strong>${tb.top_scorer}</strong>${tb.goals!=null?`<span style="color:var(--text-muted);margin-left:.25rem;">(${tb.goals} goals)</span>`:''}</div>`
@@ -9801,13 +9797,27 @@ async function viewPlayerPredictions(playerId,name){
       +`</div>`;
     const modal=document.createElement('div');
     modal.className='modal-overlay';
-    const emptyMsg = (!recentRows.length && !oldRows.length) ? '<div class="empty">No predictions yet.</div>' : '';
+    const emptyMsg = !rowsArr.length ? '<div class="empty">No predictions yet.</div>' : '';
     const nameEsc=String(name).replace(/'/g,"\\'");
     const pidEsc=String(playerId).replace(/'/g,"\\'");
     modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div style="display:flex;align-items:center;gap:.55rem;min-width:0;"><div class="pred-modal-title" style="min-width:0;overflow:hidden;text-overflow:ellipsis;">${name}</div><button class="stats-link-btn" onclick="showPlayerStats('${pidEsc}','${nameEsc}')">📈 Stats</button></div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${emptyMsg}${rows}</div>`;
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
     document.body.appendChild(modal);
+    _capVpredRowsHeight(rowsArr.length);
   }catch(e){flash('Error: '+e.message,'error');}
+}
+
+// Cap the match-history list to ~10.5 rows tall with a fade at the bottom
+// hinting more (older) games are there to scroll to.
+function _capVpredRowsHeight(rowCount){
+  const wrap = document.getElementById('vpred-rows');
+  if(!wrap || rowCount <= 10) return;
+  const rowH = wrap.querySelector('.pred-row')?.getBoundingClientRect().height;
+  if(!rowH) return;
+  wrap.style.maxHeight = (rowH * 10.5) + 'px';
+  wrap.style.overflowY = 'auto';
+  wrap.style.webkitMaskImage = 'linear-gradient(to bottom, black 0%, black calc(100% - '+Math.round(rowH*0.5)+'px), transparent 100%)';
+  wrap.style.maskImage = wrap.style.webkitMaskImage;
 }
 
 // ── BRANDING PANEL ────────────────────────
@@ -10815,7 +10825,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
