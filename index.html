@@ -885,6 +885,11 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
   /* Match card saved border glow */
   .match-card.saved { box-shadow: 0 0 0 1px rgba(16,185,129,.2); }
 
+  /* With a background image active, the green "saved" tint reads as an
+     inconsistent extra colour rather than a subtle status hint — drop it
+     so predicted and not-yet-predicted cards look the same. */
+  body.has-bg-image .match-card.saved { border-color:var(--border) !important; background:var(--surface) !important; box-shadow:none; }
+
   /* Players popup list items */
   .pred-modal div[style*="border-bottom"] { transition: background .1s; }
   .pred-modal div[style*="border-bottom"]:hover { background: var(--surface2); }
@@ -1240,7 +1245,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.74.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.74.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4587,9 +4592,9 @@ function calcPoints(ph,pa,ah,aa){
 // to hint there's more to scroll to either way — the top fade zone is kept
 // small so the sticky heading's own text stays legible. When a background
 // image is active the date heading has no backing fill of its own (see
-// applyPlayerBackground), so the fade zone is moved to start below the
-// heading instead of overlapping it — otherwise the heading text itself
-// gets faded out along with the container edge.
+// applyPlayerBackground), so there's no safe place for a top fade to sit
+// without washing out either the heading or the first line of the next
+// card — it's dropped entirely in that case, keeping only the bottom peek.
 function _capFixturesListHeight(list){
   if(!list) return;
   const card = list.querySelector('.match-card');
@@ -4603,7 +4608,7 @@ function _capFixturesListHeight(list){
   list.style.maxHeight = (headingH + slotH*fullSlots + bottomFade) + 'px';
   const hasBgImage = document.body.classList.contains('has-bg-image');
   const mask = hasBgImage
-    ? `linear-gradient(to bottom, black 0, black ${headingH}px, transparent ${headingH}px, black ${headingH+topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`
+    ? `linear-gradient(to bottom, black 0, black calc(100% - ${bottomFade}px), transparent 100%)`
     : `linear-gradient(to bottom, transparent 0, black ${topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`;
   list.style.webkitMaskImage = mask;
   list.style.maskImage = mask;
@@ -5448,6 +5453,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.74.2',date:'1 Jul 2026',notes:['Predict page, background image active: the previous fix still let the scroll-hint fade wash out the first line of the next card below the date. There\'s no safe spot for that fade to sit without touching some piece of text, so it\'s now dropped entirely at the top (bottom peek fade is unaffected) — the date and every card stay fully crisp.','Fixed: predicted (\'saved\') match cards had a green border/glow that, combined with a green-toned background image, made them look like a different, inconsistent colour from not-yet-predicted cards. That green tint is now dropped whenever a background image is active, so all cards match.']},
   {v:'1.74.1',date:'1 Jul 2026',notes:['Predict page: when a background image is active, the sticky matchday date header no longer gets extra-faded by the fixture list\'s top scroll-hint gradient — that fade now starts just below the date, over the first match card, instead of overlapping the date text itself.','Appearance: added three new mid-tone colour themes — Dusk (mauve), Stone (taupe) and Mist (blue-grey) — for something between the existing near-black themes and full light mode.']},
   {v:'1.74.0',date:'1 Jul 2026',notes:['Appearance: added a Card Transparency slider (40–100%) — controls how see-through every card, row and panel is (home cards, match cards, leaderboard rows, etc.), so you can let a background image show through them instead of always sitting on a fully solid surface. Personal, saved per player on this device.']},
   {v:'1.73.5',date:'1 Jul 2026',notes:['Predict page: the matchday date header now only gets a solid background when there\'s no background image set — with a photo background active it goes transparent instead.']},
@@ -11100,7 +11106,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.74.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.74.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
