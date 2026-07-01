@@ -148,9 +148,6 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 /* ── New predict card layout ──────────────────────── */
 .today-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;}
 .matchday-label.dim{color:var(--text-muted);font-size:1.05rem;}
-.matchday-label.finished-heading{cursor:pointer;color:var(--text-muted);font-size:1.05rem;justify-content:space-between;}
-.matchday-label.finished-heading:hover{color:var(--text);}
-.finished-chevron{font-size:1.2rem;font-weight:400;line-height:1;}
 .mc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem;}
 .mc-ko{font-size:.65rem;font-weight:700;letter-spacing:.05em;color:var(--text-muted);text-transform:uppercase;}
 .mc-header-right{display:flex;align-items:center;gap:.4rem;}
@@ -1231,7 +1228,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.70.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.71.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4083,7 +4080,7 @@ function showView(name){ closeMenu();
   const nb=document.getElementById('nav-'+name);
   if(nb) nb.classList.add('active');
   if(name==='home'){ loadHome(); startCountdown(); }
-  if(name==='predict') loadPredictions();
+  if(name==='predict') loadPredictions(true);
   if(name==='leaderboard') loadLeaderboard();
   if(name==='admin'){
     if(!isAdmin){ showView('home'); flash('Triple-click the version number to access admin','error'); return; }
@@ -4492,7 +4489,25 @@ function calcPoints(ph,pa,ah,aa){
 }
 
 // ── LOAD PREDICTIONS ─────────────────────
-async function loadPredictions(){
+// Opens the predict page scrolled to today's matches — scroll up for previous
+// days, down for upcoming ones. Falls back to the nearest future/past day.
+function _scrollPredictToToday(list){
+  requestAnimationFrame(()=>{
+    const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    const groups=Array.from(list.querySelectorAll('.matchday-group[data-datekey]'));
+    if(!groups.length) return;
+    const target=groups.find(g=>g.dataset.datekey===todayKey)
+      || groups.find(g=>g.dataset.datekey!=='zz-tbd'&&g.dataset.datekey>todayKey)
+      || groups[groups.length-1];
+    if(!target) return;
+    target.scrollIntoView({block:'start'});
+    const headerH=(document.querySelector('header')?.getBoundingClientRect().height||56)
+      + (document.getElementById('ticker-sticky-wrap')?.getBoundingClientRect().height||0);
+    window.scrollBy(0, -(headerH+8));
+  });
+}
+
+async function loadPredictions(scrollToToday){
   if(!currentPlayer||!currentGroup)return;
   const list=document.getElementById('fixtures-list');
   list.innerHTML='<div class="loading">Loading…</div>';
@@ -4529,6 +4544,7 @@ async function loadPredictions(){
     }
     document.getElementById('predict-stage-tabs')?.style.setProperty('display','none');
     renderFixtures(list,false);
+    if(scrollToToday) _scrollPredictToToday(list);
     if(compactMode) list.classList.add('compact');
     const compactBtn=document.getElementById('compact-btn');
     if(compactBtn) compactBtn.textContent=compactMode?'⊞ Full':'⊟ Compact';
@@ -4577,7 +4593,7 @@ function setPredictStage(stage){
 
 function renderFixtures(container,forAdmin=false){
   const grouped={}, keyMap={};
-  const prevFixtures=[], liveFixtures=[];
+  const liveFixtures=[];
   const todayKey=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   const nowMs=Date.now();
   const LIVE_WIN=130*60*1000;
@@ -4588,8 +4604,6 @@ function renderFixtures(container,forAdmin=false){
     const isLive=!!(koMs&&nowMs>=koMs&&nowMs<koMs+LIVE_WIN);
     if(forAdmin && isLive){
       liveFixtures.push(f);
-    } else if(!forAdmin && dateKey!=='zz-tbd'&&dateKey<todayKey&&!isLive){
-      prevFixtures.push(f);
     } else {
       const key = dateKey;
       const label = getMatchDateLabel(f);
@@ -4632,17 +4646,12 @@ function renderFixtures(container,forAdmin=false){
       html+=`</div>`;
     });
   } else {
-    if(prevFixtures.length){
-      html+=`<div class="matchday-group"><div class="matchday-label finished-heading" onclick="toggleFinishedSection()">Previous Matches<span class="finished-chevron" id="finished-chevron">›</span></div><div id="finished-matches-list" style="display:none;">`;
-      prevFixtures.forEach(f=>{ html+=cardFor(f); });
-      html+=`</div></div>`;
-    }
     const keys=Object.keys(grouped).sort();
     keys.forEach(key=>{
       const label=keyMap[key];
-      const isToday=label==='Today';
-      const isFuture=label!=='Today'&&label!=='Tomorrow'&&label!=='TBD';
-      html+=`<div class="matchday-group"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${label}</div>`;
+      const isToday=key===todayKey;
+      const isFuture=key!=='zz-tbd'&&key>todayKey;
+      html+=`<div class="matchday-group" data-datekey="${key}"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${label}</div>`;
       grouped[key].forEach(f=>{ html+=cardFor(f); });
       html+=`</div>`;
     });
@@ -5282,6 +5291,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.71.0',date:'1 Jul 2026',notes:['Predict page: removed the "Previous Matches" dropdown — every date is now one continuous list, scroll up for previous days and down for upcoming ones. Opening the tab now scrolls straight to today\'s games automatically.']},
   {v:'1.70.4',date:'1 Jul 2026',notes:['Knockout draws now show who actually won: predict page score card shows "Paraguay AET" / "Paraguay AP" under the 90-min scoreline when it went to extra time or penalties. Admin results card label changed from "PEN" to "AP" to match.']},
   {v:'1.70.3',date:'1 Jul 2026',notes:['Fixed: background scroll lock didn\'t actually stop touch-scrolling behind a modal on mobile — overflow:hidden alone doesn\'t block iOS Safari\'s rubber-band scroll. Now pins the body in place with position:fixed and restores your scroll position when the modal closes.']},
   {v:'1.70.2',date:'1 Jul 2026',notes:['Background page no longer scrolls behind an open modal (player card, stats, etc.) — locked until you close it.']},
@@ -6425,15 +6435,6 @@ function renderChangelog(){
   if(!el) return;
   el.innerHTML='<div class="page-header" style="padding-bottom:.5rem;"><div class="page-title">Changelog</div></div>'
     +CHANGELOG.map(c=>`<div class="cl-entry"><span class="cl-ver">v${c.v}</span><span class="cl-date">${c.date}</span><ul class="cl-notes">${c.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>`).join('');
-}
-
-function toggleFinishedSection(){
-  const list=document.getElementById('finished-matches-list');
-  const chevron=document.getElementById('finished-chevron');
-  if(!list) return;
-  const open=list.style.display!=='none';
-  list.style.display=open?'none':'';
-  if(chevron) chevron.textContent=open?'›':'⌄';
 }
 
 function updatePredictTotalPts(){
@@ -10874,7 +10875,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.70.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
