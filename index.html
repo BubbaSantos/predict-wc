@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.77.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.77.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1470,7 +1470,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <button class="btn" onclick="finishHomeOnboard()">Set Theme</button>
         </div>
         <div style="text-align:center;margin-top:.7rem;">
-          <span onclick="homeOnboardSkip()" style="font-size:.68rem;color:var(--text-muted);cursor:pointer;text-decoration:underline;">Skip for now</span>
+          <span onclick="homeOnboardSkip(event)" style="font-size:.68rem;color:var(--text-muted);cursor:pointer;text-decoration:underline;">Skip for now</span>
         </div>
       </div>
       <div class="group-hero" id="group-hero-block">
@@ -5562,6 +5562,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.77.2',date:'1 Jul 2026',notes:['Hardened the Home background-picker card\'s "Skip for now" so it can\'t ever also show the "Theme set!" popup — stops event propagation and force-closes any stray modal.','Bumped force-refresh.txt so everyone gets the "New version available" banner and picks up the latest fixes.']},
   {v:'1.77.1',date:'1 Jul 2026',notes:['Home "Pick a Background" card: the "change this later from your name → Theme" message after tapping Set Theme is now a dismissible popup instead of a toast that faded on its own.']},
   {v:'1.77.0',date:'1 Jul 2026',notes:['Appearance: brought back the Card Transparency slider (only in the name → Theme modal — the Home onboarding card stays automatic) so it can override the 60%/100% default when wanted.','The name-menu dropdown (top right) now only ever gets slightly transparent — floored at 90% opacity regardless of how low Card Transparency is set, so navigation stays legible.','Admin → Players: each player\'s appearance chip now shows their background, accent colour and card opacity on hover, not just theme/mode. Requires new accent, background_id and card_opacity columns on players in Supabase (same pattern as score_master — the app degrades gracefully until they\'re added).']},
   {v:'1.76.1',date:'1 Jul 2026',notes:['Home "Pick a Background" card: replaced the auto-complete-once-both-are-set behaviour with an explicit "Set Theme" button, so it\'s clearer when you\'re done. Shows a confirmation message pointing back to name → Theme for later changes.']},
@@ -8386,11 +8387,13 @@ function finishHomeOnboard(){
   document.body.appendChild(modal);
 }
 
-function homeOnboardSkip(){
+function homeOnboardSkip(e){
+  if(e){ e.preventDefault(); e.stopPropagation(); }
   const key = getHomeBgOnboardKey();
   if(key) localStorage.setItem(key, '1');
   const card = document.getElementById('home-bg-onboard-card');
   if(card) card.style.display='none';
+  document.querySelector('.modal-overlay')?.remove(); // in case the "Theme set!" popup is somehow already open
 }
 
 function playerEdgesPick(style, el){
@@ -11404,7 +11407,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.77.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.77.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
