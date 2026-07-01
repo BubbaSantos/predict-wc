@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.77.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.77.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5562,6 +5562,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.77.1',date:'1 Jul 2026',notes:['Home "Pick a Background" card: the "change this later from your name → Theme" message after tapping Set Theme is now a dismissible popup instead of a toast that faded on its own.']},
   {v:'1.77.0',date:'1 Jul 2026',notes:['Appearance: brought back the Card Transparency slider (only in the name → Theme modal — the Home onboarding card stays automatic) so it can override the 60%/100% default when wanted.','The name-menu dropdown (top right) now only ever gets slightly transparent — floored at 90% opacity regardless of how low Card Transparency is set, so navigation stays legible.','Admin → Players: each player\'s appearance chip now shows their background, accent colour and card opacity on hover, not just theme/mode. Requires new accent, background_id and card_opacity columns on players in Supabase (same pattern as score_master — the app degrades gracefully until they\'re added).']},
   {v:'1.76.1',date:'1 Jul 2026',notes:['Home "Pick a Background" card: replaced the auto-complete-once-both-are-set behaviour with an explicit "Set Theme" button, so it\'s clearer when you\'re done. Shows a confirmation message pointing back to name → Theme for later changes.']},
   {v:'1.76.0',date:'1 Jul 2026',notes:['Home: new "Pick a Background" card — swipe through the available backgrounds and tap one to preview it live. Picking one sets the theme to Smoke and reveals Accent Colour + Edge Style pickers, with a note that all of this can be changed later from your name → Theme. Shows once per player, then disappears (or tap "Skip for now").','Removed the Card Transparency slider — card opacity is no longer a manual setting, it\'s just 60% whenever a background image is active and 100% when it isn\'t.']},
@@ -8373,7 +8374,16 @@ function finishHomeOnboard(){
     });
     setTimeout(()=>{ card.style.display='none'; }, 320);
   }
-  flash('Theme set! To change it later, tap your name (top right) → Theme','success');
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:380px;text-align:center;">
+    <div style="font-size:2.2rem;margin-bottom:.5rem;">🎨</div>
+    <div style="font-size:1.1rem;font-weight:700;margin-bottom:.6rem;">Theme set!</div>
+    <div style="font-size:.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem;">To change it later, tap your name (top right) → <strong style="color:var(--text);">Theme</strong>.</div>
+    <button class="btn" onclick="this.closest('.modal-overlay').remove()">Got it</button>
+  </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
 }
 
 function homeOnboardSkip(){
@@ -11394,7 +11404,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.77.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.77.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
