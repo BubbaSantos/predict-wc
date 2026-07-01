@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.4</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.5</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5561,6 +5561,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.5',date:'1 Jul 2026',notes:['Appearance: moved Saved Setups to the top of the modal (right below the Personal note) and made its name text box bigger and easier to type into.']},
   {v:'1.78.4',date:'1 Jul 2026',notes:['Removed the "Diagonal" background option.']},
   {v:'1.78.3',date:'1 Jul 2026',notes:['Reverted the Appearance modal\'s Background grid back to "None" first, as before — only the Home "Pick a Background" onboarding card gets a "None" option, and there it sits last, after the photo backdrops.']},
   {v:'1.78.2',date:'1 Jul 2026',notes:['Appearance: moved the "None" background option to the end of the grid, after the photo backdrops, instead of first.']},
@@ -8290,6 +8291,13 @@ function showPlayerThemeModal(){
       <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
     </div>
     <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:1.1rem;letter-spacing:.04em;">Personal — only affects you on this device.</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Saved Setups</div>
+    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Save your current look and switch between setups any time.</div>
+    <div id="ptm-setups-list" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.7rem;">${renderSetupsListHtml()}</div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
+      <input id="ptm-setup-name" type="text" placeholder="Setup name…" maxlength="24" style="flex:1;min-width:0;padding:.7rem .8rem;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-size:.95rem;font-family:inherit;">
+      <button class="btn-ghost" style="font-size:.78rem;white-space:nowrap;" onclick="savePlayerThemeSetup()">💾 Save</button>
+    </div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Mode</div>
     <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
       <button id="ptm-dark-btn" onclick="playerModePick(false,this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid ${!document.body.classList.contains('light')?'var(--group-accent)':'var(--border)'};background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">🌙 Dark</button>
@@ -8312,13 +8320,6 @@ function showPlayerThemeModal(){
     <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;">
       <input type="range" id="ptm-card-opacity" min="40" max="100" step="5" value="${currentCardOpacity}" oninput="playerCardOpacityPick(this.value)" style="flex:1;accent-color:var(--group-accent);">
       <span id="ptm-card-opacity-val" style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:2.8rem;text-align:right;flex-shrink:0;">${currentCardOpacity}%</span>
-    </div>
-    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Saved Setups</div>
-    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Save your current look and switch between setups any time.</div>
-    <div id="ptm-setups-list" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.7rem;">${renderSetupsListHtml()}</div>
-    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;">
-      <input id="ptm-setup-name" type="text" placeholder="Setup name…" maxlength="24" style="flex:1;min-width:0;padding:.5rem .6rem;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-size:.82rem;font-family:inherit;">
-      <button class="btn-ghost" style="font-size:.78rem;white-space:nowrap;" onclick="savePlayerThemeSetup()">💾 Save</button>
     </div>
     ${hasOverride?`<button class="btn-ghost" style="font-size:.78rem;" onclick="clearPlayerAppearance(this)">Reset to group defaults</button>`:''}
   </div>`;
@@ -11469,7 +11470,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.4</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.5</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
