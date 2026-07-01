@@ -1240,7 +1240,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.74.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.74.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2533,6 +2533,27 @@ const THEMES = {
       .predict-toggle-bar{font-weight:700!important;letter-spacing:.06em!important;text-transform:uppercase!important;font-size:.75rem!important;}
       .match-card.predicted{border-left:3px solid #D44E2A!important;}
     `
+  },
+  dusk:{
+    label:'Dusk', desc:'Warm mid-tone mauve',
+    preview:['#332c3a','#403649','#c084fc'],
+    vars:{'--bg':'#332c3a','--surface':'#403649','--surface2':'#4b4054','--border':'#5d5068','--text':'#f5eff8','--text-muted':'#ac9bb8','--text-dim':'#d3c3dd','--gold':'#fbbf24','--silver':'#b0a0c0','--bronze':'#d97706','--header-bg':'rgba(51,44,58,.9)'},
+    lightVars:{'--bg':'#faf7fc','--surface':'#ffffff','--surface2':'#f3ecf8','--border':'#e3d3ec','--text':'#2f2836','--text-muted':'#8a7896','--text-dim':'#5c4d68','--gold':'#d97706','--silver':'#9d8ba8','--bronze':'#92400e','--header-bg':'rgba(250,247,252,.95)'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(192,132,252,.1) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(168,85,247,.06) 0%,transparent 50%)'
+  },
+  stone:{
+    label:'Stone', desc:'Warm mid-tone taupe',
+    preview:['#3a352e','#463f37','#e0a458'],
+    vars:{'--bg':'#3a352e','--surface':'#463f37','--surface2':'#524a40','--border':'#665c4f','--text':'#f6f1e9','--text-muted':'#ad9d89','--text-dim':'#d4c4ad','--gold':'#fbbf24','--silver':'#ad9d89','--bronze':'#d97706','--header-bg':'rgba(58,53,46,.9)'},
+    lightVars:{'--bg':'#faf8f3','--surface':'#ffffff','--surface2':'#f3ede2','--border':'#e5d8c3','--text':'#332e26','--text-muted':'#8f8065','--text-dim':'#5c5241','--gold':'#d97706','--silver':'#a08e6f','--bronze':'#92400e','--header-bg':'rgba(250,248,243,.95)'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(224,164,88,.1) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(180,120,50,.06) 0%,transparent 50%)'
+  },
+  mist:{
+    label:'Mist', desc:'Cool mid-tone blue-grey',
+    preview:['#2f3a42','#39454f','#38bdf8'],
+    vars:{'--bg':'#2f3a42','--surface':'#39454f','--surface2':'#43515c','--border':'#556572','--text':'#eef5f8','--text-muted':'#96acb8','--text-dim':'#c1d5de','--gold':'#fbbf24','--silver':'#96acb8','--bronze':'#d97706','--header-bg':'rgba(47,58,66,.9)'},
+    lightVars:{'--bg':'#f5f9fb','--surface':'#ffffff','--surface2':'#e9f2f6','--border':'#cfe1e8','--text':'#24333b','--text-muted':'#75909d','--text-dim':'#3f5a63','--gold':'#d97706','--silver':'#7396a3','--bronze':'#92400e','--header-bg':'rgba(245,249,251,.95)'},
+    bodyGradient:'radial-gradient(ellipse at 20% 0%,rgba(56,189,248,.1) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(14,165,233,.06) 0%,transparent 50%)'
   },
 };
 
@@ -3992,10 +4013,12 @@ function applyPlayerBackground(bgId){
   document.body.classList.toggle('has-bg-image', !!bg);
   if(!bg){
     layer.style.opacity = '0';
-    return;
+  } else {
+    layer.style.backgroundImage = `url('${bg.file}')`;
+    layer.style.opacity = String(bg.opacity);
   }
-  layer.style.backgroundImage = `url('${bg.file}')`;
-  layer.style.opacity = String(bg.opacity);
+  const fixturesList = document.getElementById('fixtures-list');
+  if(fixturesList) _capFixturesListHeight(fixturesList);
 }
 
 const SQUARE_EDGES_CSS=`
@@ -4562,7 +4585,11 @@ function calcPoints(ph,pa,ah,aa){
 // up behind them. Compact mode shows roughly twice as many rows as Full mode
 // since its cards are shorter. Fades the top/bottom edge (a half-card peek)
 // to hint there's more to scroll to either way — the top fade zone is kept
-// small so the sticky heading's own text stays legible.
+// small so the sticky heading's own text stays legible. When a background
+// image is active the date heading has no backing fill of its own (see
+// applyPlayerBackground), so the fade zone is moved to start below the
+// heading instead of overlapping it — otherwise the heading text itself
+// gets faded out along with the container edge.
 function _capFixturesListHeight(list){
   if(!list) return;
   const card = list.querySelector('.match-card');
@@ -4574,7 +4601,10 @@ function _capFixturesListHeight(list){
   const bottomFade = slotH*0.5;
   const topFade = 14;
   list.style.maxHeight = (headingH + slotH*fullSlots + bottomFade) + 'px';
-  const mask = `linear-gradient(to bottom, transparent 0, black ${topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`;
+  const hasBgImage = document.body.classList.contains('has-bg-image');
+  const mask = hasBgImage
+    ? `linear-gradient(to bottom, black 0, black ${headingH}px, transparent ${headingH}px, black ${headingH+topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`
+    : `linear-gradient(to bottom, transparent 0, black ${topFade}px, black calc(100% - ${bottomFade}px), transparent 100%)`;
   list.style.webkitMaskImage = mask;
   list.style.maskImage = mask;
 }
@@ -5418,6 +5448,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.74.1',date:'1 Jul 2026',notes:['Predict page: when a background image is active, the sticky matchday date header no longer gets extra-faded by the fixture list\'s top scroll-hint gradient — that fade now starts just below the date, over the first match card, instead of overlapping the date text itself.','Appearance: added three new mid-tone colour themes — Dusk (mauve), Stone (taupe) and Mist (blue-grey) — for something between the existing near-black themes and full light mode.']},
   {v:'1.74.0',date:'1 Jul 2026',notes:['Appearance: added a Card Transparency slider (40–100%) — controls how see-through every card, row and panel is (home cards, match cards, leaderboard rows, etc.), so you can let a background image show through them instead of always sitting on a fully solid surface. Personal, saved per player on this device.']},
   {v:'1.73.5',date:'1 Jul 2026',notes:['Predict page: the matchday date header now only gets a solid background when there\'s no background image set — with a photo background active it goes transparent instead.']},
   {v:'1.73.4',date:'1 Jul 2026',notes:['Reverted v1.73.3\'s matchday date header restyle (frosted glass + accent tint) — back to the plain solid background.']},
@@ -11069,7 +11100,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.74.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.74.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
