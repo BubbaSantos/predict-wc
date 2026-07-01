@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.76.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.77.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1368,7 +1368,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
       <div style="position:relative;">
       <button class="user-chip" id="h-player-chip" type="button" style="cursor:pointer;user-select:none;background:none;border:1px solid var(--border);font-family:inherit;font-size:inherit;" title="Profile"></button>
-      <div id="profile-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:190px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden;">
+      <div id="profile-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:color-mix(in srgb, var(--surface-solid, var(--surface)) max(90%, var(--card-opacity, 100%)), transparent);border:1px solid var(--border);border-radius:10px;min-width:190px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden;">
         <div id="profile-menu-header" style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;">Profile</div>
         <button class="profile-menu-item" onclick="showNicknameModal();closeProfileMenu()">✏️ Change Nickname</button>
         <button class="profile-menu-item" onclick="showChangePinModal();closeProfileMenu()">🔑 Change PIN</button>
@@ -1467,7 +1467,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <button id="hbo-curved-btn" onclick="homeOnboardEdgesPick('curved',this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">⬭ Curved</button>
             <button id="hbo-square-btn" onclick="homeOnboardEdgesPick('square',this)" style="flex:1;padding:.5rem;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:border-color .15s;">⬜ Square</button>
           </div>
-          <div style="font-size:.72rem;color:var(--text-muted);line-height:1.4;">💡 You can change any of this later — tap your name (top right) → <strong style="color:var(--text);">Theme</strong>.</div>
+          <button class="btn" onclick="finishHomeOnboard()">Set Theme</button>
         </div>
         <div style="text-align:center;margin-top:.7rem;">
           <span onclick="homeOnboardSkip()" style="font-size:.68rem;color:var(--text-muted);cursor:pointer;text-decoration:underline;">Skip for now</span>
@@ -2829,15 +2829,18 @@ async function sb(path, opts={}){
   try{ return JSON.parse(txt); }catch(e){ return null; }
 }
 
-// score_master is a newer players column — groups whose Supabase instance
-// hasn't had it added yet would otherwise fail every query that selects it
-// (including login). Retries once with the column stripped out of the
-// select list so everything else still works; score_master just reads as
-// false until the column is added.
-function sbSelectScoreMaster(path){
+// Some players columns (score_master, accent, background_id, card_opacity)
+// are newer and may not exist yet in a given Supabase instance until the
+// matching ALTER TABLE has been run. Retries with each missing column (as
+// named in the specific PostgREST error) stripped from the select list, so
+// queries keep working — those fields just read as undefined/null until
+// the column is added, instead of breaking the whole request (login etc).
+function sbSelectOptional(path, optionalCols){
   return sb(path).catch(e=>{
-    if(String(e.message||'').includes('score_master')){
-      return sb(path.replace(',score_master',''));
+    const msg = String(e.message||'');
+    const missing = optionalCols.find(c=>msg.includes(c));
+    if(missing){
+      return sbSelectOptional(path.replace(','+missing,''), optionalCols.filter(c=>c!==missing));
     }
     throw e;
   });
@@ -3428,13 +3431,13 @@ async function loginPlayer(){
     }
 
     // Find player by login name, then nickname, then previous names
-    let players = await sbSelectScoreMaster(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
+    let players = await sbSelectOptional(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`, ['score_master']);
     if(!players||!players.length){
-      players = await sbSelectScoreMaster(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`);
+      players = await sbSelectOptional(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`, ['score_master']);
     }
     if(!players||!players.length){
       // Check previous_names array (for players whose login name was changed)
-      const all = await sbSelectScoreMaster(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,score_master,previous_names`).catch(()=>[]);
+      const all = await sbSelectOptional(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,score_master,previous_names`, ['score_master']).catch(()=>[]);
       players = (all||[]).filter(p=>(p.previous_names||[]).some(n=>n.toLowerCase()===name.toLowerCase()));
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
@@ -3510,11 +3513,11 @@ async function refreshGroup(){
 async function refreshPlayerSelf(){
   if(!currentPlayer?.id) return;
   try{
-    const rows = await sbSelectScoreMaster('players?id=eq.'+currentPlayer.id+'&select=is_admin,god_mode,score_master');
+    const rows = await sbSelectOptional('players?id=eq.'+currentPlayer.id+'&select=is_admin,god_mode,score_master,accent,background_id,card_opacity', ['score_master','accent','background_id','card_opacity']);
     if(rows && rows.length){
       const row = rows[0];
       const wasScoreMaster = !!currentPlayer.score_master;
-      currentPlayer = {...currentPlayer, is_admin:row.is_admin||false, god_mode:row.god_mode||false, score_master:row.score_master||false};
+      currentPlayer = {...currentPlayer, is_admin:row.is_admin||false, god_mode:row.god_mode||false, score_master:row.score_master||false, accent:row.accent||null, background_id:row.background_id||null, card_opacity:row.card_opacity??null};
       if(row.is_admin) isAdmin = true;
       isScoreMaster = !!row.score_master;
       saveSession();
@@ -4075,7 +4078,10 @@ function applyTheme(themeId){
   const isLight = document.body.classList.contains('light');
   const vars = (isLight && t.lightVars) ? {...t.vars,...t.lightVars} : t.vars;
   Object.entries(vars).forEach(([k,v])=>root.style.setProperty(k,v));
-  if(vars['--surface']) root.style.setProperty('--surface', `color-mix(in srgb, ${vars['--surface']} var(--card-opacity,100%), transparent)`);
+  if(vars['--surface']){
+    root.style.setProperty('--surface-solid', vars['--surface']);
+    root.style.setProperty('--surface', `color-mix(in srgb, ${vars['--surface']} var(--card-opacity,100%), transparent)`);
+  }
   if(vars['--surface2']) root.style.setProperty('--surface2', `color-mix(in srgb, ${vars['--surface2']} var(--card-opacity,100%), transparent)`);
   document.body.style.backgroundImage = t.bodyGradient==='none' ? 'none' : t.bodyGradient;
   let extraEl = document.getElementById('theme-extra-css');
@@ -4090,14 +4096,16 @@ function applyTheme(themeId){
 function getPlayerThemeKey(){ return currentPlayer ? `wc26_player_theme_${currentPlayer.id}` : null; }
 function getPlayerEdgesKey(){ return currentPlayer ? `wc26_player_edges_${currentPlayer.id}` : null; }
 function getPlayerBgKey(){ return currentPlayer ? `wc26_player_bg_${currentPlayer.id}` : null; }
+function getPlayerCardOpacityKey(){ return currentPlayer ? `wc26_player_cardopacity_${currentPlayer.id}` : null; }
 function applyCardOpacity(pct){
   const val = (pct==null || pct==='') ? 100 : Number(pct);
   document.documentElement.style.setProperty('--card-opacity', (isNaN(val)?100:val)+'%');
 }
 
-// Card opacity isn't a separate user setting — it's just 60% whenever a
-// background image is active (so the photo shows through) and 100%
-// otherwise, so it always follows applyPlayerBackground automatically.
+// Card opacity defaults to 60% whenever a background image is active (so
+// the photo shows through) and 100% otherwise — but a player can drag the
+// Card Transparency slider in Appearance to override that default, which
+// takes priority over the automatic value until they reset it.
 function applyPlayerBackground(bgId){
   const layer = document.getElementById('bg-photo-layer');
   if(!layer) return;
@@ -4109,7 +4117,9 @@ function applyPlayerBackground(bgId){
     layer.style.backgroundImage = `url('${bg.file}')`;
     layer.style.opacity = String(bg.opacity);
   }
-  applyCardOpacity(bg ? 60 : 100);
+  const opacityKey = getPlayerCardOpacityKey();
+  const opacityOverride = opacityKey ? localStorage.getItem(opacityKey) : null;
+  applyCardOpacity(opacityOverride!=null ? opacityOverride : (bg ? 60 : 100));
   const fixturesList = document.getElementById('fixtures-list');
   if(fixturesList) _capFixturesListHeight(fixturesList);
 }
@@ -5552,6 +5562,8 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.77.0',date:'1 Jul 2026',notes:['Appearance: brought back the Card Transparency slider (only in the name → Theme modal — the Home onboarding card stays automatic) so it can override the 60%/100% default when wanted.','The name-menu dropdown (top right) now only ever gets slightly transparent — floored at 90% opacity regardless of how low Card Transparency is set, so navigation stays legible.','Admin → Players: each player\'s appearance chip now shows their background, accent colour and card opacity on hover, not just theme/mode. Requires new accent, background_id and card_opacity columns on players in Supabase (same pattern as score_master — the app degrades gracefully until they\'re added).']},
+  {v:'1.76.1',date:'1 Jul 2026',notes:['Home "Pick a Background" card: replaced the auto-complete-once-both-are-set behaviour with an explicit "Set Theme" button, so it\'s clearer when you\'re done. Shows a confirmation message pointing back to name → Theme for later changes.']},
   {v:'1.76.0',date:'1 Jul 2026',notes:['Home: new "Pick a Background" card — swipe through the available backgrounds and tap one to preview it live. Picking one sets the theme to Smoke and reveals Accent Colour + Edge Style pickers, with a note that all of this can be changed later from your name → Theme. Shows once per player, then disappears (or tap "Skip for now").','Removed the Card Transparency slider — card opacity is no longer a manual setting, it\'s just 60% whenever a background image is active and 100% when it isn\'t.']},
   {v:'1.75.2',date:'1 Jul 2026',notes:['Appearance: moved Background up to sit right below Accent Colour instead of after Theme.']},
   {v:'1.75.1',date:'1 Jul 2026',notes:['Added 6 more backgrounds — Poster Goal, Aerial Pitch, Golden Trophy, Trophy Night, Trophy Sky and Stadium Crowd — bringing the total to 15.','Fixed: pages using the players table (login, the admin Players tab) would break entirely on groups where the score_master column hasn\'t been added to Supabase yet. They now retry without it and keep working, with Score Master features just staying unavailable until the column exists.']},
@@ -8195,7 +8207,10 @@ function showPlayerThemeModal(){
     <div onclick="playerBgPick('${b.id}',this)" data-bid="${b.id}" title="${b.label}" style="cursor:pointer;border-radius:10px;overflow:hidden;position:relative;border:2px solid ${currentBg===b.id?'var(--group-accent)':'var(--border)'};aspect-ratio:3/4;background:var(--surface2) url('${b.thumb}') center/cover;transition:border-color .15s;">
       <span style="position:absolute;left:0;right:0;bottom:0;padding:.3rem .35rem;font-size:.6rem;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));text-shadow:0 1px 2px rgba(0,0,0,.6);">${b.label}</span>
     </div>`).join('');
-  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey))||(bgKey&&localStorage.getItem(bgKey));
+  const cardOpacityKey = getPlayerCardOpacityKey();
+  const cardOpacityOverride = cardOpacityKey && localStorage.getItem(cardOpacityKey);
+  const currentCardOpacity = cardOpacityOverride!=null ? cardOpacityOverride : (currentBg ? 60 : 100);
+  const hasOverride = (themeKey&&localStorage.getItem(themeKey))||(accentKey&&localStorage.getItem(accentKey))||(edgesKey&&localStorage.getItem(edgesKey))||(bgKey&&localStorage.getItem(bgKey))||(cardOpacityOverride!=null);
   modal.innerHTML=`<div class="pred-modal" style="max-width:480px;">
     <div class="pred-modal-header">
       <div class="pred-modal-title">Appearance</div>
@@ -8219,6 +8234,12 @@ function showPlayerThemeModal(){
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-bg-grid">${bgGrid}</div>
     <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.5rem;">Theme</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1.25rem;" id="player-theme-grid">${themeGrid}</div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.3rem;">Card Transparency</div>
+    <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:.6rem;">Defaults to 60% with a background, 100% without — drag to override.</div>
+    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1.25rem;">
+      <input type="range" id="ptm-card-opacity" min="40" max="100" step="5" value="${currentCardOpacity}" oninput="playerCardOpacityPick(this.value)" style="flex:1;accent-color:var(--group-accent);">
+      <span id="ptm-card-opacity-val" style="font-size:.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;width:2.8rem;text-align:right;flex-shrink:0;">${currentCardOpacity}%</span>
+    </div>
     ${hasOverride?`<button class="btn-ghost" style="font-size:.78rem;" onclick="clearPlayerAppearance(this)">Reset to group defaults</button>`:''}
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -8253,22 +8274,41 @@ function playerBgPick(id, el){
     c.style.borderColor = c.dataset.bid===(id||'none') ? 'var(--group-accent)' : 'var(--border)';
   });
   applyBranding();
+  savePlayerAppearancePref({background_id:id||null});
+  // No manual opacity override yet? Reflect the new auto-default (60/100) in the slider.
+  const opacityKey = getPlayerCardOpacityKey();
+  if(!opacityKey || localStorage.getItem(opacityKey)==null){
+    const slider = document.getElementById('ptm-card-opacity');
+    const label = document.getElementById('ptm-card-opacity-val');
+    const autoVal = id ? 60 : 100;
+    if(slider) slider.value = autoVal;
+    if(label) label.textContent = autoVal+'%';
+    savePlayerAppearancePref({card_opacity:autoVal});
+  }
+}
+
+function playerCardOpacityPick(val){
+  const key = getPlayerCardOpacityKey();
+  if(key) localStorage.setItem(key, val);
+  applyCardOpacity(val);
+  const label = document.getElementById('ptm-card-opacity-val');
+  if(label) label.textContent = val+'%';
+  savePlayerAppearancePref({card_opacity:Number(val)});
 }
 
 // ── HOME BACKGROUND ONBOARDING CARD ──────
 // One-time swipe-to-preview background picker shown on Home until a player
 // completes (or skips) it once. Picking a background sets card opacity to
 // 60% and the theme to Smoke so the photo reads clearly, then reveals an
-// Accent Colour + Edge Style step; the card auto-hides once both are set.
+// Accent Colour + Edge Style step with a "Set Theme" button that finishes
+// (and hides) the card.
 function getHomeBgOnboardKey(){ return currentPlayer ? `wc26_home_bg_onboard_seen_${currentPlayer.id}` : null; }
-let _hboAccentSet = false, _hboEdgesSet = false;
 
 function initHomeBgOnboard(){
   const card = document.getElementById('home-bg-onboard-card');
   if(!card) return;
   const key = getHomeBgOnboardKey();
   if(!key || localStorage.getItem(key)){ card.style.display='none'; return; }
-  _hboAccentSet = false; _hboEdgesSet = false;
   document.getElementById('hbo-step2').style.display='none';
   const currentBg = getPlayerBgKey() ? localStorage.getItem(getPlayerBgKey()) : null;
   document.getElementById('hbo-swipe-row').innerHTML = BACKGROUNDS.map(b=>`
@@ -8283,7 +8323,7 @@ function homeOnboardPickBg(id){
   const bgKey = getPlayerBgKey(); if(bgKey) localStorage.setItem(bgKey, id);
   const themeKey = getPlayerThemeKey(); if(themeKey) localStorage.setItem(themeKey, 'smoke');
   applyBranding(); // also sets card opacity to 60% now that a background is set
-  savePlayerAppearancePref({theme:'smoke'});
+  savePlayerAppearancePref({theme:'smoke', background_id:id, card_opacity:60});
   document.querySelectorAll('#hbo-swipe-row [data-bid]').forEach(t=>{
     t.style.borderColor = t.dataset.bid===id ? 'var(--group-accent)' : 'var(--border)';
   });
@@ -8305,8 +8345,7 @@ function homeOnboardAccentPick(val, el){
     s.style.borderColor = s.dataset.aval===val ? '#fff' : 'transparent';
   });
   document.documentElement.style.setProperty('--group-accent', val);
-  _hboAccentSet = true;
-  maybeFinishHomeOnboard();
+  savePlayerAppearancePref({accent:val});
 }
 
 function homeOnboardEdgesPick(style, el){
@@ -8315,12 +8354,9 @@ function homeOnboardEdgesPick(style, el){
   document.getElementById('hbo-curved-btn').style.borderColor = style==='curved' ? 'var(--group-accent)' : 'var(--border)';
   document.getElementById('hbo-square-btn').style.borderColor = style==='square' ? 'var(--group-accent)' : 'var(--border)';
   applyEdges(style);
-  _hboEdgesSet = true;
-  maybeFinishHomeOnboard();
 }
 
-function maybeFinishHomeOnboard(){
-  if(!_hboAccentSet || !_hboEdgesSet) return;
+function finishHomeOnboard(){
   const key = getHomeBgOnboardKey();
   if(key) localStorage.setItem(key, '1');
   const card = document.getElementById('home-bg-onboard-card');
@@ -8337,7 +8373,7 @@ function maybeFinishHomeOnboard(){
     });
     setTimeout(()=>{ card.style.display='none'; }, 320);
   }
-  flash('All set — change this anytime from your name → Theme','success');
+  flash('Theme set! To change it later, tap your name (top right) → Theme','success');
 }
 
 function homeOnboardSkip(){
@@ -8706,9 +8742,19 @@ async function syncPlayerAppearancePrefs(){
   const theme = themeKey ? localStorage.getItem(themeKey) : null;
   const lightRaw = localStorage.getItem('wc26_theme');
   const lightMode = lightRaw==='light' ? true : lightRaw==='dark' ? false : null;
+  const accentKey = getPlayerAccentKey();
+  const accent = accentKey ? localStorage.getItem(accentKey) : null;
+  const bgKey = getPlayerBgKey();
+  const backgroundId = bgKey ? localStorage.getItem(bgKey) : null;
+  const opacityKey = getPlayerCardOpacityKey();
+  const cardOpacityRaw = opacityKey ? localStorage.getItem(opacityKey) : null;
+  const cardOpacity = cardOpacityRaw!=null ? Number(cardOpacityRaw) : null;
   const patch = {};
   if(theme!=null && currentPlayer.theme !== theme) patch.theme = theme;
   if(lightMode!=null && currentPlayer.light_mode !== lightMode) patch.light_mode = lightMode;
+  if(accent!=null && currentPlayer.accent !== accent) patch.accent = accent;
+  if(backgroundId!=null && currentPlayer.background_id !== backgroundId) patch.background_id = backgroundId;
+  if(cardOpacity!=null && currentPlayer.card_opacity !== cardOpacity) patch.card_opacity = cardOpacity;
   if(!Object.keys(patch).length) return;
   try{
     await sb('players?id=eq.'+currentPlayer.id,{method:'PATCH',prefer:'return=minimal',body:patch});
@@ -8724,6 +8770,7 @@ function playerAccentPick(val, el){
     s.style.borderColor = s.dataset.aval===val ? '#fff' : 'transparent';
   });
   document.documentElement.style.setProperty('--group-accent', val);
+  savePlayerAppearancePref({accent:val});
 }
 
 function clearPlayerAppearance(btn){
@@ -8731,13 +8778,15 @@ function clearPlayerAppearance(btn){
   const accentKey = getPlayerAccentKey();
   const edgesKey = getPlayerEdgesKey();
   const bgKey = getPlayerBgKey();
+  const cardOpacityKey = getPlayerCardOpacityKey();
   if(themeKey) localStorage.removeItem(themeKey);
   if(accentKey) localStorage.removeItem(accentKey);
   if(edgesKey) localStorage.removeItem(edgesKey);
   if(bgKey) localStorage.removeItem(bgKey);
+  if(cardOpacityKey) localStorage.removeItem(cardOpacityKey);
   applyBranding();
   btn.closest('.modal-overlay').remove();
-  savePlayerAppearancePref({theme:null, light_mode:null});
+  savePlayerAppearancePref({theme:null, light_mode:null, accent:null, background_id:null, card_opacity:null});
   flash('Reset to group defaults','success');
 }
 
@@ -9145,16 +9194,21 @@ async function clearResult(id){
 
 
 // ── PLAYERS PANEL ─────────────────────────
-function playerAppearanceChipHtml(theme, lightMode){
+function playerAppearanceChipHtml(theme, lightMode, playerAccent, backgroundId, cardOpacity){
   const hasAny = !!theme || lightMode!=null;
   const label = (theme && THEMES[theme]?.label) || (hasAny ? '—' : 'default');
-  const accent = (theme && THEMES[theme]?.preview?.[2]) || 'var(--text-muted)';
+  const dotColor = playerAccent || (theme && THEMES[theme]?.preview?.[2]) || 'var(--text-muted)';
   const modeIcon = lightMode===true ? '☀️' : lightMode===false ? '🌙' : '';
-  const title = hasAny
-    ? `Theme: ${label}${modeIcon?' · '+(lightMode?'Light':'Dark')+' mode':''}`
-    : 'No saved appearance yet — this player hasn\'t opened the app since the v1.51 update';
+  const bg = backgroundId ? BACKGROUNDS.find(b=>b.id===backgroundId) : null;
+  const opacityPct = cardOpacity!=null ? cardOpacity : (bg ? 60 : null);
+  const titleParts = [];
+  if(hasAny) titleParts.push(`Theme: ${label}${modeIcon?' · '+(lightMode?'Light':'Dark')+' mode':''}`);
+  if(playerAccent) titleParts.push(`Accent: ${playerAccent}`);
+  titleParts.push(bg ? `Background: ${bg.label}` : 'Background: none');
+  if(opacityPct!=null) titleParts.push(`Card opacity: ${opacityPct}%`);
+  const title = titleParts.length ? titleParts.join(' · ') : 'No saved appearance yet — this player hasn\'t opened the app since the v1.51 update';
   const dim = hasAny ? '' : 'opacity:.55;';
-  return `<span class="player-appearance-chip" title="${title}" style="display:inline-flex;align-items:center;gap:.25rem;font-size:.62rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.05rem .35rem;margin-left:.35rem;vertical-align:middle;letter-spacing:.02em;white-space:nowrap;${dim}"><span style="display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:${accent};"></span>${label}${modeIcon?' '+modeIcon:''}</span>`;
+  return `<span class="player-appearance-chip" title="${title}" style="display:inline-flex;align-items:center;gap:.25rem;font-size:.62rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.05rem .35rem;margin-left:.35rem;vertical-align:middle;letter-spacing:.02em;white-space:nowrap;${dim}"><span style="display:inline-block;width:.5rem;height:.5rem;border-radius:50%;background:${dotColor};"></span>${label}${modeIcon?' '+modeIcon:''}${bg?' 🖼️':''}</span>`;
 }
 
 async function loadPlayersPanel(){
@@ -9163,7 +9217,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sbSelectScoreMaster(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode`),
+      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity`, ['score_master','accent','background_id','card_opacity']),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -9172,7 +9226,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -9184,7 +9238,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${p.score_master ? ' <span title="Score Master" style="font-size:.75rem;margin-left:.15rem;">📊</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode)}</span></div>
+          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${p.score_master ? ' <span title="Score Master" style="font-size:.75rem;margin-left:.15rem;">📊</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode, p.accent, p.background_id, p.card_opacity)}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
@@ -11340,7 +11394,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.76.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.77.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
