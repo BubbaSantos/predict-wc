@@ -1252,7 +1252,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.7</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2439,6 +2439,12 @@ const ACCENT_COLOURS = [
   {name:'Orange',   val:'#f97316'},
   {name:'Lime',     val:'#84cc16'},
   {name:'Pink',     val:'#ec4899'},
+  {name:'Red',      val:'#ef4444'},
+  {name:'Indigo',   val:'#6366f1'},
+  {name:'Teal',     val:'#14b8a6'},
+  {name:'Cyan',     val:'#06b6d4'},
+  {name:'Yellow',   val:'#eab308'},
+  {name:'Fuchsia',  val:'#d946ef'},
 ];
 
 const THEMES = {
@@ -5561,6 +5567,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.8',date:'2 Jul 2026',notes:['Appearance: added 6 more accent colours — Red, Indigo, Teal, Cyan, Yellow and Fuchsia — alongside the existing 8.']},
   {v:'1.78.7',date:'1 Jul 2026',notes:['Appearance: moved Card Transparency to sit right under Accent Colour, ahead of Background and Theme.']},
   {v:'1.78.6',date:'1 Jul 2026',notes:['Appearance: Saved Setups name field is now full-width on its own line above the Save button instead of squeezed next to it.']},
   {v:'1.78.5',date:'1 Jul 2026',notes:['Appearance: moved Saved Setups to the top of the modal (right below the Personal note) and made its name text box bigger and easier to type into.']},
@@ -11470,7 +11477,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.7</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.8</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
