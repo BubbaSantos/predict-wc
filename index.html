@@ -1231,7 +1231,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.71.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.71.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4258,6 +4258,21 @@ const BROADCASTERS = {
   // m087 (Colombia v Ghana) broadcaster TBC
 };
 
+// Colour-codes each knockout round's pill on the predict page so rounds are
+// visually distinct at a glance (Round of 32 vs Quarter-Final vs Final, etc).
+const KO_ROUND_COLORS = {
+  'Round of 32':          {bg:'rgba(59,130,246,.14)',  border:'rgba(59,130,246,.35)',  text:'#3b82f6'},
+  'Round of 16':          {bg:'rgba(168,85,247,.14)',  border:'rgba(168,85,247,.35)',  text:'#a855f7'},
+  'Quarter-Final':        {bg:'rgba(236,72,153,.14)',  border:'rgba(236,72,153,.35)',  text:'#ec4899'},
+  'Semi-Final':           {bg:'rgba(249,115,22,.14)',  border:'rgba(249,115,22,.35)',  text:'#f97316'},
+  '3rd Place Play-off':   {bg:'rgba(100,116,139,.16)', border:'rgba(100,116,139,.4)',  text:'#94a3b8'},
+  'Final':                {bg:'rgba(234,179,8,.16)',   border:'rgba(234,179,8,.4)',    text:'#eab308'},
+};
+function koRoundTagStyle(group){
+  const c = KO_ROUND_COLORS[group];
+  return c ? `background:${c.bg};border-color:${c.border};color:${c.text};` : '';
+}
+
 function getMatchKickoff(f){
   if(f.utcDate) return new Date(f.utcDate);
   if(KICKOFFS[f.id]) return new Date(KICKOFFS[f.id]);
@@ -4708,7 +4723,7 @@ function renderPredictCard(f,pred,res){
   const broadcaster = BROADCASTERS[f.id];
   const broadcasterBadge = broadcaster ? `<span class="broadcaster-badge ${broadcaster.toLowerCase()}">${broadcaster}</span>` : '';
   const centreTag = f.group
-    ? `<span class="group-tag" style="position:absolute;left:50%;transform:translateX(-50%);text-transform:none;letter-spacing:0;">${f.isKnockout ? f.group : `Group ${f.group}`}</span>`
+    ? `<span class="group-tag" style="position:absolute;left:50%;transform:translateX(-50%);text-transform:none;letter-spacing:0;${f.isKnockout?koRoundTagStyle(f.group):''}">${f.isKnockout ? f.group : `Group ${f.group}`}</span>`
     : '';
   const broadcasterRow = broadcasterBadge ? `<div style="text-align:center;margin-top:.25rem;">${broadcasterBadge}</div>` : '';
 
@@ -5317,6 +5332,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.71.2',date:'1 Jul 2026',notes:['Predict page: each knockout round now gets its own pill colour — Round of 32 blue, Round of 16 purple, Quarter-Final pink, Semi-Final orange, 3rd Place grey, Final gold — instead of every round sharing the same plain tag.']},
   {v:'1.71.1',date:'1 Jul 2026',notes:['Predict page: fixture list is now a bounded box showing ~4 games at a time with its own scroll — date headings stick to the top as you scroll instead of disappearing, and a faded half-game peeks at the bottom (top too, subtly) to hint there\'s more.']},
   {v:'1.71.0',date:'1 Jul 2026',notes:['Predict page: removed the "Previous Matches" dropdown — every date is now one continuous list, scroll up for previous days and down for upcoming ones. Opening the tab now scrolls straight to today\'s games automatically.']},
   {v:'1.70.4',date:'1 Jul 2026',notes:['Knockout draws now show who actually won: predict page score card shows "Paraguay AET" / "Paraguay AP" under the 90-min scoreline when it went to extra time or penalties. Admin results card label changed from "PEN" to "AP" to match.']},
@@ -10903,7 +10919,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.71.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
