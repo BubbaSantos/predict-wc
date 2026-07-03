@@ -337,6 +337,26 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .hbar-track{flex:1;height:10px;background:var(--surface);border-radius:5px;overflow:hidden;}
 .hbar-fill{height:100%;background:var(--group-accent);border-radius:5px;}
 .hbar-value{width:1.4rem;text-align:right;flex-shrink:0;font-size:.7rem;color:var(--text-muted);font-weight:700;}
+.modal-compare-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:2.1rem;height:2.1rem;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s;}
+.modal-compare-btn:hover{border-color:var(--group-accent);}
+.compare-pick-list{display:flex;flex-direction:column;}
+.compare-pick-row{display:flex;align-items:center;gap:.5rem;padding:.7rem .2rem;border-bottom:1px dashed var(--border);cursor:pointer;font-size:.85rem;font-weight:600;transition:color .15s;}
+.compare-pick-row:last-child{border-bottom:none;}
+.compare-pick-row:hover{color:var(--group-accent);}
+.compare-banner{text-align:center;font-size:.85rem;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem;margin:-.6rem 0 1rem;}
+.compare-banner strong{color:var(--group-accent);}
+.compare-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.5rem;margin-bottom:.2rem;padding:0 .2rem;}
+.compare-head-name{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.compare-head-name:last-child{text-align:right;}
+.compare-row-list{display:flex;flex-direction:column;}
+.compare-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.5rem;padding:.55rem 0;border-bottom:1px dashed var(--border);}
+.compare-row:last-child{border-bottom:none;}
+.compare-cell{font-size:.85rem;font-weight:600;color:var(--text-dim);}
+.compare-cell-a{text-align:left;}
+.compare-cell-b{text-align:right;}
+.compare-cell.compare-win{color:var(--group-accent);font-weight:800;}
+.compare-cell-b.compare-win{color:var(--gold);}
+.compare-cell-label{font-size:.68rem;color:var(--text-muted);font-weight:600;text-align:center;white-space:nowrap;display:flex;align-items:center;gap:.3rem;justify-content:center;}
 .home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
@@ -1284,7 +1304,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.15</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.16</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5613,6 +5633,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.16',date:'3 Jul 2026',notes:['New ⚔️ Compare feature on the player stats page — tap the sword icon next to any player\'s stats, pick another player from the group, and get a full head-to-head: a leader banner, a Points Race chart with both players\' lines, a Matchday Head-to-Head record (who out-scored who on shared matchdays), and side-by-side stat rows (points, position, correct scores/results, wrong, MOTM, streaks, goals) with the better value highlighted for each.']},
   {v:'1.78.15',date:'3 Jul 2026',notes:['My Stats / player stats page: all 5 charts (Leaderboard Position, Points Race, Points Per Matchday, Prediction Outcomes, Favourite Scorelines) now grouped together at the top of the page, above the stat rows.']},
   {v:'1.78.14',date:'3 Jul 2026',notes:['My Stats / player stats page: added 4 more charts — Points Race (your cumulative points vs the group average), Prediction Outcomes (exact/result/wrong split), Points Per Matchday (bar chart) and Favourite Scorelines (top 5 ranked). All 5 charts, including the existing Leaderboard Position chart, can now be individually toggled on/off from Admin → Display → Personal Player Stats, same as any other stat.']},
   {v:'1.78.13',date:'3 Jul 2026',notes:['My Stats / player stats page: stats now list as horizontal rows (label left, value right) instead of a card grid — easier to scan, especially on narrow screens.']},
@@ -7806,27 +7827,13 @@ async function showMyStats(){
   showPlayerStats(currentPlayer.id, currentPlayer.nickname||currentPlayer.name);
 }
 
-async function showPlayerStats(playerId, name){
-  if(!currentGroup) return;
-  const me = playerId;
-  const myName = name;
-  let allPreds, allResults, allPlayers;
-  try{
-    [allPreds, allResults, allPlayers] = await Promise.all([
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
-    ]);
-  }catch(e){ flash('Error: '+e.message,'error'); return; }
-
-  const gamePreds = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
-  const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
+// ── Shared per-player stat computation (used by the stats page and the Compare feature) ──
+function computePlayerCore(pid, gamePreds, rm, fixtures){
   const matchPreds={}; gamePreds.forEach(p=>{ (matchPreds[p.match_id]=matchPreds[p.match_id]||[]).push(p); });
-  const fixtures = allFixtures();
 
-  // ── My per-game points + scoreline tallies ──
+  // ── Per-game points + scoreline tallies ──
   const myPredMap={}; // match_id -> {h,a}
-  gamePreds.filter(p=>p.player_id===me).forEach(p=>{ myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
+  gamePreds.filter(p=>p.player_id===pid).forEach(p=>{ myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
   let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0;
   const exactGames=[], soloExactGames=[], scorelineCount={};
   fixtures.forEach(f=>{
@@ -7841,7 +7848,7 @@ async function showPlayerStats(playerId, name){
     if(pts===8) perfect8++;
     if(pts>=5){
       exact++; exactGames.push(f);
-      const others=(matchPreds[f.id]||[]).filter(q=>q.player_id!==me && q.home_score!=null && calcPoints(q.home_score,q.away_score,r.home_score,r.away_score)>=5);
+      const others=(matchPreds[f.id]||[]).filter(q=>q.player_id!==pid && q.home_score!=null && calcPoints(q.home_score,q.away_score,r.home_score,r.away_score)>=5);
       if(!others.length) soloExactGames.push(f);
     } else if(pts===3){ results3++; }
     else if(pts===0){ wrong++; }
@@ -7866,19 +7873,19 @@ async function showPlayerStats(playerId, name){
         if(pts===8){cum[p.player_id].total+=8;cum[p.player_id].result++;}
         else if(pts===5){cum[p.player_id].total+=5;cum[p.player_id].result++;}
         else if(pts===3){cum[p.player_id].total+=3;cum[p.player_id].result++;}
-        if(p.player_id===me){ myMdPts+=(pts||0); myPlayed=true; }
+        if(p.player_id===pid){ myMdPts+=(pts||0); myPlayed=true; }
       });
     });
     if(myPlayed) mdPoints.push({dateKey, pts:myMdPts});
-    if(!cum[me]) return;
+    if(!cum[pid]) return;
     const ranked=Object.entries(cum);
-    const myEntry=[me,cum[me]];
+    const myEntry=[pid,cum[pid]];
     let rank=1;
-    ranked.forEach(e=>{ if(e[0]!==me && lbCompare(e,myEntry)<0) rank++; });
+    ranked.forEach(e=>{ if(e[0]!==pid && lbCompare(e,myEntry)<0) rank++; });
     rankHistory.push({rank, field:ranked.length, dateKey});
     daysAtPos[rank]=(daysAtPos[rank]||0)+1;
     const avgTotal = ranked.reduce((s,[,c])=>s+c.total,0)/ranked.length;
-    cumHistory.push({dateKey, mine:cum[me].total, avg:avgTotal});
+    cumHistory.push({dateKey, mine:cum[pid].total, avg:avgTotal});
   });
   const ranks=rankHistory.map(h=>h.rank);
   const hasRanks=ranks.length>0;
@@ -7922,8 +7929,45 @@ async function showPlayerStats(playerId, name){
     });
     if(!Object.keys(dayPts).length) return;
     const best=Math.max(...Object.values(dayPts));
-    if(best>0&&dayPts[me]===best) motmAwards++;
+    if(best>0&&dayPts[pid]===best) motmAwards++;
   });
+
+  return {
+    totalPts, exact, results3, wrong, perfect8, scoredGames, goalsPredicted, predictionsMade,
+    exactGames, soloExactGames, scorelineCount,
+    rankHistory, mdPoints, cumHistory,
+    hasRanks, currentPos, bestPos, worstPos, netMove, netLookback, recentBest, recentWorst,
+    daysTop, daysPodium, daysBottom, favPos,
+    perfectCount, hotCount, coldCount, longestPerfect, longestHot, longestCold, trailPerfect, trailHot, trailCold,
+    favScoreline, motmAwards, completed, matchPreds, myPredMap,
+  };
+}
+
+async function showPlayerStats(playerId, name){
+  if(!currentGroup) return;
+  const me = playerId;
+  const myName = name;
+  let allPreds, allResults, allPlayers;
+  try{
+    [allPreds, allResults, allPlayers] = await Promise.all([
+      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
+    ]);
+  }catch(e){ flash('Error: '+e.message,'error'); return; }
+
+  const gamePreds = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
+  const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
+  const fixtures = allFixtures();
+  const {
+    totalPts, exact, results3, wrong, scoredGames, goalsPredicted, predictionsMade,
+    exactGames, soloExactGames, scorelineCount,
+    rankHistory, mdPoints, cumHistory,
+    hasRanks, currentPos, bestPos, worstPos, netMove, netLookback, recentBest, recentWorst,
+    daysTop, daysPodium, daysBottom, favPos,
+    perfectCount, hotCount, coldCount, longestPerfect, longestHot, longestCold, trailPerfect, trailHot, trailCold,
+    favScoreline, motmAwards,
+  } = computePlayerCore(me, gamePreds, rm, fixtures);
 
   // ── Build stat values ──
   const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
@@ -8001,7 +8045,8 @@ async function showPlayerStats(playerId, name){
     ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
     : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
   const body = blocks.length ? blocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
-  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
+  const compareBtn = (allPlayers||[]).filter(p=>p.id!==me).length ? `<button class="modal-compare-btn" title="Compare with another player">⚔️</button>` : '';
+  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.6rem;">${compareBtn}<span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
   chartInits.forEach(({key,built})=>{
@@ -8009,6 +8054,197 @@ async function showPlayerStats(playerId, name){
     else if(key==='cumulative_chart') initCumulativeChart(modal, cumHistory, built);
     else if(key==='points_chart') initBarChart(modal, mdPoints);
   });
+  const compareBtnEl = modal.querySelector('.modal-compare-btn');
+  if(compareBtnEl) compareBtnEl.addEventListener('click', ()=> openComparePicker(me, myName, allPlayers||[]));
+}
+
+// ── Compare With… player picker (launched from the ⚔️ button on the stats page) ──
+function openComparePicker(pid, pname, allPlayers){
+  const others = (allPlayers||[]).filter(p=>p.id!==pid).sort((a,b)=>(a.nickname||a.name).localeCompare(b.nickname||b.name));
+  if(!others.length){ flash('No other players to compare with.','error'); return; }
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  const rows = others.map(p=>{
+    const label = p.nickname || p.name;
+    const dn = String(label).replace(/"/g,'&quot;');
+    return `<div class="compare-pick-row" data-id="${p.id}" data-name="${dn}"><span class="stat-hi-emoji">👤</span>${label}</div>`;
+  }).join('');
+  modal.innerHTML = `<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">⚔️ Compare With…</div><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div><div class="compare-pick-list">${rows}</div></div>`;
+  modal.addEventListener('click', e=>{
+    if(e.target===modal){ modal.remove(); return; }
+    const row = e.target.closest('.compare-pick-row');
+    if(row){ modal.remove(); showPlayerCompare(pid, pname, row.dataset.id, row.dataset.name); }
+  });
+  document.body.appendChild(modal);
+}
+
+// ── Head-to-head player comparison ──
+function mergeCoreByDate(histA, histB, key){
+  const mapA = new Map(histA.map(x=>[x.dateKey, x[key]]));
+  const mapB = new Map(histB.map(x=>[x.dateKey, x[key]]));
+  const dates = [...mapA.keys()].filter(d=>mapB.has(d)).sort();
+  return dates.map(dateKey=>({dateKey, a:mapA.get(dateKey), b:mapB.get(dateKey)}));
+}
+
+async function showPlayerCompare(aId, aName, bId, bName){
+  if(!currentGroup) return;
+  let allPreds, allResults;
+  try{
+    [allPreds, allResults] = await Promise.all([
+      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+    ]);
+  }catch(e){ flash('Error: '+e.message,'error'); return; }
+
+  const gamePreds = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
+  const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
+  const fixtures = allFixtures();
+  const A = computePlayerCore(aId, gamePreds, rm, fixtures);
+  const B = computePlayerCore(bId, gamePreds, rm, fixtures);
+
+  const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+
+  // ── Head-to-head matchday record: who scored more points each shared matchday ──
+  const mdMerged = mergeCoreByDate(A.mdPoints, B.mdPoints, 'pts');
+  let winsA=0, winsB=0, draws=0;
+  mdMerged.forEach(r=>{ if(r.a>r.b) winsA++; else if(r.b>r.a) winsB++; else draws++; });
+
+  // ── Leader banner ──
+  const diff = A.totalPts - B.totalPts;
+  const banner = diff===0
+    ? `Dead level on points — ${A.totalPts} each`
+    : diff>0 ? `<strong>${aName}</strong> leads by ${diff} pt${diff!==1?'s':''}` : `<strong>${bName}</strong> leads by ${-diff} pt${-diff!==1?'s':''}`;
+
+  // ── Points race dual-line chart ──
+  const cumMerged = mergeCoreByDate(A.cumHistory, B.cumHistory, 'mine');
+  const chart = cumMerged.length>=2 ? buildCompareLineChart(cumMerged, {labelA:aName, labelB:bName, colorA:'var(--group-accent)', colorB:'var(--gold)', rankMode:false}) : null;
+
+  // ── Head-to-head record bar ──
+  const h2hTotal = winsA+winsB+draws;
+  const h2hBar = h2hTotal ? `<div class="pos-chart-wrap">
+      <div class="pos-chart-head"><span class="stat-hi-label">🥊 Matchday Head-to-Head</span><span class="pos-chart-readout">${h2hTotal} shared matchday${h2hTotal!==1?'s':''}</span></div>
+      <div class="outcome-bar">${winsA>0?`<div class="outcome-seg" style="flex:${winsA};background:var(--group-accent);" title="${aName} won ${winsA}"></div>`:''}${draws>0?`<div class="outcome-seg" style="flex:${draws};background:var(--text-muted);" title="Draws: ${draws}"></div>`:''}${winsB>0?`<div class="outcome-seg" style="flex:${winsB};background:var(--gold);" title="${bName} won ${winsB}"></div>`:''}</div>
+      <div class="outcome-legend">
+        <span class="outcome-leg-item"><i style="background:var(--group-accent);"></i>${aName} ${winsA}</span>
+        <span class="outcome-leg-item"><i style="background:var(--text-muted);"></i>Draws ${draws}</span>
+        <span class="outcome-leg-item"><i style="background:var(--gold);"></i>${bName} ${winsB}</span>
+      </div>
+    </div>` : '';
+
+  // ── Scalar stat comparison rows ──
+  const fmtRate = (n,d)=> d ? `${Math.round(n/d*100)}%` : '—';
+  const rows = [
+    {emoji:'🎯', label:'Total Points', a:A.totalPts, b:B.totalPts, better:'high'},
+    {emoji:'📍', label:'Current Position', a:A.currentPos?A.currentPos.rank:null, b:B.currentPos?B.currentPos.rank:null, better:'low', fmt:v=>v==null?'—':ord(v)},
+    {emoji:'⭐', label:'Correct Scores', a:A.exact, b:B.exact, better:'high'},
+    {emoji:'✅', label:'Correct Results', a:A.results3, b:B.results3, better:'high'},
+    {emoji:'❌', label:'Wrong Predictions', a:A.wrong, b:B.wrong, better:'low'},
+    {emoji:'📊', label:'Avg Points / Game', a:A.scoredGames?A.totalPts/A.scoredGames:null, b:B.scoredGames?B.totalPts/B.scoredGames:null, better:'high', fmt:v=>v==null?'—':v.toFixed(2)},
+    {emoji:'🎲', label:'Correct-Score Rate', a:A.scoredGames?A.exact/A.scoredGames*100:null, b:B.scoredGames?B.exact/B.scoredGames*100:null, better:'high', rawA:A.exact, rawB:B.exact, dA:A.scoredGames, dB:B.scoredGames},
+    {emoji:'⚽', label:'Man of the Match', a:A.motmAwards, b:B.motmAwards, better:'high'},
+    {emoji:'💎', label:'Longest Perfect Streak', a:A.longestPerfect, b:B.longestPerfect, better:'high'},
+    {emoji:'🔁', label:'Goals Predicted', a:A.goalsPredicted, b:B.goalsPredicted, better:null},
+  ];
+  const rowHtml = rows.map(r=>{
+    const fmt = v => r.fmt ? r.fmt(v) : (v==null?'—':v);
+    const aDisp = r.rawA!=null ? fmtRate(r.rawA,r.dA) : fmt(r.a);
+    const bDisp = r.rawB!=null ? fmtRate(r.rawB,r.dB) : fmt(r.b);
+    let aWin=false, bWin=false;
+    if(r.better && r.a!=null && r.b!=null && r.a!==r.b){
+      if(r.better==='high') { aWin = r.a>r.b; bWin = r.b>r.a; }
+      else { aWin = r.a<r.b; bWin = r.b<r.a; }
+    }
+    return `<div class="compare-row">
+      <div class="compare-cell compare-cell-a${aWin?' compare-win':''}">${aDisp}</div>
+      <div class="compare-cell-label"><span class="stat-hi-emoji">${r.emoji}</span>${r.label}</div>
+      <div class="compare-cell compare-cell-b${bWin?' compare-win':''}">${bDisp}</div>
+    </div>`;
+  }).join('');
+
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.innerHTML=`<div class="pred-modal">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title" style="font-size:1.15rem;">⚔️ ${aName} <span style="color:var(--text-muted);font-weight:500;">vs</span> ${bName}</div>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <div class="compare-banner">${banner}</div>
+    ${chart?chart.html:''}
+    ${h2hBar}
+    <div class="compare-head">
+      <span class="compare-head-name" style="color:var(--group-accent);">${aName}</span>
+      <span></span>
+      <span class="compare-head-name" style="color:var(--gold);">${bName}</span>
+    </div>
+    <div class="compare-row-list">${rowHtml}</div>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  if(chart) initCompareLineChart(modal, cumMerged, chart);
+}
+
+// ── Two-series comparison line chart (used by the Compare feature) ──
+function buildCompareLineChart(rows, opts){
+  const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const n = rows.length;
+  const W=600, H=170, padL=28, padR=8, padT=10, padB=10;
+  const allVals = rows.flatMap(r=>[r.a,r.b]).filter(v=>v!=null);
+  const rawMax = Math.max(...allVals, 1);
+  const minV = opts.rankMode ? 1 : 0;
+  const maxV = opts.rankMode ? Math.max(rawMax, 2) : rawMax;
+  const range = maxV-minV || 1;
+  const xAt = i => padL + (W-padL-padR) * (n===1?0:i/(n-1));
+  const yAt = v => opts.rankMode
+    ? padT + (H-padT-padB) * ((v-minV)/range)
+    : padT + (H-padT-padB) * (1 - (v-minV)/range);
+  const lineFor = key => rows.map((r,i)=>`${xAt(i).toFixed(1)},${yAt(r[key]).toFixed(1)}`).join(' ');
+  const gridVals = [...new Set([minV, Math.round((minV+maxV)/2), Math.round(maxV)])];
+  const gridLines = gridVals.map(v=>`<line x1="${padL}" y1="${yAt(v).toFixed(1)}" x2="${W-padR}" y2="${yAt(v).toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2,3"/>`).join('');
+  const gridLabels = gridVals.map(v=>`<text x="${padL-6}" y="${(yAt(v)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-muted)">${v}</text>`).join('');
+  const last = rows[n-1];
+  const readoutFor = (i,r) => `Day ${i+1} · <strong style="color:${opts.colorA};">${r.a}</strong> · <strong style="color:${opts.colorB};">${r.b}</strong>${r.dateKey?' · '+fmtDate(r.dateKey):''}`;
+  const html = `<div class="pos-chart-wrap" data-chart-key="compare_chart">
+      <div class="pos-chart-head"><span class="stat-hi-label">📈 Points Race</span><span class="pos-chart-readout">${readoutFor(n-1,last)}</span></div>
+      <div class="chart-legend"><span class="chart-leg-item"><i style="background:${opts.colorA};"></i>${opts.labelA}</span><span class="chart-leg-item"><i style="background:${opts.colorB};"></i>${opts.labelB}</span></div>
+      <svg class="cmp-chart-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;touch-action:pan-y;">
+        ${gridLines}${gridLabels}
+        <polyline points="${lineFor('b')}" fill="none" stroke="${opts.colorB}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="${lineFor('a')}" fill="none" stroke="${opts.colorA}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${xAt(n-1).toFixed(1)}" cy="${yAt(last.b).toFixed(1)}" r="3.5" fill="${opts.colorB}"/>
+        <circle cx="${xAt(n-1).toFixed(1)}" cy="${yAt(last.a).toFixed(1)}" r="4" fill="${opts.colorA}"/>
+        <line class="cmp-chart-cursor-line" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="var(--text-muted)" stroke-width="1" opacity="0"></line>
+        <rect class="cmp-chart-overlay" x="0" y="0" width="${W}" height="${H}" fill="transparent"></rect>
+      </svg>
+    </div>`;
+  return {html, W, H, padL, padR, xAt, yAt, readoutFor};
+}
+function initCompareLineChart(scope, rows, chart){
+  const root = scope.querySelector('[data-chart-key="compare_chart"]');
+  if(!root) return;
+  const svg = root.querySelector('.cmp-chart-svg');
+  const overlay = root.querySelector('.cmp-chart-overlay');
+  const cursorLine = root.querySelector('.cmp-chart-cursor-line');
+  const readout = root.querySelector('.pos-chart-readout');
+  if(!svg||!overlay) return;
+  const n = rows.length;
+  const step = n>1 ? (chart.W-chart.padL-chart.padR)/(n-1) : 0;
+  const defaultReadout = chart.readoutFor(n-1, rows[n-1]);
+  const showIndex = i=>{
+    cursorLine.setAttribute('x1', chart.xAt(i)); cursorLine.setAttribute('x2', chart.xAt(i)); cursorLine.setAttribute('opacity','1');
+    readout.innerHTML = chart.readoutFor(i, rows[i]);
+  };
+  const showFromClientX = clientX=>{
+    const rect = svg.getBoundingClientRect();
+    const svgX = (clientX - rect.left) * (chart.W / rect.width);
+    let i = step ? Math.round((svgX - chart.padL) / step) : 0;
+    showIndex(Math.max(0, Math.min(n-1, i)));
+  };
+  const reset = ()=>{ cursorLine.setAttribute('opacity','0'); readout.innerHTML = defaultReadout; };
+  overlay.addEventListener('mousemove', e=>showFromClientX(e.clientX));
+  overlay.addEventListener('mouseleave', reset);
+  overlay.addEventListener('touchstart', e=>showFromClientX(e.touches[0].clientX), {passive:true});
+  overlay.addEventListener('touchmove', e=>showFromClientX(e.touches[0].clientX), {passive:true});
+  overlay.addEventListener('touchend', reset);
 }
 
 // ── Leaderboard-position-over-games line chart (used on the player stats page) ──
@@ -11788,7 +12024,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.15</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.16</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
