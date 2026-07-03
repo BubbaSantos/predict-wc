@@ -305,6 +305,13 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .stat-multi-item:first-child{padding-top:.05rem;}
 .stat-multi-item:last-child{border-bottom:none;padding-bottom:.05rem;}
 @media (max-width:420px){.stat-hi-grid{grid-template-columns:1fr;}}
+.stat-row-list{display:flex;flex-direction:column;}
+.stat-row{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;padding:.6rem 0;border-bottom:1px dashed var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-row-main{flex:1;min-width:0;}
+.stat-row-label{display:flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:600;color:var(--text-dim);}
+.stat-row-val{text-align:right;flex-shrink:0;}
+.stat-row .stat-hi-sublist{margin-top:.25rem;}
 .pos-chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.65rem .75rem .55rem;margin-bottom:.85rem;}
 .pos-chart-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.4rem;}
 .pos-chart-readout{font-size:.65rem;color:var(--text-muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
@@ -1257,7 +1264,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.12</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.13</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5581,6 +5588,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.13',date:'3 Jul 2026',notes:['My Stats / player stats page: stats now list as horizontal rows (label left, value right) instead of a card grid — easier to scan, especially on narrow screens.']},
   {v:'1.78.12',date:'3 Jul 2026',notes:['My Stats / player stats page: added a Leaderboard Position chart — a line graph of your rank across every completed matchday, with a hover/tap readout showing the exact position, field size and date for any game.']},
   {v:'1.78.11',date:'02 Jul 2026',notes:['Admin → Players: each player row now shows their chosen background (theme name and description) as readable text beneath the stats line.']},
   {v:'1.78.10',date:'2 Jul 2026',notes:['Restored swipe left/right to navigate between Home, Leaderboard and Predict on mobile — removed in 1.78.1, brought back by request.']},
@@ -7926,11 +7934,15 @@ async function showPlayerStats(playerId, name){
 
   // ── Render ──
   const hidden=getPlayerStatsHidden();
-  const cell=(emoji,label,v)=>`<div class="stat-hi-cell">
-      <div class="stat-hi-head"><span class="stat-hi-emoji">${emoji}</span><span class="stat-hi-label">${label}</span></div>
-      <div class="stat-hi-value">${v.value}</div>
-      ${v.meta?`<div class="stat-hi-meta">${v.meta}</div>`:''}
-      ${v.sub?`<div class="stat-hi-sublist">${v.sub}</div>`:''}
+  const cell=(emoji,label,v)=>`<div class="stat-row">
+      <div class="stat-row-main">
+        <div class="stat-row-label"><span class="stat-hi-emoji">${emoji}</span>${label}</div>
+        ${v.sub?`<div class="stat-hi-sublist">${v.sub}</div>`:''}
+      </div>
+      <div class="stat-row-val">
+        <div class="stat-hi-value">${v.value}</div>
+        ${v.meta?`<div class="stat-hi-meta">${v.meta}</div>`:''}
+      </div>
     </div>`;
   const cells=[];
   PLAYER_STAT_DEFS.forEach(d=>{ if(hidden.includes(d.key)) return; const v=V[d.key]; if(!v) return; cells.push(cell(d.emoji,d.label,v)); });
@@ -7940,7 +7952,7 @@ async function showPlayerStats(playerId, name){
   const subtitle = currentPos
     ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
     : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
-  const body = cells.length ? `<div class="stat-hi-grid">${cells.join('')}</div>` : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
+  const body = cells.length ? `<div class="stat-row-list">${cells.join('')}</div>` : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
   const chart = rankHistory.length>=2 ? buildPositionChart(rankHistory) : null;
   modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${chart?chart.html:''}${body}</div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -11592,7 +11604,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.12</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.13</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
