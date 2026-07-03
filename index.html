@@ -358,11 +358,14 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .compare-cell-b.compare-win{color:var(--gold);}
 .compare-cell-label{font-size:.68rem;color:var(--text-muted);font-weight:600;text-align:center;white-space:nowrap;display:flex;align-items:center;gap:.3rem;justify-content:center;}
 .badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.6rem,1fr));gap:.5rem;}
-.badge-tile{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.5rem .3rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);opacity:.4;filter:grayscale(1);text-align:center;}
+.badge-tile{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.5rem .3rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);opacity:.4;filter:grayscale(1);text-align:center;cursor:pointer;transition:transform .1s;}
+.badge-tile:active{transform:scale(.94);}
 .badge-tile.earned{opacity:1;filter:none;border-color:color-mix(in srgb,var(--group-accent) 40%,transparent);background:color-mix(in srgb,var(--group-accent) 8%,var(--surface));}
 .badge-emoji{font-size:1.3rem;line-height:1;}
 .badge-name{font-size:.55rem;font-weight:700;color:var(--text-dim);line-height:1.2;}
 .badge-tile.earned .badge-name{color:var(--text);}
+.badge-caption{font-size:.68rem;color:var(--text-muted);font-weight:500;margin-top:.6rem;line-height:1.4;min-height:1.2em;}
+.badge-caption strong{color:var(--text);}
 .share-card-preview-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
 .share-card-canvas{width:100%;height:auto;display:block;}
 .home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
@@ -1312,7 +1315,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.17</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.18</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5667,6 +5670,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.18',date:'3 Jul 2026',notes:['Achievements: tap any badge to see what it takes to unlock it (was previously only a desktop hover tooltip, which doesn\'t work on mobile).']},
   {v:'1.78.17',date:'3 Jul 2026',notes:['4 new features on the player stats page: 🏅 Achievements — 14 unlockable badges (Table Topper, Flawless, Unicorn, Century, MOTM Legend and more) shown as a grid, earned ones in full colour. 📤 Share Your Stats — generates a downloadable/shareable image card of your season stats and badges. 🎲 Maverick Picks — tracks predictions that went against the group\'s most common pick for that fixture, and whether being contrarian paid off vs going with the crowd. ⚔️ Closest Rival home card (Admin → Display → Home Page Cards, off by default) — surfaces the player nearest you in points with a one-tap shortcut into Compare.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_rival boolean DEFAULT false;']},
   {v:'1.78.16',date:'3 Jul 2026',notes:['New ⚔️ Compare feature on the player stats page — tap the sword icon next to any player\'s stats, pick another player from the group, and get a full head-to-head: a leader banner, a Points Race chart with both players\' lines, a Matchday Head-to-Head record (who out-scored who on shared matchdays), and side-by-side stat rows (points, position, correct scores/results, wrong, MOTM, streaks, goals) with the better value highlighted for each.']},
   {v:'1.78.15',date:'3 Jul 2026',notes:['My Stats / player stats page: all 5 charts (Leaderboard Position, Points Race, Points Per Matchday, Prediction Outcomes, Favourite Scorelines) now grouped together at the top of the page, above the stat rows.']},
@@ -8109,7 +8113,7 @@ async function showPlayerStats(playerId, name){
     if(hidden.includes(d.key)) return;
     if(d.badges){
       const built = buildBadgesBlock(core);
-      if(built){ flushRows(); blocks.push(built.html); }
+      if(built){ flushRows(); blocks.push(built.html); chartInits.push({key:'badges', built}); }
       return;
     }
     if(d.chart){
@@ -8137,6 +8141,7 @@ async function showPlayerStats(playerId, name){
     if(key==='position_chart') initPositionChart(modal, rankHistory, built);
     else if(key==='cumulative_chart') initCumulativeChart(modal, cumHistory, built);
     else if(key==='points_chart') initBarChart(modal, mdPoints);
+    else if(key==='badges') initBadgesBlock(modal, built.earnedKeys);
   });
   const compareBtnEl = modal.querySelector('.modal-compare-btn');
   if(compareBtnEl) compareBtnEl.addEventListener('click', ()=> openComparePicker(me, myName, allPlayers||[]));
@@ -8496,16 +8501,32 @@ function buildBadgesBlock(core){
   const earnedKeys = new Set(earned.map(b=>b.key));
   const tiles = PLAYER_BADGE_DEFS.map(b=>{
     const got = earnedKeys.has(b.key);
-    return `<div class="badge-tile${got?' earned':''}" title="${b.name}: ${b.desc}${got?'':' (locked)'}">
+    return `<div class="badge-tile${got?' earned':''}" data-key="${b.key}">
       <div class="badge-emoji">${b.emoji}</div>
       <div class="badge-name">${b.name}</div>
     </div>`;
   }).join('');
-  const html = `<div class="pos-chart-wrap">
+  const html = `<div class="pos-chart-wrap" data-chart-key="badges">
       <div class="pos-chart-head"><span class="stat-hi-label">🏅 Achievements</span><span class="pos-chart-readout">${earned.length} / ${PLAYER_BADGE_DEFS.length} unlocked</span></div>
       <div class="badge-grid">${tiles}</div>
+      <div class="badge-caption">Tap a badge to see what it takes</div>
     </div>`;
-  return {html};
+  return {html, earnedKeys};
+}
+function initBadgesBlock(scope, earnedKeys){
+  const root = scope.querySelector('[data-chart-key="badges"]');
+  if(!root) return;
+  const grid = root.querySelector('.badge-grid');
+  const caption = root.querySelector('.badge-caption');
+  if(!grid || !caption) return;
+  grid.addEventListener('click', e=>{
+    const tile = e.target.closest('.badge-tile');
+    if(!tile) return;
+    const def = PLAYER_BADGE_DEFS.find(b=>b.key===tile.dataset.key);
+    if(!def) return;
+    const got = earnedKeys.has(def.key);
+    caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}${got?'':' <span style="color:var(--text-muted);">(locked)</span>'}`;
+  });
 }
 
 // ── Maverick picks: predictions that went against the group consensus (used on the player stats page) ──
@@ -12332,7 +12353,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.17</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.18</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
