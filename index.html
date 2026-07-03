@@ -314,9 +314,29 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .stat-row .stat-hi-sublist{margin-top:.25rem;}
 .pos-chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.65rem .75rem .55rem;margin-bottom:.85rem;}
 .pos-chart-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.4rem;}
+.pos-chart-head .stat-hi-label{white-space:nowrap;flex-shrink:0;}
 .pos-chart-readout{font-size:.65rem;color:var(--text-muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .pos-chart-readout strong{color:var(--group-accent);}
 .pos-chart-overlay{cursor:pointer;}
+.bar-chart-track{display:flex;align-items:flex-end;gap:3px;height:90px;}
+.bar-chart-col{flex:1;height:100%;display:flex;align-items:flex-end;cursor:pointer;}
+.bar-chart-bar{width:100%;min-height:4px;background:var(--group-accent);border-radius:3px 3px 0 0;transition:opacity .1s;}
+.bar-chart-col:hover .bar-chart-bar{opacity:.7;}
+.chart-legend{display:flex;gap:.9rem;margin-bottom:.4rem;}
+.chart-leg-item{display:flex;align-items:center;gap:.35rem;font-size:.65rem;color:var(--text-muted);font-weight:600;}
+.chart-leg-item i{display:inline-block;width:12px;height:2px;background:var(--group-accent);border-radius:1px;}
+.chart-leg-item i.dashed{background:repeating-linear-gradient(to right,var(--text-muted) 0 3px,transparent 3px 5px);}
+.outcome-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px;background:var(--surface);}
+.outcome-seg{height:100%;}
+.outcome-legend{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.5rem;}
+.outcome-leg-item{display:flex;align-items:center;gap:.3rem;font-size:.65rem;color:var(--text-muted);font-weight:600;}
+.outcome-leg-item i{display:inline-block;width:8px;height:8px;border-radius:2px;}
+.hbar-list{display:flex;flex-direction:column;gap:.4rem;}
+.hbar-row{display:flex;align-items:center;gap:.5rem;}
+.hbar-label{width:2.6rem;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text-dim);font-weight:600;}
+.hbar-track{flex:1;height:10px;background:var(--surface);border-radius:5px;overflow:hidden;}
+.hbar-fill{height:100%;background:var(--group-accent);border-radius:5px;}
+.hbar-value{width:1.4rem;text-align:right;flex-shrink:0;font-size:.7rem;color:var(--text-muted);font-weight:700;}
 .home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
@@ -1264,7 +1284,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.13</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.14</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5532,6 +5552,7 @@ const HOME_CARD_DEFS = [
 const PLAYER_STAT_DEFS = [
   {key:'total_pts',       emoji:'🎯', label:'Total Points'},
   {key:'current_pos',     emoji:'📍', label:'Current Position'},
+  {key:'position_chart',  emoji:'📈', label:'Leaderboard Position Chart', chart:true},
   {key:'best_pos',        emoji:'🏆', label:'Highest Position'},
   {key:'worst_pos',       emoji:'🪣', label:'Lowest Position'},
   {key:'net_move',        emoji:'↕️', label:'Form Trend (Last 10 Games)'},
@@ -5542,14 +5563,17 @@ const PLAYER_STAT_DEFS = [
   {key:'fav_pos',         emoji:'🪑', label:'Most-Held Position'},
   {key:'predictions_made',emoji:'📝', label:'Predictions Made'},
   {key:'avg_pts',         emoji:'📊', label:'Average Points / Game'},
+  {key:'cumulative_chart',emoji:'📈', label:'Points Race vs Group Average Chart', chart:true},
   {key:'exact_scores',    emoji:'⭐', label:'Correct Scores'},
   {key:'correct_results', emoji:'✅', label:'Correct Results'},
   {key:'wrong',           emoji:'❌', label:'Wrong Predictions'},
+  {key:'outcome_chart',   emoji:'🎯', label:'Prediction Outcomes Chart', chart:true},
   {key:'exact_rate',      emoji:'🎲', label:'Correct-Score Rate'},
   {key:'result_rate',     emoji:'✔️', label:'Correct-Result Rate'},
   {key:'solo_exacts',     emoji:'🦄', label:'Solo Correct Scores'},
   {key:'best_matchday',   emoji:'🚀', label:'Best Matchday'},
   {key:'worst_matchday',  emoji:'🥶', label:'Worst Matchday'},
+  {key:'points_chart',    emoji:'📊', label:'Points Per Matchday Chart', chart:true},
   {key:'current_streak',  emoji:'🔥', label:'Current Streak'},
   {key:'longest_perfect', emoji:'💎', label:'Longest Perfect Streak'},
   {key:'longest_hot',     emoji:'🔥', label:'Longest Hot Streak'},
@@ -5558,6 +5582,7 @@ const PLAYER_STAT_DEFS = [
   {key:'hot_streaks',     emoji:'🔥', label:'Hot Streaks'},
   {key:'cold_streaks',    emoji:'💩', label:'Shite Streaks'},
   {key:'fav_scoreline',   emoji:'🔁', label:'Favourite Predicted Scoreline'},
+  {key:'scoreline_chart', emoji:'🔁', label:'Favourite Scorelines Chart', chart:true},
   {key:'goals_predicted', emoji:'⚽', label:'Total Goals Predicted'},
 ];
 function getPlayerStatsHidden(){
@@ -5588,6 +5613,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.14',date:'3 Jul 2026',notes:['My Stats / player stats page: added 4 more charts — Points Race (your cumulative points vs the group average), Prediction Outcomes (exact/result/wrong split), Points Per Matchday (bar chart) and Favourite Scorelines (top 5 ranked). All 5 charts, including the existing Leaderboard Position chart, can now be individually toggled on/off from Admin → Display → Personal Player Stats, same as any other stat.']},
   {v:'1.78.13',date:'3 Jul 2026',notes:['My Stats / player stats page: stats now list as horizontal rows (label left, value right) instead of a card grid — easier to scan, especially on narrow screens.']},
   {v:'1.78.12',date:'3 Jul 2026',notes:['My Stats / player stats page: added a Leaderboard Position chart — a line graph of your rank across every completed matchday, with a hover/tap readout showing the exact position, field size and date for any game.']},
   {v:'1.78.11',date:'02 Jul 2026',notes:['Admin → Players: each player row now shows their chosen background (theme name and description) as readable text beneath the stats line.']},
@@ -7827,7 +7853,7 @@ async function showPlayerStats(playerId, name){
   completed.forEach(f=>{ const k=f.date||'unknown'; (matchesByDate[k]=matchesByDate[k]||[]).push(f); });
   const dateKeys=Object.keys(matchesByDate).filter(k=>k!=='unknown').sort();
   const cum={}; // pid -> {total,result}
-  const rankHistory=[], daysAtPos={}, mdPoints=[];
+  const rankHistory=[], daysAtPos={}, mdPoints=[], cumHistory=[];
   dateKeys.forEach(dateKey=>{
     let myMdPts=0, myPlayed=false;
     matchesByDate[dateKey].forEach(f=>{
@@ -7850,6 +7876,8 @@ async function showPlayerStats(playerId, name){
     ranked.forEach(e=>{ if(e[0]!==me && lbCompare(e,myEntry)<0) rank++; });
     rankHistory.push({rank, field:ranked.length, dateKey});
     daysAtPos[rank]=(daysAtPos[rank]||0)+1;
+    const avgTotal = ranked.reduce((s,[,c])=>s+c.total,0)/ranked.length;
+    cumHistory.push({dateKey, mine:cum[me].total, avg:avgTotal});
   });
   const ranks=rankHistory.map(h=>h.rank);
   const hasRanks=ranks.length>0;
@@ -7944,20 +7972,42 @@ async function showPlayerStats(playerId, name){
         ${v.meta?`<div class="stat-hi-meta">${v.meta}</div>`:''}
       </div>
     </div>`;
-  const cells=[];
-  PLAYER_STAT_DEFS.forEach(d=>{ if(hidden.includes(d.key)) return; const v=V[d.key]; if(!v) return; cells.push(cell(d.emoji,d.label,v)); });
+  const chartBuilders = {
+    position_chart:   ()=> rankHistory.length>=2 ? buildPositionChart(rankHistory) : null,
+    cumulative_chart: ()=> cumHistory.length>=2 ? buildCumulativeChart(cumHistory) : null,
+    outcome_chart:    ()=> buildOutcomeChart(exact, results3, wrong),
+    points_chart:     ()=> mdPoints.length>=2 ? buildPointsBarChart(mdPoints) : null,
+    scoreline_chart:  ()=> buildScorelineChart(scorelineCount),
+  };
+  const blocks=[]; let rowBuf=[];
+  const chartInits=[];
+  const flushRows=()=>{ if(rowBuf.length){ blocks.push(`<div class="stat-row-list">${rowBuf.join('')}</div>`); rowBuf=[]; } };
+  PLAYER_STAT_DEFS.forEach(d=>{
+    if(hidden.includes(d.key)) return;
+    if(d.chart){
+      const built = chartBuilders[d.key] ? chartBuilders[d.key]() : null;
+      if(built){ flushRows(); blocks.push(built.html); chartInits.push({key:d.key, built}); }
+      return;
+    }
+    const v=V[d.key]; if(!v) return;
+    rowBuf.push(cell(d.emoji,d.label,v));
+  });
+  flushRows();
 
   const modal=document.createElement('div');
   modal.className='modal-overlay';
   const subtitle = currentPos
     ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
     : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
-  const body = cells.length ? `<div class="stat-row-list">${cells.join('')}</div>` : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
-  const chart = rankHistory.length>=2 ? buildPositionChart(rankHistory) : null;
-  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${chart?chart.html:''}${body}</div>`;
+  const body = blocks.length ? blocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
+  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
-  if(chart) initPositionChart(modal, rankHistory, chart);
+  chartInits.forEach(({key,built})=>{
+    if(key==='position_chart') initPositionChart(modal, rankHistory, built);
+    else if(key==='cumulative_chart') initCumulativeChart(modal, cumHistory, built);
+    else if(key==='points_chart') initBarChart(modal, mdPoints);
+  });
 }
 
 // ── Leaderboard-position-over-games line chart (used on the player stats page) ──
@@ -7975,8 +8025,8 @@ function buildPositionChart(history){
   const gridLabels = gridRanks.map(r=>`<text x="${padL-5}" y="${(yAt(r)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-muted)">${r}</text>`).join('');
   const last = history[n-1];
   const lastDot = `<circle cx="${xAt(n-1).toFixed(1)}" cy="${yAt(last.rank).toFixed(1)}" r="4" fill="var(--group-accent)"/>`;
-  const defaultReadout = `Game ${n} · <strong>${ord(last.rank)}</strong> of ${last.field}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
-  const html = `<div class="pos-chart-wrap">
+  const defaultReadout = `Day ${n} · <strong>${ord(last.rank)}</strong> of ${last.field}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const html = `<div class="pos-chart-wrap" data-chart-key="position_chart">
       <div class="pos-chart-head"><span class="stat-hi-label">📈 Leaderboard Position</span><span class="pos-chart-readout">${defaultReadout}</span></div>
       <svg class="pos-chart-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;touch-action:pan-y;">
         ${gridLines}${gridLabels}
@@ -7991,24 +8041,26 @@ function buildPositionChart(history){
 }
 
 function initPositionChart(scope, history, chart){
-  const svg = scope.querySelector('.pos-chart-svg');
-  const overlay = scope.querySelector('.pos-chart-overlay');
-  const cursorLine = scope.querySelector('.pos-chart-cursor-line');
-  const cursorDot = scope.querySelector('.pos-chart-cursor-dot');
-  const readout = scope.querySelector('.pos-chart-readout');
+  const root = scope.querySelector('[data-chart-key="position_chart"]');
+  if(!root) return;
+  const svg = root.querySelector('.pos-chart-svg');
+  const overlay = root.querySelector('.pos-chart-overlay');
+  const cursorLine = root.querySelector('.pos-chart-cursor-line');
+  const cursorDot = root.querySelector('.pos-chart-cursor-dot');
+  const readout = root.querySelector('.pos-chart-readout');
   if(!svg||!overlay) return;
   const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
   const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
   const n = history.length;
   const step = n>1 ? (chart.W-chart.padL-chart.padR)/(n-1) : 0;
   const last = history[n-1];
-  const defaultReadout = `Game ${n} · <strong>${ord(last.rank)}</strong> of ${last.field}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const defaultReadout = `Day ${n} · <strong>${ord(last.rank)}</strong> of ${last.field}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
   const showIndex = i=>{
     const h = history[i];
     const cx = chart.xAt(i), cy = chart.yAt(h.rank);
     cursorLine.setAttribute('x1', cx); cursorLine.setAttribute('x2', cx); cursorLine.setAttribute('opacity','1');
     cursorDot.setAttribute('cx', cx); cursorDot.setAttribute('cy', cy); cursorDot.setAttribute('opacity','1');
-    readout.innerHTML = `Game ${i+1} · <strong>${ord(h.rank)}</strong> of ${h.field}${h.dateKey?' · '+fmtDate(h.dateKey):''}`;
+    readout.innerHTML = `Day ${i+1} · <strong>${ord(h.rank)}</strong> of ${h.field}${h.dateKey?' · '+fmtDate(h.dateKey):''}`;
   };
   const showFromClientX = clientX=>{
     const rect = svg.getBoundingClientRect();
@@ -8022,6 +8074,137 @@ function initPositionChart(scope, history, chart){
   overlay.addEventListener('touchstart', e=>showFromClientX(e.touches[0].clientX), {passive:true});
   overlay.addEventListener('touchmove', e=>showFromClientX(e.touches[0].clientX), {passive:true});
   overlay.addEventListener('touchend', reset);
+}
+
+// ── Points-per-matchday bar chart (used on the player stats page) ──
+function buildPointsBarChart(mdPoints){
+  const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const n = mdPoints.length;
+  const maxPts = Math.max(...mdPoints.map(m=>m.pts), 1);
+  const bars = mdPoints.map((m,i)=>{
+    const h = Math.max(4, Math.round(m.pts/maxPts*100));
+    return `<div class="bar-chart-col" data-i="${i}"><div class="bar-chart-bar" style="height:${h}%;"></div></div>`;
+  }).join('');
+  const last = mdPoints[n-1];
+  const defaultReadout = `Day ${n} · <strong>${last.pts} pt${last.pts!==1?'s':''}</strong>${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const html = `<div class="pos-chart-wrap" data-chart-key="points_chart">
+      <div class="pos-chart-head"><span class="stat-hi-label">📊 Points Per Matchday</span><span class="pos-chart-readout">${defaultReadout}</span></div>
+      <div class="bar-chart-track">${bars}</div>
+    </div>`;
+  return {html};
+}
+function initBarChart(scope, mdPoints){
+  const root = scope.querySelector('[data-chart-key="points_chart"]');
+  if(!root) return;
+  const track = root.querySelector('.bar-chart-track');
+  const readout = root.querySelector('.pos-chart-readout');
+  if(!track||!readout) return;
+  const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const n = mdPoints.length;
+  const last = mdPoints[n-1];
+  const defaultReadout = `Day ${n} · <strong>${last.pts} pt${last.pts!==1?'s':''}</strong>${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const show = i=>{
+    const m = mdPoints[i]; if(!m) return;
+    readout.innerHTML = `Day ${i+1} · <strong>${m.pts} pt${m.pts!==1?'s':''}</strong>${m.dateKey?' · '+fmtDate(m.dateKey):''}`;
+  };
+  const fromTarget = target=>{ const col=target.closest('.bar-chart-col'); if(col) show(+col.dataset.i); };
+  track.addEventListener('mouseover', e=>fromTarget(e.target));
+  track.addEventListener('mouseleave', ()=>{ readout.innerHTML = defaultReadout; });
+  track.addEventListener('touchstart', e=>fromTarget(e.target), {passive:true});
+}
+
+// ── Cumulative points vs group average line chart (used on the player stats page) ──
+function buildCumulativeChart(cumHistory){
+  const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const n = cumHistory.length;
+  const W=600, H=170, padL=28, padR=8, padT=10, padB=10;
+  const maxVal = Math.max(...cumHistory.map(h=>Math.max(h.mine,h.avg)), 1);
+  const xAt = i => padL + (W-padL-padR) * (n===1?0:i/(n-1));
+  const yAt = v => padT + (H-padT-padB) * (1 - v/maxVal);
+  const lineFor = key => cumHistory.map((h,i)=>`${xAt(i).toFixed(1)},${yAt(h[key]).toFixed(1)}`).join(' ');
+  const gridVals = [...new Set([0, Math.round(maxVal/2), Math.round(maxVal)])];
+  const gridLines = gridVals.map(v=>`<line x1="${padL}" y1="${yAt(v).toFixed(1)}" x2="${W-padR}" y2="${yAt(v).toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2,3"/>`).join('');
+  const gridLabels = gridVals.map(v=>`<text x="${padL-6}" y="${(yAt(v)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-muted)">${v}</text>`).join('');
+  const last = cumHistory[n-1];
+  const defaultReadout = `Day ${n} · You <strong>${Math.round(last.mine)}</strong> · Avg ${last.avg.toFixed(1)}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const html = `<div class="pos-chart-wrap" data-chart-key="cumulative_chart">
+      <div class="pos-chart-head"><span class="stat-hi-label">📈 Points Race</span><span class="pos-chart-readout">${defaultReadout}</span></div>
+      <div class="chart-legend"><span class="chart-leg-item"><i></i>You</span><span class="chart-leg-item"><i class="dashed"></i>Group average</span></div>
+      <svg class="cum-chart-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;touch-action:pan-y;">
+        ${gridLines}${gridLabels}
+        <polyline points="${lineFor('avg')}" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-dasharray="4,3" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="${lineFor('mine')}" fill="none" stroke="var(--group-accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${xAt(n-1).toFixed(1)}" cy="${yAt(last.avg).toFixed(1)}" r="3.5" fill="var(--text-muted)"/>
+        <circle cx="${xAt(n-1).toFixed(1)}" cy="${yAt(last.mine).toFixed(1)}" r="4" fill="var(--group-accent)"/>
+        <line class="cum-chart-cursor-line" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="var(--text-muted)" stroke-width="1" opacity="0"></line>
+        <rect class="cum-chart-overlay" x="0" y="0" width="${W}" height="${H}" fill="transparent"></rect>
+      </svg>
+    </div>`;
+  return {html, W, H, padL, padR, xAt, yAt};
+}
+function initCumulativeChart(scope, history, chart){
+  const root = scope.querySelector('[data-chart-key="cumulative_chart"]');
+  if(!root) return;
+  const svg = root.querySelector('.cum-chart-svg');
+  const overlay = root.querySelector('.cum-chart-overlay');
+  const cursorLine = root.querySelector('.cum-chart-cursor-line');
+  const readout = root.querySelector('.pos-chart-readout');
+  if(!svg||!overlay) return;
+  const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const n = history.length;
+  const step = n>1 ? (chart.W-chart.padL-chart.padR)/(n-1) : 0;
+  const last = history[n-1];
+  const defaultReadout = `Day ${n} · You <strong>${Math.round(last.mine)}</strong> · Avg ${last.avg.toFixed(1)}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const showIndex = i=>{
+    const h = history[i];
+    const cx = chart.xAt(i);
+    cursorLine.setAttribute('x1', cx); cursorLine.setAttribute('x2', cx); cursorLine.setAttribute('opacity','1');
+    readout.innerHTML = `Day ${i+1} · You <strong>${Math.round(h.mine)}</strong> · Avg ${h.avg.toFixed(1)}${h.dateKey?' · '+fmtDate(h.dateKey):''}`;
+  };
+  const showFromClientX = clientX=>{
+    const rect = svg.getBoundingClientRect();
+    const svgX = (clientX - rect.left) * (chart.W / rect.width);
+    let i = step ? Math.round((svgX - chart.padL) / step) : 0;
+    showIndex(Math.max(0, Math.min(n-1, i)));
+  };
+  const reset = ()=>{ cursorLine.setAttribute('opacity','0'); readout.innerHTML = defaultReadout; };
+  overlay.addEventListener('mousemove', e=>showFromClientX(e.clientX));
+  overlay.addEventListener('mouseleave', reset);
+  overlay.addEventListener('touchstart', e=>showFromClientX(e.touches[0].clientX), {passive:true});
+  overlay.addEventListener('touchmove', e=>showFromClientX(e.touches[0].clientX), {passive:true});
+  overlay.addEventListener('touchend', reset);
+}
+
+// ── Prediction outcome breakdown bar (used on the player stats page) ──
+function buildOutcomeChart(exact, results3, wrong){
+  const total = exact+results3+wrong;
+  if(!total) return null;
+  const pct = v => Math.round(v/total*100);
+  const seg = (val,color,label)=> val>0 ? `<div class="outcome-seg" style="flex:${val};background:${color};" title="${label}: ${val} (${pct(val)}%)"></div>` : '';
+  const leg = (val,color,emoji,label)=> val>0 ? `<span class="outcome-leg-item"><i style="background:${color};"></i>${emoji} ${label} ${val} (${pct(val)}%)</span>` : '';
+  const html = `<div class="pos-chart-wrap" data-chart-key="outcome_chart">
+      <div class="pos-chart-head"><span class="stat-hi-label">🎯 Prediction Outcomes</span><span class="pos-chart-readout">${total} scored game${total!==1?'s':''}</span></div>
+      <div class="outcome-bar">${seg(exact,'var(--green)','Correct Score')}${seg(results3,'var(--gold)','Correct Result')}${seg(wrong,'var(--accent2)','Wrong')}</div>
+      <div class="outcome-legend">${leg(exact,'var(--green)','⭐','Exact')}${leg(results3,'var(--gold)','✅','Result')}${leg(wrong,'var(--accent2)','❌','Wrong')}</div>
+    </div>`;
+  return {html};
+}
+
+// ── Favourite scorelines bar chart (used on the player stats page) ──
+function buildScorelineChart(scorelineCount){
+  const entries = Object.entries(scorelineCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(!entries.length) return null;
+  const max = entries[0][1];
+  const rows = entries.map(([sl,count])=>`<div class="hbar-row">
+      <div class="hbar-label">${sl}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${Math.max(8,Math.round(count/max*100))}%;"></div></div>
+      <div class="hbar-value">${count}</div>
+    </div>`).join('');
+  const html = `<div class="pos-chart-wrap" data-chart-key="scoreline_chart">
+      <div class="pos-chart-head"><span class="stat-hi-label">🔁 Favourite Scorelines</span><span class="pos-chart-readout">Top ${entries.length}</span></div>
+      <div class="hbar-list">${rows}</div>
+    </div>`;
+  return {html};
 }
 
 // ── ENTRY MODE ────────────────────────────────────────
@@ -11604,7 +11787,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.13</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.14</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
