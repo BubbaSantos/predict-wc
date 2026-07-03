@@ -337,8 +337,8 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .hbar-track{flex:1;height:10px;background:var(--surface);border-radius:5px;overflow:hidden;}
 .hbar-fill{height:100%;background:var(--group-accent);border-radius:5px;}
 .hbar-value{width:1.4rem;text-align:right;flex-shrink:0;font-size:.7rem;color:var(--text-muted);font-weight:700;}
-.modal-compare-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:2.1rem;height:2.1rem;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s;}
-.modal-compare-btn:hover{border-color:var(--group-accent);}
+.modal-compare-btn,.modal-share-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:2.1rem;height:2.1rem;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s;}
+.modal-compare-btn:hover,.modal-share-btn:hover{border-color:var(--group-accent);}
 .compare-pick-list{display:flex;flex-direction:column;}
 .compare-pick-row{display:flex;align-items:center;gap:.5rem;padding:.7rem .2rem;border-bottom:1px dashed var(--border);cursor:pointer;font-size:.85rem;font-weight:600;transition:color .15s;}
 .compare-pick-row:last-child{border-bottom:none;}
@@ -357,6 +357,14 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .compare-cell.compare-win{color:var(--group-accent);font-weight:800;}
 .compare-cell-b.compare-win{color:var(--gold);}
 .compare-cell-label{font-size:.68rem;color:var(--text-muted);font-weight:600;text-align:center;white-space:nowrap;display:flex;align-items:center;gap:.3rem;justify-content:center;}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.6rem,1fr));gap:.5rem;}
+.badge-tile{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.5rem .3rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);opacity:.4;filter:grayscale(1);text-align:center;}
+.badge-tile.earned{opacity:1;filter:none;border-color:color-mix(in srgb,var(--group-accent) 40%,transparent);background:color-mix(in srgb,var(--group-accent) 8%,var(--surface));}
+.badge-emoji{font-size:1.3rem;line-height:1;}
+.badge-name{font-size:.55rem;font-weight:700;color:var(--text-dim);line-height:1.2;}
+.badge-tile.earned .badge-name{color:var(--text);}
+.share-card-preview-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+.share-card-canvas{width:100%;height:auto;display:block;}
 .home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
@@ -1304,7 +1312,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.16</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.17</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1570,6 +1578,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <div class="home-card" id="home-stats-card" style="display:none;">
         <div class="home-card-title">📊 Tournament Stats</div>
         <div id="home-stats-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+      </div>
+      <div class="home-card" id="home-rival-card" style="display:none;">
+        <div class="home-card-title">⚔️ Closest Rival</div>
+        <div id="home-rival-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
     </div>
 
@@ -4602,6 +4614,7 @@ let _homeRoundDate = null;
 let _homeRoundPtsByName = {};
 let _homeRoundPrevRankByName = {};
 let _homeRoundCurRankByName = {};
+let _homeRival = null; // {id, name} of the closest rival, set by loadHome()
 let _lbInfoOpen = false;
 function applyLbInfoVisibility(){
   const panel = document.getElementById('lb-info-panel');
@@ -5565,16 +5578,19 @@ const HOME_CARD_DEFS = [
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
   {key:'stats',     id:'home-stats-card',     label:'Tournament Stats',   toggleId:'home-show-stats-toggle',     flag:'home_show_stats', defaultOff:true},
+  {key:'rival',     id:'home-rival-card',     label:'Closest Rival',      toggleId:'home-show-rival-toggle',     flag:'home_show_rival', defaultOff:true},
 ];
 // Personal stats shown on a player's own "📈 My Stats" page. Each is individually
 // hideable by an admin (Admin → Display → Personal Player Stats). The key is stored
 // in groups.player_stats_hidden when switched off. Order here = order on the page.
 const PLAYER_STAT_DEFS = [
+  {key:'badges',          emoji:'🏅', label:'Achievements', badges:true},
   {key:'position_chart',  emoji:'📈', label:'Leaderboard Position Chart', chart:true},
   {key:'cumulative_chart',emoji:'📈', label:'Points Race vs Group Average Chart', chart:true},
   {key:'points_chart',    emoji:'📊', label:'Points Per Matchday Chart', chart:true},
   {key:'outcome_chart',   emoji:'🎯', label:'Prediction Outcomes Chart', chart:true},
   {key:'scoreline_chart', emoji:'🔁', label:'Favourite Scorelines Chart', chart:true},
+  {key:'maverick_chart',  emoji:'🎲', label:'Maverick Picks Chart', chart:true},
   {key:'total_pts',       emoji:'🎯', label:'Total Points'},
   {key:'current_pos',     emoji:'📍', label:'Current Position'},
   {key:'best_pos',        emoji:'🏆', label:'Highest Position'},
@@ -5605,6 +5621,24 @@ const PLAYER_STAT_DEFS = [
   {key:'fav_scoreline',   emoji:'🔁', label:'Favourite Predicted Scoreline'},
   {key:'goals_predicted', emoji:'⚽', label:'Total Goals Predicted'},
 ];
+// Milestone badges shown in the "Achievements" block on the player stats page.
+// `test(core)` receives the object returned by computePlayerCore() and returns a boolean.
+const PLAYER_BADGE_DEFS = [
+  {key:'table_topper',  emoji:'🥇', name:'Table Topper',    desc:'Spent a matchday in 1st place',        test:c=>c.hasRanks && c.daysTop>=1},
+  {key:'king_hill',     emoji:'👑', name:'King of the Hill', desc:'5+ matchdays at #1',                   test:c=>c.daysTop>=5},
+  {key:'flawless',      emoji:'💎', name:'Flawless',        desc:'3+ correct scores in a row',            test:c=>c.longestPerfect>=3},
+  {key:'on_fire',       emoji:'🔥', name:'On Fire',         desc:'5+ correct results in a row',           test:c=>c.longestHot>=5},
+  {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:"Nailed a correct score nobody else got", test:c=>c.soloExactGames.length>=1},
+  {key:'motm',          emoji:'⚽', name:'Man of the Match', desc:'Top scorer on a matchday',              test:c=>c.motmAwards>=1},
+  {key:'motm_legend',   emoji:'🌟', name:'MOTM Legend',     desc:'5+ matchdays as top scorer',            test:c=>c.motmAwards>=5},
+  {key:'century',       emoji:'💯', name:'Century',         desc:'100+ points',                           test:c=>c.totalPts>=100},
+  {key:'sharpshooter',  emoji:'🎯', name:'Sharpshooter',    desc:'10+ correct scores',                    test:c=>c.exact>=10},
+  {key:'podium_regular',emoji:'🥉', name:'Podium Regular',  desc:'10+ matchdays in the top 3',            test:c=>c.daysPodium>=10},
+  {key:'climber',       emoji:'📈', name:'Climber',         desc:'Trending up over your last games',      test:c=>c.netMove!=null && c.netMove>=3},
+  {key:'frozen_out',    emoji:'💩', name:'Frozen Out',      desc:'3+ wrong predictions in a row',         test:c=>c.longestCold>=3},
+  {key:'high_roller',   emoji:'🎲', name:'High Roller',     desc:'Predicted 50+ goals',                   test:c=>c.goalsPredicted>=50},
+  {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'20+ predictions made',                  test:c=>c.predictionsMade>=20},
+];
 function getPlayerStatsHidden(){
   const h = currentGroup?.player_stats_hidden;
   if(Array.isArray(h)) return h;
@@ -5633,6 +5667,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.17',date:'3 Jul 2026',notes:['4 new features on the player stats page: 🏅 Achievements — 14 unlockable badges (Table Topper, Flawless, Unicorn, Century, MOTM Legend and more) shown as a grid, earned ones in full colour. 📤 Share Your Stats — generates a downloadable/shareable image card of your season stats and badges. 🎲 Maverick Picks — tracks predictions that went against the group\'s most common pick for that fixture, and whether being contrarian paid off vs going with the crowd. ⚔️ Closest Rival home card (Admin → Display → Home Page Cards, off by default) — surfaces the player nearest you in points with a one-tap shortcut into Compare.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_rival boolean DEFAULT false;']},
   {v:'1.78.16',date:'3 Jul 2026',notes:['New ⚔️ Compare feature on the player stats page — tap the sword icon next to any player\'s stats, pick another player from the group, and get a full head-to-head: a leader banner, a Points Race chart with both players\' lines, a Matchday Head-to-Head record (who out-scored who on shared matchdays), and side-by-side stat rows (points, position, correct scores/results, wrong, MOTM, streaks, goals) with the better value highlighted for each.']},
   {v:'1.78.15',date:'3 Jul 2026',notes:['My Stats / player stats page: all 5 charts (Leaderboard Position, Points Race, Points Per Matchday, Prediction Outcomes, Favourite Scorelines) now grouped together at the top of the page, above the stat rows.']},
   {v:'1.78.14',date:'3 Jul 2026',notes:['My Stats / player stats page: added 4 more charts — Points Race (your cumulative points vs the group average), Prediction Outcomes (exact/result/wrong split), Points Per Matchday (bar chart) and Favourite Scorelines (top 5 ranked). All 5 charts, including the existing Leaderboard Position chart, can now be individually toggled on/off from Admin → Display → Personal Player Stats, same as any other stat.']},
@@ -7194,6 +7229,41 @@ async function loadHome(){
     }
     if(lbEl) lbEl.innerHTML = lbHtml;
 
+    // ── Closest Rival card: the player nearest you in points ──
+    const rivalEl = document.getElementById('home-rival-content');
+    if(rivalEl){
+      _homeRival = null;
+      if(myIdx<0 || sorted.length<2){
+        rivalEl.innerHTML = '<div style="font-size:.8rem;color:var(--text-muted);">No rival yet — need at least one scored prediction.</div>';
+      } else {
+        const myEntry = sorted[myIdx];
+        const above = myIdx>0 ? sorted[myIdx-1] : null;
+        const below = myIdx<sorted.length-1 ? sorted[myIdx+1] : null;
+        let rival = null;
+        if(above && below){
+          rival = Math.abs(myEntry[1].total-below[1].total) < Math.abs(myEntry[1].total-above[1].total) ? below : above;
+        } else {
+          rival = above || below;
+        }
+        if(!rival){
+          rivalEl.innerHTML = '<div style="font-size:.8rem;color:var(--text-muted);">No rival yet.</div>';
+        } else {
+          const [rivalName, rivalS] = rival;
+          const diff = myEntry[1].total - rivalS.total;
+          const diffText = diff===0 ? 'Tied on points' : diff>0 ? `You're ${diff} pt${diff!==1?'s':''} ahead` : `You're ${-diff} pt${-diff!==1?'s':''} behind`;
+          const diffColor = diff>0 ? 'var(--green)' : diff<0 ? 'var(--accent2)' : 'var(--text-muted)';
+          _homeRival = {id: rivalS.playerId, name: rivalName};
+          rivalEl.innerHTML = `<div style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="homeRivalCompare()">
+            <div>
+              <div style="font-size:.95rem;font-weight:700;">${rivalName}</div>
+              <div style="font-size:.75rem;font-weight:600;color:${diffColor};margin-top:.15rem;">${diffText}</div>
+            </div>
+            <div style="font-size:1.1rem;color:var(--group-accent);">⚔️</div>
+          </div>`;
+        }
+      }
+    }
+
     // Build next game + last result data for merged match card
     const now = new Date();
     const myPredMap = {};
@@ -7827,6 +7897,11 @@ async function showMyStats(){
   showPlayerStats(currentPlayer.id, currentPlayer.nickname||currentPlayer.name);
 }
 
+function homeRivalCompare(){
+  if(!currentPlayer||!_homeRival) return;
+  showPlayerCompare(currentPlayer.id, currentPlayer.nickname||currentPlayer.name, _homeRival.id, _homeRival.name);
+}
+
 // ── Shared per-player stat computation (used by the stats page and the Compare feature) ──
 function computePlayerCore(pid, gamePreds, rm, fixtures){
   const matchPreds={}; gamePreds.forEach(p=>{ (matchPreds[p.match_id]=matchPreds[p.match_id]||[]).push(p); });
@@ -7959,6 +8034,7 @@ async function showPlayerStats(playerId, name){
   const gamePreds = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
   const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
   const fixtures = allFixtures();
+  const core = computePlayerCore(me, gamePreds, rm, fixtures);
   const {
     totalPts, exact, results3, wrong, scoredGames, goalsPredicted, predictionsMade,
     exactGames, soloExactGames, scorelineCount,
@@ -7967,7 +8043,7 @@ async function showPlayerStats(playerId, name){
     daysTop, daysPodium, daysBottom, favPos,
     perfectCount, hotCount, coldCount, longestPerfect, longestHot, longestCold, trailPerfect, trailHot, trailCold,
     favScoreline, motmAwards,
-  } = computePlayerCore(me, gamePreds, rm, fixtures);
+  } = core;
 
   // ── Build stat values ──
   const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
@@ -8017,18 +8093,25 @@ async function showPlayerStats(playerId, name){
         ${v.meta?`<div class="stat-hi-meta">${v.meta}</div>`:''}
       </div>
     </div>`;
+  const maverick = computeMaverickStats(core, rm);
   const chartBuilders = {
     position_chart:   ()=> rankHistory.length>=2 ? buildPositionChart(rankHistory) : null,
     cumulative_chart: ()=> cumHistory.length>=2 ? buildCumulativeChart(cumHistory) : null,
     outcome_chart:    ()=> buildOutcomeChart(exact, results3, wrong),
     points_chart:     ()=> mdPoints.length>=2 ? buildPointsBarChart(mdPoints) : null,
     scoreline_chart:  ()=> buildScorelineChart(scorelineCount),
+    maverick_chart:   ()=> buildMaverickChart(maverick),
   };
   const blocks=[]; let rowBuf=[];
   const chartInits=[];
   const flushRows=()=>{ if(rowBuf.length){ blocks.push(`<div class="stat-row-list">${rowBuf.join('')}</div>`); rowBuf=[]; } };
   PLAYER_STAT_DEFS.forEach(d=>{
     if(hidden.includes(d.key)) return;
+    if(d.badges){
+      const built = buildBadgesBlock(core);
+      if(built){ flushRows(); blocks.push(built.html); }
+      return;
+    }
     if(d.chart){
       const built = chartBuilders[d.key] ? chartBuilders[d.key]() : null;
       if(built){ flushRows(); blocks.push(built.html); chartInits.push({key:d.key, built}); }
@@ -8046,7 +8129,8 @@ async function showPlayerStats(playerId, name){
     : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
   const body = blocks.length ? blocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
   const compareBtn = (allPlayers||[]).filter(p=>p.id!==me).length ? `<button class="modal-compare-btn" title="Compare with another player">⚔️</button>` : '';
-  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.6rem;">${compareBtn}<span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
+  const shareBtn = `<button class="modal-share-btn" title="Share your stats">📤</button>`;
+  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.6rem;">${shareBtn}${compareBtn}<span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
   chartInits.forEach(({key,built})=>{
@@ -8056,6 +8140,165 @@ async function showPlayerStats(playerId, name){
   });
   const compareBtnEl = modal.querySelector('.modal-compare-btn');
   if(compareBtnEl) compareBtnEl.addEventListener('click', ()=> openComparePicker(me, myName, allPlayers||[]));
+  const shareBtnEl = modal.querySelector('.modal-share-btn');
+  if(shareBtnEl) shareBtnEl.addEventListener('click', ()=> openShareStatsCard(myName, core));
+}
+
+// ── Shareable stats card (launched from the 📤 button on the stats page) ──
+function hexToRgba(hex, alpha){
+  let h = (hex||'').trim().replace('#','');
+  if(h.length===3) h = h.split('').map(c=>c+c).join('');
+  if(h.length!==6) return `rgba(109,92,255,${alpha})`;
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function openShareStatsCard(myName, core){
+  const earned = PLAYER_BADGE_DEFS.filter(b=>b.test(core));
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:380px;">
+    <div class="pred-modal-header"><div class="pred-modal-title" style="font-size:1.1rem;">📤 Share Your Stats</div><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
+    <div class="share-card-preview-wrap"><canvas class="share-card-canvas" width="1080" height="1350"></canvas></div>
+    <button class="btn share-card-download" style="margin-top:.85rem;">⬇️ Download Image</button>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+
+  const canvas = modal.querySelector('.share-card-canvas');
+  const draw = ()=> drawStatsCard(canvas, myName, core, earned);
+  draw();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+
+  modal.querySelector('.share-card-download').addEventListener('click', ()=>{
+    canvas.toBlob(async blob=>{
+      const filename = `${myName.replace(/[^a-z0-9]/gi,'_')}-stats.png`;
+      if(navigator.canShare && navigator.share){
+        const file = new File([blob], filename, {type:'image/png'});
+        if(navigator.canShare({files:[file]})){
+          try{ await navigator.share({files:[file], title:`${myName}'s Stats`}); return; }catch(e){ /* user cancelled or unsupported, fall through */ }
+        }
+      }
+      const a = document.createElement('a');
+      a.download = filename;
+      a.href = URL.createObjectURL(blob);
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    }, 'image/png');
+  });
+}
+function drawStatsCard(canvas, name, core, earned){
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cs = getComputedStyle(document.documentElement);
+  const gv = (name,fallback)=> (cs.getPropertyValue(name)||'').trim() || fallback;
+  const accent = gv('--group-accent','#6d5cff');
+  const bg = gv('--bg','#0b1120');
+  const surface2 = gv('--surface2','#1d2740');
+  const text = gv('--text','#eef1f8');
+  const textMuted = gv('--text-muted','#7986a3');
+  const gold = gv('--gold','#fbbf24');
+  const F = (w,px,fam)=>`${w} ${px}px '${fam||'Plus Jakarta Sans'}',sans-serif`;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,W,H);
+  const glow = ctx.createRadialGradient(W*0.82,H*0.06,10,W*0.82,H*0.06,W*0.65);
+  glow.addColorStop(0, hexToRgba(accent,0.35));
+  glow.addColorStop(1, hexToRgba(accent,0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(0,0,W,H);
+
+  const padX = 76;
+  let y = 130;
+  ctx.textBaseline = 'alphabetic';
+
+  ctx.fillStyle = textMuted;
+  ctx.font = F('700', 26);
+  ctx.textAlign = 'left';
+  ctx.save(); ctx.font = F('700', 24); ctx.fillText('⚽  SCORE PREDICTOR', padX, y); ctx.restore();
+
+  y += 90;
+  ctx.fillStyle = text;
+  ctx.font = F('800', 68);
+  ctx.fillText(name, padX, y);
+
+  y += 46;
+  ctx.fillStyle = textMuted;
+  ctx.font = F('700', 26);
+  ctx.fillText('SEASON STATS', padX, y);
+
+  // Big points number
+  y += 190;
+  ctx.fillStyle = accent;
+  ctx.font = F('800', 190, 'JetBrains Mono');
+  const numW = ctx.measureText(`${core.totalPts}`).width;
+  ctx.fillText(`${core.totalPts}`, padX, y);
+  ctx.fillStyle = textMuted;
+  ctx.font = F('700', 30);
+  ctx.fillText('POINTS', padX + numW + 24, y - 10);
+
+  if(core.currentPos){
+    y += 54;
+    ctx.fillStyle = text;
+    ctx.font = F('700', 32);
+    const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+    ctx.fillText(`Currently ${ord(core.currentPos.rank)} of ${core.currentPos.field}`, padX, y);
+  }
+
+  // Stat grid (2x2)
+  y += 70;
+  const gridStats = [
+    {label:'CORRECT SCORES', value:core.exact},
+    {label:'CORRECT RESULTS', value:core.results3},
+    {label:'MOTM AWARDS', value:core.motmAwards},
+    {label:'BEST STREAK', value:Math.max(core.longestPerfect,core.longestHot)},
+  ];
+  const colW = (W - padX*2 - 30)/2;
+  gridStats.forEach((s,i)=>{
+    const col = i%2, row = Math.floor(i/2);
+    const cx = padX + col*(colW+30);
+    const cy = y + row*150;
+    ctx.fillStyle = surface2;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(cx, cy, colW, 122, 16) : ctx.rect(cx, cy, colW, 122);
+    ctx.fill();
+    ctx.fillStyle = text;
+    ctx.font = F('800', 54, 'JetBrains Mono');
+    ctx.fillText(`${s.value}`, cx+28, cy+66);
+    ctx.fillStyle = textMuted;
+    ctx.font = F('700', 20);
+    ctx.fillText(s.label, cx+28, cy+96);
+  });
+  y += 150*2 + 50;
+
+  // Badges row
+  ctx.fillStyle = textMuted;
+  ctx.font = F('700', 24);
+  ctx.fillText(`🏅 ${earned.length} / ${PLAYER_BADGE_DEFS.length} ACHIEVEMENTS`, padX, y);
+  y += 54;
+  if(earned.length){
+    ctx.font = '54px sans-serif';
+    let bx = padX;
+    earned.slice(0,10).forEach(b=>{
+      ctx.fillText(b.emoji, bx, y);
+      bx += 66;
+    });
+  } else {
+    ctx.fillStyle = textMuted;
+    ctx.font = F('600', 24);
+    ctx.fillText('Keep playing to unlock achievements!', padX, y-10);
+  }
+
+  // Footer
+  ctx.strokeStyle = hexToRgba(textMuted, 0.3);
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(padX, H-90); ctx.lineTo(W-padX, H-90); ctx.stroke();
+  ctx.fillStyle = textMuted;
+  ctx.font = F('700', 24);
+  ctx.fillText((currentGroup && currentGroup.name) ? currentGroup.name : 'Predictor', padX, H-46);
+  ctx.textAlign = 'right';
+  ctx.fillText(new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}), W-padX, H-46);
+  ctx.textAlign = 'left';
 }
 
 // ── Compare With… player picker (launched from the ⚔️ button on the stats page) ──
@@ -8245,6 +8488,71 @@ function initCompareLineChart(scope, rows, chart){
   overlay.addEventListener('touchstart', e=>showFromClientX(e.touches[0].clientX), {passive:true});
   overlay.addEventListener('touchmove', e=>showFromClientX(e.touches[0].clientX), {passive:true});
   overlay.addEventListener('touchend', reset);
+}
+
+// ── Achievements grid (used on the player stats page) ──
+function buildBadgesBlock(core){
+  const earned = PLAYER_BADGE_DEFS.filter(b=>b.test(core));
+  const earnedKeys = new Set(earned.map(b=>b.key));
+  const tiles = PLAYER_BADGE_DEFS.map(b=>{
+    const got = earnedKeys.has(b.key);
+    return `<div class="badge-tile${got?' earned':''}" title="${b.name}: ${b.desc}${got?'':' (locked)'}">
+      <div class="badge-emoji">${b.emoji}</div>
+      <div class="badge-name">${b.name}</div>
+    </div>`;
+  }).join('');
+  const html = `<div class="pos-chart-wrap">
+      <div class="pos-chart-head"><span class="stat-hi-label">🏅 Achievements</span><span class="pos-chart-readout">${earned.length} / ${PLAYER_BADGE_DEFS.length} unlocked</span></div>
+      <div class="badge-grid">${tiles}</div>
+    </div>`;
+  return {html};
+}
+
+// ── Maverick picks: predictions that went against the group consensus (used on the player stats page) ──
+function computeMaverickStats(core, rm){
+  const resultOf = (h,a)=>h>a?'H':h<a?'A':'D';
+  let maverickPicks=0, maverickHits=0, consensusPicks=0, consensusHits=0;
+  let bestMaverick=null;
+  core.completed.forEach(f=>{
+    const p = core.myPredMap[f.id]; if(!p || p.h==null) return;
+    const r = rm[f.id]; if(!r || r.home_score==null) return;
+    const preds = (core.matchPreds[f.id]||[]).filter(q=>q.home_score!=null);
+    if(preds.length<3) return; // need a meaningful crowd sample
+    const tally={H:0,D:0,A:0};
+    preds.forEach(q=>{ tally[resultOf(q.home_score,q.away_score)]++; });
+    const maxCount = Math.max(tally.H,tally.D,tally.A);
+    const winners = Object.keys(tally).filter(k=>tally[k]===maxCount);
+    if(winners.length!==1) return; // no clear consensus
+    const consensus = winners[0];
+    const myResult = resultOf(p.h,p.a);
+    const pts = calcPoints(p.h,p.a,r.home_score,r.away_score);
+    if(myResult!==consensus){
+      maverickPicks++;
+      if(pts>0){ maverickHits++; if(!bestMaverick||pts>bestMaverick.pts) bestMaverick={f,pts}; }
+    } else {
+      consensusPicks++;
+      if(pts>0) consensusHits++;
+    }
+  });
+  return {maverickPicks, maverickHits, consensusPicks, consensusHits, bestMaverick};
+}
+function buildMaverickChart(m){
+  if(!m.maverickPicks && !m.consensusPicks) return null;
+  const maverickRate = m.maverickPicks ? Math.round(m.maverickHits/m.maverickPicks*100) : null;
+  const consensusRate = m.consensusPicks ? Math.round(m.consensusHits/m.consensusPicks*100) : null;
+  const bar = (label,rate,count,color)=> rate==null ? '' : `<div class="hbar-row">
+      <div class="hbar-label" style="width:4.2rem;">${label}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${Math.max(4,rate)}%;background:${color};"></div></div>
+      <div class="hbar-value" style="width:3rem;">${rate}%</div>
+    </div>`;
+  const bestSub = m.bestMaverick ? `<div class="stat-hi-sublist" style="margin-top:.5rem;">Best contrarian call: <span class="stat-score">${m.bestMaverick.f.hf} ${m.bestMaverick.f.home} v ${m.bestMaverick.f.away} ${m.bestMaverick.f.af}</span> for ${m.bestMaverick.pts} pts</div>` : '';
+  const html = `<div class="pos-chart-wrap">
+      <div class="pos-chart-head"><span class="stat-hi-label">🎲 Maverick Picks</span><span class="pos-chart-readout">${m.maverickPicks} against the crowd</span></div>
+      ${bar('Maverick', maverickRate, m.maverickPicks, 'var(--gold)')}
+      ${bar('Crowd', consensusRate, m.consensusPicks, 'var(--group-accent)')}
+      ${bestSub}
+    </div>`;
+  return {html};
 }
 
 // ── Leaderboard-position-over-games line chart (used on the player stats page) ──
@@ -12024,7 +12332,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.16</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.17</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
