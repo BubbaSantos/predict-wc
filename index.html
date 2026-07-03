@@ -305,6 +305,11 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .stat-multi-item:first-child{padding-top:.05rem;}
 .stat-multi-item:last-child{border-bottom:none;padding-bottom:.05rem;}
 @media (max-width:420px){.stat-hi-grid{grid-template-columns:1fr;}}
+.pos-chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.65rem .75rem .55rem;margin-bottom:.85rem;}
+.pos-chart-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.4rem;}
+.pos-chart-readout{font-size:.65rem;color:var(--text-muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.pos-chart-readout strong{color:var(--group-accent);}
+.pos-chart-overlay{cursor:pointer;}
 .home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
@@ -1252,7 +1257,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.11</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.12</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5576,6 +5581,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.12',date:'3 Jul 2026',notes:['My Stats / player stats page: added a Leaderboard Position chart — a line graph of your rank across every completed matchday, with a hover/tap readout showing the exact position, field size and date for any game.']},
   {v:'1.78.11',date:'02 Jul 2026',notes:['Admin → Players: each player row now shows their chosen background (theme name and description) as readable text beneath the stats line.']},
   {v:'1.78.10',date:'2 Jul 2026',notes:['Restored swipe left/right to navigate between Home, Leaderboard and Predict on mobile — removed in 1.78.1, brought back by request.']},
   {v:'1.78.9',date:'2 Jul 2026',notes:['Appearance: added Grey, White and Black accent colours. White swatches now get a dark selection ring instead of the usual white one (so "selected" is still visible), and every swatch has a subtle permanent outline so pale colours stand out against the modal background.']},
@@ -7834,7 +7840,7 @@ async function showPlayerStats(playerId, name){
     const myEntry=[me,cum[me]];
     let rank=1;
     ranked.forEach(e=>{ if(e[0]!==me && lbCompare(e,myEntry)<0) rank++; });
-    rankHistory.push({rank, field:ranked.length});
+    rankHistory.push({rank, field:ranked.length, dateKey});
     daysAtPos[rank]=(daysAtPos[rank]||0)+1;
   });
   const ranks=rankHistory.map(h=>h.rank);
@@ -7935,9 +7941,75 @@ async function showPlayerStats(playerId, name){
     ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
     : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
   const body = cells.length ? `<div class="stat-hi-grid">${cells.join('')}</div>` : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
-  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
+  const chart = rankHistory.length>=2 ? buildPositionChart(rankHistory) : null;
+  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${chart?chart.html:''}${body}</div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
+  if(chart) initPositionChart(modal, rankHistory, chart);
+}
+
+// ── Leaderboard-position-over-games line chart (used on the player stats page) ──
+function buildPositionChart(history){
+  const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+  const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const n = history.length;
+  const W=600, H=170, padL=24, padR=8, padT=10, padB=10;
+  const maxField = Math.max(...history.map(h=>h.field), 2);
+  const xAt = i => padL + (W-padL-padR) * (n===1?0:i/(n-1));
+  const yAt = r => padT + (H-padT-padB) * ((r-1)/(maxField-1));
+  const pts = history.map((h,i)=>`${xAt(i).toFixed(1)},${yAt(h.rank).toFixed(1)}`).join(' ');
+  const gridRanks = [...new Set([1, Math.round((1+maxField)/2), maxField])];
+  const gridLines = gridRanks.map(r=>`<line x1="${padL}" y1="${yAt(r).toFixed(1)}" x2="${W-padR}" y2="${yAt(r).toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2,3"/>`).join('');
+  const gridLabels = gridRanks.map(r=>`<text x="${padL-5}" y="${(yAt(r)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-muted)">${r}</text>`).join('');
+  const last = history[n-1];
+  const lastDot = `<circle cx="${xAt(n-1).toFixed(1)}" cy="${yAt(last.rank).toFixed(1)}" r="4" fill="var(--group-accent)"/>`;
+  const defaultReadout = `Game ${n} · <strong>${ord(last.rank)}</strong> of ${last.field}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const html = `<div class="pos-chart-wrap">
+      <div class="pos-chart-head"><span class="stat-hi-label">📈 Leaderboard Position</span><span class="pos-chart-readout">${defaultReadout}</span></div>
+      <svg class="pos-chart-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;touch-action:pan-y;">
+        ${gridLines}${gridLabels}
+        <polyline points="${pts}" fill="none" stroke="var(--group-accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${lastDot}
+        <line class="pos-chart-cursor-line" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="var(--text-muted)" stroke-width="1" opacity="0"></line>
+        <circle class="pos-chart-cursor-dot" r="4.5" fill="var(--group-accent)" stroke="var(--surface2)" stroke-width="1.5" opacity="0"></circle>
+        <rect class="pos-chart-overlay" x="0" y="0" width="${W}" height="${H}" fill="transparent"></rect>
+      </svg>
+    </div>`;
+  return {html, W, H, padL, padR, xAt, yAt};
+}
+
+function initPositionChart(scope, history, chart){
+  const svg = scope.querySelector('.pos-chart-svg');
+  const overlay = scope.querySelector('.pos-chart-overlay');
+  const cursorLine = scope.querySelector('.pos-chart-cursor-line');
+  const cursorDot = scope.querySelector('.pos-chart-cursor-dot');
+  const readout = scope.querySelector('.pos-chart-readout');
+  if(!svg||!overlay) return;
+  const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+  const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
+  const n = history.length;
+  const step = n>1 ? (chart.W-chart.padL-chart.padR)/(n-1) : 0;
+  const last = history[n-1];
+  const defaultReadout = `Game ${n} · <strong>${ord(last.rank)}</strong> of ${last.field}${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const showIndex = i=>{
+    const h = history[i];
+    const cx = chart.xAt(i), cy = chart.yAt(h.rank);
+    cursorLine.setAttribute('x1', cx); cursorLine.setAttribute('x2', cx); cursorLine.setAttribute('opacity','1');
+    cursorDot.setAttribute('cx', cx); cursorDot.setAttribute('cy', cy); cursorDot.setAttribute('opacity','1');
+    readout.innerHTML = `Game ${i+1} · <strong>${ord(h.rank)}</strong> of ${h.field}${h.dateKey?' · '+fmtDate(h.dateKey):''}`;
+  };
+  const showFromClientX = clientX=>{
+    const rect = svg.getBoundingClientRect();
+    const svgX = (clientX - rect.left) * (chart.W / rect.width);
+    let i = step ? Math.round((svgX - chart.padL) / step) : 0;
+    showIndex(Math.max(0, Math.min(n-1, i)));
+  };
+  const reset = ()=>{ cursorLine.setAttribute('opacity','0'); cursorDot.setAttribute('opacity','0'); readout.innerHTML = defaultReadout; };
+  overlay.addEventListener('mousemove', e=>showFromClientX(e.clientX));
+  overlay.addEventListener('mouseleave', reset);
+  overlay.addEventListener('touchstart', e=>showFromClientX(e.touches[0].clientX), {passive:true});
+  overlay.addEventListener('touchmove', e=>showFromClientX(e.touches[0].clientX), {passive:true});
+  overlay.addEventListener('touchend', reset);
 }
 
 // ── ENTRY MODE ────────────────────────────────────────
@@ -11520,7 +11592,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.11</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.12</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
