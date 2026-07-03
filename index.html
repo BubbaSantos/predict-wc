@@ -1284,7 +1284,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.14</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.15</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5550,9 +5550,13 @@ const HOME_CARD_DEFS = [
 // hideable by an admin (Admin → Display → Personal Player Stats). The key is stored
 // in groups.player_stats_hidden when switched off. Order here = order on the page.
 const PLAYER_STAT_DEFS = [
+  {key:'position_chart',  emoji:'📈', label:'Leaderboard Position Chart', chart:true},
+  {key:'cumulative_chart',emoji:'📈', label:'Points Race vs Group Average Chart', chart:true},
+  {key:'points_chart',    emoji:'📊', label:'Points Per Matchday Chart', chart:true},
+  {key:'outcome_chart',   emoji:'🎯', label:'Prediction Outcomes Chart', chart:true},
+  {key:'scoreline_chart', emoji:'🔁', label:'Favourite Scorelines Chart', chart:true},
   {key:'total_pts',       emoji:'🎯', label:'Total Points'},
   {key:'current_pos',     emoji:'📍', label:'Current Position'},
-  {key:'position_chart',  emoji:'📈', label:'Leaderboard Position Chart', chart:true},
   {key:'best_pos',        emoji:'🏆', label:'Highest Position'},
   {key:'worst_pos',       emoji:'🪣', label:'Lowest Position'},
   {key:'net_move',        emoji:'↕️', label:'Form Trend (Last 10 Games)'},
@@ -5563,17 +5567,14 @@ const PLAYER_STAT_DEFS = [
   {key:'fav_pos',         emoji:'🪑', label:'Most-Held Position'},
   {key:'predictions_made',emoji:'📝', label:'Predictions Made'},
   {key:'avg_pts',         emoji:'📊', label:'Average Points / Game'},
-  {key:'cumulative_chart',emoji:'📈', label:'Points Race vs Group Average Chart', chart:true},
   {key:'exact_scores',    emoji:'⭐', label:'Correct Scores'},
   {key:'correct_results', emoji:'✅', label:'Correct Results'},
   {key:'wrong',           emoji:'❌', label:'Wrong Predictions'},
-  {key:'outcome_chart',   emoji:'🎯', label:'Prediction Outcomes Chart', chart:true},
   {key:'exact_rate',      emoji:'🎲', label:'Correct-Score Rate'},
   {key:'result_rate',     emoji:'✔️', label:'Correct-Result Rate'},
   {key:'solo_exacts',     emoji:'🦄', label:'Solo Correct Scores'},
   {key:'best_matchday',   emoji:'🚀', label:'Best Matchday'},
   {key:'worst_matchday',  emoji:'🥶', label:'Worst Matchday'},
-  {key:'points_chart',    emoji:'📊', label:'Points Per Matchday Chart', chart:true},
   {key:'current_streak',  emoji:'🔥', label:'Current Streak'},
   {key:'longest_perfect', emoji:'💎', label:'Longest Perfect Streak'},
   {key:'longest_hot',     emoji:'🔥', label:'Longest Hot Streak'},
@@ -5582,7 +5583,6 @@ const PLAYER_STAT_DEFS = [
   {key:'hot_streaks',     emoji:'🔥', label:'Hot Streaks'},
   {key:'cold_streaks',    emoji:'💩', label:'Shite Streaks'},
   {key:'fav_scoreline',   emoji:'🔁', label:'Favourite Predicted Scoreline'},
-  {key:'scoreline_chart', emoji:'🔁', label:'Favourite Scorelines Chart', chart:true},
   {key:'goals_predicted', emoji:'⚽', label:'Total Goals Predicted'},
 ];
 function getPlayerStatsHidden(){
@@ -5613,6 +5613,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.15',date:'3 Jul 2026',notes:['My Stats / player stats page: all 5 charts (Leaderboard Position, Points Race, Points Per Matchday, Prediction Outcomes, Favourite Scorelines) now grouped together at the top of the page, above the stat rows.']},
   {v:'1.78.14',date:'3 Jul 2026',notes:['My Stats / player stats page: added 4 more charts — Points Race (your cumulative points vs the group average), Prediction Outcomes (exact/result/wrong split), Points Per Matchday (bar chart) and Favourite Scorelines (top 5 ranked). All 5 charts, including the existing Leaderboard Position chart, can now be individually toggled on/off from Admin → Display → Personal Player Stats, same as any other stat.']},
   {v:'1.78.13',date:'3 Jul 2026',notes:['My Stats / player stats page: stats now list as horizontal rows (label left, value right) instead of a card grid — easier to scan, especially on narrow screens.']},
   {v:'1.78.12',date:'3 Jul 2026',notes:['My Stats / player stats page: added a Leaderboard Position chart — a line graph of your rank across every completed matchday, with a hover/tap readout showing the exact position, field size and date for any game.']},
@@ -11787,7 +11788,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.14</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.15</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
