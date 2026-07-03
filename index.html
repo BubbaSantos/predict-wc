@@ -372,6 +372,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .home-cta-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:.78rem;font-weight:600;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center;}
 .home-cta-btn:hover{border-color:var(--group-accent);color:var(--group-accent);}
 .home-cta-btn.primary{background:color-mix(in srgb,var(--group-accent) 10%,transparent);border-color:color-mix(in srgb,var(--group-accent) 40%,transparent);color:var(--group-accent);}
+.home-card-scroll{max-height:34rem;overflow-y:auto;}
 .home-cta-btn.start-here{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.5);color:#10b981;animation:startHerePulse 1.4s ease-in-out infinite;}
 @keyframes startHerePulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4);}50%{box-shadow:0 0 0 7px rgba(16,185,129,0);}}
 .fe-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;}
@@ -1315,7 +1316,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.18</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.19</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1585,6 +1586,11 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <div class="home-card" id="home-rival-card" style="display:none;">
         <div class="home-card-title">⚔️ Closest Rival</div>
         <div id="home-rival-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+      </div>
+      <div class="home-card" id="home-personal-stats-card" style="display:none;">
+        <div class="home-card-title">📈 Personal Stats</div>
+        <div id="home-personal-stats-content" class="home-card-scroll"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+        <button class="home-cta-btn" style="margin-top:.75rem;width:100%;" onclick="showMyStats()">Open Full Stats Page</button>
       </div>
     </div>
 
@@ -5582,6 +5588,7 @@ const HOME_CARD_DEFS = [
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
   {key:'stats',     id:'home-stats-card',     label:'Tournament Stats',   toggleId:'home-show-stats-toggle',     flag:'home_show_stats', defaultOff:true},
   {key:'rival',     id:'home-rival-card',     label:'Closest Rival',      toggleId:'home-show-rival-toggle',     flag:'home_show_rival', defaultOff:true},
+  {key:'personal_stats', id:'home-personal-stats-card', label:'Personal Stats', toggleId:'home-show-personal-stats-toggle', flag:'home_show_personal_stats', defaultOff:true},
 ];
 // Personal stats shown on a player's own "📈 My Stats" page. Each is individually
 // hideable by an admin (Admin → Display → Personal Player Stats). The key is stored
@@ -5670,6 +5677,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.19',date:'3 Jul 2026',notes:['New 📈 Personal Stats home card (Admin → Display → Home Page Cards, off by default) — embeds your full My Stats page (charts, achievements, everything) directly on the home page in a scrollable card, with a button to open the full page. Tournament Stats home card restyled to match the Personal Stats look (horizontal rows instead of boxed card grids) for visual consistency.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_personal_stats boolean DEFAULT false;']},
   {v:'1.78.18',date:'3 Jul 2026',notes:['Achievements: tap any badge to see what it takes to unlock it (was previously only a desktop hover tooltip, which doesn\'t work on mobile).']},
   {v:'1.78.17',date:'3 Jul 2026',notes:['4 new features on the player stats page: 🏅 Achievements — 14 unlockable badges (Table Topper, Flawless, Unicorn, Century, MOTM Legend and more) shown as a grid, earned ones in full colour. 📤 Share Your Stats — generates a downloadable/shareable image card of your season stats and badges. 🎲 Maverick Picks — tracks predictions that went against the group\'s most common pick for that fixture, and whether being contrarian paid off vs going with the crowd. ⚔️ Closest Rival home card (Admin → Display → Home Page Cards, off by default) — surfaces the player nearest you in points with a one-tap shortcut into Compare.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_rival boolean DEFAULT false;']},
   {v:'1.78.16',date:'3 Jul 2026',notes:['New ⚔️ Compare feature on the player stats page — tap the sword icon next to any player\'s stats, pick another player from the group, and get a full head-to-head: a leader banner, a Points Race chart with both players\' lines, a Matchday Head-to-Head record (who out-scored who on shared matchdays), and side-by-side stat rows (points, position, correct scores/results, wrong, MOTM, streaks, goals) with the better value highlighted for each.']},
@@ -7268,6 +7276,20 @@ async function loadHome(){
       }
     }
 
+    // ── Personal Stats card: full My Stats content embedded on the home page (opt-in) ──
+    const personalStatsEl = document.getElementById('home-personal-stats-content');
+    if(personalStatsEl && currentPlayer && currentGroup.home_show_personal_stats===true){
+      const myCore = computePlayerCore(currentPlayer.id, gamePreds, rm, allFixtures());
+      const {blocks: psBlocks, chartInits: psInits} = buildPlayerStatsBlocks(myCore, rm);
+      personalStatsEl.innerHTML = psBlocks.length ? psBlocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
+      psInits.forEach(({key,built})=>{
+        if(key==='position_chart') initPositionChart(personalStatsEl, myCore.rankHistory, built);
+        else if(key==='cumulative_chart') initCumulativeChart(personalStatsEl, myCore.cumHistory, built);
+        else if(key==='points_chart') initBarChart(personalStatsEl, myCore.mdPoints);
+        else if(key==='badges') initBadgesBlock(personalStatsEl, built.earnedKeys);
+      });
+    }
+
     // Build next game + last result data for merged match card
     const now = new Date();
     const myPredMap = {};
@@ -7628,19 +7650,27 @@ async function loadHome(){
         ? `<div class="stat-multi">${arr.map(x=>`<div class="stat-multi-item">${x}</div>`).join('')}</div>`
         : (arr[0] || '');
 
-      let html = `<div class="stat-grid">
-        <div class="stat-tile"><div class="stat-tile-label">Games</div><div class="stat-tile-value">${totalGames}</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">Goals</div><div class="stat-tile-value">${totalGoals}</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">Avg / Game</div><div class="stat-tile-value">${avgGoals}</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">Draws</div><div class="stat-tile-value">${draws}</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">Clean Sheets</div><div class="stat-tile-value">${cleanSheets}</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">H · D · A</div><div class="stat-tile-value" style="font-size:.95rem;">${homeWins}·${draws}·${awayWins}</div></div>
+      const quickRow = (emoji, label, value) => `<div class="stat-row">
+        <div class="stat-row-main"><div class="stat-row-label"><span class="stat-hi-emoji">${emoji}</span>${label}</div></div>
+        <div class="stat-row-val"><div class="stat-hi-value">${value}</div></div>
+      </div>`;
+      let html = `<div class="stat-row-list">
+        ${quickRow('🎮','Games',totalGames)}
+        ${quickRow('⚽','Goals',totalGoals)}
+        ${quickRow('📊','Avg / Game',avgGoals)}
+        ${quickRow('🤝','Draws',draws)}
+        ${quickRow('🧤','Clean Sheets',cleanSheets)}
+        ${quickRow('🏠','H · D · A',`${homeWins}·${draws}·${awayWins}`)}
       </div>`;
 
-      const cell = (emoji, label, value, meta) => `<div class="stat-hi-cell">
-        <div class="stat-hi-head"><span class="stat-hi-emoji">${emoji}</span><span class="stat-hi-label">${label}</span></div>
-        <div class="stat-hi-value">${value}</div>
-        ${meta ? `<div class="stat-hi-meta">${meta}</div>` : ''}
+      const cell = (emoji, label, value, meta) => `<div class="stat-row">
+        <div class="stat-row-main">
+          <div class="stat-row-label"><span class="stat-hi-emoji">${emoji}</span>${label}</div>
+        </div>
+        <div class="stat-row-val">
+          <div class="stat-hi-value">${value}</div>
+          ${meta ? `<div class="stat-hi-meta">${meta}</div>` : ''}
+        </div>
       </div>`;
 
       const cells = [], hiddenCells = [];
@@ -7728,11 +7758,11 @@ async function loadHome(){
       if(exactKings.length)
         pushCell('exact_king', '⭐', `Exact Score King${exactKings.length>1?'s':''}`, joinList(exactKings), `${maxExact} exact-score prediction${maxExact===1?'':'s'}${exactKings.length>1?' each':''}`);
 
-      if(cells.length) html += `<div class="stat-hi-grid">${cells.join('')}</div>`;
+      if(cells.length) html += `<div class="stat-row-list" style="margin-top:.5rem;">${cells.join('')}</div>`;
 
       // Hidden highlights go into a "Show more" collapsible
       if(hiddenCells.length){
-        html += `<div style="margin-top:.5rem;"><button onclick="(function(btn){const d=document.getElementById('stat-more-div');const open=d.style.display!=='none';d.style.display=open?'none':'block';btn.textContent=open?'▸ Show more (${hiddenCells.length})':'▾ Show less'})(this)" style="background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.75rem;padding:.3rem .6rem;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">▸ Show more (${hiddenCells.length})</button><div id="stat-more-div" style="display:none;"><div class="stat-hi-grid" style="margin-top:.45rem;">${hiddenCells.join('')}</div></div></div>`;
+        html += `<div style="margin-top:.5rem;"><button onclick="(function(btn){const d=document.getElementById('stat-more-div');const open=d.style.display!=='none';d.style.display=open?'none':'block';btn.textContent=open?'▸ Show more (${hiddenCells.length})':'▾ Show less'})(this)" style="background:none;border:1px solid var(--border);color:var(--text-muted);font-size:.75rem;padding:.3rem .6rem;border-radius:6px;cursor:pointer;width:100%;text-align:left;font-family:inherit;">▸ Show more (${hiddenCells.length})</button><div id="stat-more-div" style="display:none;"><div class="stat-row-list" style="margin-top:.45rem;">${hiddenCells.join('')}</div></div></div>`;
       }
 
       if(statsEl) statsEl.innerHTML = html;
@@ -8039,6 +8069,35 @@ async function showPlayerStats(playerId, name){
   const rm={}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
   const fixtures = allFixtures();
   const core = computePlayerCore(me, gamePreds, rm, fixtures);
+  const {totalPts, predictionsMade, currentPos, rankHistory, cumHistory, mdPoints, ord, blocks, chartInits} = buildPlayerStatsBlocks(core, rm);
+
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  const subtitle = currentPos
+    ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
+    : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
+  const body = blocks.length ? blocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
+  const compareBtn = (allPlayers||[]).filter(p=>p.id!==me).length ? `<button class="modal-compare-btn" title="Compare with another player">⚔️</button>` : '';
+  const shareBtn = `<button class="modal-share-btn" title="Share your stats">📤</button>`;
+  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.6rem;">${shareBtn}${compareBtn}<span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  chartInits.forEach(({key,built})=>{
+    if(key==='position_chart') initPositionChart(modal, rankHistory, built);
+    else if(key==='cumulative_chart') initCumulativeChart(modal, cumHistory, built);
+    else if(key==='points_chart') initBarChart(modal, mdPoints);
+    else if(key==='badges') initBadgesBlock(modal, built.earnedKeys);
+  });
+  const compareBtnEl = modal.querySelector('.modal-compare-btn');
+  if(compareBtnEl) compareBtnEl.addEventListener('click', ()=> openComparePicker(me, myName, allPlayers||[]));
+  const shareBtnEl = modal.querySelector('.modal-share-btn');
+  if(shareBtnEl) shareBtnEl.addEventListener('click', ()=> openShareStatsCard(myName, core));
+}
+
+// ── Builds the stat-row / chart / badge blocks shared by the My Stats modal and
+// the optional "Personal Stats" home card. Returns block HTML plus data needed
+// to wire up chart interactivity after the caller inserts the HTML into the DOM.
+function buildPlayerStatsBlocks(core, rm){
   const {
     totalPts, exact, results3, wrong, scoredGames, goalsPredicted, predictionsMade,
     exactGames, soloExactGames, scorelineCount,
@@ -8126,27 +8185,7 @@ async function showPlayerStats(playerId, name){
   });
   flushRows();
 
-  const modal=document.createElement('div');
-  modal.className='modal-overlay';
-  const subtitle = currentPos
-    ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">Currently ${ord(currentPos.rank)} of ${currentPos.field}</div>`
-    : (predictionsMade ? `<div style="font-size:.8rem;color:var(--text-muted);margin:-.6rem 0 1rem;">No results in yet.</div>` : '');
-  const body = blocks.length ? blocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
-  const compareBtn = (allPlayers||[]).filter(p=>p.id!==me).length ? `<button class="modal-compare-btn" title="Compare with another player">⚔️</button>` : '';
-  const shareBtn = `<button class="modal-share-btn" title="Share your stats">📤</button>`;
-  modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div class="pred-modal-title">${myName}</div><div style="display:flex;align-items:center;gap:.6rem;">${shareBtn}${compareBtn}<span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${subtitle}${body}</div>`;
-  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
-  document.body.appendChild(modal);
-  chartInits.forEach(({key,built})=>{
-    if(key==='position_chart') initPositionChart(modal, rankHistory, built);
-    else if(key==='cumulative_chart') initCumulativeChart(modal, cumHistory, built);
-    else if(key==='points_chart') initBarChart(modal, mdPoints);
-    else if(key==='badges') initBadgesBlock(modal, built.earnedKeys);
-  });
-  const compareBtnEl = modal.querySelector('.modal-compare-btn');
-  if(compareBtnEl) compareBtnEl.addEventListener('click', ()=> openComparePicker(me, myName, allPlayers||[]));
-  const shareBtnEl = modal.querySelector('.modal-share-btn');
-  if(shareBtnEl) shareBtnEl.addEventListener('click', ()=> openShareStatsCard(myName, core));
+  return {totalPts, predictionsMade, currentPos, rankHistory, cumHistory, mdPoints, ord, blocks, chartInits};
 }
 
 // ── Shareable stats card (launched from the 📤 button on the stats page) ──
@@ -12353,7 +12392,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.18</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.19</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
