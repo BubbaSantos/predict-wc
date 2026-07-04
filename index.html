@@ -1316,7 +1316,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.19</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.20</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4528,8 +4528,16 @@ const BROADCASTERS = {
   // Round of 32
   'm073':'ITV', 'm074':'BBC', 'm075':'ITV', 'm076':'ITV', 'm077':'ITV',
   'm078':'BBC', 'm079':'ITV', 'm080':'BBC', 'm081':'BBC', 'm082':'ITV',
-  'm083':'BBC', 'm084':'BBC', 'm085':'BBC', 'm086':'ITV', 'm088':'BBC',
-  // m087 (Colombia v Ghana) broadcaster TBC
+  'm083':'BBC', 'm084':'BBC', 'm085':'BBC', 'm086':'ITV', 'm087':'ITV', 'm088':'BBC',
+  // Round of 16
+  'm089':'BBC', // Paraguay v France
+  'm090':'ITV', // Canada v Morocco
+  'm091':'ITV', // Brazil v Norway
+  'm092':'BBC', // Mexico v England
+  'm093':'BBC', // Portugal v Spain
+  'm094':'BBC', // USA v Belgium
+  'm095':'ITV', // W m086 (Argentina/Cape Verde) v W m088 (Australia/Egypt)
+  'm096':'ITV', // Switzerland v W m087 (Colombia/Ghana)
 };
 
 // Colour-codes each knockout round's pill on the predict page so rounds are
@@ -5677,6 +5685,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.20',date:'4 Jul 2026',notes:['Added BBC/ITV broadcaster badges for all 8 Round of 16 fixtures, and filled in the previously-TBC Colombia v Ghana broadcaster (ITV1).']},
   {v:'1.78.19',date:'3 Jul 2026',notes:['New 📈 Personal Stats home card (Admin → Display → Home Page Cards, off by default) — embeds your full My Stats page (charts, achievements, everything) directly on the home page in a scrollable card, with a button to open the full page. Tournament Stats home card restyled to match the Personal Stats look (horizontal rows instead of boxed card grids) for visual consistency.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_personal_stats boolean DEFAULT false;']},
   {v:'1.78.18',date:'3 Jul 2026',notes:['Achievements: tap any badge to see what it takes to unlock it (was previously only a desktop hover tooltip, which doesn\'t work on mobile).']},
   {v:'1.78.17',date:'3 Jul 2026',notes:['4 new features on the player stats page: 🏅 Achievements — 14 unlockable badges (Table Topper, Flawless, Unicorn, Century, MOTM Legend and more) shown as a grid, earned ones in full colour. 📤 Share Your Stats — generates a downloadable/shareable image card of your season stats and badges. 🎲 Maverick Picks — tracks predictions that went against the group\'s most common pick for that fixture, and whether being contrarian paid off vs going with the crowd. ⚔️ Closest Rival home card (Admin → Display → Home Page Cards, off by default) — surfaces the player nearest you in points with a one-tap shortcut into Compare.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_rival boolean DEFAULT false;']},
@@ -12392,7 +12401,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.19</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.20</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
