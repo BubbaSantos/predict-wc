@@ -540,10 +540,12 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .pred-modal-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;letter-spacing:.06em;}
 .modal-close{background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:.2rem .4rem;border-radius:4px;}
 .modal-close:hover{color:var(--text);background:var(--surface2);}
-.stats-link-btn{flex-shrink:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.7rem;font-weight:600;padding:.28rem .6rem;border-radius:6px;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s;}
+.stats-link-btn{position:relative;flex-shrink:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.7rem;font-weight:600;padding:.28rem .6rem;border-radius:6px;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s;overflow:visible;}
 .stats-link-btn:hover{border-color:var(--group-accent);background:var(--surface);}
+.new-sticker{position:absolute;top:-.6rem;right:-.55rem;background:var(--accent2);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.04em;padding:.1rem .32rem;border-radius:4px;transform:rotate(-12deg);box-shadow:0 2px 5px rgba(0,0,0,.3);border:1.5px solid var(--surface);pointer-events:none;text-transform:uppercase;}
 .pred-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem;}
 .pred-row:last-child{border-bottom:none;}
+.pred-row-upcoming{opacity:.65;border-top:1px dashed var(--border);}
 .pred-match{color:var(--text-dim);flex:1;}
 .pred-score{font-weight:500;margin:0 1rem;}
 
@@ -1316,7 +1318,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.20</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.21</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5685,6 +5687,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.21',date:'4 Jul 2026',notes:['Player predictions card (tap a name on the leaderboard): match history now runs oldest-to-newest with the most recent finished game at the bottom, and shows the next 3 upcoming fixtures below it even if not predicted yet — scroll up for older games. Added a "New" sticker on the 📈 Stats button to point players at the new stats features.']},
   {v:'1.78.20',date:'4 Jul 2026',notes:['Added BBC/ITV broadcaster badges for all 8 Round of 16 fixtures, and filled in the previously-TBC Colombia v Ghana broadcaster (ITV1).']},
   {v:'1.78.19',date:'3 Jul 2026',notes:['New 📈 Personal Stats home card (Admin → Display → Home Page Cards, off by default) — embeds your full My Stats page (charts, achievements, everything) directly on the home page in a scrollable card, with a button to open the full page. Tournament Stats home card restyled to match the Personal Stats look (horizontal rows instead of boxed card grids) for visual consistency.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_personal_stats boolean DEFAULT false;']},
   {v:'1.78.18',date:'3 Jul 2026',notes:['Achievements: tap any badge to see what it takes to unlock it (was previously only a desktop hover tooltip, which doesn\'t work on mobile).']},
@@ -11293,9 +11296,14 @@ async function viewPlayerPredictions(playerId,name){
     const predMap={}; (preds||[]).forEach(p=>predMap[p.match_id]={h:p.home_score,a:p.away_score});
     let totalPts=0,statExact=0,statResult=0,statWrong=0;
     const rowsArr=[];
+    const upcomingArr=[];
     allFixtures().forEach(f=>{
       const p=predMap[f.id],r=rm[f.id];
-      if(!p)return;
+      const ts=getMatchKickoff(f)?.getTime() ?? (f.date?new Date(f.date).getTime():0);
+      if(!p){
+        if(!r) upcomingArr.push({f,ts}); // no prediction yet, no result yet — an upcoming fixture preview
+        return;
+      }
       const pts=r?calcPoints(p.h,p.a,r.home_score,r.away_score):null;
       if(pts!==null){
         totalPts+=pts;
@@ -11310,11 +11318,18 @@ async function viewPlayerPredictions(playerId,name){
       const rankTxt=rankNum!=null?(rh.counts[rankNum]>1?'=':'#')+rankNum+'/'+rh.total:'';
       const rankBadge=`<span style="font-size:.68rem;color:var(--text-muted);min-width:2.6rem;text-align:right;" title="League position after this match">${rankTxt}</span>`;
       const html=`<div class="pred-row"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span class="pred-score">${p.h}–${p.a}${resTxt}</span><span>${ptsTxt}</span>${rankBadge}</div>`;
-      const ts=getMatchKickoff(f)?.getTime() ?? (f.date?new Date(f.date).getTime():0);
       rowsArr.push({html,ts});
     });
-    rowsArr.sort((a,b)=>b.ts-a.ts);
-    const rows = rowsArr.length ? `<div id="vpred-rows">${rowsArr.map(r=>r.html).join('')}</div>` : '';
+    rowsArr.sort((a,b)=>a.ts-b.ts); // oldest first — most recent finished game sits at the bottom
+    upcomingArr.sort((a,b)=>a.ts-b.ts);
+    const nextUpcoming = upcomingArr.slice(0,3);
+    const upcomingHtml = nextUpcoming.map(({f})=>{
+      const ko=getMatchKickoff(f);
+      const koTxt = ko ? `${ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} ${ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}` : 'TBC';
+      return `<div class="pred-row pred-row-upcoming"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span style="color:var(--text-muted);font-size:.75rem;">${koTxt}</span></div>`;
+    }).join('');
+    const totalRowCount = rowsArr.length + nextUpcoming.length;
+    const rows = totalRowCount ? `<div id="vpred-rows">${rowsArr.map(r=>r.html).join('')}${upcomingHtml}</div>` : '';
     const tb=tbs&&tbs[0];
     const tbHtml=tb&&tb.top_scorer
       ?`<div style="display:flex;align-items:center;gap:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;">⚽ <span style="color:var(--text-muted);">Top scorer:</span>&nbsp;<strong>${tb.top_scorer}</strong>${tb.goals!=null?`<span style="color:var(--text-muted);margin-left:.25rem;">(${tb.goals} goals)</span>`:''}</div>`
@@ -11335,24 +11350,27 @@ async function viewPlayerPredictions(playerId,name){
     const emptyMsg = !rowsArr.length ? '<div class="empty">No predictions yet.</div>' : '';
     const nameEsc=String(name).replace(/'/g,"\\'");
     const pidEsc=String(playerId).replace(/'/g,"\\'");
-    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div style="display:flex;align-items:center;gap:.55rem;min-width:0;"><div class="pred-modal-title" style="min-width:0;overflow:hidden;text-overflow:ellipsis;">${name}</div><button class="stats-link-btn" onclick="showPlayerStats('${pidEsc}','${nameEsc}')">📈 Stats</button></div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${emptyMsg}${rows}</div>`;
+    modal.innerHTML=`<div class="pred-modal"><div class="pred-modal-header"><div style="display:flex;align-items:center;gap:.55rem;min-width:0;"><div class="pred-modal-title" style="min-width:0;overflow:hidden;text-overflow:ellipsis;">${name}</div><button class="stats-link-btn" onclick="showPlayerStats('${pidEsc}','${nameEsc}')">📈 Stats<span class="new-sticker">New</span></button></div><div style="display:flex;align-items:center;gap:.75rem;"><span style="font-size:1.5rem;color:var(--group-accent);">${totalPts} pts</span><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button></div></div>${statsHtml}${tbHtml}${emptyMsg}${rows}</div>`;
     modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
     document.body.appendChild(modal);
-    _capVpredRowsHeight(rowsArr.length);
+    _capVpredRowsHeight(totalRowCount);
   }catch(e){flash('Error: '+e.message,'error');}
 }
 
-// Cap the match-history list to ~10.5 rows tall with a fade at the bottom
-// hinting more (older) games are there to scroll to.
+// Cap the match-history list to ~10.5 rows tall, landed scrolled to the bottom
+// (most recent finished game + upcoming preview games in view) with a fade at
+// the top hinting older games are there to scroll up to.
 function _capVpredRowsHeight(rowCount){
   const wrap = document.getElementById('vpred-rows');
-  if(!wrap || rowCount <= 10) return;
+  if(!wrap) return;
+  if(rowCount <= 10){ wrap.scrollTop = wrap.scrollHeight; return; }
   const rowH = wrap.querySelector('.pred-row')?.getBoundingClientRect().height;
   if(!rowH) return;
   wrap.style.maxHeight = (rowH * 10.5) + 'px';
   wrap.style.overflowY = 'auto';
-  wrap.style.webkitMaskImage = 'linear-gradient(to bottom, black 0%, black calc(100% - '+Math.round(rowH*0.5)+'px), transparent 100%)';
+  wrap.style.webkitMaskImage = 'linear-gradient(to bottom, transparent 0%, black '+Math.round(rowH*0.5)+'px, black 100%)';
   wrap.style.maskImage = wrap.style.webkitMaskImage;
+  wrap.scrollTop = wrap.scrollHeight;
 }
 
 // ── BRANDING PANEL ────────────────────────
@@ -12401,7 +12419,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.20</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.21</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
