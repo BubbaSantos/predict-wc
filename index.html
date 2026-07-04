@@ -1318,7 +1318,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.22</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.23</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5687,6 +5687,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.23',date:'4 Jul 2026',notes:['Fixed a bug where downloading a Share Stats image on iOS Safari could leave a broken entry in the browser\'s navigation history — swiping to it later showed "Safari can\'t open the page (WebKitBlobResource error 1)". The download fallback now uses a data: URL instead of a blob: URL, which can never go stale like that. Native share sheet (used automatically where supported) is unaffected.']},
   {v:'1.78.22',date:'4 Jul 2026',notes:['Fixed the player predictions card sometimes not auto-scrolling to the most recent game on open — a font-loading reflow right after the first paint could shift row heights out from under the one-shot scroll call. Now retries across a couple of animation frames and again once fonts finish loading.']},
   {v:'1.78.21',date:'4 Jul 2026',notes:['Player predictions card (tap a name on the leaderboard): match history now runs oldest-to-newest with the most recent finished game at the bottom, and shows the next 3 upcoming fixtures below it even if not predicted yet — scroll up for older games. Added a "New" sticker on the 📈 Stats button to point players at the new stats features.']},
   {v:'1.78.20',date:'4 Jul 2026',notes:['Added BBC/ITV broadcaster badges for all 8 Round of 16 fixtures, and filled in the previously-TBC Colombia v Ghana broadcaster (ITV1).']},
@@ -8227,20 +8228,35 @@ function openShareStatsCard(myName, core){
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 
   modal.querySelector('.share-card-download').addEventListener('click', ()=>{
-    canvas.toBlob(async blob=>{
-      const filename = `${myName.replace(/[^a-z0-9]/gi,'_')}-stats.png`;
-      if(navigator.canShare && navigator.share){
+    const filename = `${myName.replace(/[^a-z0-9]/gi,'_')}-stats.png`;
+    // Try the native share sheet first (works with a real Blob/File). If the
+    // browser doesn't support it, fall back to a plain download using a
+    // data: URL rather than a blob: URL — iOS Safari can unreliably treat an
+    // <a download> pointing at a blob: URL as a real navigation instead of a
+    // download, leaving a stale history entry that later 404s with
+    // "WebKitBlobResource error 1" once the blob is revoked (e.g. when
+    // swiping through browser history). A data: URL has no revocable backing
+    // store, so it can never leave a broken history entry behind.
+    const trySystemShare = () => new Promise(resolve=>{
+      if(!(navigator.canShare && navigator.share)){ resolve(false); return; }
+      canvas.toBlob(async blob=>{
+        if(!blob){ resolve(false); return; }
         const file = new File([blob], filename, {type:'image/png'});
-        if(navigator.canShare({files:[file]})){
-          try{ await navigator.share({files:[file], title:`${myName}'s Stats`}); return; }catch(e){ /* user cancelled or unsupported, fall through */ }
-        }
-      }
+        if(!navigator.canShare({files:[file]})){ resolve(false); return; }
+        try{ await navigator.share({files:[file], title:`${myName}'s Stats`}); }
+        catch(e){ /* user cancelled the share sheet — still handled, don't also download */ }
+        resolve(true);
+      }, 'image/png');
+    });
+    trySystemShare().then(handled=>{
+      if(handled) return;
       const a = document.createElement('a');
       a.download = filename;
-      a.href = URL.createObjectURL(blob);
+      a.href = canvas.toDataURL('image/png');
+      document.body.appendChild(a);
       a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
-    }, 'image/png');
+      a.remove();
+    });
   });
 }
 function drawStatsCard(canvas, name, core, earned){
@@ -12429,7 +12445,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.22</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.23</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
