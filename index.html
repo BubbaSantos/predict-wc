@@ -1318,7 +1318,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.21</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.22</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5687,6 +5687,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.22',date:'4 Jul 2026',notes:['Fixed the player predictions card sometimes not auto-scrolling to the most recent game on open — a font-loading reflow right after the first paint could shift row heights out from under the one-shot scroll call. Now retries across a couple of animation frames and again once fonts finish loading.']},
   {v:'1.78.21',date:'4 Jul 2026',notes:['Player predictions card (tap a name on the leaderboard): match history now runs oldest-to-newest with the most recent finished game at the bottom, and shows the next 3 upcoming fixtures below it even if not predicted yet — scroll up for older games. Added a "New" sticker on the 📈 Stats button to point players at the new stats features.']},
   {v:'1.78.20',date:'4 Jul 2026',notes:['Added BBC/ITV broadcaster badges for all 8 Round of 16 fixtures, and filled in the previously-TBC Colombia v Ghana broadcaster (ITV1).']},
   {v:'1.78.19',date:'3 Jul 2026',notes:['New 📈 Personal Stats home card (Admin → Display → Home Page Cards, off by default) — embeds your full My Stats page (charts, achievements, everything) directly on the home page in a scrollable card, with a button to open the full page. Tournament Stats home card restyled to match the Personal Stats look (horizontal rows instead of boxed card grids) for visual consistency.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_personal_stats boolean DEFAULT false;']},
@@ -11363,14 +11364,23 @@ async function viewPlayerPredictions(playerId,name){
 function _capVpredRowsHeight(rowCount){
   const wrap = document.getElementById('vpred-rows');
   if(!wrap) return;
-  if(rowCount <= 10){ wrap.scrollTop = wrap.scrollHeight; return; }
+  // Scroll-to-bottom is retried across a couple of animation frames and again
+  // once web fonts finish loading, since a font swap after the first paint can
+  // reflow row heights and change scrollHeight out from under a one-shot call.
+  const scrollToBottom = () => { wrap.scrollTop = wrap.scrollHeight; };
+  const settleScroll = () => {
+    scrollToBottom();
+    requestAnimationFrame(()=>requestAnimationFrame(scrollToBottom));
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(scrollToBottom);
+  };
+  if(rowCount <= 10){ settleScroll(); return; }
   const rowH = wrap.querySelector('.pred-row')?.getBoundingClientRect().height;
   if(!rowH) return;
   wrap.style.maxHeight = (rowH * 10.5) + 'px';
   wrap.style.overflowY = 'auto';
   wrap.style.webkitMaskImage = 'linear-gradient(to bottom, transparent 0%, black '+Math.round(rowH*0.5)+'px, black 100%)';
   wrap.style.maskImage = wrap.style.webkitMaskImage;
-  wrap.scrollTop = wrap.scrollHeight;
+  settleScroll();
 }
 
 // ── BRANDING PANEL ────────────────────────
@@ -12419,7 +12429,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.21</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.22</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
