@@ -34,6 +34,10 @@ input, select, textarea { font-size: 16px !important; }
    navigation instead of (or as well as) the app's gesture, occasionally
    landing on a stale/broken history entry ("Safari can't open the page"). */
 html{overscroll-behavior-x:none;}
+/* App-wide: no text selection (this is an app, not a document) — except in
+   actual form fields, where selecting/copying text needs to keep working. */
+*{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-touch-callout:none;}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;-moz-user-select:text;user-select:text;-webkit-touch-callout:default;}
 body{overscroll-behavior-x:none;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:-.005em;
   background-image:radial-gradient(ellipse at 20% 0%,color-mix(in srgb,var(--group-accent) 7%,transparent) 0%,transparent 50%),
   radial-gradient(ellipse at 80% 100%,rgba(16,185,129,.04) 0%,transparent 50%);}
@@ -364,8 +368,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .compare-cell-b.compare-win{color:var(--gold);}
 .compare-cell-label{font-size:.68rem;color:var(--text-muted);font-weight:600;text-align:center;white-space:nowrap;display:flex;align-items:center;gap:.3rem;justify-content:center;}
 .badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(5.2rem,1fr));gap:.6rem;}
-.badge-tile{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.7rem .4rem .6rem;border-radius:10px;background:var(--surface);border:1px solid var(--border);text-align:center;cursor:pointer;transition:transform .1s,border-color .15s,background .15s;}
+.badge-tile{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.7rem .4rem .6rem;border-radius:10px;background:var(--surface);border:1px solid var(--border);text-align:center;cursor:pointer;transition:transform .1s,border-color .15s,background .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .badge-tile:active{transform:scale(.94);}
+.badge-tile.selected{border-color:var(--group-accent);box-shadow:0 0 0 1px var(--group-accent);}
 .badge-icon-wrap{position:relative;width:2.5rem;height:2.5rem;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:2px solid var(--border);transition:border-color .15s,background .15s,box-shadow .15s;}
 .badge-emoji{font-size:1.25rem;line-height:1;filter:grayscale(1);opacity:.45;transition:filter .15s,opacity .15s;}
 .badge-tile.earned .badge-icon-wrap{background:color-mix(in srgb,var(--group-accent) 14%,var(--surface));}
@@ -1338,7 +1343,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.34</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.35</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5719,6 +5724,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.35',date:'5 Jul 2026',notes:['Achievement badge selection now sticks to the tile (a highlighted ring) instead of a timing-sensitive JS variable, so tapping an already-selected badge opens its group leaderboard whenever you tap it again — no need to double-tap quickly. App-wide: disabled text selection/callout everywhere except actual form fields (inputs, textareas), so nothing highlights by accident when tapping around.']},
   {v:'1.78.34',date:'5 Jul 2026',notes:['Raised No Cigar thresholds to Lvl 1 at 25, Lvl 2 at 50, Lvl 3 at 75 (was 8/15/25).']},
   {v:'1.78.33',date:'5 Jul 2026',notes:['Achievements: tap a badge a second time to open a group leaderboard for that specific achievement, ranking everyone by level and value (first tap still shows what it takes). New badge: No Cigar 🚬, levels for landing one goal away from the exact score. Ever Present is now a % of already-finished games predicted rather than a raw count. Rebalanced thresholds: Century (100/200/300), Man of the Match (1/5/10).']},
   {v:'1.78.32',date:'5 Jul 2026',notes:['Doubled the Half Baked achievement thresholds — Lvl 1 at 20, Lvl 2 at 40, Lvl 3 at 70 (was 10/20/35), since it was unlocking too easily.']},
@@ -8661,17 +8667,20 @@ function initBadgesBlock(scope, tierMap, groupCtx){
   const grid = root.querySelector('.badge-grid');
   const caption = root.querySelector('.badge-caption');
   if(!grid || !caption) return;
-  let selectedKey = null;
   grid.addEventListener('click', e=>{
     const tile = e.target.closest('.badge-tile');
     if(!tile) return;
     const def = PLAYER_BADGE_DEFS.find(b=>b.key===tile.dataset.key);
     if(!def) return;
-    if(groupCtx && selectedKey===def.key){
+    // Selection is tracked on the tile itself (not a JS timer/closure), so tapping
+    // the already-selected badge again opens the leaderboard no matter how much
+    // time has passed since the first tap.
+    if(groupCtx && tile.classList.contains('selected')){
       openBadgeLeaderboardModal(def, groupCtx);
       return;
     }
-    selectedKey = def.key;
+    grid.querySelectorAll('.badge-tile.selected').forEach(el=>el.classList.remove('selected'));
+    tile.classList.add('selected');
     const t = tierMap.get(def.key);
     if(!def.tiers){
       const status = t.earned ? '' : ' <span style="color:var(--text-muted);">(locked)</span>';
@@ -12574,7 +12583,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.34</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.35</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
