@@ -1346,7 +1346,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.45</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.46</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -4780,10 +4780,12 @@ function allFixtures(){
         if(loser) return {name:w==='home'?sf.away:sf.home, flag:w==='home'?sf.af:sf.hf};
         return {name:w==='home'?sf.home:sf.away, flag:w==='home'?sf.hf:sf.af};
       }
-      // For QF onwards, keep TBD until the actual winner is known
-      const QF_PLUS=new Set(['m097','m098','m099','m100','m101','m102','m103','m104']);
-      if(QF_PLUS.has(fid)) return null;
-      if(sf.home&&sf.home!=='TBD'&&sf.away&&sf.away!=='TBD')
+      // From SF onwards, keep TBD until the actual winner is known — chaining
+      // an "or" placeholder one level further (QF's placeholder built from an
+      // already-placeholder R16 team) would jumble four names together.
+      const SF_PLUS=new Set(['m101','m102','m103','m104']);
+      if(SF_PLUS.has(fid)) return null;
+      if(sf.home&&sf.home!=='TBD'&&!sf.home.includes('\n')&&sf.away&&sf.away!=='TBD'&&!sf.away.includes('\n'))
         return {name:`${sf.home}\n${sf.away}`,flag:''};
       return null;
     };
@@ -5845,6 +5847,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.46',date:'5 Jul 2026',notes:['Quarter-Final fixtures now show a "Team A or Team B" placeholder (same as Round of 16 already does) once both Round of 16 teams are known but that game hasn\'t been played yet, instead of a plain TBD. Semi-Final, 3rd Place and Final still show TBD until their teams are actually confirmed.']},
   {v:'1.78.45',date:'5 Jul 2026',notes:['Fixed: Forfeit Vote and Paid Places Vote cards still showed up in the Reorder Home Cards list even when their poll was switched off — they aren\'t part of the generic card-visibility system (each has its own poll on/off setting) so the reorder list wasn\'t checking them correctly.']},
   {v:'1.78.44',date:'5 Jul 2026',notes:['Small ⠿ reorder button in the corner of every home card jumps straight to the Reorder Home Cards popup — no need to go through the name menu first. The reorder list now only shows cards currently switched on for your group, instead of listing hidden ones too.']},
   {v:'1.78.43',date:'5 Jul 2026',notes:['Replaced "pin one card to the top" with full home page reordering — tap your name → 🏠 Reorder Home Cards to drag your whole home page into any order you want, with a Reset to Default option. Just for you, synced to any device. Admin → Players now shows a player\'s full custom order (was just the pinned card). The one-time tip popup on next home load points at this instead. Also switched the hint to a proper centred popup (matching the app\'s usual "Got it" style) instead of a bottom banner.', 'Requires a new Supabase column (the previous pinned_home_card column, if you added it, is no longer used and can be dropped or left in place): ALTER TABLE players ADD COLUMN home_card_order text DEFAULT NULL;']},
@@ -12750,7 +12753,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.45</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.46</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
