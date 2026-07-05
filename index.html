@@ -1328,7 +1328,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.29</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.30</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5669,7 +5669,7 @@ const PLAYER_BADGE_DEFS = [
   {key:'century',       emoji:'💯', name:'Century',         desc:'Total points earned',               metric:c=>c.totalPts,       tiers:[{name:'Lvl 1',min:50},{name:'Lvl 2',min:100},{name:'Lvl 3',min:200}]},
   {key:'sharpshooter',  emoji:'🎯', name:'Sharpshooter',    desc:'Correct scores nailed',              metric:c=>c.exact,          tiers:[{name:'Lvl 1',min:5},{name:'Lvl 2',min:10},{name:'Lvl 3',min:20}]},
   {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'Predictions made',                   metric:c=>c.predictionsMade,tiers:[{name:'Lvl 1',min:10},{name:'Lvl 2',min:20},{name:'Lvl 3',min:30}]},
-  {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:"Nailed a correct score nobody else got", test:c=>c.soloExactGames.length>=1},
+  {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:'Correct scores nailed that nobody else got', metric:c=>c.soloExactGames.length, tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
   {key:'climber',       emoji:'📈', name:'Climber',         desc:'Trending up over your last games',       test:c=>c.netMove!=null && c.netMove>=3},
   {key:'frozen_out',    emoji:'💩', name:'Frozen Out',      desc:'3+ wrong predictions in a row',          test:c=>c.longestCold>=3},
   {key:'high_roller',   emoji:'🎲', name:'High Roller',     desc:'Predicted 50+ goals',                    test:c=>c.goalsPredicted>=50},
@@ -5712,6 +5712,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.30',date:'5 Jul 2026',notes:['Achievements: Unicorn (solo correct scores — nailing a scoreline nobody else got) now levels up too: Lvl 1 at 1, Lvl 2 at 3, Lvl 3 at 5.']},
   {v:'1.78.29',date:'5 Jul 2026',notes:['Achievements: renamed tiers from Bronze/Silver/Gold to Lvl 1/2/3. Tapping a levelled badge now lists all 3 levels with their thresholds, striking through the ones you\'ve already hit.']},
   {v:'1.78.28',date:'5 Jul 2026',notes:['Achievements: 8 badges now level up in place (Bronze → Silver → Gold) instead of unlocking once — Table Topper, Podium Regular, Flawless, On Fire, Man of the Match, Century, Sharpshooter and Ever Present. Removed King of the Hill and MOTM Legend, folded into Table Topper and Man of the Match as their Gold tier. Badge tiles show the current tier; tapping one shows what\'s needed for the next.']},
   {v:'1.78.27',date:'5 Jul 2026',notes:['Fixed the player predictions card (tap a name on the leaderboard) not scrolling once a player has more than ~10 games of history — the bottom-anchoring trick relied on flex-direction:column-reverse, which cannot be scrolled at all once capped to a fixed height (its scrollable range sits at negative scrollTop, which native touch-scroll refuses to enter). Switched to plain chronological order with a one-time scroll-to-bottom on open.']},
@@ -12494,7 +12495,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.29</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.30</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
