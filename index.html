@@ -1343,7 +1343,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.36</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.37</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5685,6 +5685,7 @@ const PLAYER_BADGE_DEFS = [
   {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:'Correct scores nailed that nobody else got', metric:c=>c.soloExactGames.length, tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
   {key:'half_baked',    emoji:'🍞', name:'Half Baked',      desc:'Nailed one side\'s score without the full scoreline', metric:c=>c.halfExact, tiers:[{name:'Lvl 1',min:20},{name:'Lvl 2',min:40},{name:'Lvl 3',min:70}]},
   {key:'no_cigar',      emoji:'🚬', name:'No Cigar',        desc:'One goal away from the exact score',                  metric:c=>c.oneGoalOff, tiers:[{name:'Lvl 1',min:25},{name:'Lvl 2',min:50},{name:'Lvl 3',min:75}]},
+  {key:'contrarian',    emoji:'🎭', name:'Contrarian',      desc:'Went against the group\'s consensus pick and were right', metric:c=>c.contrarianHits, tiers:[{name:'Lvl 1',min:3},{name:'Lvl 2',min:6},{name:'Lvl 3',min:10}]},
 ];
 // Resolves a badge def against a player's core stats: which tier (if any) is
 // currently held, and what's needed for the next one.
@@ -5724,6 +5725,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.37',date:'5 Jul 2026',notes:['New achievement: Contrarian 🎭 — levels up each time you went against the group\'s clear consensus pick and were right. Lvl 1 at 3, Lvl 2 at 6, Lvl 3 at 10.']},
   {v:'1.78.36',date:'5 Jul 2026',notes:['Badge group leaderboard now opens instantly with a loading state instead of the tap appearing to hang — recomputing every player\'s stats to rank them is deferred a frame so it happens after the modal paints, not before.']},
   {v:'1.78.35',date:'5 Jul 2026',notes:['Achievement badge selection now sticks to the tile (a highlighted ring) instead of a timing-sensitive JS variable, so tapping an already-selected badge opens its group leaderboard whenever you tap it again — no need to double-tap quickly. App-wide: disabled text selection/callout everywhere except actual form fields (inputs, textareas), so nothing highlights by accident when tapping around.']},
   {v:'1.78.34',date:'5 Jul 2026',notes:['Raised No Cigar thresholds to Lvl 1 at 25, Lvl 2 at 50, Lvl 3 at 75 (was 8/15/25).']},
@@ -8012,7 +8014,8 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
   // ── Per-game points + scoreline tallies ──
   const myPredMap={}; // match_id -> {h,a}
   gamePreds.filter(p=>p.player_id===pid).forEach(p=>{ myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
-  let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0, halfExact=0, oneGoalOff=0;
+  let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0, halfExact=0, oneGoalOff=0, contrarianHits=0;
+  const resultOf=(h,a)=>h>a?'H':h<a?'A':'D';
   const exactGames=[], soloExactGames=[], scorelineCount={};
   fixtures.forEach(f=>{
     const p=myPredMap[f.id]; if(!p || p.h==null || p.a==null) return;
@@ -8034,6 +8037,17 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
     if(pts<5 && (p.h===r.home_score || p.a===r.away_score)) halfExact++;
     // "No Cigar": total scoreline just one goal away from the exact result
     if(pts<5 && (Math.abs(p.h-r.home_score)+Math.abs(p.a-r.away_score))===1) oneGoalOff++;
+    // "Contrarian": went against the group's clear consensus result and was still right
+    if(pts>0){
+      const crowdPreds=(matchPreds[f.id]||[]).filter(q=>q.home_score!=null);
+      if(crowdPreds.length>=3){
+        const tally={H:0,D:0,A:0};
+        crowdPreds.forEach(q=>{ tally[resultOf(q.home_score,q.away_score)]++; });
+        const maxCount=Math.max(tally.H,tally.D,tally.A);
+        const winners=Object.keys(tally).filter(k=>tally[k]===maxCount);
+        if(winners.length===1 && resultOf(p.h,p.a)!==winners[0]) contrarianHits++;
+      }
+    }
   });
 
   // ── Rank snapshots after each completed matchday (mirrors home stats) ──
@@ -8124,7 +8138,7 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
     hasRanks, currentPos, bestPos, worstPos, netMove, netLookback, recentBest, recentWorst,
     daysTop, daysPodium, daysBottom, favPos,
     perfectCount, hotCount, coldCount, longestPerfect, longestHot, longestCold, trailPerfect, trailHot, trailCold,
-    favScoreline, motmAwards, completed, matchPreds, myPredMap, halfExact, oneGoalOff, predictedPct,
+    favScoreline, motmAwards, completed, matchPreds, myPredMap, halfExact, oneGoalOff, predictedPct, contrarianHits,
   };
 }
 
@@ -12592,7 +12606,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.36</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.37</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
