@@ -440,7 +440,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .lb-row.lb-silver{background:color-mix(in srgb,#cbd5e1 16%,var(--surface));border-color:#cbd5e1;box-shadow:0 0 10px rgba(203,213,225,.4),inset 0 0 8px rgba(255,255,255,.12);}
 .lb-row.lb-bronze{background:color-mix(in srgb,var(--bronze) 16%,var(--surface));border-color:rgba(217,119,6,.45);box-shadow:0 0 10px rgba(217,119,6,.35),inset 0 0 8px rgba(255,255,255,.08);}
 .lb-row.lb-last{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);}
-.lb-row.lb-you{border-color:var(--group-accent);box-shadow:0 0 0 1px var(--group-accent);}
+.lb-row.lb-you{border-color:color-mix(in srgb,var(--group-accent) 45%,var(--border));}
 .lb-rank{font-size:1.6rem;line-height:1;color:var(--text-muted);text-align:center;}
 .lb-row.lb-gold .lb-rank{color:var(--gold);}
 .lb-row.lb-silver .lb-rank{color:#cbd5e1;}
@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.49</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.50</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5888,6 +5888,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.50',date:'5 Jul 2026',notes:['Standings home card: replaced the 🥇🥈🥉 medal emojis with plain rank numbers, matching every other position.', 'Toned down the "you" row highlight on the main Leaderboard — a subtle tinted border instead of a bright glowing accent ring.']},
   {v:'1.78.49',date:'5 Jul 2026',notes:['Split the combined match card into three independent, individually reorderable home cards: Live Now, Previous Results and Next Up. Live Now only appears while a game is actually live (was always taking a slot even with nothing live); Previous Results can now show at the same time as Live Now instead of being hidden whenever something\'s live. All three respect their own admin on/off toggle in Home Page Cards.', 'Standings home card simplified down to just position, name and points — dropped the online dot, streak/MOTM/ITM badges and round-change arrows to keep it minimal.', 'Gold and bronze leaderboard/achievement rows now get the same shine treatment (glow + inner highlight) silver got last update, so silver no longer stands out as the odd one out.', 'If you\'d already customised your home card order, Live Now and Previous Results will land at the end of it the first time — just drag them back into place via Reorder Home Cards.', 'Requires 2 new Supabase columns (missed noting this at the time — the admin "Save Home Cards" button fails entirely without them, since all card toggles save in one request): ALTER TABLE groups ADD COLUMN home_show_live boolean DEFAULT true; ALTER TABLE groups ADD COLUMN home_show_results boolean DEFAULT true;']},
   {v:'1.78.48',date:'5 Jul 2026',notes:['Standings home card now shows the full group (everyone, not just top 3 + you), with smaller/tighter rows so it stays compact. Silver (2nd place) rows on both the home Standings card and the full Leaderboard now get a proper metallic shine — brighter ring, soft glow, inner highlight — instead of flat grey, matching the Lvl 2 achievement look.']},
   {v:'1.78.47',date:'5 Jul 2026',notes:['Fixed 3 wrong Quarter-Final pairings in the bracket (m097/m098/m099 were mapped to the wrong Round of 16 matches — cross-checked against the official schedule). Extended the "Team A or Team B" placeholder to every knockout round (Semi-Final, 3rd Place, Final too), not just QF — it now shows automatically wherever a feeding match\'s two teams are both known, and only ever shows two names (falls back to plain TBD rather than jumbling more than two teams together).']},
@@ -7434,7 +7435,6 @@ async function loadHome(){
     _homeRoundCurRankByName=curRankByNameH;
 
     // Mini leaderboard HTML
-    const rankMedals = {1:'🥇',2:'🥈',3:'🥉'};
     const rankCls = {1:'mlb-gold',2:'mlb-silver',3:'mlb-bronze'};
     let lbHtml = '';
     if(!sorted.length){
@@ -7443,7 +7443,7 @@ async function loadHome(){
       sorted.forEach(([name,s],i)=>{
         const isYou = name===myDisplayName;
         const r = miniRanks[i];
-        const medal = rankMedals[r] || (miniRankCounts[r]>1?'='+r:String(r));
+        const medal = miniRankCounts[r]>1?'='+r:String(r);
         const cls = (rankCls[r] || '') + (isYou?' mlb-you':'');
         lbHtml += `<div class="mini-lb-row ${cls}">
           <div class="mini-lb-rank">${medal}</div>
@@ -12768,7 +12768,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.49</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.50</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
