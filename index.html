@@ -391,6 +391,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .badge-tile.tier-lvl3 .badge-progress-fill{background:#eab308;}
 .badge-caption{font-size:.68rem;color:var(--text-muted);font-weight:500;margin-top:.6rem;line-height:1.4;min-height:1.2em;}
 .badge-caption strong{color:var(--text);}
+.badge-compare-hint{display:inline-flex;align-items:center;gap:.3rem;margin-top:.5rem;font-size:.68rem;font-weight:700;color:var(--group-accent);background:color-mix(in srgb,var(--group-accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--group-accent) 30%,transparent);border-radius:20px;padding:.3rem .7rem;}
 .share-card-preview-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
 .share-card-canvas{width:100%;height:auto;display:block;}
 .home-cta{display:flex;gap:.75rem;margin-top:.75rem;}
@@ -1343,7 +1344,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.37</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.38</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1618,6 +1619,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <div class="home-card-title">📈 Personal Stats</div>
         <div id="home-personal-stats-content" class="home-card-scroll"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
         <button class="home-cta-btn" style="margin-top:.75rem;width:100%;" onclick="showMyStats()">Open Full Stats Page</button>
+      </div>
+      <div class="home-card" id="home-achievements-card" style="display:none;">
+        <div class="home-card-title" style="position:relative;display:inline-block;">🏅 Achievements<span class="new-sticker">New</span></div>
+        <div id="home-achievements-content" class="home-card-scroll"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
     </div>
 
@@ -5625,6 +5630,7 @@ const HOME_CARD_DEFS = [
   {key:'stats',     id:'home-stats-card',     label:'Tournament Stats',   toggleId:'home-show-stats-toggle',     flag:'home_show_stats', defaultOff:true},
   {key:'rival',     id:'home-rival-card',     label:'Closest Rival',      toggleId:'home-show-rival-toggle',     flag:'home_show_rival', defaultOff:true},
   {key:'personal_stats', id:'home-personal-stats-card', label:'Personal Stats', toggleId:'home-show-personal-stats-toggle', flag:'home_show_personal_stats', defaultOff:true},
+  {key:'achievements', id:'home-achievements-card', label:'Achievements', toggleId:'home-show-achievements-toggle', flag:'home_show_achievements', defaultOff:true},
 ];
 // Personal stats shown on a player's own "📈 My Stats" page. Each is individually
 // hideable by an admin (Admin → Display → Personal Player Stats). The key is stored
@@ -5725,6 +5731,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.38',date:'5 Jul 2026',notes:['New 🏅 Achievements home card (Admin → Display → Home Page Cards, off by default) — badges now get their own card instead of being buried inside Personal Stats, with a "New" sticker to flag it. Made the tap-once/tap-again interaction clearer: the default hint now explains both steps, and after a first tap the "compare with the group" hint is a visible pill instead of faint text.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_achievements boolean DEFAULT false;']},
   {v:'1.78.37',date:'5 Jul 2026',notes:['New achievement: Contrarian 🎭 — levels up each time you went against the group\'s clear consensus pick and were right. Lvl 1 at 3, Lvl 2 at 6, Lvl 3 at 10.']},
   {v:'1.78.36',date:'5 Jul 2026',notes:['Badge group leaderboard now opens instantly with a loading state instead of the tap appearing to hang — recomputing every player\'s stats to rank them is deferred a frame so it happens after the modal paints, not before.']},
   {v:'1.78.35',date:'5 Jul 2026',notes:['Achievement badge selection now sticks to the tile (a highlighted ring) instead of a timing-sensitive JS variable, so tapping an already-selected badge opens its group leaderboard whenever you tap it again — no need to double-tap quickly. App-wide: disabled text selection/callout everywhere except actual form fields (inputs, textareas), so nothing highlights by accident when tapping around.']},
@@ -7342,18 +7349,28 @@ async function loadHome(){
       }
     }
 
-    // ── Personal Stats card: full My Stats content embedded on the home page (opt-in) ──
+    // ── Personal Stats + Achievements cards: My Stats content embedded on the home
+    // page (both opt-in). Achievements has its own card now, so it's excluded from
+    // the Personal Stats card to avoid showing it twice; both share one computed
+    // core when both are on, since computePlayerCore is expensive per player.
     const personalStatsEl = document.getElementById('home-personal-stats-content');
+    const achievementsEl = document.getElementById('home-achievements-content');
+    const needMyCore = (personalStatsEl && currentGroup.home_show_personal_stats===true) || (achievementsEl && currentGroup.home_show_achievements===true);
+    const myCore = (needMyCore && currentPlayer) ? computePlayerCore(currentPlayer.id, gamePreds, rm, allFixtures()) : null;
+    const groupCtx = currentPlayer ? {allPlayers, gamePreds, rm, fixtures:allFixtures(), myId:currentPlayer.id} : null;
     if(personalStatsEl && currentPlayer && currentGroup.home_show_personal_stats===true){
-      const myCore = computePlayerCore(currentPlayer.id, gamePreds, rm, allFixtures());
-      const {blocks: psBlocks, chartInits: psInits} = buildPlayerStatsBlocks(myCore, rm);
+      const {blocks: psBlocks, chartInits: psInits} = buildPlayerStatsBlocks(myCore, rm, ['badges']);
       personalStatsEl.innerHTML = psBlocks.length ? psBlocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
       psInits.forEach(({key,built})=>{
         if(key==='position_chart') initPositionChart(personalStatsEl, myCore.rankHistory, built);
         else if(key==='cumulative_chart') initCumulativeChart(personalStatsEl, myCore.cumHistory, built);
         else if(key==='points_chart') initBarChart(personalStatsEl, myCore.mdPoints);
-        else if(key==='badges') initBadgesBlock(personalStatsEl, built.tierMap, {allPlayers, gamePreds, rm, fixtures:allFixtures(), myId:currentPlayer.id});
       });
+    }
+    if(achievementsEl && currentPlayer && currentGroup.home_show_achievements===true){
+      const built = buildBadgesBlock(myCore);
+      achievementsEl.innerHTML = built.html;
+      initBadgesBlock(achievementsEl, built.tierMap, groupCtx);
     }
 
     // Build next game + last result data for merged match card
@@ -8187,7 +8204,7 @@ async function showPlayerStats(playerId, name){
 // ── Builds the stat-row / chart / badge blocks shared by the My Stats modal and
 // the optional "Personal Stats" home card. Returns block HTML plus data needed
 // to wire up chart interactivity after the caller inserts the HTML into the DOM.
-function buildPlayerStatsBlocks(core, rm){
+function buildPlayerStatsBlocks(core, rm, excludeKeys){
   const {
     totalPts, exact, results3, wrong, scoredGames, goalsPredicted, predictionsMade,
     exactGames, soloExactGames, scorelineCount,
@@ -8259,7 +8276,7 @@ function buildPlayerStatsBlocks(core, rm){
   const chartInits=[];
   const flushRows=()=>{ if(rowBuf.length){ blocks.push(`<div class="stat-row-list">${rowBuf.join('')}</div>`); rowBuf=[]; } };
   PLAYER_STAT_DEFS.forEach(d=>{
-    if(hidden.includes(d.key)) return;
+    if(hidden.includes(d.key) || (excludeKeys&&excludeKeys.includes(d.key))) return;
     if(d.badges){
       const built = buildBadgesBlock(core);
       if(built){ flushRows(); blocks.push(built.html); chartInits.push({key:'badges', built}); }
@@ -8669,7 +8686,7 @@ function buildBadgesBlock(core){
   const html = `<div class="pos-chart-wrap" data-chart-key="badges">
       <div class="pos-chart-head"><span class="stat-hi-label">🏅 Achievements</span><span class="pos-chart-readout">${earnedCount} / ${PLAYER_BADGE_DEFS.length} unlocked</span></div>
       <div class="badge-grid">${tiles}</div>
-      <div class="badge-caption">Tap a badge to see what it takes</div>
+      <div class="badge-caption">Tap a badge to see what it takes, tap it again to compare with the group</div>
     </div>`;
   return {html, tierMap};
 }
@@ -8707,7 +8724,7 @@ function initBadgesBlock(scope, tierMap, groupCtx){
       const style = done ? 'text-decoration:line-through;opacity:.5;' : isNext ? 'color:var(--text);font-weight:700;' : '';
       return `<div style="${style}">${tr.name} — ${tr.min}${def.unit||''}+</div>`;
     }).join('');
-    caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}<div style="margin-top:.3rem;">${tierLines}</div>${groupCtx?'<div style="margin-top:.3rem;opacity:.6;">Tap again to compare with the group</div>':''}`;
+    caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}<div style="margin-top:.3rem;">${tierLines}</div>${groupCtx?'<div class="badge-compare-hint">👥 Tap again to compare with the group</div>':''}`;
   });
 }
 // Ranks every player in the group against a single badge's metric (or 1/0 for a
@@ -12606,7 +12623,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.37</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.38</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
