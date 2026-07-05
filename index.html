@@ -1343,7 +1343,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.35</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.36</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5724,6 +5724,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.36',date:'5 Jul 2026',notes:['Badge group leaderboard now opens instantly with a loading state instead of the tap appearing to hang — recomputing every player\'s stats to rank them is deferred a frame so it happens after the modal paints, not before.']},
   {v:'1.78.35',date:'5 Jul 2026',notes:['Achievement badge selection now sticks to the tile (a highlighted ring) instead of a timing-sensitive JS variable, so tapping an already-selected badge opens its group leaderboard whenever you tap it again — no need to double-tap quickly. App-wide: disabled text selection/callout everywhere except actual form fields (inputs, textareas), so nothing highlights by accident when tapping around.']},
   {v:'1.78.34',date:'5 Jul 2026',notes:['Raised No Cigar thresholds to Lvl 1 at 25, Lvl 2 at 50, Lvl 3 at 75 (was 8/15/25).']},
   {v:'1.78.33',date:'5 Jul 2026',notes:['Achievements: tap a badge a second time to open a group leaderboard for that specific achievement, ranking everyone by level and value (first tap still shows what it takes). New badge: No Cigar 🚬, levels for landing one goal away from the exact score. Ever Present is now a % of already-finished games predicted rather than a raw count. Rebalanced thresholds: Century (100/200/300), Man of the Match (1/5/10).']},
@@ -8706,20 +8707,6 @@ function computeBadgeLeaderboard(def, allPlayers, gamePreds, rm, fixtures){
   }).sort((a,b)=> b.value-a.value || b.tierIdx-a.tierIdx);
 }
 function openBadgeLeaderboardModal(def, groupCtx){
-  const {allPlayers, gamePreds, rm, fixtures, myId} = groupCtx;
-  const rows = computeBadgeLeaderboard(def, allPlayers, gamePreds, rm, fixtures);
-  const medals = ['🥇','🥈','🥉'];
-  const rowsHtml = rows.map((r,i)=>{
-    const rankCls = i===0?'mlb-gold':i===1?'mlb-silver':i===2?'mlb-bronze':'';
-    const youCls = r.id===myId ? ' mlb-you' : '';
-    const rankTxt = medals[i] || String(i+1);
-    const tierTxt = def.tiers ? (r.tierName ? `Lvl ${r.tierIdx+1}` : '—') : (r.value?'✓':'—');
-    return `<div class="mini-lb-row ${rankCls}${youCls}">
-      <div class="mini-lb-rank">${rankTxt}</div>
-      <div class="mini-lb-name">${r.name}${r.id===myId?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}</div>
-      <div style="text-align:right;"><div class="mini-lb-pts">${tierTxt}</div>${def.tiers?`<div style="font-size:.6rem;color:var(--text-muted);">${r.value}${def.unit||''}</div>`:''}</div>
-    </div>`;
-  }).join('');
   const modal=document.createElement('div');
   modal.className='modal-overlay';
   modal.innerHTML = `<div class="pred-modal" style="max-width:420px;">
@@ -8728,10 +8715,32 @@ function openBadgeLeaderboardModal(def, groupCtx){
       <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
     </div>
     <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">${def.desc}</div>
-    ${rowsHtml || '<div class="empty">No data yet.</div>'}
+    <div class="badge-lb-body"><div class="loading" style="font-size:.78rem;padding:2rem 0;">Loading…</div></div>
   </div>`;
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
+  // computeBadgeLeaderboard recomputes every player's full stats, which can take
+  // a moment in a big/long-running group — defer it a frame so the modal (with
+  // its loading state) paints first instead of the tap appearing to hang.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(!modal.isConnected) return;
+    const {allPlayers, gamePreds, rm, fixtures, myId} = groupCtx;
+    const rows = computeBadgeLeaderboard(def, allPlayers, gamePreds, rm, fixtures);
+    const medals = ['🥇','🥈','🥉'];
+    const rowsHtml = rows.map((r,i)=>{
+      const rankCls = i===0?'mlb-gold':i===1?'mlb-silver':i===2?'mlb-bronze':'';
+      const youCls = r.id===myId ? ' mlb-you' : '';
+      const rankTxt = medals[i] || String(i+1);
+      const tierTxt = def.tiers ? (r.tierName ? `Lvl ${r.tierIdx+1}` : '—') : (r.value?'✓':'—');
+      return `<div class="mini-lb-row ${rankCls}${youCls}">
+        <div class="mini-lb-rank">${rankTxt}</div>
+        <div class="mini-lb-name">${r.name}${r.id===myId?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}</div>
+        <div style="text-align:right;"><div class="mini-lb-pts">${tierTxt}</div>${def.tiers?`<div style="font-size:.6rem;color:var(--text-muted);">${r.value}${def.unit||''}</div>`:''}</div>
+      </div>`;
+    }).join('');
+    const body = modal.querySelector('.badge-lb-body');
+    if(body) body.innerHTML = rowsHtml || '<div class="empty">No data yet.</div>';
+  }));
 }
 
 // ── Maverick picks: predictions that went against the group consensus (used on the player stats page) ──
@@ -12583,7 +12592,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.35</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.36</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
