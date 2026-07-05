@@ -204,6 +204,8 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 /* ── HOME DASHBOARD ── */
 .home-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;margin-bottom:1rem;position:relative;}
 .home-card-title{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.85rem;font-weight:600;}
+.reorder-card-btn{position:absolute;top:.7rem;right:.8rem;background:none;border:none;font-size:.95rem;line-height:1;padding:.15rem;cursor:pointer;opacity:.35;color:var(--text-muted);transition:opacity .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.reorder-card-btn:active{opacity:.7;}
 .mini-lb-row{display:grid;grid-template-columns:2.2rem 1fr auto;align-items:center;gap:.75rem;padding:.55rem .5rem;border-radius:8px;margin-bottom:.3rem;transition:background .15s;}
 .mini-lb-row.mlb-gold{background:color-mix(in srgb,var(--gold) 16%,var(--surface));border:1px solid rgba(251,191,36,.35);}
 .mini-lb-row.mlb-silver{background:color-mix(in srgb,var(--silver) 14%,var(--surface));border:1px solid rgba(148,163,184,.3);}
@@ -1344,7 +1346,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.43</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.44</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5727,6 +5729,12 @@ function getHomeCardOrder(){
   if(idx > 0){ order.splice(idx,1); order.unshift('pwa-tip'); }
   return order;
 }
+// Whether a home card is currently switched on for this group (cards with no
+// flag, like Match Card/Standings, are always on).
+function isHomeCardVisible(def){
+  if(!def.flag) return true;
+  return def.defaultOff ? currentGroup?.[def.flag] === true : currentGroup?.[def.flag] !== false;
+}
 function applyHomeCardOrder(){
   const homeView = document.getElementById('view-home');
   if(!homeView || !currentGroup) return;
@@ -5734,7 +5742,28 @@ function applyHomeCardOrder(){
     const def = HOME_CARD_DEFS.find(c=>c.key===key);
     if(def){ const el=document.getElementById(def.id); if(el) homeView.appendChild(el); }
   });
+  initHomeCardReorderButtons();
   maybeShowReorderHint();
+}
+// Small ↕️ button in the corner of every visible home card (skipping the
+// pwa-tip install nudge) that jumps straight to the reorder modal — so the
+// feature is discoverable from wherever a player already is on the page.
+function initHomeCardReorderButtons(){
+  HOME_CARD_DEFS.forEach(def=>{
+    if(def.key==='pwa-tip') return;
+    const card = document.getElementById(def.id);
+    if(!card) return;
+    let btn = card.querySelector('.reorder-card-btn');
+    if(!btn){
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'reorder-card-btn';
+      btn.innerHTML = '⠿';
+      btn.title = 'Reorder home cards';
+      btn.onclick = e=>{ e.stopPropagation(); showReorderHomeCardsModal(); };
+      card.appendChild(btn);
+    }
+  });
 }
 // One-time (per browser) nudge pointing players at the reorder feature — shown
 // the first time the home page loads/refreshes after this shipped. Marked seen
@@ -5758,9 +5787,13 @@ function maybeShowReorderHint(){
 function renderPlayerCardsSortable(){
   const container = document.getElementById('player-cards-sortable');
   if(!container) return;
-  container.innerHTML = getHomeCardOrder().filter(k=>k!=='pwa-tip').map(key=>{
+  container.innerHTML = getHomeCardOrder().filter(key=>{
+    if(key==='pwa-tip') return false;
     const def = HOME_CARD_DEFS.find(c=>c.key===key);
-    return def ? `<div class="home-card-sort-row" data-key="${key}"><span class="sort-handle" title="Drag to reorder">⠿</span><span class="sort-label">${def.label}</span></div>` : '';
+    return def && isHomeCardVisible(def);
+  }).map(key=>{
+    const def = HOME_CARD_DEFS.find(c=>c.key===key);
+    return `<div class="home-card-sort-row" data-key="${key}"><span class="sort-handle" title="Drag to reorder">⠿</span><span class="sort-label">${def.label}</span></div>`;
   }).join('');
 }
 function showReorderHomeCardsModal(){
@@ -5771,7 +5804,7 @@ function showReorderHomeCardsModal(){
       <div class="pred-modal-title" style="font-size:1.1rem;">🏠 Reorder Home Cards</div>
       <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
     </div>
-    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Drag to set your own home page order — just for you, synced to any device you log into. Cards an admin has hidden still won't show.</div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Drag to set your own home page order — just for you, synced to any device you log into. Only shows cards currently switched on for your group.</div>
     <div id="player-cards-sortable"></div>
     <div style="display:flex;gap:.6rem;margin-top:1.1rem;">
       <button class="home-cta-btn" style="flex:1;" onclick="resetPlayerHomeCardOrder()">Reset to Default</button>
@@ -5809,6 +5842,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.44',date:'5 Jul 2026',notes:['Small ⠿ reorder button in the corner of every home card jumps straight to the Reorder Home Cards popup — no need to go through the name menu first. The reorder list now only shows cards currently switched on for your group, instead of listing hidden ones too.']},
   {v:'1.78.43',date:'5 Jul 2026',notes:['Replaced "pin one card to the top" with full home page reordering — tap your name → 🏠 Reorder Home Cards to drag your whole home page into any order you want, with a Reset to Default option. Just for you, synced to any device. Admin → Players now shows a player\'s full custom order (was just the pinned card). The one-time tip popup on next home load points at this instead. Also switched the hint to a proper centred popup (matching the app\'s usual "Got it" style) instead of a bottom banner.', 'Requires a new Supabase column (the previous pinned_home_card column, if you added it, is no longer used and can be dropped or left in place): ALTER TABLE players ADD COLUMN home_card_order text DEFAULT NULL;']},
   {v:'1.78.42',date:'5 Jul 2026',notes:['New: pin any home card to the top of your own home page with the 📌 button in its corner — overrides the group\'s default card order just for you, and syncs across your devices. A one-time tip banner points it out the first time you load the home page after this update. Admins can see which card each player has pinned in Admin → Players.', 'Achievements card: "New" sticker moved back to floating above the card corner (title stays put) so it doesn\'t crowd the title text.', 'Requires a new Supabase column: ALTER TABLE players ADD COLUMN pinned_home_card text DEFAULT NULL;']},
   {v:'1.78.41',date:'5 Jul 2026',notes:['Moved the Achievements card\'s "New" sticker to the top-left corner instead of the top-right.']},
@@ -7958,7 +7992,7 @@ async function loadHome(){
     if(!def.flag) return;
     const el = document.getElementById(def.id);
     if(!el) return;
-    const show = def.defaultOff ? currentGroup[def.flag] === true : currentGroup[def.flag] !== false;
+    const show = isHomeCardVisible(def);
     if(!show) el.style.display = 'none';
     else if(def.key !== 'countdown') el.style.display = '';
     // countdown display left to startCountdown() when shown
@@ -12712,7 +12746,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.43</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.44</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
