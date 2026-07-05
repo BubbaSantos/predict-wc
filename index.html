@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.50</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.51</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5756,21 +5756,33 @@ function getPlayerStatsHidden(){
   if(typeof h==='string' && h) return h.split(',');
   return [];
 }
-// A player's own home_card_order (if they've set one via "Reorder Home Cards")
-// takes full precedence over the group's default order — same CSV format, same
-// validation, so this and the group-level version share every rule below.
-function getHomeCardOrder(){
-  const stored = currentPlayer?.home_card_order || currentGroup?.home_card_order;
+// Turns a stored CSV/array of card keys into a full, valid order — fills in
+// any keys missing from the stored value (new cards, typos) and always
+// forces pwa-tip first regardless of what was saved.
+function resolveHomeCardOrder(stored){
   const def = HOME_CARD_DEFS.map(c=>c.key);
   if(!stored) return def;
   const arr = typeof stored==='string' ? stored.split(',') : stored;
   const valid = arr.filter(k=>HOME_CARD_DEFS.some(c=>c.key===k));
   const missing = def.filter(k=>!valid.includes(k));
   const order = [...valid,...missing];
-  // pwa-tip always pinned first regardless of saved order
   const idx = order.indexOf('pwa-tip');
   if(idx > 0){ order.splice(idx,1); order.unshift('pwa-tip'); }
   return order;
+}
+// A player's own home_card_order (if they've set one via "Reorder Home Cards")
+// takes full precedence over the group's default order for actually rendering
+// the home page. The admin's own settings screen must NOT use this — it needs
+// getGroupHomeCardOrder() below, so an admin who has personally reordered
+// their own home page doesn't end up viewing (and risk re-saving) their
+// personal order as the group's default.
+function getHomeCardOrder(){
+  return resolveHomeCardOrder(currentPlayer?.home_card_order || currentGroup?.home_card_order);
+}
+// The group's own default order, ignoring any personal player override —
+// this is what Admin → Display → Home Page Cards should show and edit.
+function getGroupHomeCardOrder(){
+  return resolveHomeCardOrder(currentGroup?.home_card_order);
 }
 // Whether a home card is currently switched on for this group. Forfeit/Paid
 // Places aren't in the generic flag system (they're gated by their own poll
@@ -5888,6 +5900,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.51',date:'5 Jul 2026',notes:['Fixed: Admin → Display → Home Page Cards was showing (and could silently overwrite) the group\'s default order with whatever personal order the logged-in admin had set for themselves via Reorder Home Cards. Admin settings now always show/edit the true group default; players who haven\'t personally reordered still fall back to it exactly as before.']},
   {v:'1.78.50',date:'5 Jul 2026',notes:['Standings home card: replaced the 🥇🥈🥉 medal emojis with plain rank numbers, matching every other position.', 'Toned down the "you" row highlight on the main Leaderboard — a subtle tinted border instead of a bright glowing accent ring.']},
   {v:'1.78.49',date:'5 Jul 2026',notes:['Split the combined match card into three independent, individually reorderable home cards: Live Now, Previous Results and Next Up. Live Now only appears while a game is actually live (was always taking a slot even with nothing live); Previous Results can now show at the same time as Live Now instead of being hidden whenever something\'s live. All three respect their own admin on/off toggle in Home Page Cards.', 'Standings home card simplified down to just position, name and points — dropped the online dot, streak/MOTM/ITM badges and round-change arrows to keep it minimal.', 'Gold and bronze leaderboard/achievement rows now get the same shine treatment (glow + inner highlight) silver got last update, so silver no longer stands out as the odd one out.', 'If you\'d already customised your home card order, Live Now and Previous Results will land at the end of it the first time — just drag them back into place via Reorder Home Cards.', 'Requires 2 new Supabase columns (missed noting this at the time — the admin "Save Home Cards" button fails entirely without them, since all card toggles save in one request): ALTER TABLE groups ADD COLUMN home_show_live boolean DEFAULT true; ALTER TABLE groups ADD COLUMN home_show_results boolean DEFAULT true;']},
   {v:'1.78.48',date:'5 Jul 2026',notes:['Standings home card now shows the full group (everyone, not just top 3 + you), with smaller/tighter rows so it stays compact. Silver (2nd place) rows on both the home Standings card and the full Leaderboard now get a proper metallic shine — brighter ring, soft glow, inner highlight — instead of flat grey, matching the Lvl 2 achievement look.']},
@@ -6765,7 +6778,7 @@ function loadHomeCardSettings(){
   const container = document.getElementById('home-cards-sortable');
   if(!container) return;
   container.innerHTML = '';
-  getHomeCardOrder().forEach(key=>{
+  getGroupHomeCardOrder().forEach(key=>{
     const def = HOME_CARD_DEFS.find(c=>c.key===key);
     if(!def) return;
     const isOn = def.flag ? (def.defaultOff ? g[def.flag] === true : g[def.flag] !== false) : null;
@@ -6865,7 +6878,7 @@ async function saveHomeCardSettings(){
   const container = document.getElementById('home-cards-sortable');
   const order = container
     ? [...container.querySelectorAll('.home-card-sort-row')].map(r=>r.dataset.key).join(',')
-    : getHomeCardOrder().join(',');
+    : getGroupHomeCardOrder().join(',');
   const body = {home_card_order: order};
   HOME_CARD_DEFS.forEach(def=>{ if(def.flag){ const el=document.getElementById(def.toggleId); if(el) body[def.flag]=el.checked; } });
   const hiddenKeys=[]; document.querySelectorAll('.stat-hi-tog').forEach(cb=>{ if(!cb.checked) hiddenKeys.push(cb.dataset.key); });
@@ -12768,7 +12781,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.50</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.51</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
