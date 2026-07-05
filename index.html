@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.52</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.53</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1584,11 +1584,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <div class="gh-pot-label">Total Pot</div>
           <div class="gh-pot-amount" id="gh-pot-amount">£0</div>
         </div>
-      </div>
-
-      <!-- Live Now: only shown while a game is actually live -->
-      <div class="home-card" id="home-live-card" onclick="togglePicksView()" style="cursor:pointer;display:none;">
-        <div id="hmc-live-body"></div>
       </div>
 
       <!-- Previous Results -->
@@ -2941,7 +2936,6 @@ let _nextUpcomingIdx = 0;
 let _nextGamePredHtmlAll = [];
 let _lastResultsAll = [];
 let _lastResultIdx = 0;
-let _liveGamesIdx = 0;
 let _livePicksMap = {};
 let _matchPredsMap = {};
 let _liveMissingMap = {};
@@ -3729,59 +3723,22 @@ function enterApp(){
 // a game is actually live).
 function renderMatchCardBody(){
   const now = Date.now();
-  const fixtures = allFixtures();
-  const liveGames = fixtures.filter(isLiveGame);
   const picksHint = `<div style="font-size:.55rem;color:var(--text-muted);opacity:.4;text-align:center;margin-top:.3rem;letter-spacing:.04em;">tap to ${_picksViewMode==='grouped'?'view by name':'view grouped'}</div>`;
-
-  // ── Live Now ──
-  const liveCard = document.getElementById('home-live-card');
-  const liveBody = document.getElementById('hmc-live-body');
-  const liveEnabled = isHomeCardVisible(HOME_CARD_DEFS.find(d=>d.key==='live'));
-  if(liveCard) liveCard.style.display = (liveEnabled && liveGames.length) ? '' : 'none';
-  if(liveBody){
-    let liveHtml = '';
-    if(liveGames.length > 1){
-      if(_liveGamesIdx >= liveGames.length) _liveGamesIdx = 0;
-      liveHtml += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
-      const slides = liveGames.map(f=>{
-        const r = results[f.id];
-        const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
-        const p = predictions[f.id];
-        const hasPred = p&&p.home!==''&&p.home!==null;
-        const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
-        const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
-        const _sbc=BROADCASTERS[f.id],_sbcH=_sbc?`<span class="broadcaster-badge ${_sbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_sbc}</span>`:'';
-        return `<div class="hmc-carousel-slide" style="width:${100/liveGames.length}%;position:relative;">${_sbcH}${_pctTeamsHtml(f,'live',score,f.id)}${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${_liveMissingMap[f.id]||''}${picks}${hasAnyPicks?picksHint:''}${matchExtrasHtml(f)}</div>`;
-      }).join('');
-      const livePct = _liveGamesIdx*(100/liveGames.length);
-      liveHtml += `<div class="hmc-carousel-wrap" id="hmc-live-wrap"><div class="hmc-carousel-track" id="hmc-live-track" style="width:${liveGames.length*100}%;transform:translateX(-${livePct}%)">${slides}</div></div>`;
-      const liveDots = liveGames.map((_,i)=>`<span class="hmc-dot${i===_liveGamesIdx?' active':''}" onclick="hmcLiveGoToSlide(${i});event.stopPropagation()"></span>`).join('');
-      liveHtml += `<div class="hmc-dots">${liveDots}</div>`;
-    } else if(liveGames.length===1){
-      const f = liveGames[0];
-      const _lbc=BROADCASTERS[f.id];
-      liveHtml += `<div class="hmc-label live" style="display:flex;justify-content:space-between;align-items:center;"><span><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</span>${_lbc?`<span class="broadcaster-badge ${_lbc.toLowerCase()}">${_lbc}</span>`:''}</div>`;
-      const r = results[f.id];
-      const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
-      const p = predictions[f.id];
-      const hasPred = p&&p.home!==''&&p.home!==null;
-      const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
-      const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
-      liveHtml += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+(_liveMissingMap[f.id]||'')+picks+(hasAnyPicks?picksHint:'')+matchExtrasHtml(f);
-    }
-    liveBody.innerHTML = liveHtml;
-  }
+  const groupedPicksFor = (item, nid) => {
+    if(item.live || item.finished){ const r=results[nid]; return coloredGroupedPicksHtml(nid, r&&r.home, r&&r.away); }
+    return _livePicksMap[nid]||'';
+  };
 
   // ── Previous Results ──
   const resultsCard = document.getElementById('home-results-card');
   const resultsBody = document.getElementById('hmc-results-body');
   const resultsEnabled = isHomeCardVisible(HOME_CARD_DEFS.find(d=>d.key==='results'));
-  if(resultsCard) resultsCard.style.display = (resultsEnabled && _lastResultsAll.length) ? '' : 'none';
+  if(resultsCard) resultsCard.style.display = (resultsEnabled && !isHomeCardHiddenByPlayer('results') && _lastResultsAll.length) ? '' : 'none';
   if(resultsBody){
     let resultsHtml = '';
     if(_lastResultsAll.length){
       const lrn = _lastResultsAll.length;
-      const lrLabel = lrn > 1 ? "Yesterday's Results" : "Yesterday's Result";
+      const lrLabel = lrn > 1 ? "Previous Results" : "Previous Result";
       if(lrn > 1){
         const lrTN = lrn+2;
         const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`; };
@@ -3800,37 +3757,39 @@ function renderMatchCardBody(){
     resultsBody.innerHTML = resultsHtml;
   }
 
-  // ── Next Up ──
+  // ── Today's Fixtures (countdown / live / finished, merged into one list) ──
   const nextBody = document.getElementById('hmc-next-body');
   if(nextBody){
     let nextHtml = '';
     if(_nextUpcoming){
       const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
       const cdHtml=ko=>{const diff=ko.getTime()-now;if(diff<=0)return'';const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);return`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;};
-      const finishedHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.6rem;">Finished</div>`;
+      const finishedHdr=`<div style="text-align:center;margin-bottom:.6rem;"><span class="result-badge">✓ Game Finished</span></div>`;
+      const liveHdr=`<div class="hmc-label live" style="text-align:center;margin-bottom:.6rem;"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live</div>`;
       const nuItemHtml=(item,nid)=>{
         if(item.finished){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'';return{timer:finishedHdr,sc,cls:''};}
+        if(item.live){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'0–0';return{timer:liveHdr,sc,cls:'live'};}
         return{timer:cdHtml(item.ko),sc:'vs',cls:'vs'};
       };
-      if(_nextUpcomingAll.some(item=>item.finished||item.ko.getTime()>now)){
-        if(_nextUpcomingAll.length > 1){
-          nextHtml += `<div class="hmc-label">Next Up</div>`;
-          const cn = _nextUpcomingAll.length, cnTN = cn+2;
-          const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,item.finished?'result':'upcoming'),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
-          const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
-          const pct = (_nextUpcomingIdx+1)*(100/cnTN);
-          nextHtml += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
-          const dots = _nextUpcomingAll.map((_,i)=>`<span class="hmc-dot${i===_nextUpcomingIdx?' active':''}" onclick="hmcGoToSlide(${i});event.stopPropagation()"></span>`).join('');
-          nextHtml += `<div class="hmc-dots">${dots}</div>`;
-        } else {
-          const nextId = _nextUpcoming.f.id;
-          const _nbc=BROADCASTERS[nextId];
-          nextHtml += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">Next Up${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
-          const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
-          const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,_nextUpcoming.finished?'result':'upcoming');
-          const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-          nextHtml += timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
-        }
+      const nuMode = item => item.finished?'result':(item.live?'live':'upcoming');
+      const lbl = _nextUpcomingAll.length>1?"Today's Fixtures":"Today's Fixture";
+      if(_nextUpcomingAll.length > 1){
+        nextHtml += `<div class="hmc-label">${lbl}</div>`;
+        const cn = _nextUpcomingAll.length, cnTN = cn+2;
+        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewMode==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item)),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
+        const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
+        const pct = (_nextUpcomingIdx+1)*(100/cnTN);
+        nextHtml += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
+        const dots = _nextUpcomingAll.map((_,i)=>`<span class="hmc-dot${i===_nextUpcomingIdx?' active':''}" onclick="hmcGoToSlide(${i});event.stopPropagation()"></span>`).join('');
+        nextHtml += `<div class="hmc-dots">${dots}</div>`;
+      } else {
+        const nextId = _nextUpcoming.f.id;
+        const _nbc=BROADCASTERS[nextId];
+        nextHtml += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">${lbl}${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
+        const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
+        const nextPicks = _picksViewMode==='grouped' ? groupedPicksFor(_nextUpcoming,nextId) : namedPicksHtml(nextId,nuMode(_nextUpcoming));
+        const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
+        nextHtml += timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
       }
     }
     if(!nextHtml) nextHtml = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -3857,19 +3816,6 @@ function hmcLastGoToSlide(idx){
     const n=_lastResultsAll.length, totalN=n+2, vIdx=idx+1;
     track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
     track.style.transform = `translateX(-${vIdx*(100/totalN)}%)`;
-    _hmcSyncDots(track, idx);
-  }
-}
-function hmcLiveGoToSlide(idx){
-  const fixtures = allFixtures();
-  const liveGames = fixtures.filter(isLiveGame);
-  if(idx<0||idx>=liveGames.length) return;
-  _liveGamesIdx = idx;
-  const track = document.getElementById('hmc-live-track');
-  if(track){
-    const n = liveGames.length;
-    track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
-    track.style.transform = `translateX(-${idx*(100/n)}%)`;
     _hmcSyncDots(track, idx);
   }
 }
@@ -5668,9 +5614,8 @@ const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const HOME_CARD_DEFS = [
   {key:'pwa-tip',   id:'pwa-tip-card',        label:'Install Tip Card',   toggleId:null,                         flag:null},
   {key:'hero',      id:'group-hero-block',    label:'Group Hero',         toggleId:'home-show-hero-toggle',      flag:'home_show_hero'},
-  {key:'live',      id:'home-live-card',      label:'Live Now',           toggleId:'home-show-live-toggle',      flag:'home_show_live'},
   {key:'results',   id:'home-results-card',   label:'Previous Results',   toggleId:'home-show-results-toggle',   flag:'home_show_results'},
-  {key:'next',      id:'home-next-card',       label:'Next Up',            toggleId:'home-show-next-toggle',      flag:'home_show_next'},
+  {key:'next',      id:'home-next-card',       label:"Today's Fixtures",   toggleId:'home-show-next-toggle',      flag:'home_show_next'},
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
@@ -5793,6 +5738,15 @@ function isHomeCardVisible(def){
   if(!def.flag) return true;
   return def.defaultOff ? currentGroup?.[def.flag] === true : currentGroup?.[def.flag] !== false;
 }
+// A player can personally hide any card the admin has switched on (via
+// Reorder Home Cards) — this only ever narrows what isHomeCardVisible()
+// already allows, never widens it.
+function isHomeCardHiddenByPlayer(key){
+  const hidden = currentPlayer?.home_cards_hidden;
+  if(!hidden) return false;
+  const arr = typeof hidden==='string' ? hidden.split(',') : hidden;
+  return arr.includes(key);
+}
 function applyHomeCardOrder(){
   const homeView = document.getElementById('view-home');
   if(!homeView || !currentGroup) return;
@@ -5851,7 +5805,8 @@ function renderPlayerCardsSortable(){
     return def && isHomeCardVisible(def);
   }).map(key=>{
     const def = HOME_CARD_DEFS.find(c=>c.key===key);
-    return `<div class="home-card-sort-row" data-key="${key}"><span class="sort-handle" title="Drag to reorder">⠿</span><span class="sort-label">${def.label}</span></div>`;
+    const shown = !isHomeCardHiddenByPlayer(key);
+    return `<div class="home-card-sort-row" data-key="${key}"><span class="sort-handle" title="Drag to reorder">⠿</span><span class="sort-label">${def.label}</span><label class="toggle-switch" title="Show/hide just for you"><input type="checkbox" class="player-card-hide-tog" data-key="${key}"${shown?' checked':''}><span class="toggle-slider"></span></label></div>`;
   }).join('');
 }
 function showReorderHomeCardsModal(){
@@ -5862,11 +5817,11 @@ function showReorderHomeCardsModal(){
       <div class="pred-modal-title" style="font-size:1.1rem;">🏠 Reorder Home Cards</div>
       <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
     </div>
-    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Drag to set your own home page order — just for you, synced to any device you log into. Only shows cards currently switched on for your group.</div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Drag to reorder and use the switch to show/hide each one — just for you, synced to any device you log into. Only lists cards currently switched on for your group.</div>
     <div id="player-cards-sortable"></div>
     <div style="display:flex;gap:.6rem;margin-top:1.1rem;">
       <button class="home-cta-btn" style="flex:1;" onclick="resetPlayerHomeCardOrder()">Reset to Default</button>
-      <button class="btn" style="flex:1;" onclick="savePlayerHomeCardOrder()">Save Order</button>
+      <button class="btn" style="flex:1;" onclick="savePlayerHomeCardOrder()">Save</button>
     </div>
   </div>`;
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
@@ -5879,27 +5834,31 @@ async function savePlayerHomeCardOrder(){
   const container = document.getElementById('player-cards-sortable');
   if(!container) return;
   const order = [...container.querySelectorAll('.home-card-sort-row')].map(r=>r.dataset.key).join(',');
+  const hidden = [...container.querySelectorAll('.player-card-hide-tog')].filter(cb=>!cb.checked).map(cb=>cb.dataset.key).join(',');
   currentPlayer.home_card_order = order;
+  currentPlayer.home_cards_hidden = hidden||null;
   saveSession();
-  applyHomeCardOrder();
   document.querySelector('.modal-overlay')?.remove();
-  flash('Home card order saved!', 'success');
+  flash('Home cards saved!', 'success');
+  loadHome();
   try{
-    await sb('players?id=eq.'+currentPlayer.id, {method:'PATCH', prefer:'return=minimal', body:{home_card_order:order}});
-  }catch(e){ flash('Error saving order: '+e.message, 'error'); }
+    await sb('players?id=eq.'+currentPlayer.id, {method:'PATCH', prefer:'return=minimal', body:{home_card_order:order, home_cards_hidden:hidden||null}});
+  }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 async function resetPlayerHomeCardOrder(){
   if(!currentPlayer) return;
   currentPlayer.home_card_order = null;
+  currentPlayer.home_cards_hidden = null;
   saveSession();
-  applyHomeCardOrder();
   renderPlayerCardsSortable();
-  flash('Reset to default order', 'success');
+  flash('Reset to default', 'success');
+  loadHome();
   try{
-    await sb('players?id=eq.'+currentPlayer.id, {method:'PATCH', prefer:'return=minimal', body:{home_card_order:null}});
+    await sb('players?id=eq.'+currentPlayer.id, {method:'PATCH', prefer:'return=minimal', body:{home_card_order:null, home_cards_hidden:null}});
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.53',date:'5 Jul 2026',notes:['Merged Live Now into Today\'s Fixtures (renamed from Next Up) — the live game now shows inline with an obvious "Live" indicator instead of getting pulled into its own card. Finished games show a clear "✓ Game Finished" badge. Once every one of today\'s games is finished, the whole day moves over to Previous Results automatically — which now always shows the most recently fully-completed day rather than being locked to literally "yesterday", so it slides forward correctly across rest days too.', 'Reorder Home Cards now also has a per-card show/hide switch, not just drag-to-reorder — a player can hide any card the admin has switched on, just for themselves. The list only ever offers cards the admin allows.', 'Fixed: Previous Results could show up empty — the admin on/off toggle loop ran after the card had already correctly hidden itself for having no data, and unconditionally forced it back on.', 'Live Now card and its home_show_live toggle are removed/unused now — safe to leave that column in place or drop it. Requires a new Supabase column for the per-player show/hide switch: ALTER TABLE players ADD COLUMN home_cards_hidden text DEFAULT NULL;']},
   {v:'1.78.52',date:'5 Jul 2026',notes:['Removed the "(you)" text tag from the Standings home card — your row is already highlighted, the label was redundant.']},
   {v:'1.78.51',date:'5 Jul 2026',notes:['Fixed: Admin → Display → Home Page Cards was showing (and could silently overwrite) the group\'s default order with whatever personal order the logged-in admin had set for themselves via Reorder Home Cards. Admin settings now always show/edit the true group default; players who haven\'t personally reordered still fall back to it exactly as before.']},
   {v:'1.78.50',date:'5 Jul 2026',notes:['Standings home card: replaced the 🥇🥈🥉 medal emojis with plain rank numbers, matching every other position.', 'Toned down the "you" row highlight on the main Leaderboard — a subtle tinted border instead of a bright glowing accent ring.']},
@@ -7338,7 +7297,7 @@ async function loadHome(){
     const [allPreds, allResults, allPlayers, homeTiebreaks] = await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
-      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen,home_card_order`, ['home_card_order']),
+      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen,home_card_order,home_cards_hidden`, ['home_card_order','home_cards_hidden']),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
     // Tournament-wide top scorers (populated by sync.js from football-data.org).
@@ -7348,10 +7307,10 @@ async function loadHome(){
     const _homeNowMs = Date.now();
     _lbOnline = {};
     (allPlayers||[]).forEach(p=>{ _lbOnline[p.id] = !!(p.last_seen && (_homeNowMs - new Date(p.last_seen).getTime() < 120000)); });
-    // Keep our own custom home card order fresh (picks up changes made on another device)
+    // Keep our own custom home card order/hidden-cards fresh (picks up changes made on another device)
     if(currentPlayer){
       const me = (allPlayers||[]).find(p=>p.id===currentPlayer.id);
-      if(me) currentPlayer.home_card_order = me.home_card_order||null;
+      if(me){ currentPlayer.home_card_order = me.home_card_order||null; currentPlayer.home_cards_hidden = me.home_cards_hidden||null; }
     }
     _lbTiebreaks={}; (homeTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
     if(currentPlayer && _lbTiebreaks[currentPlayer.id]?.top_scorer) _tiebreakDone = true;
@@ -7578,16 +7537,57 @@ async function loadHome(){
       });
     });
 
-    // Yesterday's completed matches in US Eastern time (up to 6), fallback to 6 most recent
-    const _etYdKey = new Date(Date.now()-86400000).toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-    const _completedKOs = allFixtures()
-      .filter(f=>rm[f.id]&&rm[f.id].home_score!==null&&rm[f.id].home_score!==undefined)
-      .map(f=>({f,ko:getMatchKickoff(f)}))
-      .filter(({ko})=>ko);
-    let _ydKOs = _completedKOs.filter(({ko})=>ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'})===_etYdKey).sort((a,b)=>a.ko-b.ko);
-    if(!_ydKOs.length) _ydKOs = _completedKOs.sort((a,b)=>b.ko-a.ko).slice(0,6);
-    _lastResultsAll = _ydKOs.slice(0,6)
-      .map(({f})=>{
+    // ── Today's Fixtures / Previous Results: date-bucketed match state ──
+    // Today's Fixtures shows the next "active" day of fixtures — the earliest
+    // date (today or later) that isn't fully resolved yet — with each game in
+    // whatever state it's actually in (countdown / live / finished). Live
+    // games used to be pulled out into their own separate card; now they just
+    // show inline here with a live indicator. Once every game on the active
+    // day is finished, the whole day moves over to Previous Results, which
+    // always shows the most recently *fully* completed day (usually
+    // yesterday, but this naturally slides forward across rest days too).
+    const _byDateKO = {};
+    allFixtures().forEach(f=>{ const d=_koDateET(f); if(d) (_byDateKO[d]=_byDateKO[d]||[]).push(f); });
+    const _dateKeysAll = Object.keys(_byDateKO).sort();
+    const _dateFullyDone = d => _byDateKO[d].every(f=>{ const r=rm[f.id]; return r&&r.home_score!=null&&!isLiveGame(f); });
+    const _futureOrTodayKeys = _dateKeysAll.filter(d=>d>=todayUS);
+    const _activeDateKey = _futureOrTodayKeys.find(d=>!_dateFullyDone(d)) ?? (_futureOrTodayKeys[0] ?? null);
+
+    _nextUpcomingAll = _activeDateKey
+      ? _byDateKO[_activeDateKey].map(f=>{
+          const r=rm[f.id];
+          const live=isLiveGame(f);
+          const finished=!!(r&&r.home_score!=null)&&!live;
+          return {f, ko:getMatchKickoff(f), finished, live};
+        }).sort((a,b)=>a.ko-b.ko).slice(0,6)
+      : [];
+    _nextUpcoming = _nextUpcomingAll[0]||null;
+    if(_nextUpcoming){
+      if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
+      _nextGamePredHtmlAll = _nextUpcomingAll.map(({f,finished})=>{
+        const pred=myPredMap[f.id];
+        const missingHtml=_liveMissingMap[f.id]||'';
+        if(finished){
+          if(!pred) return missingHtml;
+          const r=rm[f.id];
+          const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
+          const ptsNum=pts===8?8:pts===5?5:pts===3?3:0;
+          const ptsDisplay=ptsNum===0?'0':ptsNum===8?'+8 ⭐':'+'+ptsNum;
+          const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'#f59e0b':'#22c55e';
+          return `<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received <span style="color:${ptsColor};font-weight:700;">${ptsDisplay}</span></div>`;
+        }
+        return (pred?`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div>`:'')+missingHtml;
+      });
+      _nextGameStaticHtml='';
+      _nextGamePredHtml = _nextGamePredHtmlAll[0]||'';
+    } else { _nextUpcomingAll=[]; _nextGamePredHtmlAll=[]; _nextGameStaticHtml=''; _nextGamePredHtml=''; }
+
+    // Previous Results = most recently fully-completed date, strictly before the active one.
+    const _completedCutoff = _activeDateKey ?? (todayUS+'~');
+    const _lastCompletedDateKey = _dateKeysAll.filter(d=>d<_completedCutoff&&_dateFullyDone(d)).sort().pop() || null;
+    _lastResultsAll = (_lastCompletedDateKey ? _byDateKO[_lastCompletedDateKey] : [])
+      .slice().sort((a,b)=>getMatchKickoff(a)-getMatchKickoff(b)).slice(0,6)
+      .map(f=>{
         const r=rm[f.id], pred=myPredMap[f.id];
         let predHtml='';
         if(pred){
@@ -7616,47 +7616,6 @@ async function loadHome(){
       _lastResultPicksGrouped=lr.picksGrouped; _lastResultMatchId=lr.matchId; _lastMatchStatsHtml=lr.statsHtml;
     } else { _lastResultHtml=''; _lastResultF=null; _lastResultPredHtml=''; _lastResultPicksGrouped=''; _lastResultMatchId=null; _lastMatchStatsHtml=''; }
 
-    // Next upcoming matches
-    const _nextSorted = allFixtures()
-      .filter(f=>!rm[f.id])
-      .map(f=>({f,ko:getMatchKickoff(f)}))
-      .filter(({ko})=>ko&&ko>now)
-      .sort((a,b)=>a.ko-b.ko);
-    // Today's already-finished games — stay in Next Up until ET midnight, showing "Finished"
-    // Exclude games still within the live window (and not yet marked Full Time) so they
-    // don't appear in both Live Now and Next Up.
-    const _etNowKey = new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-    const _todayDone = allFixtures()
-      .filter(f=>rm[f.id]&&rm[f.id].home_score!=null)
-      .map(f=>({f,ko:getMatchKickoff(f),finished:true}))
-      .filter(({ko})=>ko&&ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'})===_etNowKey)
-      .filter(({f})=>!isLiveGame(f))
-      .sort((a,b)=>a.ko-b.ko);
-    _nextUpcoming = _nextSorted[0]||_todayDone[0]||null;
-    if(_nextUpcoming){
-      const _etTodayKey = _etNowKey;
-      let _todayKOs = _nextSorted.filter(({ko})=>ko.toLocaleDateString('en-CA',{timeZone:'America/New_York'})===_etTodayKey);
-      if(!_todayKOs.length) _todayKOs = _nextSorted.slice(0,6);
-      _nextUpcomingAll = [..._todayDone, ..._todayKOs].slice(0,6);
-      if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
-      _nextGamePredHtmlAll = _nextUpcomingAll.map(({f,finished})=>{
-        const pred=myPredMap[f.id];
-        const missingHtml=_liveMissingMap[f.id]||'';
-        if(finished){
-          if(!pred) return missingHtml;
-          const r=rm[f.id];
-          const pts=calcPoints(pred.h,pred.a,r.home_score,r.away_score);
-          const ptsNum=pts===8?8:pts===5?5:pts===3?3:0;
-          const ptsDisplay=ptsNum===0?'0':ptsNum===8?'+8 ⭐':'+'+ptsNum;
-          const ptsColor=ptsNum===0?'var(--text-muted)':ptsNum===3?'#f59e0b':'#22c55e';
-          return `<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div><div class="hmc-meta">Points received <span style="color:${ptsColor};font-weight:700;">${ptsDisplay}</span></div>`;
-        }
-        return (pred?`<div class="hmc-pred">You predicted ${pred.h}–${pred.a}</div>`:'')+missingHtml;
-      });
-      _nextGameStaticHtml='';
-      _nextGamePredHtml = _nextGamePredHtmlAll[0]||'';
-    } else { _nextUpcomingAll=[]; _nextGamePredHtmlAll=[]; _nextGameStaticHtml=''; _nextGamePredHtml=''; }
-
     // Predict button
     const predictBtn=document.getElementById('home-predict-btn');
     if(predictBtn){
@@ -7668,7 +7627,7 @@ async function loadHome(){
     // Paid places vote section
     const ppPollEnabled = currentGroup.paidplaces_poll_enabled !== false;
     const ppHomeCard = document.getElementById('home-paidplaces-card');
-    if(ppHomeCard) ppHomeCard.style.display = ppPollEnabled ? 'block' : 'none';
+    if(ppHomeCard) ppHomeCard.style.display = (ppPollEnabled && !isHomeCardHiddenByPlayer('paidplaces')) ? 'block' : 'none';
     if(ppPollEnabled){
       const ppHomeEl = document.getElementById('home-paidplaces');
       const ppQEl = document.getElementById('home-paidplaces-question');
@@ -7680,7 +7639,7 @@ async function loadHome(){
     // Forfeit vote section
     const forfeitPollEnabled = currentGroup.forfeit_poll_enabled !== false;
     const forfeitCard = document.getElementById('home-forfeit-card');
-    if(forfeitCard) forfeitCard.style.display = forfeitPollEnabled ? 'block' : 'none';
+    if(forfeitCard) forfeitCard.style.display = (forfeitPollEnabled && !isHomeCardHiddenByPlayer('forfeit')) ? 'block' : 'none';
     const forfeitLocked = currentGroup.votes_locked === true;
     if(forfeitEl && forfeitPollEnabled){
       if(currentGroup.forfeit_poll_ended){
@@ -8019,12 +7978,15 @@ async function loadHome(){
   }
   applyHomeCardOrder();
   startCountdown();
-  // Apply home card visibility toggles (after startCountdown so we can override countdown display)
+  // Apply home card visibility toggles (after startCountdown so we can override countdown display).
+  // Skips cards with their own dedicated visibility logic elsewhere (each of
+  // which already folds in isHomeCardHiddenByPlayer() itself): pwa-tip,
+  // forfeit/paidplaces (poll-enabled), results (data-availability).
   HOME_CARD_DEFS.forEach(def=>{
-    if(!def.flag) return;
+    if(!def.flag || def.key==='results') return;
     const el = document.getElementById(def.id);
     if(!el) return;
-    const show = isHomeCardVisible(def);
+    const show = isHomeCardVisible(def) && !isHomeCardHiddenByPlayer(def.key);
     if(!show) el.style.display = 'none';
     else if(def.key !== 'countdown') el.style.display = '';
     // countdown display left to startCountdown() when shown
@@ -10573,7 +10535,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_card_order`, ['score_master','accent','background_id','card_opacity','home_card_order']),
+      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_card_order,home_cards_hidden`, ['score_master','accent','background_id','card_opacity','home_card_order','home_cards_hidden']),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -10582,7 +10544,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,home_card_order:p.home_card_order||null};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,home_card_order:p.home_card_order||null,home_cards_hidden:p.home_cards_hidden||null};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -10598,6 +10560,7 @@ async function loadPlayersPanel(){
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${p.background_id ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🖼️ Background: <strong style="color:var(--text);">${BACKGROUNDS.find(b=>b.id===p.background_id)?.label||p.background_id}</strong></div>` : ''}
           ${p.home_card_order ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🏠 Custom order: <strong style="color:var(--text);">${p.home_card_order.split(',').map(k=>HOME_CARD_DEFS.find(c=>c.key===k)?.label||k).join(' → ')}</strong></div>` : ''}
+          ${p.home_cards_hidden ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🙈 Personally hidden: <strong style="color:var(--text);">${p.home_cards_hidden.split(',').map(k=>HOME_CARD_DEFS.find(c=>c.key===k)?.label||k).join(', ')}</strong></div>` : ''}
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
         <div style="flex-shrink:0;position:relative;">
@@ -12600,10 +12563,6 @@ async function godCreateGroup(){
       items=_lastResultsAll; getIdx=()=>_lastResultIdx; setIdx=v=>{_lastResultIdx=v;}; isClone=true;
     } else if(track.id==='hmc-carousel-track'&&_nextUpcomingAll.length>1){
       items=_nextUpcomingAll; getIdx=()=>_nextUpcomingIdx; setIdx=v=>{_nextUpcomingIdx=v;}; isClone=true;
-    } else if(track.id==='hmc-live-track'){
-      const _liveNow=(()=>{const fx=allFixtures(),n=Date.now(),W=130*60*1000;return fx.filter(f=>{const ko=getMatchKickoff(f);return ko&&n>=ko.getTime()&&n<ko.getTime()+W;});})();
-      if(_liveNow.length>1){ items=_liveNow; getIdx=()=>_liveGamesIdx; setIdx=v=>{_liveGamesIdx=v;}; }
-      else return;
     } else return;
     e.stopPropagation();
     const t=e.touches[0];
@@ -12782,7 +12741,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.52</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.53</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
