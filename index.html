@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.53</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.54</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1586,7 +1586,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         </div>
       </div>
 
-      <!-- Previous Results -->
+      <!-- Previous Fixtures -->
       <div class="home-card" id="home-results-card" onclick="togglePicksView()" style="cursor:pointer;display:none;">
         <div id="hmc-results-body"></div>
       </div>
@@ -3738,7 +3738,7 @@ function renderMatchCardBody(){
     let resultsHtml = '';
     if(_lastResultsAll.length){
       const lrn = _lastResultsAll.length;
-      const lrLabel = lrn > 1 ? "Previous Results" : "Previous Result";
+      const lrLabel = lrn > 1 ? "Previous Fixtures" : "Previous Fixture";
       if(lrn > 1){
         const lrTN = lrn+2;
         const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`; };
@@ -5614,7 +5614,7 @@ const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const HOME_CARD_DEFS = [
   {key:'pwa-tip',   id:'pwa-tip-card',        label:'Install Tip Card',   toggleId:null,                         flag:null},
   {key:'hero',      id:'group-hero-block',    label:'Group Hero',         toggleId:'home-show-hero-toggle',      flag:'home_show_hero'},
-  {key:'results',   id:'home-results-card',   label:'Previous Results',   toggleId:'home-show-results-toggle',   flag:'home_show_results'},
+  {key:'results',   id:'home-results-card',   label:'Previous Fixtures',   toggleId:'home-show-results-toggle',   flag:'home_show_results'},
   {key:'next',      id:'home-next-card',       label:"Today's Fixtures",   toggleId:'home-show-next-toggle',      flag:'home_show_next'},
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
@@ -5858,6 +5858,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.54',date:'5 Jul 2026',notes:['Renamed "Previous Results" to "Previous Fixtures", matching Today\'s Fixtures.']},
   {v:'1.78.53',date:'5 Jul 2026',notes:['Merged Live Now into Today\'s Fixtures (renamed from Next Up) — the live game now shows inline with an obvious "Live" indicator instead of getting pulled into its own card. Finished games show a clear "✓ Game Finished" badge. Once every one of today\'s games is finished, the whole day moves over to Previous Results automatically — which now always shows the most recently fully-completed day rather than being locked to literally "yesterday", so it slides forward correctly across rest days too.', 'Reorder Home Cards now also has a per-card show/hide switch, not just drag-to-reorder — a player can hide any card the admin has switched on, just for themselves. The list only ever offers cards the admin allows.', 'Fixed: Previous Results could show up empty — the admin on/off toggle loop ran after the card had already correctly hidden itself for having no data, and unconditionally forced it back on.', 'Live Now card and its home_show_live toggle are removed/unused now — safe to leave that column in place or drop it. Requires a new Supabase column for the per-player show/hide switch: ALTER TABLE players ADD COLUMN home_cards_hidden text DEFAULT NULL;']},
   {v:'1.78.52',date:'5 Jul 2026',notes:['Removed the "(you)" text tag from the Standings home card — your row is already highlighted, the label was redundant.']},
   {v:'1.78.51',date:'5 Jul 2026',notes:['Fixed: Admin → Display → Home Page Cards was showing (and could silently overwrite) the group\'s default order with whatever personal order the logged-in admin had set for themselves via Reorder Home Cards. Admin settings now always show/edit the true group default; players who haven\'t personally reordered still fall back to it exactly as before.']},
@@ -12741,7 +12742,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.53</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.54</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
