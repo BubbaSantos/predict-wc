@@ -1360,7 +1360,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.64</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.65</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2942,6 +2942,7 @@ let _nextGamePredHtml = '';
 let _nextUpcoming = null;
 let _nextUpcomingAll = [];
 let _nextUpcomingIdx = 0;
+let _nextUpcomingIdxInit = false; // true once the carousel has picked its opening slide for this session
 let _nextGamePredHtmlAll = [];
 let _lastResultsAll = [];
 let _lastResultIdx = 0;
@@ -3788,7 +3789,7 @@ function renderMatchCardBody(){
       // stays roughly the same height whether a match is upcoming, live, or
       // finished — nothing above/below has to jump when the state changes.
       const finishedHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Match status</div><div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="color:var(--green);font-size:1.7rem;">✓ FT</div><div class="hmc-cd-lbl">full time</div></div></div>`;
-      const liveHdr=`<div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="font-size:1.15rem;color:#ef4444;animation:pulse 1.5s infinite;">● LIVE</div></div></div>`;
+      const liveHdr=`<div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="font-size:.85rem;color:#ef4444;animation:pulse 1.5s infinite;">● LIVE</div></div></div>`;
       const nuItemHtml=(item,nid)=>{
         if(item.finished){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'';return{timer:finishedHdr,sc,cls:''};}
         if(item.live){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'0–0';return{timer:liveHdr,sc,cls:'live'};}
@@ -5246,6 +5247,12 @@ function renderAdminCard(f,res){
   const h=res?res.home:'', a=res?res.away:'';
   const grpLabel=f.isKnockout?(f.group||'KO'):`Grp ${f.group}`;
   const hasScore = h!==null&&h!==undefined&&h!=='';
+  // Once kickoff has passed with no score entered yet, hint "0" in both boxes
+  // (most games start scoreless) instead of a bare dash — just a placeholder,
+  // not a saved value, so it's replaced the moment the admin types a real one.
+  const ko = getMatchKickoff(f);
+  const kickedOff = !hasScore && ko && ko.getTime() <= Date.now();
+  const scorePh = kickedOff ? '0' : '–';
   const ftOn = !!(res && res.fullTime);
   const isDraw = hasScore && +h===+a;
   const koW = res?.ko_winner||null, koM = res?.ko_method||null;
@@ -5262,9 +5269,9 @@ function renderAdminCard(f,res){
     <div class="team"><span class="team-flag">${f.hf}</span><span class="team-name">${f.home}</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
       <div style="display:flex;align-items:center;gap:.4rem;">
-        <input class="actual-input" type="number" min="0" max="99" id="rh-${f.id}" value="${h!==null&&h!==undefined?h:''}" placeholder="–" inputmode="numeric" oninput="adminScoreInput(this,'ra-${f.id}')" />
+        <input class="actual-input" type="number" min="0" max="99" id="rh-${f.id}" value="${h!==null&&h!==undefined?h:''}" placeholder="${scorePh}" inputmode="numeric" oninput="adminScoreInput(this,'ra-${f.id}')" />
         <span class="score-sep">–</span>
-        <input class="actual-input" type="number" min="0" max="99" id="ra-${f.id}" value="${a!==null&&a!==undefined?a:''}" placeholder="–" inputmode="numeric" oninput="adminScoreInput(this,null)" />
+        <input class="actual-input" type="number" min="0" max="99" id="ra-${f.id}" value="${a!==null&&a!==undefined?a:''}" placeholder="${scorePh}" inputmode="numeric" oninput="adminScoreInput(this,null)" />
       </div>
       ${hasScore? `<span class="result-badge">${h}–${a}${koW?` (${koMethodLabel(koM)})`:''}</span>`:''}
       ${winLabel}
@@ -5906,6 +5913,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.65',date:'5 Jul 2026',notes:['Today\'s Fixtures carousel now opens on the live game (if there is one) on a fresh load/restart, instead of whichever fixture happens to sort first — later refreshes leave your position alone once you\'ve navigated.','Shrunk the "Live" indicator text a bit more.','Admin → Results: once a match has kicked off with no score entered yet, both boxes hint "0" instead of a bare dash (most games start scoreless) — it\'s just a placeholder, replaced the moment you type the real score.']},
   {v:'1.78.64',date:'5 Jul 2026',notes:['Today\'s Fixtures: the countdown/live/finished header now reserves a fixed-height band above the team flags and names, so they always sit the same distance from the top of the card no matter which state is showing — previously the shorter Live/Full Time badges let the flags creep up higher than the countdown did.']},
   {v:'1.78.63',date:'5 Jul 2026',notes:['Fixed the small hitboxes for "tap to view grouped/by name" and "show form & table" — each match card is now split into two big tap zones instead of relying on a thin line of text: anywhere above the player picks switches grouped/by-name view, anywhere below opens form & table.']},
   {v:'1.78.62',date:'5 Jul 2026',notes:['Made the "Live" indicator smaller and dropped the "Match status"/"in progress" labels around it — just a small pulsing ● LIVE now.','"Show form & table" now starts collapsed by default on every match card instead of expanded — tap to opt in per card.']},
@@ -7623,6 +7631,15 @@ async function loadHome(){
     _nextUpcoming = _nextUpcomingAll[0]||null;
     if(_nextUpcoming){
       if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
+      // On the first time we have data this session, open on the live game
+      // (if any) instead of whichever fixture happens to sort first — after
+      // that, leave the index alone so later refreshes don't yank the
+      // carousel out from under someone mid-swipe.
+      if(!_nextUpcomingIdxInit){
+        const liveIdx = _nextUpcomingAll.findIndex(x=>x.live);
+        if(liveIdx>=0) _nextUpcomingIdx = liveIdx;
+        _nextUpcomingIdxInit = true;
+      }
       _nextGamePredHtmlAll = _nextUpcomingAll.map(({f,finished})=>{
         const pred=myPredMap[f.id];
         const missingHtml=_liveMissingMap[f.id]||'';
@@ -12817,7 +12834,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.64</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.65</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
