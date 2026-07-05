@@ -389,7 +389,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .badge-tile.tier-lvl1 .badge-progress-fill{background:#cd7f32;}
 .badge-tile.tier-lvl2 .badge-progress-fill{background:#9ca3af;}
 .badge-tile.tier-lvl3 .badge-progress-fill{background:#eab308;}
-.badge-caption{font-size:.68rem;color:var(--text-muted);font-weight:500;margin-top:.6rem;line-height:1.4;min-height:1.2em;}
+.badge-caption{font-size:.68rem;color:var(--text-muted);font-weight:500;margin-top:.6rem;line-height:1.4;min-height:1.2em;text-align:center;}
 .badge-caption strong{color:var(--text);}
 .badge-compare-hint{display:inline-flex;align-items:center;gap:.3rem;margin-top:.5rem;font-size:.68rem;font-weight:700;color:var(--group-accent);background:color-mix(in srgb,var(--group-accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--group-accent) 30%,transparent);border-radius:20px;padding:.3rem .7rem;}
 .share-card-preview-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
@@ -1344,7 +1344,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.38</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.39</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1621,8 +1621,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button class="home-cta-btn" style="margin-top:.75rem;width:100%;" onclick="showMyStats()">Open Full Stats Page</button>
       </div>
       <div class="home-card" id="home-achievements-card" style="display:none;">
-        <div class="home-card-title" style="position:relative;display:inline-block;">🏅 Achievements<span class="new-sticker">New</span></div>
-        <div id="home-achievements-content" class="home-card-scroll"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+        <div class="home-card-title" style="position:relative;display:inline-block;padding-right:1.6rem;">🏅 Achievements<span class="new-sticker" style="right:-1.3rem;">New</span></div>
+        <div id="home-achievements-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
     </div>
 
@@ -5731,6 +5731,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.39',date:'5 Jul 2026',notes:['Achievements home card: removed its own internal scroll (was fighting with scrolling the home page itself — badge grids are short enough not to need one). Nudged the "New" sticker further right so it no longer covers the card title. Centred the badge explainer text and the "compare with the group" hint under the grid.']},
   {v:'1.78.38',date:'5 Jul 2026',notes:['New 🏅 Achievements home card (Admin → Display → Home Page Cards, off by default) — badges now get their own card instead of being buried inside Personal Stats, with a "New" sticker to flag it. Made the tap-once/tap-again interaction clearer: the default hint now explains both steps, and after a first tap the "compare with the group" hint is a visible pill instead of faint text.', 'Requires a new Supabase column: ALTER TABLE groups ADD COLUMN home_show_achievements boolean DEFAULT false;']},
   {v:'1.78.37',date:'5 Jul 2026',notes:['New achievement: Contrarian 🎭 — levels up each time you went against the group\'s clear consensus pick and were right. Lvl 1 at 3, Lvl 2 at 6, Lvl 3 at 10.']},
   {v:'1.78.36',date:'5 Jul 2026',notes:['Badge group leaderboard now opens instantly with a loading state instead of the tap appearing to hang — recomputing every player\'s stats to rank them is deferred a frame so it happens after the modal paints, not before.']},
@@ -12623,7 +12624,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.38</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.39</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
