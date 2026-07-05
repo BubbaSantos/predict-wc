@@ -363,17 +363,27 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .compare-cell.compare-win{color:var(--group-accent);font-weight:800;}
 .compare-cell-b.compare-win{color:var(--gold);}
 .compare-cell-label{font-size:.68rem;color:var(--text-muted);font-weight:600;text-align:center;white-space:nowrap;display:flex;align-items:center;gap:.3rem;justify-content:center;}
-.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.6rem,1fr));gap:.5rem;}
-.badge-tile{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.5rem .3rem;border-radius:8px;background:var(--surface);border:1px solid var(--border);opacity:.4;filter:grayscale(1);text-align:center;cursor:pointer;transition:transform .1s;}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(5.2rem,1fr));gap:.6rem;}
+.badge-tile{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.7rem .4rem .6rem;border-radius:10px;background:var(--surface);border:1px solid var(--border);text-align:center;cursor:pointer;transition:transform .1s,border-color .15s,background .15s;}
 .badge-tile:active{transform:scale(.94);}
-.badge-tile.earned{opacity:1;filter:none;border-color:color-mix(in srgb,var(--group-accent) 40%,transparent);background:color-mix(in srgb,var(--group-accent) 8%,var(--surface));}
-.badge-emoji{font-size:1.3rem;line-height:1;}
-.badge-name{font-size:.55rem;font-weight:700;color:var(--text-dim);line-height:1.2;}
+.badge-icon-wrap{position:relative;width:2.5rem;height:2.5rem;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:2px solid var(--border);transition:border-color .15s,background .15s,box-shadow .15s;}
+.badge-emoji{font-size:1.25rem;line-height:1;filter:grayscale(1);opacity:.45;transition:filter .15s,opacity .15s;}
+.badge-tile.earned .badge-icon-wrap{background:color-mix(in srgb,var(--group-accent) 14%,var(--surface));}
+.badge-tile.earned .badge-emoji{filter:none;opacity:1;}
+.badge-tile.tier-lvl1 .badge-icon-wrap{border-color:#cd7f32;}
+.badge-tile.tier-lvl2 .badge-icon-wrap{border-color:#9ca3af;}
+.badge-tile.tier-lvl3 .badge-icon-wrap{border-color:#eab308;box-shadow:0 0 10px rgba(234,179,8,.4);}
+.badge-tier-dot{position:absolute;bottom:-3px;right:-3px;width:1.1rem;height:1.1rem;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;border-radius:50%;background:var(--surface2);border:1.5px solid var(--surface);color:var(--text-muted);}
+.badge-tile.tier-lvl1 .badge-tier-dot{background:#cd7f32;color:#2a1a08;}
+.badge-tile.tier-lvl2 .badge-tier-dot{background:#9ca3af;color:#1f2328;}
+.badge-tile.tier-lvl3 .badge-tier-dot{background:#eab308;color:#2a2005;}
+.badge-name{font-size:.56rem;font-weight:700;color:var(--text-dim);line-height:1.2;}
 .badge-tile.earned .badge-name{color:var(--text);}
-.badge-tier{font-size:.5rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:.05rem .35rem;border-radius:3px;}
-.badge-tier-lvl1{color:#cd7f32;background:rgba(205,127,50,.15);}
-.badge-tier-lvl2{color:#9ca3af;background:rgba(156,163,175,.15);}
-.badge-tier-lvl3{color:#eab308;background:rgba(234,179,8,.15);}
+.badge-progress{width:100%;height:3px;border-radius:2px;background:var(--border);overflow:hidden;}
+.badge-progress-fill{height:100%;border-radius:2px;background:var(--group-accent);transition:width .3s ease;}
+.badge-tile.tier-lvl1 .badge-progress-fill{background:#cd7f32;}
+.badge-tile.tier-lvl2 .badge-progress-fill{background:#9ca3af;}
+.badge-tile.tier-lvl3 .badge-progress-fill{background:#eab308;}
 .badge-caption{font-size:.68rem;color:var(--text-muted);font-weight:500;margin-top:.6rem;line-height:1.4;min-height:1.2em;}
 .badge-caption strong{color:var(--text);}
 .share-card-preview-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
@@ -1328,7 +1338,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.30</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.31</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5653,13 +5663,11 @@ const PLAYER_STAT_DEFS = [
   {key:'goals_predicted', emoji:'⚽', label:'Total Goals Predicted'},
 ];
 // Milestone badges shown in the "Achievements" block on the player stats page.
-// Two shapes:
-//  - Tiered: `metric(core)` returns a number, compared against ascending `tiers`
-//    ({name,min}) to find the highest tier reached — reaching Bronze unlocks the
-//    badge, and it upgrades in place as the same stat climbs (see badgeTierInfo()).
-//  - One-shot: `test(core)` receives the object returned by computePlayerCore()
-//    and returns a boolean. Left un-tiered because there's no natural "more of
-//    this is better" scale (frozen_out) or scaling would reward mediocrity.
+// `metric(core)` returns a number, compared against ascending `tiers`
+// ({name,min}) to find the highest tier reached — reaching Lvl 1 unlocks the
+// badge, and it upgrades in place as the same stat climbs (see badgeTierInfo()).
+// A def can instead use `test(core)` returning a boolean for a one-shot badge
+// with no natural "more is better" scale — badgeTierInfo() handles both shapes.
 const PLAYER_BADGE_DEFS = [
   {key:'table_topper',  emoji:'🥇', name:'Table Topper',    desc:'Matchdays spent in 1st place',      metric:c=>c.daysTop,        tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:5},{name:'Lvl 3',min:10}]},
   {key:'podium_regular',emoji:'🥉', name:'Podium Regular',  desc:'Matchdays spent in the top 3',      metric:c=>c.daysPodium,     tiers:[{name:'Lvl 1',min:5},{name:'Lvl 2',min:10},{name:'Lvl 3',min:20}]},
@@ -5670,9 +5678,7 @@ const PLAYER_BADGE_DEFS = [
   {key:'sharpshooter',  emoji:'🎯', name:'Sharpshooter',    desc:'Correct scores nailed',              metric:c=>c.exact,          tiers:[{name:'Lvl 1',min:5},{name:'Lvl 2',min:10},{name:'Lvl 3',min:20}]},
   {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'Predictions made',                   metric:c=>c.predictionsMade,tiers:[{name:'Lvl 1',min:10},{name:'Lvl 2',min:20},{name:'Lvl 3',min:30}]},
   {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:'Correct scores nailed that nobody else got', metric:c=>c.soloExactGames.length, tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
-  {key:'climber',       emoji:'📈', name:'Climber',         desc:'Trending up over your last games',       test:c=>c.netMove!=null && c.netMove>=3},
-  {key:'frozen_out',    emoji:'💩', name:'Frozen Out',      desc:'3+ wrong predictions in a row',          test:c=>c.longestCold>=3},
-  {key:'high_roller',   emoji:'🎲', name:'High Roller',     desc:'Predicted 50+ goals',                    test:c=>c.goalsPredicted>=50},
+  {key:'half_baked',    emoji:'🍞', name:'Half Baked',      desc:'Nailed one side\'s score without the full scoreline', metric:c=>c.halfExact, tiers:[{name:'Lvl 1',min:10},{name:'Lvl 2',min:20},{name:'Lvl 3',min:35}]},
 ];
 // Resolves a badge def against a player's core stats: which tier (if any) is
 // currently held, and what's needed for the next one.
@@ -5712,6 +5718,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.31',date:'5 Jul 2026',notes:['Achievements: removed Climber, Frozen Out and High Roller, added Half Baked (nailed one side\'s score without the full scoreline — Lvl 1 at 10, Lvl 2 at 20, Lvl 3 at 35). Redesigned the badge tiles: circular icon with a tier-coloured ring, a small level number badge, and a mini progress bar toward the next level.']},
   {v:'1.78.30',date:'5 Jul 2026',notes:['Achievements: Unicorn (solo correct scores — nailing a scoreline nobody else got) now levels up too: Lvl 1 at 1, Lvl 2 at 3, Lvl 3 at 5.']},
   {v:'1.78.29',date:'5 Jul 2026',notes:['Achievements: renamed tiers from Bronze/Silver/Gold to Lvl 1/2/3. Tapping a levelled badge now lists all 3 levels with their thresholds, striking through the ones you\'ve already hit.']},
   {v:'1.78.28',date:'5 Jul 2026',notes:['Achievements: 8 badges now level up in place (Bronze → Silver → Gold) instead of unlocking once — Table Topper, Podium Regular, Flawless, On Fire, Man of the Match, Century, Sharpshooter and Ever Present. Removed King of the Hill and MOTM Legend, folded into Table Topper and Man of the Match as their Gold tier. Badge tiles show the current tier; tapping one shows what\'s needed for the next.']},
@@ -7994,7 +8001,7 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
   // ── Per-game points + scoreline tallies ──
   const myPredMap={}; // match_id -> {h,a}
   gamePreds.filter(p=>p.player_id===pid).forEach(p=>{ myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
-  let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0;
+  let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0, halfExact=0;
   const exactGames=[], soloExactGames=[], scorelineCount={};
   fixtures.forEach(f=>{
     const p=myPredMap[f.id]; if(!p || p.h==null || p.a==null) return;
@@ -8012,6 +8019,8 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
       if(!others.length) soloExactGames.push(f);
     } else if(pts===3){ results3++; }
     else if(pts===0){ wrong++; }
+    // "Half Baked": nailed one side's score exactly without getting the full scoreline
+    if(pts<5 && (p.h===r.home_score || p.a===r.away_score)) halfExact++;
   });
 
   // ── Rank snapshots after each completed matchday (mirrors home stats) ──
@@ -8099,7 +8108,7 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
     hasRanks, currentPos, bestPos, worstPos, netMove, netLookback, recentBest, recentWorst,
     daysTop, daysPodium, daysBottom, favPos,
     perfectCount, hotCount, coldCount, longestPerfect, longestHot, longestCold, trailPerfect, trailHot, trailCold,
-    favScoreline, motmAwards, completed, matchPreds, myPredMap,
+    favScoreline, motmAwards, completed, matchPreds, myPredMap, halfExact,
   };
 }
 
@@ -8600,17 +8609,31 @@ function initCompareLineChart(scope, rows, chart){
   overlay.addEventListener('touchend', reset);
 }
 
+// Fraction of the way from the current tier to the next one (or 1 if maxed,
+// or progress toward Lvl 1 if not yet earned). Drives the tile's mini progress bar.
+function badgeProgressFrac(b, t){
+  if(!b.tiers) return t.earned ? 1 : 0;
+  const lo = t.tierIdx>=0 ? b.tiers[t.tierIdx].min : 0;
+  if(!t.next) return 1;
+  return Math.max(0, Math.min(1, (t.value-lo)/(t.next.min-lo)));
+}
 // ── Achievements grid (used on the player stats page) ──
 function buildBadgesBlock(core){
   const tierMap = new Map(PLAYER_BADGE_DEFS.map(b=>[b.key, badgeTierInfo(b,core)]));
   const earnedCount = [...tierMap.values()].filter(t=>t.earned).length;
   const tiles = PLAYER_BADGE_DEFS.map(b=>{
     const t = tierMap.get(b.key);
-    const tierChip = t.tierName ? `<div class="badge-tier badge-tier-lvl${t.tierIdx+1}">${t.tierName}</div>` : '';
-    return `<div class="badge-tile${t.earned?' earned':''}" data-key="${b.key}">
-      <div class="badge-emoji">${b.emoji}</div>
+    const tierClass = t.tierIdx>=0 ? ` tier-lvl${t.tierIdx+1}` : '';
+    const tierDot = t.tierName ? `<div class="badge-tier-dot">${t.tierIdx+1}</div>` : '';
+    const pct = Math.round(badgeProgressFrac(b,t)*100);
+    const progressBar = b.tiers ? `<div class="badge-progress"><div class="badge-progress-fill" style="width:${pct}%"></div></div>` : '';
+    return `<div class="badge-tile${t.earned?' earned':''}${tierClass}" data-key="${b.key}">
+      <div class="badge-icon-wrap">
+        <div class="badge-emoji">${b.emoji}</div>
+        ${tierDot}
+      </div>
       <div class="badge-name">${b.name}</div>
-      ${tierChip}
+      ${progressBar}
     </div>`;
   }).join('');
   const html = `<div class="pos-chart-wrap" data-chart-key="badges">
@@ -12495,7 +12518,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.30</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.31</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
