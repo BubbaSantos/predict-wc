@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.57</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.58</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5683,7 +5683,7 @@ const PLAYER_BADGE_DEFS = [
   {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:'Correct scores nailed that nobody else got', metric:c=>c.soloExactGames.length, tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
   {key:'half_baked',    emoji:'🍞', name:'Half Baked',      desc:'Nailed one side\'s score without the full scoreline', metric:c=>c.halfExact, tiers:[{name:'Lvl 1',min:20},{name:'Lvl 2',min:40},{name:'Lvl 3',min:70}]},
   {key:'no_cigar',      emoji:'🚬', name:'No Cigar',        desc:'One goal away from the exact score',                  metric:c=>c.oneGoalOff, tiers:[{name:'Lvl 1',min:25},{name:'Lvl 2',min:50},{name:'Lvl 3',min:75}]},
-  {key:'contrarian',    emoji:'🎭', name:'Contrarian',      desc:'Went against the group\'s consensus pick and were right', metric:c=>c.contrarianHits, tiers:[{name:'Lvl 1',min:3},{name:'Lvl 2',min:6},{name:'Lvl 3',min:10}]},
+  {key:'contrarian',    emoji:'🎭', name:'Contrarian',      desc:'Picked a different result (W/D/L) than the group\'s majority — and the real result proved you right', metric:c=>c.contrarianHits, tiers:[{name:'Lvl 1',min:3},{name:'Lvl 2',min:6},{name:'Lvl 3',min:10}]},
 ];
 // Resolves a badge def against a player's core stats: which tier (if any) is
 // currently held, and what's needed for the next one.
@@ -5858,6 +5858,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.58',date:'5 Jul 2026',notes:['Clearer Contrarian achievement description — now spells out that it\'s about picking a different result direction (W/D/L) than the group\'s majority and being right, not needing an exact score or being the only one correct.']},
   {v:'1.78.57',date:'5 Jul 2026',notes:['Fixed a typo in Tournament Stats: "Most Man of the Matchs" → "Most Man of the Matches" when there are joint leaders.']},
   {v:'1.78.56',date:'5 Jul 2026',notes:['Personal Stats home card no longer has its own internal scroll — now that it\'s just the charts, it sizes to fit them and lets the home page scroll normally instead.']},
   {v:'1.78.55',date:'5 Jul 2026',notes:['Personal Stats home card now shows just the charts — tap Open Full Stats Page for the rest (points, positions, streaks, etc). The full My Stats page is unaffected and still shows everything.']},
@@ -12746,7 +12747,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.57</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.58</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
