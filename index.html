@@ -1346,7 +1346,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.46</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.47</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2857,10 +2857,10 @@ const KO_BRACKET = {
   'm095':{home:'m086',away:'m088'}, // Argentina/Cape Verde v Australia/Egypt Jul 7 16:00
   'm096':{home:'m085',away:'m087'}, // Switzerland/Algeria v Colombia/Ghana   Jul 7 17:00
   // Quarter-Finals ← Round of 16 winners
-  'm097':{home:'m090',away:'m091'}, // Jul 9
-  'm098':{home:'m089',away:'m092'}, // Jul 10
-  'm099':{home:'m093',away:'m094'}, // Jul 11
-  'm100':{home:'m095',away:'m096'}, // Jul 11
+  'm097':{home:'m089',away:'m090'}, // Paraguay/France v Canada/Morocco       Jul 9
+  'm098':{home:'m093',away:'m094'}, // Portugal/Spain v USA/Belgium           Jul 10
+  'm099':{home:'m091',away:'m092'}, // Brazil/Norway v Mexico/England         Jul 11
+  'm100':{home:'m095',away:'m096'}, // M86/88 winner v Switzerland/M87 winner Jul 11
   // Semi-Finals ← QF winners
   'm101':{home:'m097',away:'m098'}, // Jul 14
   'm102':{home:'m099',away:'m100'}, // Jul 15
@@ -4780,11 +4780,11 @@ function allFixtures(){
         if(loser) return {name:w==='home'?sf.away:sf.home, flag:w==='home'?sf.af:sf.hf};
         return {name:w==='home'?sf.home:sf.away, flag:w==='home'?sf.hf:sf.af};
       }
-      // From SF onwards, keep TBD until the actual winner is known — chaining
-      // an "or" placeholder one level further (QF's placeholder built from an
-      // already-placeholder R16 team) would jumble four names together.
-      const SF_PLUS=new Set(['m101','m102','m103','m104']);
-      if(SF_PLUS.has(fid)) return null;
+      // Show a "Team A or Team B" placeholder for every round — but only when
+      // the feeding match's own teams are both already concrete (i.e. exactly
+      // two possible teams). If that feeding match is itself still an "or"
+      // placeholder (its name contains \n), there's more than two candidates
+      // this far out, so stay at plain TBD rather than jumbling names together.
       if(sf.home&&sf.home!=='TBD'&&!sf.home.includes('\n')&&sf.away&&sf.away!=='TBD'&&!sf.away.includes('\n'))
         return {name:`${sf.home}\n${sf.away}`,flag:''};
       return null;
@@ -5847,6 +5847,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.47',date:'5 Jul 2026',notes:['Fixed 3 wrong Quarter-Final pairings in the bracket (m097/m098/m099 were mapped to the wrong Round of 16 matches — cross-checked against the official schedule). Extended the "Team A or Team B" placeholder to every knockout round (Semi-Final, 3rd Place, Final too), not just QF — it now shows automatically wherever a feeding match\'s two teams are both known, and only ever shows two names (falls back to plain TBD rather than jumbling more than two teams together).']},
   {v:'1.78.46',date:'5 Jul 2026',notes:['Quarter-Final fixtures now show a "Team A or Team B" placeholder (same as Round of 16 already does) once both Round of 16 teams are known but that game hasn\'t been played yet, instead of a plain TBD. Semi-Final, 3rd Place and Final still show TBD until their teams are actually confirmed.']},
   {v:'1.78.45',date:'5 Jul 2026',notes:['Fixed: Forfeit Vote and Paid Places Vote cards still showed up in the Reorder Home Cards list even when their poll was switched off — they aren\'t part of the generic card-visibility system (each has its own poll on/off setting) so the reorder list wasn\'t checking them correctly.']},
   {v:'1.78.44',date:'5 Jul 2026',notes:['Small ⠿ reorder button in the corner of every home card jumps straight to the Reorder Home Cards popup — no need to go through the name menu first. The reorder list now only shows cards currently switched on for your group, instead of listing hidden ones too.']},
@@ -12753,7 +12754,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.46</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.47</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
