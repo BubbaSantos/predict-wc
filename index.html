@@ -164,8 +164,6 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .pwa-dot-active{background:var(--group-accent);}
 #update-banner{position:fixed;bottom:calc(1.2rem + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:9999;background:var(--group-accent);color:#fff;display:none;align-items:center;gap:.5rem;padding:.45rem .6rem .45rem .9rem;border-radius:99px;box-shadow:0 4px 20px rgba(0,0,0,.45);font-size:.78rem;font-weight:600;white-space:nowrap;}
 #update-banner button{background:rgba(255,255,255,.22);border:none;color:#fff;font-weight:700;font-size:.75rem;padding:.25rem .65rem;border-radius:99px;cursor:pointer;}
-#pin-hint-banner{position:fixed;bottom:calc(1.2rem + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:9998;background:var(--surface2);border:1px solid var(--border);color:var(--text);display:none;align-items:center;gap:.6rem;padding:.5rem .6rem .5rem .9rem;border-radius:99px;box-shadow:0 4px 20px rgba(0,0,0,.35);font-size:.78rem;font-weight:600;max-width:90vw;}
-#pin-hint-banner button{background:var(--group-accent);border:none;color:#fff;font-weight:700;font-size:.75rem;padding:.25rem .65rem;border-radius:99px;cursor:pointer;flex-shrink:0;}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;flex-shrink:0;}
 .match-card.is-live{border-color:rgba(239,68,68,.35) !important;}
 .match-card.is-updating{border-color:color-mix(in srgb,var(--group-accent) 35%,transparent) !important;}
@@ -206,9 +204,6 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 /* ── HOME DASHBOARD ── */
 .home-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;margin-bottom:1rem;position:relative;}
 .home-card-title{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.85rem;font-weight:600;}
-.pin-card-btn{position:absolute;top:.7rem;right:.8rem;background:none;border:none;font-size:.85rem;line-height:1;padding:.15rem;cursor:pointer;opacity:.35;filter:grayscale(1);transition:opacity .15s,filter .15s,transform .1s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-.pin-card-btn:active{transform:scale(.85);}
-.pin-card-btn.pinned{opacity:1;filter:none;transform:rotate(-25deg);}
 .mini-lb-row{display:grid;grid-template-columns:2.2rem 1fr auto;align-items:center;gap:.75rem;padding:.55rem .5rem;border-radius:8px;margin-bottom:.3rem;transition:background .15s;}
 .mini-lb-row.mlb-gold{background:color-mix(in srgb,var(--gold) 16%,var(--surface));border:1px solid rgba(251,191,36,.35);}
 .mini-lb-row.mlb-silver{background:color-mix(in srgb,var(--silver) 14%,var(--surface));border:1px solid rgba(148,163,184,.3);}
@@ -1349,7 +1344,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.42</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.43</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1472,6 +1467,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button class="profile-menu-item" onclick="showMyPredictions();closeProfileMenu()">📊 My Predictions</button>
         <button class="profile-menu-item" onclick="showMyStats();closeProfileMenu()">📈 My Stats</button>
         <button class="profile-menu-item" onclick="showPlayerThemeModal();closeProfileMenu()">🎨 Theme</button>
+        <button class="profile-menu-item" onclick="showReorderHomeCardsModal();closeProfileMenu()">🏠 Reorder Home Cards</button>
 <button id="profile-god-btn" class="profile-menu-item" onclick="showGodMode();closeProfileMenu()">⚡ God Mode</button>
         <div style="border-top:1px solid var(--border);margin:.25rem 0;"></div>
         <button class="profile-menu-item" onclick="leaveGroup();closeProfileMenu()" style="color:var(--accent2);">👋 Log Out</button>
@@ -5715,8 +5711,11 @@ function getPlayerStatsHidden(){
   if(typeof h==='string' && h) return h.split(',');
   return [];
 }
+// A player's own home_card_order (if they've set one via "Reorder Home Cards")
+// takes full precedence over the group's default order — same CSV format, same
+// validation, so this and the group-level version share every rule below.
 function getHomeCardOrder(){
-  const stored = currentGroup?.home_card_order;
+  const stored = currentPlayer?.home_card_order || currentGroup?.home_card_order;
   const def = HOME_CARD_DEFS.map(c=>c.key);
   if(!stored) return def;
   const arr = typeof stored==='string' ? stored.split(',') : stored;
@@ -5726,14 +5725,6 @@ function getHomeCardOrder(){
   // pwa-tip always pinned first regardless of saved order
   const idx = order.indexOf('pwa-tip');
   if(idx > 0){ order.splice(idx,1); order.unshift('pwa-tip'); }
-  // A player's own "pin to top" pick overrides the group order (but still sits
-  // below the pwa-tip install nudge, which always leads).
-  const pinned = currentPlayer?.pinned_home_card;
-  if(pinned && pinned!=='pwa-tip' && order.includes(pinned)){
-    const pIdx = order.indexOf(pinned);
-    order.splice(pIdx,1);
-    order.splice(order[0]==='pwa-tip' ? 1 : 0, 0, pinned);
-  }
   return order;
 }
 function applyHomeCardOrder(){
@@ -5743,57 +5734,82 @@ function applyHomeCardOrder(){
     const def = HOME_CARD_DEFS.find(c=>c.key===key);
     if(def){ const el=document.getElementById(def.id); if(el) homeView.appendChild(el); }
   });
-  initHomeCardPins();
+  maybeShowReorderHint();
 }
-// Adds a small 📌 "pin to top" button to the corner of every home card (skipping
-// the pwa-tip install nudge, which is already always pinned first) so a player
-// can override the group's default card order just for themselves.
-function initHomeCardPins(){
+// One-time (per browser) nudge pointing players at the reorder feature — shown
+// the first time the home page loads/refreshes after this shipped. Marked seen
+// as soon as it's shown (not on dismiss) so it can't get stuck re-showing on
+// every load if a player navigates away without tapping "Got it".
+function maybeShowReorderHint(){
+  if(localStorage.getItem('wc26_seen_reorder_hint')) return;
+  localStorage.setItem('wc26_seen_reorder_hint','1');
+  document.querySelector('.modal-overlay')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:380px;text-align:center;">
+    <div style="font-size:2.2rem;margin-bottom:.5rem;">🏠</div>
+    <div style="font-size:1.1rem;font-weight:700;margin-bottom:.6rem;">Reorder your home page</div>
+    <div style="font-size:.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem;">Tap your name (top right) → <strong style="color:var(--text);">Reorder Home Cards</strong> to drag your home page into whatever order you like — just for you.</div>
+    <button class="btn" onclick="this.closest('.modal-overlay').remove()">Got it</button>
+  </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+function renderPlayerCardsSortable(){
+  const container = document.getElementById('player-cards-sortable');
+  if(!container) return;
+  container.innerHTML = getHomeCardOrder().filter(k=>k!=='pwa-tip').map(key=>{
+    const def = HOME_CARD_DEFS.find(c=>c.key===key);
+    return def ? `<div class="home-card-sort-row" data-key="${key}"><span class="sort-handle" title="Drag to reorder">⠿</span><span class="sort-label">${def.label}</span></div>` : '';
+  }).join('');
+}
+function showReorderHomeCardsModal(){
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:420px;">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title" style="font-size:1.1rem;">🏠 Reorder Home Cards</div>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Drag to set your own home page order — just for you, synced to any device you log into. Cards an admin has hidden still won't show.</div>
+    <div id="player-cards-sortable"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1.1rem;">
+      <button class="home-cta-btn" style="flex:1;" onclick="resetPlayerHomeCardOrder()">Reset to Default</button>
+      <button class="btn" style="flex:1;" onclick="savePlayerHomeCardOrder()">Save Order</button>
+    </div>
+  </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+  renderPlayerCardsSortable();
+  initHomeCardSortable('player-cards-sortable');
+}
+async function savePlayerHomeCardOrder(){
   if(!currentPlayer) return;
-  HOME_CARD_DEFS.forEach(def=>{
-    if(def.key==='pwa-tip') return;
-    const card = document.getElementById(def.id);
-    if(!card) return;
-    let btn = card.querySelector('.pin-card-btn');
-    if(!btn){
-      btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'pin-card-btn';
-      btn.innerHTML = '📌';
-      btn.onclick = e=>{ e.stopPropagation(); togglePinHomeCard(def.key); };
-      card.appendChild(btn);
-    }
-    const isPinned = currentPlayer.pinned_home_card===def.key;
-    btn.classList.toggle('pinned', isPinned);
-    btn.title = isPinned ? 'Unpin from top' : 'Pin to top';
-  });
-  maybeShowPinHint();
-}
-// One-time (per browser) nudge pointing players at the pin buttons — shown the
-// first time the home page loads/refreshes after this feature shipped.
-function maybeShowPinHint(){
-  if(localStorage.getItem('wc26_seen_pin_hint')) return;
-  const b = document.getElementById('pin-hint-banner');
-  if(b) b.style.display = 'flex';
-}
-function dismissPinHint(){
-  localStorage.setItem('wc26_seen_pin_hint','1');
-  const b = document.getElementById('pin-hint-banner');
-  if(b) b.style.display = 'none';
-}
-async function togglePinHomeCard(key){
-  if(!currentPlayer) return;
-  dismissPinHint(); // they've found the feature — no need to keep nudging
-  const next = currentPlayer.pinned_home_card===key ? null : key;
-  currentPlayer.pinned_home_card = next;
+  const container = document.getElementById('player-cards-sortable');
+  if(!container) return;
+  const order = [...container.querySelectorAll('.home-card-sort-row')].map(r=>r.dataset.key).join(',');
+  currentPlayer.home_card_order = order;
   saveSession();
   applyHomeCardOrder();
-  flash(next ? 'Pinned to top' : 'Unpinned', 'success');
+  document.querySelector('.modal-overlay')?.remove();
+  flash('Home card order saved!', 'success');
   try{
-    await sb('players?id=eq.'+currentPlayer.id, {method:'PATCH', prefer:'return=minimal', body:{pinned_home_card:next}});
-  }catch(e){ flash('Error saving pin: '+e.message, 'error'); }
+    await sb('players?id=eq.'+currentPlayer.id, {method:'PATCH', prefer:'return=minimal', body:{home_card_order:order}});
+  }catch(e){ flash('Error saving order: '+e.message, 'error'); }
+}
+async function resetPlayerHomeCardOrder(){
+  if(!currentPlayer) return;
+  currentPlayer.home_card_order = null;
+  saveSession();
+  applyHomeCardOrder();
+  renderPlayerCardsSortable();
+  flash('Reset to default order', 'success');
+  try{
+    await sb('players?id=eq.'+currentPlayer.id, {method:'PATCH', prefer:'return=minimal', body:{home_card_order:null}});
+  }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.43',date:'5 Jul 2026',notes:['Replaced "pin one card to the top" with full home page reordering — tap your name → 🏠 Reorder Home Cards to drag your whole home page into any order you want, with a Reset to Default option. Just for you, synced to any device. Admin → Players now shows a player\'s full custom order (was just the pinned card). The one-time tip popup on next home load points at this instead. Also switched the hint to a proper centred popup (matching the app\'s usual "Got it" style) instead of a bottom banner.', 'Requires a new Supabase column (the previous pinned_home_card column, if you added it, is no longer used and can be dropped or left in place): ALTER TABLE players ADD COLUMN home_card_order text DEFAULT NULL;']},
   {v:'1.78.42',date:'5 Jul 2026',notes:['New: pin any home card to the top of your own home page with the 📌 button in its corner — overrides the group\'s default card order just for you, and syncs across your devices. A one-time tip banner points it out the first time you load the home page after this update. Admins can see which card each player has pinned in Admin → Players.', 'Achievements card: "New" sticker moved back to floating above the card corner (title stays put) so it doesn\'t crowd the title text.', 'Requires a new Supabase column: ALTER TABLE players ADD COLUMN pinned_home_card text DEFAULT NULL;']},
   {v:'1.78.41',date:'5 Jul 2026',notes:['Moved the Achievements card\'s "New" sticker to the top-left corner instead of the top-right.']},
   {v:'1.78.40',date:'5 Jul 2026',notes:['Lvl 2 achievement tiles now look properly silver — a brighter metallic ring with a soft glow, a shine gradient on the level dot, and a shimmering progress bar, instead of flat grey.']},
@@ -6705,8 +6721,8 @@ async function savePlayerStatsSettings(){
     flash('Player stats saved!','success');
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
-function initHomeCardSortable(){
-  const container = document.getElementById('home-cards-sortable');
+function initHomeCardSortable(containerId){
+  const container = document.getElementById(containerId||'home-cards-sortable');
   if(!container) return;
   let dragEl=null, ghost=null, indicator=null, ghostOffY=0;
 
@@ -7222,7 +7238,7 @@ async function loadHome(){
     const [allPreds, allResults, allPlayers, homeTiebreaks] = await Promise.all([
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
-      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen,pinned_home_card`, ['pinned_home_card']),
+      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen,home_card_order`, ['home_card_order']),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
     // Tournament-wide top scorers (populated by sync.js from football-data.org).
@@ -7232,10 +7248,10 @@ async function loadHome(){
     const _homeNowMs = Date.now();
     _lbOnline = {};
     (allPlayers||[]).forEach(p=>{ _lbOnline[p.id] = !!(p.last_seen && (_homeNowMs - new Date(p.last_seen).getTime() < 120000)); });
-    // Keep our own pinned-card preference fresh (picks up changes made on another device)
+    // Keep our own custom home card order fresh (picks up changes made on another device)
     if(currentPlayer){
       const me = (allPlayers||[]).find(p=>p.id===currentPlayer.id);
-      if(me) currentPlayer.pinned_home_card = me.pinned_home_card||null;
+      if(me) currentPlayer.home_card_order = me.home_card_order||null;
     }
     _lbTiebreaks={}; (homeTiebreaks||[]).forEach(t=>{ _lbTiebreaks[t.player_id]={top_scorer:t.top_scorer,goals:t.goals}; });
     if(currentPlayer && _lbTiebreaks[currentPlayer.id]?.top_scorer) _tiebreakDone = true;
@@ -10491,7 +10507,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,pinned_home_card`, ['score_master','accent','background_id','card_opacity','pinned_home_card']),
+      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_card_order`, ['score_master','accent','background_id','card_opacity','home_card_order']),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -10500,7 +10516,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,pinned_home_card:p.pinned_home_card||null};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,home_card_order:p.home_card_order||null};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -10515,7 +10531,7 @@ async function loadPlayersPanel(){
           <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${p.score_master ? ' <span title="Score Master" style="font-size:.75rem;margin-left:.15rem;">📊</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode, p.accent, p.background_id, p.card_opacity)}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${p.background_id ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🖼️ Background: <strong style="color:var(--text);">${BACKGROUNDS.find(b=>b.id===p.background_id)?.label||p.background_id}</strong></div>` : ''}
-          ${p.pinned_home_card ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">📌 Pinned: <strong style="color:var(--text);">${HOME_CARD_DEFS.find(c=>c.key===p.pinned_home_card)?.label||p.pinned_home_card}</strong></div>` : ''}
+          ${p.home_card_order ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🏠 Custom order: <strong style="color:var(--text);">${p.home_card_order.split(',').map(k=>HOME_CARD_DEFS.find(c=>c.key===k)?.label||k).join(' → ')}</strong></div>` : ''}
           ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
         </div>
         <div style="flex-shrink:0;position:relative;">
@@ -12696,8 +12712,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.42</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.43</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
-<div id="pin-hint-banner"><span>📌 Tip: tap the pin icon on any home card to keep it at the top</span><button onclick="dismissPinHint()">Got it</button></div>
 </body>
 </html>
