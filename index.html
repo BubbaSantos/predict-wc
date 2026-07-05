@@ -207,9 +207,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .reorder-card-btn{position:absolute;top:.7rem;right:.8rem;background:none;border:none;font-size:.95rem;line-height:1;padding:.15rem;cursor:pointer;opacity:.35;color:var(--text-muted);transition:opacity .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .reorder-card-btn:active{opacity:.7;}
 .mini-lb-row{display:grid;grid-template-columns:2.2rem 1fr auto;align-items:center;gap:.75rem;padding:.55rem .5rem;border-radius:8px;margin-bottom:.3rem;transition:background .15s;}
-.mini-lb-row.mlb-gold{background:color-mix(in srgb,var(--gold) 16%,var(--surface));border:1px solid rgba(251,191,36,.35);}
+.mini-lb-row.mlb-gold{background:color-mix(in srgb,var(--gold) 16%,var(--surface));border:1px solid rgba(251,191,36,.35);box-shadow:0 0 8px rgba(251,191,36,.35),inset 0 0 6px rgba(255,255,255,.1);}
 .mini-lb-row.mlb-silver{background:color-mix(in srgb,#cbd5e1 14%,var(--surface));border:1px solid #cbd5e1;box-shadow:0 0 8px rgba(203,213,225,.35),inset 0 0 6px rgba(255,255,255,.1);}
-.mini-lb-row.mlb-bronze{background:color-mix(in srgb,var(--bronze) 14%,var(--surface));border:1px solid rgba(217,119,6,.3);}
+.mini-lb-row.mlb-bronze{background:color-mix(in srgb,var(--bronze) 14%,var(--surface));border:1px solid rgba(217,119,6,.3);box-shadow:0 0 8px rgba(217,119,6,.3),inset 0 0 6px rgba(255,255,255,.08);}
 .mini-lb-row.mlb-you{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.3);}
 .mini-lb-rank{font-size:1.1rem;font-weight:700;text-align:center;color:var(--text-muted);}
 .mlb-gold .mini-lb-rank{color:var(--gold);}
@@ -382,9 +382,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .badge-emoji{font-size:1.25rem;line-height:1;filter:grayscale(1);opacity:.45;transition:filter .15s,opacity .15s;}
 .badge-tile.earned .badge-icon-wrap{background:color-mix(in srgb,var(--group-accent) 14%,var(--surface));}
 .badge-tile.earned .badge-emoji{filter:none;opacity:1;}
-.badge-tile.tier-lvl1 .badge-icon-wrap{border-color:#cd7f32;}
+.badge-tile.tier-lvl1 .badge-icon-wrap{border-color:#cd7f32;box-shadow:0 0 8px rgba(205,127,50,.45),inset 0 0 6px rgba(255,255,255,.12);}
 .badge-tile.tier-lvl2 .badge-icon-wrap{border-color:#cbd5e1;box-shadow:0 0 8px rgba(203,213,225,.5),inset 0 0 6px rgba(255,255,255,.15);}
-.badge-tile.tier-lvl3 .badge-icon-wrap{border-color:#eab308;box-shadow:0 0 10px rgba(234,179,8,.4);}
+.badge-tile.tier-lvl3 .badge-icon-wrap{border-color:#eab308;box-shadow:0 0 10px rgba(234,179,8,.4),inset 0 0 8px rgba(255,255,255,.15);}
 .badge-tier-dot{position:absolute;bottom:-3px;right:-3px;width:1.1rem;height:1.1rem;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;border-radius:50%;background:var(--surface2);border:1.5px solid var(--surface);color:var(--text-muted);}
 .badge-tile.tier-lvl1 .badge-tier-dot{background:#cd7f32;color:#2a1a08;}
 .badge-tile.tier-lvl2 .badge-tier-dot{background:linear-gradient(135deg,#f8fafc,#94a3b8 55%,#e2e8f0);color:#1f2328;}
@@ -436,9 +436,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 /* ── LEADERBOARD ── */
 .lb-row{display:grid;grid-template-columns:3rem 1fr auto;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.5rem;transition:border-color .15s;-webkit-tap-highlight-color:transparent;}
 @media(hover:hover){.lb-row:hover{border-color:var(--group-accent);}}
-.lb-row.lb-gold{background:color-mix(in srgb,var(--gold) 18%,var(--surface));border-color:rgba(251,191,36,.45);}
+.lb-row.lb-gold{background:color-mix(in srgb,var(--gold) 18%,var(--surface));border-color:rgba(251,191,36,.45);box-shadow:0 0 10px rgba(251,191,36,.4),inset 0 0 8px rgba(255,255,255,.12);}
 .lb-row.lb-silver{background:color-mix(in srgb,#cbd5e1 16%,var(--surface));border-color:#cbd5e1;box-shadow:0 0 10px rgba(203,213,225,.4),inset 0 0 8px rgba(255,255,255,.12);}
-.lb-row.lb-bronze{background:color-mix(in srgb,var(--bronze) 16%,var(--surface));border-color:rgba(217,119,6,.45);}
+.lb-row.lb-bronze{background:color-mix(in srgb,var(--bronze) 16%,var(--surface));border-color:rgba(217,119,6,.45);box-shadow:0 0 10px rgba(217,119,6,.35),inset 0 0 8px rgba(255,255,255,.08);}
 .lb-row.lb-last{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);}
 .lb-row.lb-you{border-color:var(--group-accent);box-shadow:0 0 0 1px var(--group-accent);}
 .lb-rank{font-size:1.6rem;line-height:1;color:var(--text-muted);text-align:center;}
@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.48</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.49</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1586,9 +1586,19 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         </div>
       </div>
 
-      <!-- Match Card: last result + next game + countdown -->
+      <!-- Live Now: only shown while a game is actually live -->
+      <div class="home-card" id="home-live-card" onclick="togglePicksView()" style="cursor:pointer;display:none;">
+        <div id="hmc-live-body"></div>
+      </div>
+
+      <!-- Previous Results -->
+      <div class="home-card" id="home-results-card" onclick="togglePicksView()" style="cursor:pointer;display:none;">
+        <div id="hmc-results-body"></div>
+      </div>
+
+      <!-- Next Up: next game + countdown -->
       <div class="home-card" id="home-next-card" onclick="togglePicksView()" style="cursor:pointer;">
-        <div id="hmc-body"></div>
+        <div id="hmc-next-body"></div>
       </div>
 
       <!-- Mini Leaderboard -->
@@ -3713,18 +3723,26 @@ function enterApp(){
   startUpdateChecker();
 }
 
+// Live Now / Previous Results / Next Up are three independent home cards —
+// each renders into its own element and shows/hides itself based on whether
+// it actually has anything to say (Live Now in particular only appears while
+// a game is actually live).
 function renderMatchCardBody(){
-  const el = document.getElementById('hmc-body');
-  if(!el) return;
   const now = Date.now();
   const fixtures = allFixtures();
   const liveGames = fixtures.filter(isLiveGame);
-  let html = '';
   const picksHint = `<div style="font-size:.55rem;color:var(--text-muted);opacity:.4;text-align:center;margin-top:.3rem;letter-spacing:.04em;">tap to ${_picksViewMode==='grouped'?'view by name':'view grouped'}</div>`;
-  if(liveGames.length){
+
+  // ── Live Now ──
+  const liveCard = document.getElementById('home-live-card');
+  const liveBody = document.getElementById('hmc-live-body');
+  const liveEnabled = isHomeCardVisible(HOME_CARD_DEFS.find(d=>d.key==='live'));
+  if(liveCard) liveCard.style.display = (liveEnabled && liveGames.length) ? '' : 'none';
+  if(liveBody){
+    let liveHtml = '';
     if(liveGames.length > 1){
       if(_liveGamesIdx >= liveGames.length) _liveGamesIdx = 0;
-      html += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
+      liveHtml += `<div class="hmc-label live"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</div>`;
       const slides = liveGames.map(f=>{
         const r = results[f.id];
         const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
@@ -3736,72 +3754,88 @@ function renderMatchCardBody(){
         return `<div class="hmc-carousel-slide" style="width:${100/liveGames.length}%;position:relative;">${_sbcH}${_pctTeamsHtml(f,'live',score,f.id)}${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${_liveMissingMap[f.id]||''}${picks}${hasAnyPicks?picksHint:''}${matchExtrasHtml(f)}</div>`;
       }).join('');
       const livePct = _liveGamesIdx*(100/liveGames.length);
-      html += `<div class="hmc-carousel-wrap" id="hmc-live-wrap"><div class="hmc-carousel-track" id="hmc-live-track" style="width:${liveGames.length*100}%;transform:translateX(-${livePct}%)">${slides}</div></div>`;
+      liveHtml += `<div class="hmc-carousel-wrap" id="hmc-live-wrap"><div class="hmc-carousel-track" id="hmc-live-track" style="width:${liveGames.length*100}%;transform:translateX(-${livePct}%)">${slides}</div></div>`;
       const liveDots = liveGames.map((_,i)=>`<span class="hmc-dot${i===_liveGamesIdx?' active':''}" onclick="hmcLiveGoToSlide(${i});event.stopPropagation()"></span>`).join('');
-      html += `<div class="hmc-dots">${liveDots}</div>`;
-    } else {
+      liveHtml += `<div class="hmc-dots">${liveDots}</div>`;
+    } else if(liveGames.length===1){
       const f = liveGames[0];
       const _lbc=BROADCASTERS[f.id];
-      html += `<div class="hmc-label live" style="display:flex;justify-content:space-between;align-items:center;"><span><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</span>${_lbc?`<span class="broadcaster-badge ${_lbc.toLowerCase()}">${_lbc}</span>`:''}</div>`;
+      liveHtml += `<div class="hmc-label live" style="display:flex;justify-content:space-between;align-items:center;"><span><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live Now</span>${_lbc?`<span class="broadcaster-badge ${_lbc.toLowerCase()}">${_lbc}</span>`:''}</div>`;
       const r = results[f.id];
       const score = (r&&r.home!==null&&r.away!==null)?`${r.home}–${r.away}`:'0–0';
       const p = predictions[f.id];
       const hasPred = p&&p.home!==''&&p.home!==null;
       const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
       const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
-      html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+(_liveMissingMap[f.id]||'')+picks+(hasAnyPicks?picksHint:'')+matchExtrasHtml(f);
+      liveHtml += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+(_liveMissingMap[f.id]||'')+picks+(hasAnyPicks?picksHint:'')+matchExtrasHtml(f);
     }
-  } else if(_lastResultsAll.length){
-    const lrn = _lastResultsAll.length;
-    const lrLabel = lrn > 1 ? "Yesterday's Results" : "Yesterday's Result";
-    if(lrn > 1){
-      const lrTN = lrn+2;
-      const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`; };
-      const slides = [lrn-1,...Array.from({length:lrn},(_,i)=>i),0].map(mkLrSlide).join('');
-      const lrPct = (_lastResultIdx+1)*(100/lrTN);
-      html += `<div class="hmc-label">${lrLabel}</div><div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-last-track" data-rn="${lrn}" style="width:${lrTN*100}%;transform:translateX(-${lrPct}%)">${slides}</div></div>`;
-      const lrDots = _lastResultsAll.map((_,i)=>`<span class="hmc-dot${i===_lastResultIdx?' active':''}" onclick="hmcLastGoToSlide(${i});event.stopPropagation()"></span>`).join('');
-      html += `<div class="hmc-dots">${lrDots}</div>`;
-    } else {
-      const item=_lastResultsAll[0], r=results[item.matchId];
-      const lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
-      const hasLastPicks=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length));
-      html += `<div class="hmc-label">${lrLabel}</div>`+_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)+item.predHtml+lastPicks+(hasLastPicks?picksHint:'')+matchExtrasHtml(item.f)+item.statsHtml;
-    }
+    liveBody.innerHTML = liveHtml;
   }
-  if(_nextUpcoming){
-    const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
-    const cdHtml=ko=>{const diff=ko.getTime()-now;if(diff<=0)return'';const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);return`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;};
-    const finishedHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.6rem;">Finished</div>`;
-    const nuItemHtml=(item,nid)=>{
-      if(item.finished){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'';return{timer:finishedHdr,sc,cls:''};}
-      return{timer:cdHtml(item.ko),sc:'vs',cls:'vs'};
-    };
-    if(_nextUpcomingAll.some(item=>item.finished||item.ko.getTime()>now)){
-      if(html) html += '<hr class="hmc-sep">';
-      if(_nextUpcomingAll.length > 1){
-        html += `<div class="hmc-label">Next Up</div>`;
-        const cn = _nextUpcomingAll.length, cnTN = cn+2;
-        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,item.finished?'result':'upcoming'),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
-        const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
-        const pct = (_nextUpcomingIdx+1)*(100/cnTN);
-        html += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
-        const dots = _nextUpcomingAll.map((_,i)=>`<span class="hmc-dot${i===_nextUpcomingIdx?' active':''}" onclick="hmcGoToSlide(${i});event.stopPropagation()"></span>`).join('');
-        html += `<div class="hmc-dots">${dots}</div>`;
+
+  // ── Previous Results ──
+  const resultsCard = document.getElementById('home-results-card');
+  const resultsBody = document.getElementById('hmc-results-body');
+  const resultsEnabled = isHomeCardVisible(HOME_CARD_DEFS.find(d=>d.key==='results'));
+  if(resultsCard) resultsCard.style.display = (resultsEnabled && _lastResultsAll.length) ? '' : 'none';
+  if(resultsBody){
+    let resultsHtml = '';
+    if(_lastResultsAll.length){
+      const lrn = _lastResultsAll.length;
+      const lrLabel = lrn > 1 ? "Yesterday's Results" : "Yesterday's Result";
+      if(lrn > 1){
+        const lrTN = lrn+2;
+        const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`; };
+        const slides = [lrn-1,...Array.from({length:lrn},(_,i)=>i),0].map(mkLrSlide).join('');
+        const lrPct = (_lastResultIdx+1)*(100/lrTN);
+        resultsHtml += `<div class="hmc-label">${lrLabel}</div><div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-last-track" data-rn="${lrn}" style="width:${lrTN*100}%;transform:translateX(-${lrPct}%)">${slides}</div></div>`;
+        const lrDots = _lastResultsAll.map((_,i)=>`<span class="hmc-dot${i===_lastResultIdx?' active':''}" onclick="hmcLastGoToSlide(${i});event.stopPropagation()"></span>`).join('');
+        resultsHtml += `<div class="hmc-dots">${lrDots}</div>`;
       } else {
-        const nextId = _nextUpcoming.f.id;
-        const _nbc=BROADCASTERS[nextId];
-        html += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">Next Up${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
-        const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
-        const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,_nextUpcoming.finished?'result':'upcoming');
-        const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-        html += timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
+        const item=_lastResultsAll[0], r=results[item.matchId];
+        const lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
+        const hasLastPicks=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length));
+        resultsHtml += `<div class="hmc-label">${lrLabel}</div>`+_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)+item.predHtml+lastPicks+(hasLastPicks?picksHint:'')+matchExtrasHtml(item.f)+item.statsHtml;
       }
     }
-  } else if(!html){
-    html = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
+    resultsBody.innerHTML = resultsHtml;
   }
-  el.innerHTML = html;
+
+  // ── Next Up ──
+  const nextBody = document.getElementById('hmc-next-body');
+  if(nextBody){
+    let nextHtml = '';
+    if(_nextUpcoming){
+      const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
+      const cdHtml=ko=>{const diff=ko.getTime()-now;if(diff<=0)return'';const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);return`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;};
+      const finishedHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.6rem;">Finished</div>`;
+      const nuItemHtml=(item,nid)=>{
+        if(item.finished){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'';return{timer:finishedHdr,sc,cls:''};}
+        return{timer:cdHtml(item.ko),sc:'vs',cls:'vs'};
+      };
+      if(_nextUpcomingAll.some(item=>item.finished||item.ko.getTime()>now)){
+        if(_nextUpcomingAll.length > 1){
+          nextHtml += `<div class="hmc-label">Next Up</div>`;
+          const cn = _nextUpcomingAll.length, cnTN = cn+2;
+          const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewMode==='grouped'?(_livePicksMap[nid]||''):namedPicksHtml(nid,item.finished?'result':'upcoming'),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
+          const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
+          const pct = (_nextUpcomingIdx+1)*(100/cnTN);
+          nextHtml += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
+          const dots = _nextUpcomingAll.map((_,i)=>`<span class="hmc-dot${i===_nextUpcomingIdx?' active':''}" onclick="hmcGoToSlide(${i});event.stopPropagation()"></span>`).join('');
+          nextHtml += `<div class="hmc-dots">${dots}</div>`;
+        } else {
+          const nextId = _nextUpcoming.f.id;
+          const _nbc=BROADCASTERS[nextId];
+          nextHtml += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">Next Up${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
+          const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
+          const nextPicks = _picksViewMode==='grouped' ? (_livePicksMap[nextId]||'') : namedPicksHtml(nextId,_nextUpcoming.finished?'result':'upcoming');
+          const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
+          nextHtml += timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
+        }
+      }
+    }
+    if(!nextHtml) nextHtml = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
+    nextBody.innerHTML = nextHtml;
+  }
 }
 
 function hmcGoToSlide(idx){
@@ -5634,7 +5668,9 @@ const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
 const HOME_CARD_DEFS = [
   {key:'pwa-tip',   id:'pwa-tip-card',        label:'Install Tip Card',   toggleId:null,                         flag:null},
   {key:'hero',      id:'group-hero-block',    label:'Group Hero',         toggleId:'home-show-hero-toggle',      flag:'home_show_hero'},
-  {key:'next',      id:'home-next-card',       label:'Match Card',         toggleId:'home-show-next-toggle',      flag:'home_show_next'},
+  {key:'live',      id:'home-live-card',      label:'Live Now',           toggleId:'home-show-live-toggle',      flag:'home_show_live'},
+  {key:'results',   id:'home-results-card',   label:'Previous Results',   toggleId:'home-show-results-toggle',   flag:'home_show_results'},
+  {key:'next',      id:'home-next-card',       label:'Next Up',            toggleId:'home-show-next-toggle',      flag:'home_show_next'},
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
   {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
@@ -5852,6 +5888,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.49',date:'5 Jul 2026',notes:['Split the combined match card into three independent, individually reorderable home cards: Live Now, Previous Results and Next Up. Live Now only appears while a game is actually live (was always taking a slot even with nothing live); Previous Results can now show at the same time as Live Now instead of being hidden whenever something\'s live. All three respect their own admin on/off toggle in Home Page Cards.', 'Standings home card simplified down to just position, name and points — dropped the online dot, streak/MOTM/ITM badges and round-change arrows to keep it minimal.', 'Gold and bronze leaderboard/achievement rows now get the same shine treatment (glow + inner highlight) silver got last update, so silver no longer stands out as the odd one out.', 'If you\'d already customised your home card order, Live Now and Previous Results will land at the end of it the first time — just drag them back into place via Reorder Home Cards.']},
   {v:'1.78.48',date:'5 Jul 2026',notes:['Standings home card now shows the full group (everyone, not just top 3 + you), with smaller/tighter rows so it stays compact. Silver (2nd place) rows on both the home Standings card and the full Leaderboard now get a proper metallic shine — brighter ring, soft glow, inner highlight — instead of flat grey, matching the Lvl 2 achievement look.']},
   {v:'1.78.47',date:'5 Jul 2026',notes:['Fixed 3 wrong Quarter-Final pairings in the bracket (m097/m098/m099 were mapped to the wrong Round of 16 matches — cross-checked against the official schedule). Extended the "Team A or Team B" placeholder to every knockout round (Semi-Final, 3rd Place, Final too), not just QF — it now shows automatically wherever a feeding match\'s two teams are both known, and only ever shows two names (falls back to plain TBD rather than jumbling more than two teams together).']},
   {v:'1.78.46',date:'5 Jul 2026',notes:['Quarter-Final fixtures now show a "Team A or Team B" placeholder (same as Round of 16 already does) once both Round of 16 teams are known but that game hasn\'t been played yet, instead of a plain TBD. Semi-Final, 3rd Place and Final still show TBD until their teams are actually confirmed.']},
@@ -7396,20 +7433,6 @@ async function loadHome(){
     _homeRoundPrevRankByName=prevRankByNameH;
     _homeRoundCurRankByName=curRankByNameH;
 
-    // Helper: small rank-change arrow for mini-lb
-    const miniRankArrow=(prev,cur)=>{
-      if(prev==null||cur==null||!prevRoundIdsH.size) return '';
-      const diff=prev-cur;
-      if(diff===0) return '';
-      return `<div style="font-size:.48rem;font-weight:700;color:${diff>0?'#10b981':'#ef4444'};line-height:1.2;margin-top:.06rem;">${diff>0?'▲':'▼'}${Math.abs(diff)}</div>`;
-    };
-    const miniPtsGained=(name)=>{
-      const g=prevRoundPtsByNameH[name];
-      if(g==null||!prevRoundIdsH.size) return '';
-      const c=g>0?'#22c55e':g===0?'var(--text-muted)':'#ef4444';
-      return `<div style="font-size:.58rem;color:${c};font-weight:600;line-height:1.2;margin-top:.06rem;">${g>0?'+'+g:String(g)}</div>`;
-    };
-
     // Mini leaderboard HTML
     const rankMedals = {1:'🥇',2:'🥈',3:'🥉'};
     const rankCls = {1:'mlb-gold',2:'mlb-silver',3:'mlb-bronze'};
@@ -7417,20 +7440,15 @@ async function loadHome(){
     if(!sorted.length){
       lbHtml = '<div style="font-size:.8rem;color:var(--text-muted);">No scores yet.</div>';
     } else {
-      const miniDot = pid => _lbOnline[pid] ? '<span title="Online now" style="display:inline-block;width:.38rem;height:.38rem;border-radius:50%;background:#10b981;margin-left:.35rem;vertical-align:middle;"></span>' : '';
-      const miniMotmBadge = pid => (currentGroup?.show_motm_badge!==false && _lbMotmPids.size && _lbMotmPids.has(pid)) ? '<span class="lb-badge lb-badge-motm" style="font-size:.5rem;padding:.08rem .28rem;">⚽ MOTM</span>' : '';
       sorted.forEach(([name,s],i)=>{
         const isYou = name===myDisplayName;
-        const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
-        const mBadge = mIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.5rem;padding:.06rem .25rem;">ITM</span>':mIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.5rem;padding:.06rem .25rem;">Forfeit</span>':'';
-        const mNameHtml = streakNameHtml(name, _lbStreaks[name]);
         const r = miniRanks[i];
         const medal = rankMedals[r] || (miniRankCounts[r]>1?'='+r:String(r));
         const cls = (rankCls[r] || '') + (isYou?' mlb-you':'');
         lbHtml += `<div class="mini-lb-row ${cls}">
-          <div class="mini-lb-rank" style="display:flex;flex-direction:column;align-items:center;">${medal}${miniRankArrow(prevRankByNameH[name],r)}</div>
-          <div class="mini-lb-name">${mNameHtml}${miniDot(s.playerId)}${isYou?' <span style="font-size:.6rem;color:#818cf8;">(you)</span>':''}${mBadge}${miniMotmBadge(s.playerId)}</div>
-          <div style="text-align:right;"><div class="mini-lb-pts">${s.total} pts</div>${miniPtsGained(name)}</div>
+          <div class="mini-lb-rank">${medal}</div>
+          <div class="mini-lb-name">${name}${isYou?' <span style="font-size:.6rem;color:#818cf8;">(you)</span>':''}</div>
+          <div class="mini-lb-pts" style="text-align:right;">${s.total} pts</div>
         </div>`;
       });
     }
@@ -12547,11 +12565,15 @@ async function godCreateGroup(){
   }catch(e){ showErr(errEl,'Error: '+e.message); }
 }
 
-// Unified carousel swipe handler for home match card (last results + next up + live)
+// Unified carousel swipe handler for the Live Now / Previous Results / Next Up
+// home cards. Delegated from the shared #view-home ancestor (rather than any
+// one of those three cards) since they're now independent, separately
+// reorderable cards — .closest('.hmc-carousel-wrap') still finds the right
+// one regardless of which card contains it.
 // Last Results and Next Up use clone-based infinite loop: DOM is [clone_last, ...real, clone_first]
 // so visual index = logical+1 and totalN = n+2. On landing on a clone, snap instantly to the real slide.
 (function(){
-  const card = document.getElementById('home-next-card');
+  const card = document.getElementById('view-home');
   if(!card) return;
   let _cSwX=null,_cSwY=null,_cSwT=0,_cDragging=false,_cStartPct=0,_cTrack=null,_cItems=null,_cGetIdx=null,_cSetIdx=null,_cClone=false,_cTotalN=0;
   card.addEventListener('touchstart',e=>{
@@ -12746,7 +12768,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.48</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.49</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
