@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.56</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.57</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5858,6 +5858,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.57',date:'5 Jul 2026',notes:['Fixed a typo in Tournament Stats: "Most Man of the Matchs" → "Most Man of the Matches" when there are joint leaders.']},
   {v:'1.78.56',date:'5 Jul 2026',notes:['Personal Stats home card no longer has its own internal scroll — now that it\'s just the charts, it sizes to fit them and lets the home page scroll normally instead.']},
   {v:'1.78.55',date:'5 Jul 2026',notes:['Personal Stats home card now shows just the charts — tap Open Full Stats Page for the rest (points, positions, streaks, etc). The full My Stats page is unaffected and still shows everything.']},
   {v:'1.78.54',date:'5 Jul 2026',notes:['Renamed "Previous Results" to "Previous Fixtures", matching Today\'s Fixtures.']},
@@ -7936,7 +7937,7 @@ async function loadHome(){
           const motmMax=Math.max(...Object.values(homeMotmCounts));
           const motmLeaders=Object.entries(homeMotmCounts).filter(([,c])=>c===motmMax).map(([pid])=>(pm[pid]?.display||pm[pid]?.name||pid));
           if(motmMax>0&&motmLeaders.length)
-            pushCell('motm_awards','⚽',`Most Man of the Match${motmLeaders.length>1?'s':''}`,joinList(motmLeaders),`${motmMax} MOTM award${motmMax===1?'':'s'}${motmLeaders.length>1?' each':''}`);
+            pushCell('motm_awards','⚽',`Most Man of the ${motmLeaders.length>1?'Matches':'Match'}`,joinList(motmLeaders),`${motmMax} MOTM award${motmMax===1?'':'s'}${motmLeaders.length>1?' each':''}`);
         }
       }
       if(botDaysLeaders.length)
@@ -12745,7 +12746,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.56</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.57</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
