@@ -549,9 +549,8 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .stats-link-btn{position:relative;flex-shrink:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.7rem;font-weight:600;padding:.28rem .6rem;border-radius:6px;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s;overflow:visible;}
 .stats-link-btn:hover{border-color:var(--group-accent);background:var(--surface);}
 .new-sticker{position:absolute;top:-.6rem;right:-.55rem;background:var(--accent2);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.04em;padding:.1rem .32rem;border-radius:4px;transform:rotate(-12deg);box-shadow:0 2px 5px rgba(0,0,0,.3);border:1.5px solid var(--surface);pointer-events:none;text-transform:uppercase;}
-#vpred-rows{display:flex;flex-direction:column-reverse;}
 .pred-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem;}
-#vpred-rows .pred-row:first-child{border-bottom:none;}
+#vpred-rows .pred-row:last-child{border-bottom:none;}
 .pred-row-upcoming{opacity:.65;}
 .pred-match{color:var(--text-dim);flex:1;}
 .pred-score{font-weight:500;margin:0 1rem;}
@@ -1325,7 +1324,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.26</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.27</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5695,6 +5694,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.27',date:'5 Jul 2026',notes:['Fixed the player predictions card (tap a name on the leaderboard) not scrolling once a player has more than ~10 games of history — the bottom-anchoring trick relied on flex-direction:column-reverse, which cannot be scrolled at all once capped to a fixed height (its scrollable range sits at negative scrollTop, which native touch-scroll refuses to enter). Switched to plain chronological order with a one-time scroll-to-bottom on open.']},
   {v:'1.78.26',date:'5 Jul 2026',notes:['Live Now home card now shows "Not predicted yet: …" for anyone in the group who hasn\'t predicted that match — previously this only appeared on the Next Up card, so a live game with missing predictions gave no indication.']},
   {v:'1.78.25',date:'4 Jul 2026',notes:['Fixed the "swipe from the screen edge takes you out of the app" issue — the app\'s own left/right swipe-between-tabs gesture was competing with Safari\'s built-in edge-swipe back/forward navigation, which could land on a stale browser history entry. Added overscroll-behavior-x:none so Safari\'s own edge-navigation gesture is disabled and only the app\'s gesture responds to a swipe. Note: if you still see the broken-page screen once, it\'s an already-stale entry left over from before this fix — fully closing and reopening the browser tab (or the installed app) clears it for good.']},
   {v:'1.78.24',date:'4 Jul 2026',notes:['Fixed scrolling in the player predictions card being unreliable (sometimes not scrolling at all) — the JS that forced it to land on the most recent game was racing against font-loading reflows. Replaced with a pure-CSS approach (the same bottom-anchoring trick chat apps use) so the list lands on the latest game natively, with no JS scroll code to race against anything.']},
@@ -11362,14 +11362,18 @@ async function viewPlayerPredictions(playerId,name){
       return `<div class="pred-row pred-row-upcoming"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span style="color:var(--text-muted);font-size:.75rem;">${koTxt}</span></div>`;
     });
     const totalRowCount = rowsArr.length + nextUpcoming.length;
-    // #vpred-rows renders bottom-anchored via flex-direction:column-reverse (see
-    // CSS), the same trick chat apps use to show the latest message by default
-    // with no JS scrollTop hacks — those were unreliable (a font-load reflow, or
-    // WebKit's mask-image/scroll interaction, could leave the list stuck instead
-    // of landing on the most recent game). column-reverse needs DOM order
-    // reversed relative to the wanted visual order (oldest at top, newest +
-    // upcoming at bottom).
-    const domOrder = [...rowsArr.map(r=>r.html), ...upcomingHtml].reverse();
+    // Chronological DOM order (oldest at top, newest + upcoming at bottom).
+    // #vpred-rows used to be flex-direction:column-reverse to bottom-anchor
+    // this for free, but that combination doesn't scroll at all once capped
+    // to a max-height on iOS/Chromium — a reversed flex container's scrollable
+    // range sits at negative scrollTop, which native touch-scroll refuses to
+    // enter from the scrollTop:0 rest position. Plain top-to-bottom order
+    // scrolls normally; _capVpredRowsHeight forces scrollTop to the bottom
+    // once, which is reliable here (this behaves like the timing-sensitive
+    // JS scrollTop forcing that was unreliable — but that was racing a
+    // font-load reflow right after first paint; this modal opens well after
+    // fonts have settled, so there's nothing left to race).
+    const domOrder = [...rowsArr.map(r=>r.html), ...upcomingHtml];
     const rows = totalRowCount ? `<div id="vpred-rows">${domOrder.join('')}</div>` : '';
     const tb=tbs&&tbs[0];
     const tbHtml=tb&&tb.top_scorer
@@ -11398,12 +11402,10 @@ async function viewPlayerPredictions(playerId,name){
   }catch(e){flash('Error: '+e.message,'error');}
 }
 
-// Cap the match-history list to ~10.5 rows tall. #vpred-rows is bottom-anchored
-// by flex-direction:column-reverse (CSS), so once it's taller than this cap and
-// scrollable, the browser lands it on the most recent game natively — no JS
-// scrollTop needed (a previous version forced scrollTop via JS and that proved
-// unreliable: a font-load reflow, or interaction with a mask-image fade, could
-// leave the list stuck instead of landing on the bottom).
+// Cap the match-history list to ~10.5 rows tall and land it on the most
+// recent game (bottom) by default. Plain forward scrollTop — reliable here
+// because column-reverse-based bottom-anchoring doesn't scroll at all once
+// capped (see comment in viewPlayerPredictions).
 function _capVpredRowsHeight(rowCount){
   const wrap = document.getElementById('vpred-rows');
   if(!wrap || rowCount <= 10) return;
@@ -11411,6 +11413,7 @@ function _capVpredRowsHeight(rowCount){
   if(!rowH) return;
   wrap.style.maxHeight = (rowH * 10.5) + 'px';
   wrap.style.overflowY = 'auto';
+  wrap.scrollTop = wrap.scrollHeight;
 }
 
 // ── BRANDING PANEL ────────────────────────
@@ -12459,7 +12462,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.26</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.27</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
