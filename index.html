@@ -280,9 +280,10 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .ko-stat-wdl .ko-l{color:#ef4444;font-weight:700;}
 .ko-stat-pills{display:flex;gap:.3rem;flex-wrap:wrap;margin-left:auto;}
 .ko-stat-pill{padding:.05rem .32rem;border-radius:3px;font-variant-numeric:tabular-nums;white-space:nowrap;background:var(--surface2);color:var(--text-muted);}
-.extras-toggle{font-size:.55rem;color:var(--text-muted);opacity:.5;text-align:center;padding:.35rem 0 .15rem;letter-spacing:.04em;cursor:pointer;user-select:none;}
-.extras-toggle:hover{opacity:.8;}
-.extras-toggle.collapsed{opacity:.45;}
+.extras-toggle{font-size:.68rem;color:var(--text-muted);opacity:.55;text-align:center;padding:.7rem 0;margin:.1rem 0;letter-spacing:.04em;cursor:pointer;user-select:none;min-height:2rem;display:flex;align-items:center;justify-content:center;}
+.extras-toggle:hover{opacity:.85;}
+.extras-toggle.collapsed{opacity:.5;}
+.picks-hint{min-height:1.8rem;display:flex;align-items:center;justify-content:center;}
 .pred-card-pct-row{display:flex;align-items:center;font-size:.62rem;color:var(--text-muted);margin-bottom:.35rem;}
 .pred-card-pct{flex:1;text-align:center;}
 .pred-card-pct-draw{flex:0 0 auto;min-width:4rem;text-align:center;}
@@ -290,7 +291,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .hmc-cd-unit{text-align:center;}
 .hmc-cd-num{font-size:2rem;font-weight:900;font-family:'JetBrains Mono',monospace;color:#ef4444;line-height:1;}
 .hmc-cd-lbl{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-top:.15rem;}
-.hmc-carousel-wrap{overflow:hidden;position:relative;touch-action:pan-y;}
+.hmc-carousel-wrap{overflow:hidden;position:relative;touch-action:pan-y;transition:height .32s cubic-bezier(.25,.46,.45,.94);}
 .hmc-carousel-track{display:flex;}
 .hmc-carousel-slide{flex-shrink:0;}
 .hmc-dots{display:flex;justify-content:center;gap:.45rem;margin-top:.5rem;}
@@ -568,7 +569,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 
 /* ── PLAYER PRED MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:1rem;}
-.pred-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:600px;max-height:80vh;overflow-y:auto;padding:1.5rem;}
+.pred-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:600px;max-height:80vh;overflow-y:auto;overscroll-behavior:contain;padding:1.5rem;}
 .pred-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
 .pred-modal-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;letter-spacing:.06em;}
 .modal-close{background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:.2rem .4rem;border-radius:4px;}
@@ -577,6 +578,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .stats-link-btn:hover{border-color:var(--group-accent);background:var(--surface);}
 .new-sticker{position:absolute;top:-.6rem;right:-.55rem;background:var(--accent2);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.04em;padding:.1rem .32rem;border-radius:4px;transform:rotate(-12deg);box-shadow:0 2px 5px rgba(0,0,0,.3);border:1.5px solid var(--surface);pointer-events:none;text-transform:uppercase;}
 .pred-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem;}
+#vpred-rows{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
 #vpred-rows .pred-row:last-child{border-bottom:none;}
 .pred-row-upcoming{opacity:.65;}
 .pred-match{color:var(--text-dim);flex:1;}
@@ -1351,7 +1353,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.60</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.61</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1587,12 +1589,12 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
 
       <!-- Previous Fixtures -->
-      <div class="home-card" id="home-results-card" onclick="togglePicksView()" style="cursor:pointer;display:none;">
+      <div class="home-card" id="home-results-card" onclick="togglePicksView('results')" style="cursor:pointer;display:none;">
         <div id="hmc-results-body"></div>
       </div>
 
       <!-- Next Up: next game + countdown -->
-      <div class="home-card" id="home-next-card" onclick="togglePicksView()" style="cursor:pointer;">
+      <div class="home-card" id="home-next-card" onclick="togglePicksView('next')" style="cursor:pointer;">
         <div id="hmc-next-body"></div>
       </div>
 
@@ -2941,8 +2943,15 @@ let _matchPredsMap = {};
 let _liveMissingMap = {};
 let _lastResultPicksGrouped = '';
 let _lastResultMatchId = null;
-let _picksViewMode = 'named';
-let _hideMatchExtras = localStorage.getItem('wc26_hide_extras')==='1';
+// Previous Fixtures and Today's Fixtures each get their own independent
+// picks-view mode and form/table expand state, so tapping one card never
+// affects the other.
+let _picksViewModeByCard = {results:'named', next:'named'};
+let _hideMatchExtrasByCard = {};
+function isExtrasHidden(cardKey){
+  if(_hideMatchExtrasByCard[cardKey]===undefined) _hideMatchExtrasByCard[cardKey] = localStorage.getItem('wc26_hide_extras_'+cardKey)==='1';
+  return _hideMatchExtrasByCard[cardKey];
+}
 
 // ── SUPABASE ─────────────────────────────
 async function sb(path, opts={}){
@@ -3723,7 +3732,7 @@ function enterApp(){
 // a game is actually live).
 function renderMatchCardBody(){
   const now = Date.now();
-  const picksHint = `<div style="font-size:.55rem;color:var(--text-muted);opacity:.4;text-align:center;margin-top:.3rem;letter-spacing:.04em;">tap to ${_picksViewMode==='grouped'?'view by name':'view grouped'}</div>`;
+  const picksHintFor = cardKey => `<div class="picks-hint" style="font-size:.6rem;color:var(--text-muted);opacity:.55;text-align:center;padding:.5rem .3rem;margin-top:.1rem;letter-spacing:.04em;">tap to ${_picksViewModeByCard[cardKey]==='grouped'?'view by name':'view grouped'}</div>`;
   const groupedPicksFor = (item, nid) => {
     if(item.live || item.finished){ const r=results[nid]; return coloredGroupedPicksHtml(nid, r&&r.home, r&&r.away); }
     return _livePicksMap[nid]||'';
@@ -3741,7 +3750,7 @@ function renderMatchCardBody(){
       const lrLabel = lrn > 1 ? "Previous Fixtures" : "Previous Fixture";
       if(lrn > 1){
         const lrTN = lrn+2;
-        const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHint:''}${matchExtrasHtml(item.f)}${item.statsHtml}</div>`; };
+        const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewModeByCard.results==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHintFor('results'):''}${matchExtrasHtml(item.f,'results')}${item.statsHtml}</div>`; };
         const slides = [lrn-1,...Array.from({length:lrn},(_,i)=>i),0].map(mkLrSlide).join('');
         const lrPct = (_lastResultIdx+1)*(100/lrTN);
         resultsHtml += `<div class="hmc-label">${lrLabel}</div><div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-last-track" data-rn="${lrn}" style="width:${lrTN*100}%;transform:translateX(-${lrPct}%)">${slides}</div></div>`;
@@ -3749,12 +3758,14 @@ function renderMatchCardBody(){
         resultsHtml += `<div class="hmc-dots">${lrDots}</div>`;
       } else {
         const item=_lastResultsAll[0], r=results[item.matchId];
-        const lastPicks=_picksViewMode==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
+        const lastPicks=_picksViewModeByCard.results==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
         const hasLastPicks=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length));
-        resultsHtml += `<div class="hmc-label">${lrLabel}</div>`+_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)+item.predHtml+lastPicks+(hasLastPicks?picksHint:'')+matchExtrasHtml(item.f)+item.statsHtml;
+        resultsHtml += `<div class="hmc-label">${lrLabel}</div>`+_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)+item.predHtml+lastPicks+(hasLastPicks?picksHintFor('results'):'')+matchExtrasHtml(item.f,'results')+item.statsHtml;
       }
     }
     resultsBody.innerHTML = resultsHtml;
+    const lastTrack = document.getElementById('hmc-last-track');
+    if(lastTrack) _hmcSyncWrapHeight(lastTrack, _lastResultIdx+1);
   }
 
   // ── Today's Fixtures (countdown / live / finished, merged into one list) ──
@@ -3764,8 +3775,12 @@ function renderMatchCardBody(){
     if(_nextUpcoming){
       const unit=(n,l)=>`<div class="hmc-cd-unit"><div class="hmc-cd-num">${String(n).padStart(2,'0')}</div><div class="hmc-cd-lbl">${l}</div></div>`;
       const cdHtml=ko=>{const diff=ko.getTime()-now;if(diff<=0)return'';const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);return`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Starts in</div><div class="hmc-cd" style="margin-bottom:.6rem;">${d>0?unit(d,'days'):''}${unit(h,'hrs')}${unit(m,'min')}${unit(s,'sec')}</div>`;};
-      const finishedHdr=`<div style="text-align:center;margin-bottom:.6rem;"><span class="result-badge">✓ Game Finished</span></div>`;
-      const liveHdr=`<div class="hmc-label live" style="text-align:center;margin-bottom:.6rem;"><span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:.3rem;"></span>Live</div>`;
+      // Reuse the countdown's own markup (.hmc-cd/.hmc-cd-unit/.hmc-cd-num) for
+      // the live/finished states too, so the "Today's Fixtures" carousel slide
+      // stays roughly the same height whether a match is upcoming, live, or
+      // finished — nothing above/below has to jump when the state changes.
+      const finishedHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Match status</div><div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="color:var(--green);font-size:1.7rem;">✓ FT</div><div class="hmc-cd-lbl">full time</div></div></div>`;
+      const liveHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Match status</div><div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="font-size:1.7rem;animation:pulse 1.5s infinite;">● LIVE</div><div class="hmc-cd-lbl">in progress</div></div></div>`;
       const nuItemHtml=(item,nid)=>{
         if(item.finished){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'';return{timer:finishedHdr,sc,cls:''};}
         if(item.live){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'0–0';return{timer:liveHdr,sc,cls:'live'};}
@@ -3776,7 +3791,7 @@ function renderMatchCardBody(){
       if(_nextUpcomingAll.length > 1){
         nextHtml += `<div class="hmc-label">${lbl}</div>`;
         const cn = _nextUpcomingAll.length, cnTN = cn+2;
-        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewMode==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item)),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHint:''}${matchExtrasHtml(item.f)}</div>`; };
+        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewModeByCard.next==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item)),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHintFor('next'):''}${matchExtrasHtml(item.f,'next')}</div>`; };
         const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
         const pct = (_nextUpcomingIdx+1)*(100/cnTN);
         nextHtml += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
@@ -3787,13 +3802,15 @@ function renderMatchCardBody(){
         const _nbc=BROADCASTERS[nextId];
         nextHtml += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">${lbl}${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
         const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
-        const nextPicks = _picksViewMode==='grouped' ? groupedPicksFor(_nextUpcoming,nextId) : namedPicksHtml(nextId,nuMode(_nextUpcoming));
+        const nextPicks = _picksViewModeByCard.next==='grouped' ? groupedPicksFor(_nextUpcoming,nextId) : namedPicksHtml(nextId,nuMode(_nextUpcoming));
         const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-        nextHtml += timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHint:'')+matchExtrasHtml(_nextUpcoming.f);
+        nextHtml += timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHintFor('next'):'')+matchExtrasHtml(_nextUpcoming.f,'next');
       }
     }
     if(!nextHtml) nextHtml = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
     nextBody.innerHTML = nextHtml;
+    const nuTrack = document.getElementById('hmc-carousel-track');
+    if(nuTrack) _hmcSyncWrapHeight(nuTrack, _nextUpcomingIdx+1);
   }
 }
 
@@ -3806,6 +3823,7 @@ function hmcGoToSlide(idx){
     track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
     track.style.transform = `translateX(-${vIdx*(100/totalN)}%)`;
     _hmcSyncDots(track, idx);
+    _hmcSyncWrapHeight(track, vIdx);
   }
 }
 function hmcLastGoToSlide(idx){
@@ -3817,6 +3835,7 @@ function hmcLastGoToSlide(idx){
     track.style.transition = 'transform .32s cubic-bezier(.25,.46,.45,.94)';
     track.style.transform = `translateX(-${vIdx*(100/totalN)}%)`;
     _hmcSyncDots(track, idx);
+    _hmcSyncWrapHeight(track, vIdx);
   }
 }
 function _hmcSyncDots(track, idx){
@@ -3825,6 +3844,19 @@ function _hmcSyncDots(track, idx){
   const dotsEl = wrap.nextElementSibling;
   if(dotsEl&&dotsEl.classList.contains('hmc-dots'))
     dotsEl.querySelectorAll('.hmc-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+// .hmc-carousel-track is display:flex, so by default (align-items:stretch)
+// the whole row's height matches its TALLEST slide — since every slide sits
+// side-by-side for the sliding animation, a shorter slide gets stretched to
+// match, leaving visible blank space under its content. Pin the wrap's
+// height to just the currently-visible slide (domIdx = index within
+// track.children, i.e. including the clone padding for infinite-loop tracks)
+// instead of however tall the tallest sibling slide happens to be.
+function _hmcSyncWrapHeight(track, domIdx){
+  const wrap = track?.parentElement;
+  const slide = track?.children?.[domIdx];
+  if(!wrap || !slide) return;
+  wrap.style.height = slide.scrollHeight + 'px';
 }
 
 function _predPcts(mid){
@@ -3916,8 +3948,10 @@ function coloredGroupedPicksHtml(mid, resHome, resAway){
   return `<div class="hmc-others">Group picks: ${parts}</div>`;
 }
 
-function togglePicksView(){
-  _picksViewMode = _picksViewMode==='grouped' ? 'named' : 'grouped';
+function togglePicksView(cardKey){
+  const key = cardKey||'default';
+  if(_picksViewModeByCard[key]===undefined) _picksViewModeByCard[key] = 'named';
+  _picksViewModeByCard[key] = _picksViewModeByCard[key]==='grouped' ? 'named' : 'grouped';
   renderMatchCardBody();
 }
 
@@ -4017,18 +4051,24 @@ function teamFormHtml(f){
 }
 
 // Recent results + group table wrapped in a tap-to-hide/show toggle.
-function matchExtrasHtml(f){
+// cardKey scopes the expand state independently per card (defaults to a
+// shared 'default' bucket for callers — e.g. the Predict page — that don't
+// need to be independent of anything else).
+function matchExtrasHtml(f, cardKey){
   if(!f) return '';
+  const key = cardKey||'default';
   const inner = teamFormHtml(f) + (f.isKnockout ? knockoutTeamStatsHtml(f) : groupStandingsHtml(f));
   if(!inner) return '';
-  if(_hideMatchExtras)
-    return `<div class="extras-toggle collapsed" onclick="toggleMatchExtras(event)">▾ show form &amp; table</div>`;
-  return `<div class="match-extras" onclick="toggleMatchExtras(event)" style="cursor:pointer;" title="Tap to hide">${inner}</div><div class="extras-toggle" onclick="toggleMatchExtras(event)">▴ tap to hide</div>`;
+  if(isExtrasHidden(key))
+    return `<div class="extras-toggle collapsed" onclick="toggleMatchExtras(event,'${key}')">▾ show form &amp; table</div>`;
+  return `<div class="match-extras" onclick="toggleMatchExtras(event,'${key}')" style="cursor:pointer;" title="Tap to hide">${inner}</div><div class="extras-toggle" onclick="toggleMatchExtras(event,'${key}')">▴ tap to hide</div>`;
 }
-function toggleMatchExtras(event){
+function toggleMatchExtras(event, cardKey){
   if(event){ event.stopPropagation(); }
-  _hideMatchExtras = !_hideMatchExtras;
-  localStorage.setItem('wc26_hide_extras', _hideMatchExtras?'1':'0');
+  const key = cardKey||'default';
+  const next = !isExtrasHidden(key);
+  _hideMatchExtrasByCard[key] = next;
+  localStorage.setItem('wc26_hide_extras_'+key, next?'1':'0');
   renderMatchCardBody();
   // refresh any open predict-page picks panels
   document.querySelectorAll('.pred-picks-panel').forEach(p=>{
@@ -5858,6 +5898,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.61',date:'5 Jul 2026',notes:['Fixed the blank gap under a live/finished match on the Today\'s Fixtures carousel (the shorter slide was being stretched to match the height of its taller countdown sibling) — the carousel now sizes itself to whichever slide is actually showing. Also redesigned the "Live"/"Full Time" indicator to be as big as the countdown it replaces, so the score and everything below barely has to shift at all.','"Tap to view grouped/by name" and "show form & table" now work independently on Previous Fixtures vs Today\'s Fixtures — toggling one no longer affects the other. Both hint texts also have a bigger, easier-to-tap hit box.','Hardened the player predictions modal\'s scrollable history list against a rare nested-scroll conflict with the modal itself, which could make it feel stuck on some phones.']},
   {v:'1.78.60',date:'5 Jul 2026',notes:['Admin → Players no longer shows a player\'s custom home page order — kept the "personally hidden cards" line.']},
   {v:'1.78.59',date:'5 Jul 2026',notes:['Fixed: end-of-game celebration banners now only show for the most recent matchday\'s results. Logging in on a device that hasn\'t been used in a few days no longer queues up a backlog of banners for every unseen finished game since last use — older ones are marked seen silently instead.']},
   {v:'1.78.58',date:'5 Jul 2026',notes:['Clearer Contrarian achievement description — now spells out that it\'s about picking a different result direction (W/D/L) than the group\'s majority and being right, not needing an exact score or being the only one correct.']},
@@ -12633,6 +12674,7 @@ async function godCreateGroup(){
       track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
       track.style.transform=`translateX(-${vIdx*(100/totalN)}%)`;
       _hmcSyncDots(track,logIdx);
+      _hmcSyncWrapHeight(track,vIdx);
       if(vIdx===0||vIdx===n+1){
         const snapV=vIdx===0?n:1;
         track.addEventListener('transitionend',function h(){
@@ -12641,6 +12683,7 @@ async function godCreateGroup(){
           track.style.transform=`translateX(-${snapV*(100/totalN)}%)`;
           setIdx(snapV-1);
           _hmcSyncDots(track,snapV-1);
+          _hmcSyncWrapHeight(track,snapV);
         },{once:true});
       }
     }
@@ -12664,6 +12707,7 @@ async function godCreateGroup(){
       track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
       track.style.transform=`translateX(-${vIdx*(100/totalN)}%)`;
       _hmcSyncDots(track,logIdx);
+      _hmcSyncWrapHeight(track,vIdx);
       if(vIdx===0||vIdx===n+1){
         const snapV=vIdx===0?n:1;
         track.addEventListener('transitionend',function h(){
@@ -12672,6 +12716,7 @@ async function godCreateGroup(){
           track.style.transform=`translateX(-${snapV*(100/totalN)}%)`;
           setIdx(snapV-1);
           _hmcSyncDots(track,snapV-1);
+          _hmcSyncWrapHeight(track,snapV);
         },{once:true});
       }
     } else {
@@ -12682,6 +12727,7 @@ async function godCreateGroup(){
       track.style.transition='transform .32s cubic-bezier(.25,.46,.45,.94)';
       track.style.transform=`translateX(-${idx*(100/n)}%)`;
       _hmcSyncDots(track,idx);
+      _hmcSyncWrapHeight(track,idx);
     }
   },{passive:true});
 })();
@@ -12760,7 +12806,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.60</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.61</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
