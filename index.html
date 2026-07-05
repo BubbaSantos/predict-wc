@@ -1325,7 +1325,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.25</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.26</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2902,6 +2902,7 @@ let _lastResultIdx = 0;
 let _liveGamesIdx = 0;
 let _livePicksMap = {};
 let _matchPredsMap = {};
+let _liveMissingMap = {};
 let _lastResultPicksGrouped = '';
 let _lastResultMatchId = null;
 let _picksViewMode = 'named';
@@ -3700,7 +3701,7 @@ function renderMatchCardBody(){
         const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
         const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
         const _sbc=BROADCASTERS[f.id],_sbcH=_sbc?`<span class="broadcaster-badge ${_sbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_sbc}</span>`:'';
-        return `<div class="hmc-carousel-slide" style="width:${100/liveGames.length}%;position:relative;">${_sbcH}${_pctTeamsHtml(f,'live',score,f.id)}${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${picks}${hasAnyPicks?picksHint:''}${matchExtrasHtml(f)}</div>`;
+        return `<div class="hmc-carousel-slide" style="width:${100/liveGames.length}%;position:relative;">${_sbcH}${_pctTeamsHtml(f,'live',score,f.id)}${hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:''}${_liveMissingMap[f.id]||''}${picks}${hasAnyPicks?picksHint:''}${matchExtrasHtml(f)}</div>`;
       }).join('');
       const livePct = _liveGamesIdx*(100/liveGames.length);
       html += `<div class="hmc-carousel-wrap" id="hmc-live-wrap"><div class="hmc-carousel-track" id="hmc-live-track" style="width:${liveGames.length*100}%;transform:translateX(-${livePct}%)">${slides}</div></div>`;
@@ -3716,7 +3717,7 @@ function renderMatchCardBody(){
       const hasPred = p&&p.home!==''&&p.home!==null;
       const picks = _picksViewMode==='grouped' ? coloredGroupedPicksHtml(f.id, r&&r.home, r&&r.away) : namedPicksHtml(f.id,'live');
       const hasAnyPicks = !!(_livePicksMap[f.id]||(_matchPredsMap[f.id]?.length));
-      html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+picks+(hasAnyPicks?picksHint:'')+matchExtrasHtml(f);
+      html += _pctTeamsHtml(f,'live',score,f.id)+(hasPred?`<div class="hmc-pred">You predicted ${p.home}–${p.away}</div>`:'')+(_liveMissingMap[f.id]||'')+picks+(hasAnyPicks?picksHint:'')+matchExtrasHtml(f);
     }
   } else if(_lastResultsAll.length){
     const lrn = _lastResultsAll.length;
@@ -5694,6 +5695,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.26',date:'5 Jul 2026',notes:['Live Now home card now shows "Not predicted yet: …" for anyone in the group who hasn\'t predicted that match — previously this only appeared on the Next Up card, so a live game with missing predictions gave no indication.']},
   {v:'1.78.25',date:'4 Jul 2026',notes:['Fixed the "swipe from the screen edge takes you out of the app" issue — the app\'s own left/right swipe-between-tabs gesture was competing with Safari\'s built-in edge-swipe back/forward navigation, which could land on a stale browser history entry. Added overscroll-behavior-x:none so Safari\'s own edge-navigation gesture is disabled and only the app\'s gesture responds to a swipe. Note: if you still see the broken-page screen once, it\'s an already-stale entry left over from before this fix — fully closing and reopening the browser tab (or the installed app) clears it for good.']},
   {v:'1.78.24',date:'4 Jul 2026',notes:['Fixed scrolling in the player predictions card being unreliable (sometimes not scrolling at all) — the JS that forced it to land on the most recent game was racing against font-loading reflows. Replaced with a pure-CSS approach (the same bottom-anchoring trick chat apps use) so the list lands on the latest game natively, with no JS scroll code to race against anything.']},
   {v:'1.78.23',date:'4 Jul 2026',notes:['Fixed a bug where downloading a Share Stats image on iOS Safari could leave a broken entry in the browser\'s navigation history — swiping to it later showed "Safari can\'t open the page (WebKitBlobResource error 1)". The download fallback now uses a data: URL instead of a blob: URL, which can never go stale like that. Native share sheet (used automatically where supported) is unaffected.']},
@@ -7338,11 +7340,23 @@ async function loadHome(){
       return `<div class="hmc-others">Group picks: ${parts}</div>`;
     };
 
+    // Helper: "Not predicted yet: X, Y" line for a match, blank once everyone's in
+    const missingPredsHtml = mid => {
+      const predictedIds=new Set((gamePreds||[]).filter(p=>p.match_id===mid&&p.home_score!=null).map(p=>p.player_id));
+      const allPlayerIds=Object.keys(pm);
+      const missingNames=allPlayerIds.filter(pid=>!predictedIds.has(pid)).map(pid=>pm[pid]?.display||pm[pid]?.name).filter(Boolean);
+      if(!missingNames.length) return '';
+      const iAmMissing=currentPlayer&&!predictedIds.has(currentPlayer.id);
+      return `<div style="font-size:.67rem;color:var(--text-muted);margin-top:.45rem;line-height:1.5;text-align:center;">Not predicted yet: <span style="color:var(--text);">${missingNames.join(', ')}</span>${iAmMissing?`<br><span style="cursor:pointer;color:var(--group-accent);text-decoration:underline;font-weight:600;" onclick="event.stopPropagation();showView('predict')">predict now</span>`:''}</div>`;
+    };
+
     // Pre-build grouped picks and raw pred data for all fixtures
     _livePicksMap = {};
     _matchPredsMap = {};
+    _liveMissingMap = {};
     allFixtures().forEach(f=>{
       _livePicksMap[f.id] = predSummary(f.id);
+      _liveMissingMap[f.id] = missingPredsHtml(f.id);
     });
     (gamePreds||[]).filter(p=>p.home_score!=null&&p.away_score!=null).forEach(p=>{
       if(!_matchPredsMap[p.match_id]) _matchPredsMap[p.match_id]=[];
@@ -7415,14 +7429,7 @@ async function loadHome(){
       if(_nextUpcomingIdx >= _nextUpcomingAll.length) _nextUpcomingIdx = 0;
       _nextGamePredHtmlAll = _nextUpcomingAll.map(({f,finished})=>{
         const pred=myPredMap[f.id];
-        // Who hasn't predicted for this match
-        const predictedIds=new Set((gamePreds||[]).filter(p=>p.match_id===f.id&&p.home_score!=null).map(p=>p.player_id));
-        const allPlayerIds=Object.keys(pm);
-        const missingNames=allPlayerIds.filter(pid=>!predictedIds.has(pid)).map(pid=>pm[pid]?.display||pm[pid]?.name).filter(Boolean);
-        const iAmMissing=currentPlayer&&missingNames.length&&!predictedIds.has(currentPlayer.id);
-        const missingHtml=missingNames.length
-          ?`<div style="font-size:.67rem;color:var(--text-muted);margin-top:.45rem;line-height:1.5;text-align:center;">Not predicted yet: <span style="color:var(--text);">${missingNames.join(', ')}</span>${iAmMissing?`<br><span style="cursor:pointer;color:var(--group-accent);text-decoration:underline;font-weight:600;" onclick="event.stopPropagation();showView('predict')">predict now</span>`:''}</div>`
-          :'';
+        const missingHtml=_liveMissingMap[f.id]||'';
         if(finished){
           if(!pred) return missingHtml;
           const r=rm[f.id];
@@ -12452,7 +12459,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.25</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.26</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
