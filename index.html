@@ -1338,7 +1338,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.32</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.33</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5673,12 +5673,13 @@ const PLAYER_BADGE_DEFS = [
   {key:'podium_regular',emoji:'🥉', name:'Podium Regular',  desc:'Matchdays spent in the top 3',      metric:c=>c.daysPodium,     tiers:[{name:'Lvl 1',min:5},{name:'Lvl 2',min:10},{name:'Lvl 3',min:20}]},
   {key:'flawless',      emoji:'💎', name:'Flawless',        desc:'Longest streak of correct scores',  metric:c=>c.longestPerfect, tiers:[{name:'Lvl 1',min:2},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
   {key:'on_fire',       emoji:'🔥', name:'On Fire',         desc:'Longest streak of correct results', metric:c=>c.longestHot,     tiers:[{name:'Lvl 1',min:3},{name:'Lvl 2',min:5},{name:'Lvl 3',min:8}]},
-  {key:'motm',          emoji:'⚽', name:'Man of the Match', desc:'Matchdays as top scorer',           metric:c=>c.motmAwards,     tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
-  {key:'century',       emoji:'💯', name:'Century',         desc:'Total points earned',               metric:c=>c.totalPts,       tiers:[{name:'Lvl 1',min:50},{name:'Lvl 2',min:100},{name:'Lvl 3',min:200}]},
+  {key:'motm',          emoji:'⚽', name:'Man of the Match', desc:'Matchdays as top scorer',           metric:c=>c.motmAwards,     tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:5},{name:'Lvl 3',min:10}]},
+  {key:'century',       emoji:'💯', name:'Century',         desc:'Total points earned',               metric:c=>c.totalPts,       tiers:[{name:'Lvl 1',min:100},{name:'Lvl 2',min:200},{name:'Lvl 3',min:300}]},
   {key:'sharpshooter',  emoji:'🎯', name:'Sharpshooter',    desc:'Correct scores nailed',              metric:c=>c.exact,          tiers:[{name:'Lvl 1',min:5},{name:'Lvl 2',min:10},{name:'Lvl 3',min:20}]},
-  {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'Predictions made',                   metric:c=>c.predictionsMade,tiers:[{name:'Lvl 1',min:10},{name:'Lvl 2',min:20},{name:'Lvl 3',min:30}]},
+  {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'% of finished games predicted',      metric:c=>c.predictedPct, unit:'%', tiers:[{name:'Lvl 1',min:75},{name:'Lvl 2',min:90},{name:'Lvl 3',min:100}]},
   {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:'Correct scores nailed that nobody else got', metric:c=>c.soloExactGames.length, tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
   {key:'half_baked',    emoji:'🍞', name:'Half Baked',      desc:'Nailed one side\'s score without the full scoreline', metric:c=>c.halfExact, tiers:[{name:'Lvl 1',min:20},{name:'Lvl 2',min:40},{name:'Lvl 3',min:70}]},
+  {key:'no_cigar',      emoji:'🚬', name:'No Cigar',        desc:'One goal away from the exact score',                  metric:c=>c.oneGoalOff, tiers:[{name:'Lvl 1',min:8},{name:'Lvl 2',min:15},{name:'Lvl 3',min:25}]},
 ];
 // Resolves a badge def against a player's core stats: which tier (if any) is
 // currently held, and what's needed for the next one.
@@ -5718,6 +5719,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.33',date:'5 Jul 2026',notes:['Achievements: tap a badge a second time to open a group leaderboard for that specific achievement, ranking everyone by level and value (first tap still shows what it takes). New badge: No Cigar 🚬, levels for landing one goal away from the exact score. Ever Present is now a % of already-finished games predicted rather than a raw count. Rebalanced thresholds: Century (100/200/300), Man of the Match (1/5/10).']},
   {v:'1.78.32',date:'5 Jul 2026',notes:['Doubled the Half Baked achievement thresholds — Lvl 1 at 20, Lvl 2 at 40, Lvl 3 at 70 (was 10/20/35), since it was unlocking too easily.']},
   {v:'1.78.31',date:'5 Jul 2026',notes:['Achievements: removed Climber, Frozen Out and High Roller, added Half Baked (nailed one side\'s score without the full scoreline — Lvl 1 at 10, Lvl 2 at 20, Lvl 3 at 35). Redesigned the badge tiles: circular icon with a tier-coloured ring, a small level number badge, and a mini progress bar toward the next level.']},
   {v:'1.78.30',date:'5 Jul 2026',notes:['Achievements: Unicorn (solo correct scores — nailing a scoreline nobody else got) now levels up too: Lvl 1 at 1, Lvl 2 at 3, Lvl 3 at 5.']},
@@ -7340,7 +7342,7 @@ async function loadHome(){
         if(key==='position_chart') initPositionChart(personalStatsEl, myCore.rankHistory, built);
         else if(key==='cumulative_chart') initCumulativeChart(personalStatsEl, myCore.cumHistory, built);
         else if(key==='points_chart') initBarChart(personalStatsEl, myCore.mdPoints);
-        else if(key==='badges') initBadgesBlock(personalStatsEl, built.tierMap);
+        else if(key==='badges') initBadgesBlock(personalStatsEl, built.tierMap, {allPlayers, gamePreds, rm, fixtures:allFixtures(), myId:currentPlayer.id});
       });
     }
 
@@ -8002,7 +8004,7 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
   // ── Per-game points + scoreline tallies ──
   const myPredMap={}; // match_id -> {h,a}
   gamePreds.filter(p=>p.player_id===pid).forEach(p=>{ myPredMap[p.match_id]={h:p.home_score,a:p.away_score}; });
-  let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0, halfExact=0;
+  let totalPts=0, exact=0, results3=0, wrong=0, perfect8=0, scoredGames=0, goalsPredicted=0, predictionsMade=0, halfExact=0, oneGoalOff=0;
   const exactGames=[], soloExactGames=[], scorelineCount={};
   fixtures.forEach(f=>{
     const p=myPredMap[f.id]; if(!p || p.h==null || p.a==null) return;
@@ -8022,11 +8024,16 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
     else if(pts===0){ wrong++; }
     // "Half Baked": nailed one side's score exactly without getting the full scoreline
     if(pts<5 && (p.h===r.home_score || p.a===r.away_score)) halfExact++;
+    // "No Cigar": total scoreline just one goal away from the exact result
+    if(pts<5 && (Math.abs(p.h-r.home_score)+Math.abs(p.a-r.away_score))===1) oneGoalOff++;
   });
 
   // ── Rank snapshots after each completed matchday (mirrors home stats) ──
   const completed = fixtures.filter(f=>{ const r=rm[f.id]; return r && r.home_score!=null && r.away_score!=null; })
     .sort((a,b)=>(getMatchKickoff(a)?.getTime()||0)-(getMatchKickoff(b)?.getTime()||0));
+  // % of already-finished games this player predicted (used by the Ever Present badge)
+  const predictedOfCompleted = completed.filter(f=>myPredMap[f.id] && myPredMap[f.id].h!=null).length;
+  const predictedPct = completed.length ? Math.round((predictedOfCompleted/completed.length)*100) : 0;
   const matchesByDate={};
   completed.forEach(f=>{ const k=f.date||'unknown'; (matchesByDate[k]=matchesByDate[k]||[]).push(f); });
   const dateKeys=Object.keys(matchesByDate).filter(k=>k!=='unknown').sort();
@@ -8109,7 +8116,7 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
     hasRanks, currentPos, bestPos, worstPos, netMove, netLookback, recentBest, recentWorst,
     daysTop, daysPodium, daysBottom, favPos,
     perfectCount, hotCount, coldCount, longestPerfect, longestHot, longestCold, trailPerfect, trailHot, trailCold,
-    favScoreline, motmAwards, completed, matchPreds, myPredMap, halfExact,
+    favScoreline, motmAwards, completed, matchPreds, myPredMap, halfExact, oneGoalOff, predictedPct,
   };
 }
 
@@ -8147,7 +8154,7 @@ async function showPlayerStats(playerId, name){
     if(key==='position_chart') initPositionChart(modal, rankHistory, built);
     else if(key==='cumulative_chart') initCumulativeChart(modal, cumHistory, built);
     else if(key==='points_chart') initBarChart(modal, mdPoints);
-    else if(key==='badges') initBadgesBlock(modal, built.tierMap);
+    else if(key==='badges') initBadgesBlock(modal, built.tierMap, {allPlayers, gamePreds, rm, fixtures, myId:me});
   });
   const compareBtnEl = modal.querySelector('.modal-compare-btn');
   if(compareBtnEl) compareBtnEl.addEventListener('click', ()=> openComparePicker(me, myName, allPlayers||[]));
@@ -8644,17 +8651,26 @@ function buildBadgesBlock(core){
     </div>`;
   return {html, tierMap};
 }
-function initBadgesBlock(scope, tierMap){
+// `groupCtx` (optional) = {allPlayers, gamePreds, rm, fixtures, myId}. When present,
+// tapping an already-selected badge opens a group leaderboard for that badge instead
+// of just re-showing its caption (tap 1: what it takes; tap 2 on the same tile: compare).
+function initBadgesBlock(scope, tierMap, groupCtx){
   const root = scope.querySelector('[data-chart-key="badges"]');
   if(!root) return;
   const grid = root.querySelector('.badge-grid');
   const caption = root.querySelector('.badge-caption');
   if(!grid || !caption) return;
+  let selectedKey = null;
   grid.addEventListener('click', e=>{
     const tile = e.target.closest('.badge-tile');
     if(!tile) return;
     const def = PLAYER_BADGE_DEFS.find(b=>b.key===tile.dataset.key);
     if(!def) return;
+    if(groupCtx && selectedKey===def.key){
+      openBadgeLeaderboardModal(def, groupCtx);
+      return;
+    }
+    selectedKey = def.key;
     const t = tierMap.get(def.key);
     if(!def.tiers){
       const status = t.earned ? '' : ' <span style="color:var(--text-muted);">(locked)</span>';
@@ -8664,10 +8680,48 @@ function initBadgesBlock(scope, tierMap){
     const tierLines = def.tiers.map((tr,i)=>{
       const done = i<=t.tierIdx, isNext = i===t.tierIdx+1;
       const style = done ? 'text-decoration:line-through;opacity:.5;' : isNext ? 'color:var(--text);font-weight:700;' : '';
-      return `<div style="${style}">${tr.name} — ${tr.min}+</div>`;
+      return `<div style="${style}">${tr.name} — ${tr.min}${def.unit||''}+</div>`;
     }).join('');
-    caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}<div style="margin-top:.3rem;">${tierLines}</div>`;
+    caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}<div style="margin-top:.3rem;">${tierLines}</div>${groupCtx?'<div style="margin-top:.3rem;opacity:.6;">Tap again to compare with the group</div>':''}`;
   });
+}
+// Ranks every player in the group against a single badge's metric (or 1/0 for a
+// one-shot badge), highest first.
+function computeBadgeLeaderboard(def, allPlayers, gamePreds, rm, fixtures){
+  return (allPlayers||[]).map(p=>{
+    const core = computePlayerCore(p.id, gamePreds, rm, fixtures);
+    const t = badgeTierInfo(def, core);
+    const value = def.tiers ? (t.value||0) : (t.earned?1:0);
+    return {id:p.id, name:p.nickname||p.name, tierIdx:t.tierIdx, tierName:t.tierName, value};
+  }).sort((a,b)=> b.value-a.value || b.tierIdx-a.tierIdx);
+}
+function openBadgeLeaderboardModal(def, groupCtx){
+  const {allPlayers, gamePreds, rm, fixtures, myId} = groupCtx;
+  const rows = computeBadgeLeaderboard(def, allPlayers, gamePreds, rm, fixtures);
+  const medals = ['🥇','🥈','🥉'];
+  const rowsHtml = rows.map((r,i)=>{
+    const rankCls = i===0?'mlb-gold':i===1?'mlb-silver':i===2?'mlb-bronze':'';
+    const youCls = r.id===myId ? ' mlb-you' : '';
+    const rankTxt = medals[i] || String(i+1);
+    const tierTxt = def.tiers ? (r.tierName ? `Lvl ${r.tierIdx+1}` : '—') : (r.value?'✓':'—');
+    return `<div class="mini-lb-row ${rankCls}${youCls}">
+      <div class="mini-lb-rank">${rankTxt}</div>
+      <div class="mini-lb-name">${r.name}${r.id===myId?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}</div>
+      <div style="text-align:right;"><div class="mini-lb-pts">${tierTxt}</div>${def.tiers?`<div style="font-size:.6rem;color:var(--text-muted);">${r.value}${def.unit||''}</div>`:''}</div>
+    </div>`;
+  }).join('');
+  const modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.innerHTML = `<div class="pred-modal" style="max-width:420px;">
+    <div class="pred-modal-header">
+      <div class="pred-modal-title" style="font-size:1.1rem;">${def.emoji} ${def.name}</div>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">${def.desc}</div>
+    ${rowsHtml || '<div class="empty">No data yet.</div>'}
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
 }
 
 // ── Maverick picks: predictions that went against the group consensus (used on the player stats page) ──
@@ -12519,7 +12573,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.32</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.33</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
