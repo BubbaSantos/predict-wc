@@ -1338,7 +1338,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.33</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.34</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5679,7 +5679,7 @@ const PLAYER_BADGE_DEFS = [
   {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'% of finished games predicted',      metric:c=>c.predictedPct, unit:'%', tiers:[{name:'Lvl 1',min:75},{name:'Lvl 2',min:90},{name:'Lvl 3',min:100}]},
   {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:'Correct scores nailed that nobody else got', metric:c=>c.soloExactGames.length, tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
   {key:'half_baked',    emoji:'🍞', name:'Half Baked',      desc:'Nailed one side\'s score without the full scoreline', metric:c=>c.halfExact, tiers:[{name:'Lvl 1',min:20},{name:'Lvl 2',min:40},{name:'Lvl 3',min:70}]},
-  {key:'no_cigar',      emoji:'🚬', name:'No Cigar',        desc:'One goal away from the exact score',                  metric:c=>c.oneGoalOff, tiers:[{name:'Lvl 1',min:8},{name:'Lvl 2',min:15},{name:'Lvl 3',min:25}]},
+  {key:'no_cigar',      emoji:'🚬', name:'No Cigar',        desc:'One goal away from the exact score',                  metric:c=>c.oneGoalOff, tiers:[{name:'Lvl 1',min:25},{name:'Lvl 2',min:50},{name:'Lvl 3',min:75}]},
 ];
 // Resolves a badge def against a player's core stats: which tier (if any) is
 // currently held, and what's needed for the next one.
@@ -5719,6 +5719,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.34',date:'5 Jul 2026',notes:['Raised No Cigar thresholds to Lvl 1 at 25, Lvl 2 at 50, Lvl 3 at 75 (was 8/15/25).']},
   {v:'1.78.33',date:'5 Jul 2026',notes:['Achievements: tap a badge a second time to open a group leaderboard for that specific achievement, ranking everyone by level and value (first tap still shows what it takes). New badge: No Cigar 🚬, levels for landing one goal away from the exact score. Ever Present is now a % of already-finished games predicted rather than a raw count. Rebalanced thresholds: Century (100/200/300), Man of the Match (1/5/10).']},
   {v:'1.78.32',date:'5 Jul 2026',notes:['Doubled the Half Baked achievement thresholds — Lvl 1 at 20, Lvl 2 at 40, Lvl 3 at 70 (was 10/20/35), since it was unlocking too easily.']},
   {v:'1.78.31',date:'5 Jul 2026',notes:['Achievements: removed Climber, Frozen Out and High Roller, added Half Baked (nailed one side\'s score without the full scoreline — Lvl 1 at 10, Lvl 2 at 20, Lvl 3 at 35). Redesigned the badge tiles: circular icon with a tier-coloured ring, a small level number badge, and a mini progress bar toward the next level.']},
@@ -12573,7 +12574,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.33</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.34</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
