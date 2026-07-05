@@ -208,17 +208,22 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .reorder-card-btn:active{opacity:.7;}
 .mini-lb-row{display:grid;grid-template-columns:2.2rem 1fr auto;align-items:center;gap:.75rem;padding:.55rem .5rem;border-radius:8px;margin-bottom:.3rem;transition:background .15s;}
 .mini-lb-row.mlb-gold{background:color-mix(in srgb,var(--gold) 16%,var(--surface));border:1px solid rgba(251,191,36,.35);}
-.mini-lb-row.mlb-silver{background:color-mix(in srgb,var(--silver) 14%,var(--surface));border:1px solid rgba(148,163,184,.3);}
+.mini-lb-row.mlb-silver{background:color-mix(in srgb,#cbd5e1 14%,var(--surface));border:1px solid #cbd5e1;box-shadow:0 0 8px rgba(203,213,225,.35),inset 0 0 6px rgba(255,255,255,.1);}
 .mini-lb-row.mlb-bronze{background:color-mix(in srgb,var(--bronze) 14%,var(--surface));border:1px solid rgba(217,119,6,.3);}
 .mini-lb-row.mlb-you{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.3);}
 .mini-lb-rank{font-size:1.1rem;font-weight:700;text-align:center;color:var(--text-muted);}
 .mlb-gold .mini-lb-rank{color:var(--gold);}
-.mlb-silver .mini-lb-rank{color:var(--silver);}
+.mlb-silver .mini-lb-rank{color:#cbd5e1;}
 .mlb-bronze .mini-lb-rank{color:var(--bronze);}
 .mlb-you .mini-lb-rank{color:#818cf8;}
 .mini-lb-name{font-size:.88rem;font-weight:600;}
 .mini-lb-pts{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:500;color:var(--group-accent);}
 .home-divider{border:none;border-top:1px solid var(--border);margin:.6rem 0;}
+/* Standings home card shows the full group, so keep every row minimal */
+#home-mini-lb .mini-lb-row{grid-template-columns:1.6rem 1fr auto;gap:.5rem;padding:.32rem .4rem;margin-bottom:.15rem;}
+#home-mini-lb .mini-lb-rank{font-size:.78rem;}
+#home-mini-lb .mini-lb-name{font-size:.74rem;}
+#home-mini-lb .mini-lb-pts{font-size:.78rem;}
 .home-next-match{display:flex;align-items:center;justify-content:space-between;gap:.75rem;}
 .home-next-teams{font-size:.95rem;font-weight:600;flex:1;}
 .home-next-date{font-size:.72rem;color:var(--text-muted);}
@@ -432,13 +437,13 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .lb-row{display:grid;grid-template-columns:3rem 1fr auto;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.5rem;transition:border-color .15s;-webkit-tap-highlight-color:transparent;}
 @media(hover:hover){.lb-row:hover{border-color:var(--group-accent);}}
 .lb-row.lb-gold{background:color-mix(in srgb,var(--gold) 18%,var(--surface));border-color:rgba(251,191,36,.45);}
-.lb-row.lb-silver{background:color-mix(in srgb,var(--silver) 16%,var(--surface));border-color:rgba(148,163,184,.45);}
+.lb-row.lb-silver{background:color-mix(in srgb,#cbd5e1 16%,var(--surface));border-color:#cbd5e1;box-shadow:0 0 10px rgba(203,213,225,.4),inset 0 0 8px rgba(255,255,255,.12);}
 .lb-row.lb-bronze{background:color-mix(in srgb,var(--bronze) 16%,var(--surface));border-color:rgba(217,119,6,.45);}
 .lb-row.lb-last{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);}
 .lb-row.lb-you{border-color:var(--group-accent);box-shadow:0 0 0 1px var(--group-accent);}
 .lb-rank{font-size:1.6rem;line-height:1;color:var(--text-muted);text-align:center;}
 .lb-row.lb-gold .lb-rank{color:var(--gold);}
-.lb-row.lb-silver .lb-rank{color:var(--silver);}
+.lb-row.lb-silver .lb-rank{color:#cbd5e1;}
 .lb-row.lb-bronze .lb-rank{color:var(--bronze);}
 .lb-badge{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:.15rem .45rem;border-radius:4px;margin-left:.4rem;vertical-align:middle;}
 .lb-badge-row .lb-badge{margin-left:0;}
@@ -1346,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.47</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.48</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5847,6 +5852,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.48',date:'5 Jul 2026',notes:['Standings home card now shows the full group (everyone, not just top 3 + you), with smaller/tighter rows so it stays compact. Silver (2nd place) rows on both the home Standings card and the full Leaderboard now get a proper metallic shine — brighter ring, soft glow, inner highlight — instead of flat grey, matching the Lvl 2 achievement look.']},
   {v:'1.78.47',date:'5 Jul 2026',notes:['Fixed 3 wrong Quarter-Final pairings in the bracket (m097/m098/m099 were mapped to the wrong Round of 16 matches — cross-checked against the official schedule). Extended the "Team A or Team B" placeholder to every knockout round (Semi-Final, 3rd Place, Final too), not just QF — it now shows automatically wherever a feeding match\'s two teams are both known, and only ever shows two names (falls back to plain TBD rather than jumbling more than two teams together).']},
   {v:'1.78.46',date:'5 Jul 2026',notes:['Quarter-Final fixtures now show a "Team A or Team B" placeholder (same as Round of 16 already does) once both Round of 16 teams are known but that game hasn\'t been played yet, instead of a plain TBD. Semi-Final, 3rd Place and Final still show TBD until their teams are actually confirmed.']},
   {v:'1.78.45',date:'5 Jul 2026',notes:['Fixed: Forfeit Vote and Paid Places Vote cards still showed up in the Reorder Home Cards list even when their poll was switched off — they aren\'t part of the generic card-visibility system (each has its own poll on/off setting) so the reorder list wasn\'t checking them correctly.']},
@@ -7413,34 +7419,20 @@ async function loadHome(){
     } else {
       const miniDot = pid => _lbOnline[pid] ? '<span title="Online now" style="display:inline-block;width:.38rem;height:.38rem;border-radius:50%;background:#10b981;margin-left:.35rem;vertical-align:middle;"></span>' : '';
       const miniMotmBadge = pid => (currentGroup?.show_motm_badge!==false && _lbMotmPids.size && _lbMotmPids.has(pid)) ? '<span class="lb-badge lb-badge-motm" style="font-size:.5rem;padding:.08rem .28rem;">⚽ MOTM</span>' : '';
-      sorted.slice(0,3).forEach(([name,s],i)=>{
+      sorted.forEach(([name,s],i)=>{
         const isYou = name===myDisplayName;
         const mIsItm = name===itmName, mIsForfeit = name===forfeitName&&sorted.length>1;
-        const mBadge = mIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':mIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
+        const mBadge = mIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.5rem;padding:.06rem .25rem;">ITM</span>':mIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.5rem;padding:.06rem .25rem;">Forfeit</span>':'';
         const mNameHtml = streakNameHtml(name, _lbStreaks[name]);
         const r = miniRanks[i];
         const medal = rankMedals[r] || (miniRankCounts[r]>1?'='+r:String(r));
-        const cls = rankCls[r] || '';
+        const cls = (rankCls[r] || '') + (isYou?' mlb-you':'');
         lbHtml += `<div class="mini-lb-row ${cls}">
           <div class="mini-lb-rank" style="display:flex;flex-direction:column;align-items:center;">${medal}${miniRankArrow(prevRankByNameH[name],r)}</div>
-          <div class="mini-lb-name">${mNameHtml}${miniDot(s.playerId)}${isYou?' <span style="font-size:.65rem;color:#818cf8;">(you)</span>':''}${mBadge}${miniMotmBadge(s.playerId)}</div>
+          <div class="mini-lb-name">${mNameHtml}${miniDot(s.playerId)}${isYou?' <span style="font-size:.6rem;color:#818cf8;">(you)</span>':''}${mBadge}${miniMotmBadge(s.playerId)}</div>
           <div style="text-align:right;"><div class="mini-lb-pts">${s.total} pts</div>${miniPtsGained(name)}</div>
         </div>`;
       });
-      if(myIdx > 2){
-        const [myName,myS] = sorted[myIdx];
-        lbHtml += '<hr class="home-divider">';
-        const myIsItm = myName===itmName, myIsForfeit = myName===forfeitName&&sorted.length>1;
-        const myBadge = myIsItm?'<span class="lb-badge lb-badge-money" style="font-size:.55rem;padding:.1rem .3rem;">ITM</span>':myIsForfeit?'<span class="lb-badge lb-badge-forfeit" style="font-size:.55rem;padding:.1rem .3rem;">Forfeit</span>':'';
-        const myNameHtml = streakNameHtml(myName, _lbStreaks[myName]);
-        const myR = miniRanks[myIdx];
-        const myRankDisplay = miniRankCounts[myR]>1?'='+myR:String(myR);
-        lbHtml += `<div class="mini-lb-row mlb-you">
-          <div class="mini-lb-rank" style="display:flex;flex-direction:column;align-items:center;">${myRankDisplay}${miniRankArrow(prevRankByNameH[myName],myR)}</div>
-          <div class="mini-lb-name">${myNameHtml}${miniDot(myS.playerId)} <span style="font-size:.65rem;color:#818cf8;">(you)</span>${myBadge}${miniMotmBadge(myS.playerId)}</div>
-          <div style="text-align:right;"><div class="mini-lb-pts">${myS.total} pts</div>${miniPtsGained(myName)}</div>
-        </div>`;
-      }
     }
     if(lbEl) lbEl.innerHTML = lbHtml;
 
@@ -12754,7 +12746,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.47</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.48</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
