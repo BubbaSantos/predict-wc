@@ -1353,7 +1353,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.61</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.62</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2949,7 +2949,8 @@ let _lastResultMatchId = null;
 let _picksViewModeByCard = {results:'named', next:'named'};
 let _hideMatchExtrasByCard = {};
 function isExtrasHidden(cardKey){
-  if(_hideMatchExtrasByCard[cardKey]===undefined) _hideMatchExtrasByCard[cardKey] = localStorage.getItem('wc26_hide_extras_'+cardKey)==='1';
+  // Collapsed by default until the player explicitly opts in (stored '0' means "shown").
+  if(_hideMatchExtrasByCard[cardKey]===undefined) _hideMatchExtrasByCard[cardKey] = localStorage.getItem('wc26_hide_extras_'+cardKey)!=='0';
   return _hideMatchExtrasByCard[cardKey];
 }
 
@@ -3780,7 +3781,7 @@ function renderMatchCardBody(){
       // stays roughly the same height whether a match is upcoming, live, or
       // finished — nothing above/below has to jump when the state changes.
       const finishedHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Match status</div><div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="color:var(--green);font-size:1.7rem;">✓ FT</div><div class="hmc-cd-lbl">full time</div></div></div>`;
-      const liveHdr=`<div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:.3rem;">Match status</div><div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="font-size:1.7rem;animation:pulse 1.5s infinite;">● LIVE</div><div class="hmc-cd-lbl">in progress</div></div></div>`;
+      const liveHdr=`<div class="hmc-cd" style="margin-bottom:.6rem;"><div class="hmc-cd-unit"><div class="hmc-cd-num" style="font-size:1.15rem;color:#ef4444;animation:pulse 1.5s infinite;">● LIVE</div></div></div>`;
       const nuItemHtml=(item,nid)=>{
         if(item.finished){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'';return{timer:finishedHdr,sc,cls:''};}
         if(item.live){const r=results[nid];const sc=(r&&r.home!=null)?`${r.home}–${r.away}`:'0–0';return{timer:liveHdr,sc,cls:'live'};}
@@ -5898,6 +5899,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.62',date:'5 Jul 2026',notes:['Made the "Live" indicator smaller and dropped the "Match status"/"in progress" labels around it — just a small pulsing ● LIVE now.','"Show form & table" now starts collapsed by default on every match card instead of expanded — tap to opt in per card.']},
   {v:'1.78.61',date:'5 Jul 2026',notes:['Fixed the blank gap under a live/finished match on the Today\'s Fixtures carousel (the shorter slide was being stretched to match the height of its taller countdown sibling) — the carousel now sizes itself to whichever slide is actually showing. Also redesigned the "Live"/"Full Time" indicator to be as big as the countdown it replaces, so the score and everything below barely has to shift at all.','"Tap to view grouped/by name" and "show form & table" now work independently on Previous Fixtures vs Today\'s Fixtures — toggling one no longer affects the other. Both hint texts also have a bigger, easier-to-tap hit box.','Hardened the player predictions modal\'s scrollable history list against a rare nested-scroll conflict with the modal itself, which could make it feel stuck on some phones.']},
   {v:'1.78.60',date:'5 Jul 2026',notes:['Admin → Players no longer shows a player\'s custom home page order — kept the "personally hidden cards" line.']},
   {v:'1.78.59',date:'5 Jul 2026',notes:['Fixed: end-of-game celebration banners now only show for the most recent matchday\'s results. Logging in on a device that hasn\'t been used in a few days no longer queues up a backlog of banners for every unseen finished game since last use — older ones are marked seen silently instead.']},
@@ -12806,7 +12808,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.61</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.62</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
