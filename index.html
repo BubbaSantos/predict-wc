@@ -371,9 +371,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .badge-name{font-size:.55rem;font-weight:700;color:var(--text-dim);line-height:1.2;}
 .badge-tile.earned .badge-name{color:var(--text);}
 .badge-tier{font-size:.5rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:.05rem .35rem;border-radius:3px;}
-.badge-tier-bronze{color:#cd7f32;background:rgba(205,127,50,.15);}
-.badge-tier-silver{color:#9ca3af;background:rgba(156,163,175,.15);}
-.badge-tier-gold{color:#eab308;background:rgba(234,179,8,.15);}
+.badge-tier-lvl1{color:#cd7f32;background:rgba(205,127,50,.15);}
+.badge-tier-lvl2{color:#9ca3af;background:rgba(156,163,175,.15);}
+.badge-tier-lvl3{color:#eab308;background:rgba(234,179,8,.15);}
 .badge-caption{font-size:.68rem;color:var(--text-muted);font-weight:500;margin-top:.6rem;line-height:1.4;min-height:1.2em;}
 .badge-caption strong{color:var(--text);}
 .share-card-preview-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
@@ -1328,7 +1328,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.28</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.29</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5661,14 +5661,14 @@ const PLAYER_STAT_DEFS = [
 //    and returns a boolean. Left un-tiered because there's no natural "more of
 //    this is better" scale (frozen_out) or scaling would reward mediocrity.
 const PLAYER_BADGE_DEFS = [
-  {key:'table_topper',  emoji:'🥇', name:'Table Topper',    desc:'Matchdays spent in 1st place',      metric:c=>c.daysTop,        tiers:[{name:'Bronze',min:1},{name:'Silver',min:5},{name:'Gold',min:10}]},
-  {key:'podium_regular',emoji:'🥉', name:'Podium Regular',  desc:'Matchdays spent in the top 3',      metric:c=>c.daysPodium,     tiers:[{name:'Bronze',min:5},{name:'Silver',min:10},{name:'Gold',min:20}]},
-  {key:'flawless',      emoji:'💎', name:'Flawless',        desc:'Longest streak of correct scores',  metric:c=>c.longestPerfect, tiers:[{name:'Bronze',min:2},{name:'Silver',min:3},{name:'Gold',min:5}]},
-  {key:'on_fire',       emoji:'🔥', name:'On Fire',         desc:'Longest streak of correct results', metric:c=>c.longestHot,     tiers:[{name:'Bronze',min:3},{name:'Silver',min:5},{name:'Gold',min:8}]},
-  {key:'motm',          emoji:'⚽', name:'Man of the Match', desc:'Matchdays as top scorer',           metric:c=>c.motmAwards,     tiers:[{name:'Bronze',min:1},{name:'Silver',min:3},{name:'Gold',min:5}]},
-  {key:'century',       emoji:'💯', name:'Century',         desc:'Total points earned',               metric:c=>c.totalPts,       tiers:[{name:'Bronze',min:50},{name:'Silver',min:100},{name:'Gold',min:200}]},
-  {key:'sharpshooter',  emoji:'🎯', name:'Sharpshooter',    desc:'Correct scores nailed',              metric:c=>c.exact,          tiers:[{name:'Bronze',min:5},{name:'Silver',min:10},{name:'Gold',min:20}]},
-  {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'Predictions made',                   metric:c=>c.predictionsMade,tiers:[{name:'Bronze',min:10},{name:'Silver',min:20},{name:'Gold',min:30}]},
+  {key:'table_topper',  emoji:'🥇', name:'Table Topper',    desc:'Matchdays spent in 1st place',      metric:c=>c.daysTop,        tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:5},{name:'Lvl 3',min:10}]},
+  {key:'podium_regular',emoji:'🥉', name:'Podium Regular',  desc:'Matchdays spent in the top 3',      metric:c=>c.daysPodium,     tiers:[{name:'Lvl 1',min:5},{name:'Lvl 2',min:10},{name:'Lvl 3',min:20}]},
+  {key:'flawless',      emoji:'💎', name:'Flawless',        desc:'Longest streak of correct scores',  metric:c=>c.longestPerfect, tiers:[{name:'Lvl 1',min:2},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
+  {key:'on_fire',       emoji:'🔥', name:'On Fire',         desc:'Longest streak of correct results', metric:c=>c.longestHot,     tiers:[{name:'Lvl 1',min:3},{name:'Lvl 2',min:5},{name:'Lvl 3',min:8}]},
+  {key:'motm',          emoji:'⚽', name:'Man of the Match', desc:'Matchdays as top scorer',           metric:c=>c.motmAwards,     tiers:[{name:'Lvl 1',min:1},{name:'Lvl 2',min:3},{name:'Lvl 3',min:5}]},
+  {key:'century',       emoji:'💯', name:'Century',         desc:'Total points earned',               metric:c=>c.totalPts,       tiers:[{name:'Lvl 1',min:50},{name:'Lvl 2',min:100},{name:'Lvl 3',min:200}]},
+  {key:'sharpshooter',  emoji:'🎯', name:'Sharpshooter',    desc:'Correct scores nailed',              metric:c=>c.exact,          tiers:[{name:'Lvl 1',min:5},{name:'Lvl 2',min:10},{name:'Lvl 3',min:20}]},
+  {key:'ever_present',  emoji:'📝', name:'Ever Present',    desc:'Predictions made',                   metric:c=>c.predictionsMade,tiers:[{name:'Lvl 1',min:10},{name:'Lvl 2',min:20},{name:'Lvl 3',min:30}]},
   {key:'unicorn',       emoji:'🦄', name:'Unicorn',         desc:"Nailed a correct score nobody else got", test:c=>c.soloExactGames.length>=1},
   {key:'climber',       emoji:'📈', name:'Climber',         desc:'Trending up over your last games',       test:c=>c.netMove!=null && c.netMove>=3},
   {key:'frozen_out',    emoji:'💩', name:'Frozen Out',      desc:'3+ wrong predictions in a row',          test:c=>c.longestCold>=3},
@@ -5712,6 +5712,7 @@ function applyHomeCardOrder(){
   });
 }
 const CHANGELOG = [
+  {v:'1.78.29',date:'5 Jul 2026',notes:['Achievements: renamed tiers from Bronze/Silver/Gold to Lvl 1/2/3. Tapping a levelled badge now lists all 3 levels with their thresholds, striking through the ones you\'ve already hit.']},
   {v:'1.78.28',date:'5 Jul 2026',notes:['Achievements: 8 badges now level up in place (Bronze → Silver → Gold) instead of unlocking once — Table Topper, Podium Regular, Flawless, On Fire, Man of the Match, Century, Sharpshooter and Ever Present. Removed King of the Hill and MOTM Legend, folded into Table Topper and Man of the Match as their Gold tier. Badge tiles show the current tier; tapping one shows what\'s needed for the next.']},
   {v:'1.78.27',date:'5 Jul 2026',notes:['Fixed the player predictions card (tap a name on the leaderboard) not scrolling once a player has more than ~10 games of history — the bottom-anchoring trick relied on flex-direction:column-reverse, which cannot be scrolled at all once capped to a fixed height (its scrollable range sits at negative scrollTop, which native touch-scroll refuses to enter). Switched to plain chronological order with a one-time scroll-to-bottom on open.']},
   {v:'1.78.26',date:'5 Jul 2026',notes:['Live Now home card now shows "Not predicted yet: …" for anyone in the group who hasn\'t predicted that match — previously this only appeared on the Next Up card, so a live game with missing predictions gave no indication.']},
@@ -8604,7 +8605,7 @@ function buildBadgesBlock(core){
   const earnedCount = [...tierMap.values()].filter(t=>t.earned).length;
   const tiles = PLAYER_BADGE_DEFS.map(b=>{
     const t = tierMap.get(b.key);
-    const tierChip = t.tierName ? `<div class="badge-tier badge-tier-${t.tierName.toLowerCase()}">${t.tierName}</div>` : '';
+    const tierChip = t.tierName ? `<div class="badge-tier badge-tier-lvl${t.tierIdx+1}">${t.tierName}</div>` : '';
     return `<div class="badge-tile${t.earned?' earned':''}" data-key="${b.key}">
       <div class="badge-emoji">${b.emoji}</div>
       <div class="badge-name">${b.name}</div>
@@ -8630,15 +8631,17 @@ function initBadgesBlock(scope, tierMap){
     const def = PLAYER_BADGE_DEFS.find(b=>b.key===tile.dataset.key);
     if(!def) return;
     const t = tierMap.get(def.key);
-    let status = '';
     if(!def.tiers){
-      if(!t.earned) status = ' <span style="color:var(--text-muted);">(locked)</span>';
-    } else if(t.next){
-      status = ` — <strong>${t.tierName||'Locked'}</strong>${t.tierName?', next ':'first '}${t.next.name} at ${t.next.min}`;
-    } else {
-      status = ` — <strong>${t.tierName}</strong> (max tier)`;
+      const status = t.earned ? '' : ' <span style="color:var(--text-muted);">(locked)</span>';
+      caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}${status}`;
+      return;
     }
-    caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}${status}`;
+    const tierLines = def.tiers.map((tr,i)=>{
+      const done = i<=t.tierIdx, isNext = i===t.tierIdx+1;
+      const style = done ? 'text-decoration:line-through;opacity:.5;' : isNext ? 'color:var(--text);font-weight:700;' : '';
+      return `<div style="${style}">${tr.name} — ${tr.min}+</div>`;
+    }).join('');
+    caption.innerHTML = `<strong>${def.emoji} ${def.name}</strong> — ${def.desc}<div style="margin-top:.3rem;">${tierLines}</div>`;
   });
 }
 
@@ -12491,7 +12494,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.28</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.29</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
