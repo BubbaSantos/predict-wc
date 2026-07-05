@@ -1351,7 +1351,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.54</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.55</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5858,6 +5858,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.55',date:'5 Jul 2026',notes:['Personal Stats home card now shows just the charts — tap Open Full Stats Page for the rest (points, positions, streaks, etc). The full My Stats page is unaffected and still shows everything.']},
   {v:'1.78.54',date:'5 Jul 2026',notes:['Renamed "Previous Results" to "Previous Fixtures", matching Today\'s Fixtures.']},
   {v:'1.78.53',date:'5 Jul 2026',notes:['Merged Live Now into Today\'s Fixtures (renamed from Next Up) — the live game now shows inline with an obvious "Live" indicator instead of getting pulled into its own card. Finished games show a clear "✓ Game Finished" badge. Once every one of today\'s games is finished, the whole day moves over to Previous Results automatically — which now always shows the most recently fully-completed day rather than being locked to literally "yesterday", so it slides forward correctly across rest days too.', 'Reorder Home Cards now also has a per-card show/hide switch, not just drag-to-reorder — a player can hide any card the admin has switched on, just for themselves. The list only ever offers cards the admin allows.', 'Fixed: Previous Results could show up empty — the admin on/off toggle loop ran after the card had already correctly hidden itself for having no data, and unconditionally forced it back on.', 'Live Now card and its home_show_live toggle are removed/unused now — safe to leave that column in place or drop it. Requires a new Supabase column for the per-player show/hide switch: ALTER TABLE players ADD COLUMN home_cards_hidden text DEFAULT NULL;']},
   {v:'1.78.52',date:'5 Jul 2026',notes:['Removed the "(you)" text tag from the Standings home card — your row is already highlighted, the label was redundant.']},
@@ -7473,7 +7474,7 @@ async function loadHome(){
     const myCore = (needMyCore && currentPlayer) ? computePlayerCore(currentPlayer.id, gamePreds, rm, allFixtures()) : null;
     const groupCtx = currentPlayer ? {allPlayers, gamePreds, rm, fixtures:allFixtures(), myId:currentPlayer.id} : null;
     if(personalStatsEl && currentPlayer && currentGroup.home_show_personal_stats===true){
-      const {blocks: psBlocks, chartInits: psInits} = buildPlayerStatsBlocks(myCore, rm, ['badges']);
+      const {blocks: psBlocks, chartInits: psInits} = buildPlayerStatsBlocks(myCore, rm, ['badges'], true);
       personalStatsEl.innerHTML = psBlocks.length ? psBlocks.join('') : '<div class="empty">No stats to show yet — they\'ll appear once predictions are made and results come in.</div>';
       psInits.forEach(({key,built})=>{
         if(key==='position_chart') initPositionChart(personalStatsEl, myCore.rankHistory, built);
@@ -8321,7 +8322,7 @@ async function showPlayerStats(playerId, name){
 // ── Builds the stat-row / chart / badge blocks shared by the My Stats modal and
 // the optional "Personal Stats" home card. Returns block HTML plus data needed
 // to wire up chart interactivity after the caller inserts the HTML into the DOM.
-function buildPlayerStatsBlocks(core, rm, excludeKeys){
+function buildPlayerStatsBlocks(core, rm, excludeKeys, chartsOnly){
   const {
     totalPts, exact, results3, wrong, scoredGames, goalsPredicted, predictionsMade,
     exactGames, soloExactGames, scorelineCount,
@@ -8394,6 +8395,7 @@ function buildPlayerStatsBlocks(core, rm, excludeKeys){
   const flushRows=()=>{ if(rowBuf.length){ blocks.push(`<div class="stat-row-list">${rowBuf.join('')}</div>`); rowBuf=[]; } };
   PLAYER_STAT_DEFS.forEach(d=>{
     if(hidden.includes(d.key) || (excludeKeys&&excludeKeys.includes(d.key))) return;
+    if(chartsOnly && !d.chart) return;
     if(d.badges){
       const built = buildBadgesBlock(core);
       if(built){ flushRows(); blocks.push(built.html); chartInits.push({key:'badges', built}); }
@@ -12742,7 +12744,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.54</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.55</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
