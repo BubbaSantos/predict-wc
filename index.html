@@ -284,6 +284,7 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .extras-toggle:hover{opacity:.85;}
 .extras-toggle.collapsed{opacity:.5;}
 .picks-hint{min-height:1.8rem;display:flex;align-items:center;justify-content:center;}
+.hmc-tap-zone{cursor:pointer;}
 .pred-card-pct-row{display:flex;align-items:center;font-size:.62rem;color:var(--text-muted);margin-bottom:.35rem;}
 .pred-card-pct{flex:1;text-align:center;}
 .pred-card-pct-draw{flex:0 0 auto;min-width:4rem;text-align:center;}
@@ -1353,7 +1354,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.62</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.63</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1589,12 +1590,12 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
 
       <!-- Previous Fixtures -->
-      <div class="home-card" id="home-results-card" onclick="togglePicksView('results')" style="cursor:pointer;display:none;">
+      <div class="home-card" id="home-results-card" style="display:none;">
         <div id="hmc-results-body"></div>
       </div>
 
       <!-- Next Up: next game + countdown -->
-      <div class="home-card" id="home-next-card" onclick="togglePicksView('next')" style="cursor:pointer;">
+      <div class="home-card" id="home-next-card">
         <div id="hmc-next-body"></div>
       </div>
 
@@ -3751,7 +3752,7 @@ function renderMatchCardBody(){
       const lrLabel = lrn > 1 ? "Previous Fixtures" : "Previous Fixture";
       if(lrn > 1){
         const lrTN = lrn+2;
-        const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewModeByCard.results==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${lastPicks}${hasLP?picksHintFor('results'):''}${matchExtrasHtml(item.f,'results')}${item.statsHtml}</div>`; };
+        const mkLrSlide = ri => { const item=_lastResultsAll[ri],r=results[item.matchId],lastPicks=_picksViewModeByCard.results==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result'),hasLP=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length)); return `<div class="hmc-carousel-slide" style="width:${100/lrTN}%"><div class="hmc-tap-zone" onclick="togglePicksView('results')">${_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)}${item.predHtml}${hasLP?picksHintFor('results'):''}</div>${lastPicks}<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'results')">${matchExtrasHtml(item.f,'results')}${item.statsHtml}</div></div>`; };
         const slides = [lrn-1,...Array.from({length:lrn},(_,i)=>i),0].map(mkLrSlide).join('');
         const lrPct = (_lastResultIdx+1)*(100/lrTN);
         resultsHtml += `<div class="hmc-label">${lrLabel}</div><div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-last-track" data-rn="${lrn}" style="width:${lrTN*100}%;transform:translateX(-${lrPct}%)">${slides}</div></div>`;
@@ -3761,7 +3762,7 @@ function renderMatchCardBody(){
         const item=_lastResultsAll[0], r=results[item.matchId];
         const lastPicks=_picksViewModeByCard.results==='grouped'?item.picksGrouped:namedPicksHtml(item.matchId,'result');
         const hasLastPicks=!!(item.picksGrouped||(_matchPredsMap[item.matchId]?.length));
-        resultsHtml += `<div class="hmc-label">${lrLabel}</div>`+_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)+item.predHtml+lastPicks+(hasLastPicks?picksHintFor('results'):'')+matchExtrasHtml(item.f,'results')+item.statsHtml;
+        resultsHtml += `<div class="hmc-label">${lrLabel}</div><div class="hmc-tap-zone" onclick="togglePicksView('results')">`+_pctTeamsHtml(item.f,'',`${r.home}–${r.away}`,item.matchId)+item.predHtml+(hasLastPicks?picksHintFor('results'):'')+`</div>`+lastPicks+`<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'results')">`+matchExtrasHtml(item.f,'results')+item.statsHtml+`</div>`;
       }
     }
     resultsBody.innerHTML = resultsHtml;
@@ -3792,7 +3793,7 @@ function renderMatchCardBody(){
       if(_nextUpcomingAll.length > 1){
         nextHtml += `<div class="hmc-label">${lbl}</div>`;
         const cn = _nextUpcomingAll.length, cnTN = cn+2;
-        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewModeByCard.next==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item)),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${np}${hnp?picksHintFor('next'):''}${matchExtrasHtml(item.f,'next')}</div>`; };
+        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewModeByCard.next==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item)),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}<div class="hmc-tap-zone" onclick="togglePicksView('next')">${timer}${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${hnp?picksHintFor('next'):''}</div>${np}<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">${matchExtrasHtml(item.f,'next')}</div></div>`; };
         const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
         const pct = (_nextUpcomingIdx+1)*(100/cnTN);
         nextHtml += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
@@ -3805,7 +3806,7 @@ function renderMatchCardBody(){
         const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
         const nextPicks = _picksViewModeByCard.next==='grouped' ? groupedPicksFor(_nextUpcoming,nextId) : namedPicksHtml(nextId,nuMode(_nextUpcoming));
         const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-        nextHtml += timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+nextPicks+(hasNextPicks?picksHintFor('next'):'')+matchExtrasHtml(_nextUpcoming.f,'next');
+        nextHtml += `<div class="hmc-tap-zone" onclick="togglePicksView('next')">`+timer+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+(hasNextPicks?picksHintFor('next'):'')+`</div>`+nextPicks+`<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">`+matchExtrasHtml(_nextUpcoming.f,'next')+`</div>`;
       }
     }
     if(!nextHtml) nextHtml = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -5899,6 +5900,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.63',date:'5 Jul 2026',notes:['Fixed the small hitboxes for "tap to view grouped/by name" and "show form & table" — each match card is now split into two big tap zones instead of relying on a thin line of text: anywhere above the player picks switches grouped/by-name view, anywhere below opens form & table.']},
   {v:'1.78.62',date:'5 Jul 2026',notes:['Made the "Live" indicator smaller and dropped the "Match status"/"in progress" labels around it — just a small pulsing ● LIVE now.','"Show form & table" now starts collapsed by default on every match card instead of expanded — tap to opt in per card.']},
   {v:'1.78.61',date:'5 Jul 2026',notes:['Fixed the blank gap under a live/finished match on the Today\'s Fixtures carousel (the shorter slide was being stretched to match the height of its taller countdown sibling) — the carousel now sizes itself to whichever slide is actually showing. Also redesigned the "Live"/"Full Time" indicator to be as big as the countdown it replaces, so the score and everything below barely has to shift at all.','"Tap to view grouped/by name" and "show form & table" now work independently on Previous Fixtures vs Today\'s Fixtures — toggling one no longer affects the other. Both hint texts also have a bigger, easier-to-tap hit box.','Hardened the player predictions modal\'s scrollable history list against a rare nested-scroll conflict with the modal itself, which could make it feel stuck on some phones.']},
   {v:'1.78.60',date:'5 Jul 2026',notes:['Admin → Players no longer shows a player\'s custom home page order — kept the "personally hidden cards" line.']},
@@ -12808,7 +12810,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.62</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.63</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
