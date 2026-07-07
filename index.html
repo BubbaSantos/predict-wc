@@ -98,6 +98,10 @@ nav button.active{background:var(--surface2);color:var(--group-accent);}
 /* ── VIEWS ── */
 .container{max-width:900px;margin:0 auto;padding:2rem 1.5rem;}
 .view{display:none;} .view.active{display:block;}
+.swipe-edge-arrow{position:fixed;top:50%;width:2.4rem;height:2.4rem;border-radius:50%;background:var(--group-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;z-index:500;opacity:0;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);}
+.swipe-edge-arrow-left{left:.5rem;transform:translateY(-50%) translateX(0) scale(.7);}
+.swipe-edge-arrow-right{right:.5rem;transform:translateY(-50%) translateX(0) scale(.7);}
+@media(min-width:769px){.swipe-edge-arrow{display:none;}}
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
 .page-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:2rem;letter-spacing:.08em;}
 
@@ -1365,7 +1369,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.66</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.67</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5918,6 +5922,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.67',date:'7 Jul 2026',notes:['Mobile swipe-between-tabs now only arms from the screen edge (like a browser back/forward gesture) instead of anywhere on the page, so it no longer fights with carousels and sliders in the middle of the screen. Holding the drag shows a chevron that tracks your finger and grows as you pull — the page only changes once you release past the threshold; letting go early or dragging back snaps the chevron away with no navigation.']},
   {v:'1.78.66',date:'7 Jul 2026',notes:['Points Per Matchday chart now also shows the total points obtainable that day as a background bar behind your score — match days have different numbers of games so the ceiling moves; bar turns gold when you hit the max.']},
   {v:'1.78.65',date:'5 Jul 2026',notes:['Today\'s Fixtures carousel now opens on the live game (if there is one) on a fresh load/restart, instead of whichever fixture happens to sort first — later refreshes leave your position alone once you\'ve navigated.','Shrunk the "Live" indicator text a bit more.','Admin → Results: once a match has kicked off with no score entered yet, both boxes hint "0" instead of a bare dash (most games start scoreless) — it\'s just a placeholder, replaced the moment you type the real score.']},
   {v:'1.78.64',date:'5 Jul 2026',notes:['Today\'s Fixtures: the countdown/live/finished header now reserves a fixed-height band above the team flags and names, so they always sit the same distance from the top of the card no matter which state is showing — previously the shorter Live/Full Time badges let the flags creep up higher than the countdown did.']},
@@ -12771,33 +12776,86 @@ async function godCreateGroup(){
   },{passive:true});
 })();
 
-// Mobile swipe navigation between Home / Leaderboard / Predict
+// Mobile swipe navigation between Home / Leaderboard / Predict.
+// Browser-style edge gesture: only arms when the touch starts within EDGE px
+// of the left/right screen edge (so it can't fight carousels/sliders living
+// in the middle of the page), shows a chevron that tracks the finger while
+// held, and only commits the page change on release past THRESHOLD.
 (function(){
   const VIEWS = ['home','leaderboard','predict'];
-  let _swX = null, _swY = null;
+  const EDGE = 24, MAX_PULL = 72, THRESHOLD = 48;
   function activeView(){
     for(const v of VIEWS){ if(document.getElementById('view-'+v)?.classList.contains('active')) return v; }
     return null;
   }
+  const arrowL = document.createElement('div');
+  arrowL.className = 'swipe-edge-arrow swipe-edge-arrow-left';
+  arrowL.textContent = '‹';
+  const arrowR = document.createElement('div');
+  arrowR.className = 'swipe-edge-arrow swipe-edge-arrow-right';
+  arrowR.textContent = '›';
+  document.body.append(arrowL, arrowR);
+
+  let side = null, dragging = false, startX = null, startY = null;
+
+  function trackArrow(el, dist){
+    const p = Math.max(0, Math.min(1, dist / MAX_PULL));
+    el.style.transition = 'none';
+    el.style.opacity = p;
+    el.style.transform = `translateY(-50%) translateX(${(el===arrowL?1:-1)*p*10}px) scale(${.7+p*.3})`;
+  }
+  function resetArrow(el){
+    el.style.transition = 'opacity .2s ease, transform .2s ease';
+    el.style.opacity = 0;
+    el.style.transform = 'translateY(-50%) translateX(0) scale(.7)';
+  }
+  function cancel(){
+    if(side==='left') resetArrow(arrowL);
+    else if(side==='right') resetArrow(arrowR);
+    side = null; dragging = false; startX = null; startY = null;
+  }
+
   document.addEventListener('touchstart', e=>{
+    side = null; dragging = false; startX = null; startY = null;
     if(window.innerWidth > 768) return;
-    if(e.target.closest('input[type="range"], #lb-timeline-wrap')){ _swX = null; _swY = null; return; }
+    if(e.target.closest('input[type="range"], #lb-timeline-wrap')) return;
     const t = e.touches[0];
-    _swX = t.clientX; _swY = t.clientY;
+    if(t.clientX <= EDGE) side = 'left';
+    else if(t.clientX >= window.innerWidth - EDGE) side = 'right';
+    else return;
+    startX = t.clientX; startY = t.clientY;
   },{passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!side || startX === null) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX, dy = t.clientY - startY;
+    if(!dragging){
+      if(Math.abs(dx) < 8) return;
+      if(Math.abs(dy) > Math.abs(dx)){ cancel(); return; } // vertical scroll wins
+      dragging = true;
+    }
+    const el = side==='left' ? arrowL : arrowR;
+    const forward = side==='left' ? dx > 0 : dx < 0;
+    trackArrow(el, forward ? Math.abs(dx) : 0);
+  },{passive:true});
+
   document.addEventListener('touchend', e=>{
-    if(window.innerWidth > 768 || _swX === null) return;
+    if(!side || startX === null){ cancel(); return; }
     const t = e.changedTouches[0];
-    const dx = t.clientX - _swX;
-    const dy = t.clientY - _swY;
-    _swX = null; _swY = null;
-    if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const dx = t.clientX - startX;
+    const forward = side==='left' ? dx > 0 : dx < 0;
+    const shouldNav = dragging && forward && Math.abs(dx) >= THRESHOLD;
+    cancel();
+    if(!shouldNav) return;
     const cur = activeView();
     if(!cur) return;
     const idx = VIEWS.indexOf(cur);
     const next = dx < 0 ? VIEWS[(idx+1) % VIEWS.length] : VIEWS[(idx-1+VIEWS.length) % VIEWS.length];
     showView(next);
   },{passive:true});
+
+  document.addEventListener('touchcancel', cancel, {passive:true});
 })();
 
 // Lock background scroll while any .modal-overlay (player card, stats, etc.) is open.
@@ -12845,7 +12903,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.66</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.67</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
