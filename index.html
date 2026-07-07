@@ -344,13 +344,18 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
 .pos-chart-readout strong{color:var(--group-accent);}
 .pos-chart-overlay{cursor:pointer;}
 .bar-chart-track{display:flex;align-items:flex-end;gap:3px;height:90px;}
-.bar-chart-col{flex:1;height:100%;display:flex;align-items:flex-end;cursor:pointer;}
-.bar-chart-bar{width:100%;min-height:4px;background:var(--group-accent);border-radius:3px 3px 0 0;transition:opacity .1s;}
+.bar-chart-col{position:relative;flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;}
+.bar-chart-bar-max{position:absolute;bottom:0;width:100%;min-height:4px;background:var(--surface);border:1px solid var(--border);border-radius:3px 3px 0 0;}
+.bar-chart-bar{position:relative;width:58%;min-height:0;background:var(--group-accent);border-radius:2px 2px 0 0;transition:opacity .1s;z-index:1;}
+.bar-chart-bar.full{background:var(--gold);}
 .bar-chart-col:hover .bar-chart-bar{opacity:.7;}
-.chart-legend{display:flex;gap:.9rem;margin-bottom:.4rem;}
+.chart-legend{display:flex;gap:.9rem;margin-bottom:.4rem;flex-wrap:wrap;}
 .chart-leg-item{display:flex;align-items:center;gap:.35rem;font-size:.65rem;color:var(--text-muted);font-weight:600;}
 .chart-leg-item i{display:inline-block;width:12px;height:2px;background:var(--group-accent);border-radius:1px;}
 .chart-leg-item i.dashed{background:repeating-linear-gradient(to right,var(--text-muted) 0 3px,transparent 3px 5px);}
+.chart-leg-item i.sq{width:9px;height:9px;border-radius:2px;}
+.chart-leg-item i.sq.max{background:var(--surface);border:1px solid var(--border);}
+.chart-leg-item i.sq.full{background:var(--gold);}
 .outcome-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px;background:var(--surface);}
 .outcome-seg{height:100%;}
 .outcome-legend{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.5rem;}
@@ -1360,7 +1365,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.65</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.78.66</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5913,6 +5918,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.78.66',date:'7 Jul 2026',notes:['Points Per Matchday chart now also shows the total points obtainable that day as a background bar behind your score — match days have different numbers of games so the ceiling moves; bar turns gold when you hit the max.']},
   {v:'1.78.65',date:'5 Jul 2026',notes:['Today\'s Fixtures carousel now opens on the live game (if there is one) on a fresh load/restart, instead of whichever fixture happens to sort first — later refreshes leave your position alone once you\'ve navigated.','Shrunk the "Live" indicator text a bit more.','Admin → Results: once a match has kicked off with no score entered yet, both boxes hint "0" instead of a bare dash (most games start scoreless) — it\'s just a placeholder, replaced the moment you type the real score.']},
   {v:'1.78.64',date:'5 Jul 2026',notes:['Today\'s Fixtures: the countdown/live/finished header now reserves a fixed-height band above the team flags and names, so they always sit the same distance from the top of the card no matter which state is showing — previously the shorter Live/Full Time badges let the flags creep up higher than the countdown did.']},
   {v:'1.78.63',date:'5 Jul 2026',notes:['Fixed the small hitboxes for "tap to view grouped/by name" and "show form & table" — each match card is now split into two big tap zones instead of relying on a thin line of text: anywhere above the player picks switches grouped/by-name view, anywhere below opens form & table.']},
@@ -8284,7 +8290,7 @@ function computePlayerCore(pid, gamePreds, rm, fixtures){
         if(p.player_id===pid){ myMdPts+=(pts||0); myPlayed=true; }
       });
     });
-    if(myPlayed) mdPoints.push({dateKey, pts:myMdPts});
+    if(myPlayed) mdPoints.push({dateKey, pts:myMdPts, maxPts: matchesByDate[dateKey].length*8});
     if(!cum[pid]) return;
     const ranked=Object.entries(cum);
     const myEntry=[pid,cum[pid]];
@@ -9084,15 +9090,19 @@ function initPositionChart(scope, history, chart){
 function buildPointsBarChart(mdPoints){
   const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
   const n = mdPoints.length;
-  const maxPts = Math.max(...mdPoints.map(m=>m.pts), 1);
+  const globalMax = Math.max(...mdPoints.map(m=>m.maxPts||0), 1);
+  const readoutFor = (i,m)=> `Day ${i+1} · <strong>${m.pts}/${m.maxPts||0} pt${(m.maxPts||0)!==1?'s':''}</strong>${m.maxPts && m.pts===m.maxPts?' 🌟':''}${m.dateKey?' · '+fmtDate(m.dateKey):''}`;
   const bars = mdPoints.map((m,i)=>{
-    const h = Math.max(4, Math.round(m.pts/maxPts*100));
-    return `<div class="bar-chart-col" data-i="${i}"><div class="bar-chart-bar" style="height:${h}%;"></div></div>`;
+    const maxH = Math.max(4, Math.round((m.maxPts||0)/globalMax*100));
+    const ptsH = Math.max(m.pts>0?4:0, Math.round(m.pts/globalMax*100));
+    const full = m.maxPts>0 && m.pts===m.maxPts;
+    return `<div class="bar-chart-col" data-i="${i}"><div class="bar-chart-bar-max" style="height:${maxH}%;"></div><div class="bar-chart-bar${full?' full':''}" style="height:${ptsH}%;"></div></div>`;
   }).join('');
   const last = mdPoints[n-1];
-  const defaultReadout = `Day ${n} · <strong>${last.pts} pt${last.pts!==1?'s':''}</strong>${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const defaultReadout = readoutFor(n-1,last);
   const html = `<div class="pos-chart-wrap" data-chart-key="points_chart">
       <div class="pos-chart-head"><span class="stat-hi-label">📊 Points Per Matchday</span><span class="pos-chart-readout">${defaultReadout}</span></div>
+      <div class="chart-legend"><span class="chart-leg-item"><i class="sq"></i>Your points</span><span class="chart-leg-item"><i class="sq max"></i>Obtainable</span><span class="chart-leg-item"><i class="sq full"></i>Full points</span></div>
       <div class="bar-chart-track">${bars}</div>
     </div>`;
   return {html};
@@ -9105,11 +9115,12 @@ function initBarChart(scope, mdPoints){
   if(!track||!readout) return;
   const fmtDate=k=>{ try{ return new Date(k+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }catch(e){ return k; } };
   const n = mdPoints.length;
+  const readoutFor = (i,m)=> `Day ${i+1} · <strong>${m.pts}/${m.maxPts||0} pt${(m.maxPts||0)!==1?'s':''}</strong>${m.maxPts && m.pts===m.maxPts?' 🌟':''}${m.dateKey?' · '+fmtDate(m.dateKey):''}`;
   const last = mdPoints[n-1];
-  const defaultReadout = `Day ${n} · <strong>${last.pts} pt${last.pts!==1?'s':''}</strong>${last.dateKey?' · '+fmtDate(last.dateKey):''}`;
+  const defaultReadout = readoutFor(n-1,last);
   const show = i=>{
     const m = mdPoints[i]; if(!m) return;
-    readout.innerHTML = `Day ${i+1} · <strong>${m.pts} pt${m.pts!==1?'s':''}</strong>${m.dateKey?' · '+fmtDate(m.dateKey):''}`;
+    readout.innerHTML = readoutFor(i,m);
   };
   const fromTarget = target=>{ const col=target.closest('.bar-chart-col'); if(col) show(+col.dataset.i); };
   track.addEventListener('mouseover', e=>fromTarget(e.target));
@@ -12834,7 +12845,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.65</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.66</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
