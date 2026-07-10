@@ -1369,7 +1369,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.1</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.2</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2603,6 +2603,19 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
   </div>
 </div>
 
+<div id="var-wheel-overlay" class="confirm-overlay" style="z-index:9600;">
+  <div class="confirm-modal" style="max-width:340px;text-align:center;">
+    <div class="confirm-modal-title" style="font-size:1.3rem;">📺 VAR Review</div>
+    <div style="font-size:.78rem;color:var(--text-dim);margin-bottom:1rem;">Spinning for a random eligible player…</div>
+    <div style="position:relative;width:240px;height:240px;margin:0 auto 1.25rem;">
+      <div id="var-wheel-pointer" style="position:absolute;top:-.6rem;left:50%;transform:translateX(-50%);font-size:1.4rem;z-index:2;">🔻</div>
+      <div id="var-wheel" style="width:240px;height:240px;border-radius:50%;border:4px solid var(--border);position:relative;overflow:hidden;transform:rotate(0deg);"></div>
+    </div>
+    <div id="var-wheel-result" style="font-size:.95rem;font-weight:700;min-height:1.4rem;margin-bottom:.75rem;"></div>
+    <button class="sync-refresh" id="var-wheel-close-btn" onclick="closeVarWheel()" style="display:none;">Close</button>
+  </div>
+</div>
+
 <div id="msg-bar" class="msg-bar"></div>
 
 <script>
@@ -3505,12 +3518,16 @@ async function loadSpflPredictions(){
   }catch(e){ list.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
 }
 
-// Club-colour badges stand in for flags on match cards (mirrors WC's f.hf/f.af).
+// Club crest images stand in for flags on match cards (mirrors WC's f.hf/f.af).
 const SPFL_BADGES = {
-  'Dundee United':'🟠','Rangers':'🔵','Falkirk':'🔵','St. Mirren':'⚫',
-  'Aberdeen':'🔴','Heart of Midlothian':'⚪','St. Johnstone':'🔵','Kilmarnock':'🔵',
-  'Hibernian':'🟢','Motherwell':'🟡','Celtic':'🟢','Dundee':'⚫',
+  'Dundee United':'dundee-utd','Rangers':'rangers','Falkirk':'falkirk','St. Mirren':'st-mirren',
+  'Aberdeen':'aberdeen','Heart of Midlothian':'hearts','St. Johnstone':'st-johnstone','Kilmarnock':'kilmarnock',
+  'Hibernian':'hibernian','Motherwell':'motherwell','Celtic':'celtic','Dundee':'dundee',
 };
+function spflBadgeHtml(team){
+  const slug = SPFL_BADGES[team];
+  return slug ? `<img src="img/spfl-badges/${slug}.png" alt="${team}" style="width:2rem;height:2rem;object-fit:contain;vertical-align:middle;" />` : '⚪';
+}
 
 function renderSpflFixtures(list){
   const doubledMatches = new Set((spflPlayerState?.powerups||[]).filter(p=>p.type==='double').map(p=>p.match_id));
@@ -3576,7 +3593,7 @@ function renderSpflPredictCard(f, pred, res, isDoubled){
       </div>
       <div class="mc-body">
         <div class="mc-team">
-          <div class="mc-flag">${SPFL_BADGES[f.home]||'⚪'}</div>
+          <div class="mc-flag">${spflBadgeHtml(f.home)}</div>
           <div class="mc-name" style="line-height:1.3;">${f.home}</div>
         </div>
         <div class="mc-center">
@@ -3587,7 +3604,7 @@ function renderSpflPredictCard(f, pred, res, isDoubled){
           </div>
         </div>
         <div class="mc-team away">
-          <div class="mc-flag">${SPFL_BADGES[f.away]||'⚪'}</div>
+          <div class="mc-flag">${spflBadgeHtml(f.away)}</div>
           <div class="mc-name" style="line-height:1.3;">${f.away}</div>
         </div>
       </div>
@@ -3612,12 +3629,12 @@ function renderSpflPredictCard(f, pred, res, isDoubled){
       </div>
       <div class="mc-body">
         <div class="mc-team">
-          <div class="mc-flag">${SPFL_BADGES[f.home]||'⚪'}</div>
+          <div class="mc-flag">${spflBadgeHtml(f.home)}</div>
           <div class="mc-name" style="line-height:1.3;">${f.home}</div>
         </div>
         <div class="mc-center">${centerHtml}</div>
         <div class="mc-team away">
-          <div class="mc-flag">${SPFL_BADGES[f.away]||'⚪'}</div>
+          <div class="mc-flag">${spflBadgeHtml(f.away)}</div>
           <div class="mc-name" style="line-height:1.3;">${f.away}</div>
         </div>
       </div>
@@ -3735,12 +3752,70 @@ async function spflBuyVarReview(){
     const immune = await spflImmunePlayerIds(wk);
     const eligible = players.filter(p=>p.id!==currentPlayer.id && !immune.has(p.id));
     if(!eligible.length){ flash('No eligible players — everyone is immune this weekend','error'); return; }
-    const target = eligible[Math.floor(Math.random()*eligible.length)];
-    const entry = {type:'var', weekend:wk, match_id:null, target_player_id:target.id, coin_cost:cost, applied_at:new Date().toISOString()};
-    await spflPersistPlayerState({powerups:[...(spflPlayerState.powerups||[]), entry]});
-    flash(`VAR Review wheel landed on ${target.nickname||target.name} — -5 points!`,'success');
-    loadTactics();
+    spflSpinVarWheel(eligible, wk, cost);
   }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+// ── VAR REVIEW WHEEL ───────────────────────
+const VAR_WHEEL_COLOURS = ['#818cf8','#f472b6','#34d399','#fbbf24','#60a5fa','#fb923c','#a78bfa','#4ade80'];
+function spflSpinVarWheel(eligible, weekend, cost){
+  const n = eligible.length;
+  const seg = 360/n;
+  const winnerIdx = Math.floor(Math.random()*n);
+  const winner = eligible[winnerIdx];
+
+  const wheel = document.getElementById('var-wheel');
+  const resultEl = document.getElementById('var-wheel-result');
+  const closeBtn = document.getElementById('var-wheel-close-btn');
+  resultEl.textContent = '';
+  closeBtn.style.display = 'none';
+
+  // Build the pie via conic-gradient, then lay each name tangentially around the rim.
+  const gradientStops = eligible.map((p,i)=>`${VAR_WHEEL_COLOURS[i%VAR_WHEEL_COLOURS.length]} ${i*seg}deg ${(i+1)*seg}deg`).join(',');
+  const labelsHtml = eligible.map((p,i)=>{
+    const angle = i*seg + seg/2;
+    const name = (p.nickname||p.name);
+    return `<div style="position:absolute;top:50%;left:50%;width:0;height:0;transform:rotate(${angle}deg);">
+      <span style="display:block;position:absolute;left:.4rem;top:-.55rem;transform:translateX(0) rotate(90deg);transform-origin:left center;font-size:.62rem;font-weight:700;color:#000;white-space:nowrap;max-width:5.5rem;overflow:hidden;text-overflow:ellipsis;">${name}</span>
+    </div>`;
+  }).join('');
+  wheel.style.transition = 'none';
+  wheel.style.transform = 'rotate(0deg)';
+  wheel.style.background = `conic-gradient(${gradientStops})`;
+  wheel.innerHTML = labelsHtml;
+  // Force reflow so the transition below actually animates from 0deg.
+  void wheel.offsetWidth;
+
+  const segCenter = winnerIdx*seg + seg/2;
+  const spins = 6;
+  const finalRotation = spins*360 + (360 - segCenter);
+
+  const overlay = document.getElementById('var-wheel-overlay');
+  overlay.style.display = 'flex';
+  overlay.style.pointerEvents = 'all';
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    overlay.classList.add('show');
+    wheel.style.transition = 'transform 4.2s cubic-bezier(.12,.67,.1,.99)';
+    wheel.style.transform = `rotate(${finalRotation}deg)`;
+  }); });
+
+  const onDone = async ()=>{
+    wheel.removeEventListener('transitionend', onDone);
+    const targetName = winner.nickname||winner.name;
+    resultEl.textContent = `🎯 ${targetName} — -5 points!`;
+    closeBtn.style.display = '';
+    try{
+      const entry = {type:'var', weekend, match_id:null, target_player_id:winner.id, coin_cost:cost, applied_at:new Date().toISOString()};
+      await spflPersistPlayerState({powerups:[...(spflPlayerState.powerups||[]), entry]});
+    }catch(e){ resultEl.textContent = 'Error saving result: '+e.message; }
+  };
+  wheel.addEventListener('transitionend', onDone);
+}
+function closeVarWheel(){
+  const overlay = document.getElementById('var-wheel-overlay');
+  overlay.classList.remove('show');
+  overlay.style.pointerEvents = 'none';
+  setTimeout(()=>{ overlay.style.display='none'; loadTactics(); }, 160);
 }
 
 async function spflBuySabotage(targetId, targetName){
@@ -7003,6 +7078,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.2',date:'10 Jul 2026',notes:['SPFL: VAR Review now spins an actual animated wheel (colour-segmented, player names around the rim) instead of instantly announcing a result — lands on the randomly-picked eligible player after a ~4s spin.','SPFL: real club crest badges replace the coloured-circle placeholders on match cards, resized and optimised for the web (down from several MB of source images to under 35KB each).']},
   {v:'1.79.1',date:'10 Jul 2026',notes:['SPFL now matches the World Cup game\'s actual look and feel instead of a bare-bones placeholder: match cards, score inputs, points badges and locked/live states all reuse the same card styling as Predictions; the leaderboard reuses the same ranked-row styling (gold/silver/bronze, correct-scorelines breakdown) as the World Cup leaderboard.','SPFL nav now mirrors the World Cup tab set — Home, Leaderboard, Predict, plus the extra Tactics tab — instead of a cut-down Fixtures-only version. Added a proper SPFL Home tab with next-fixture countdown, coin balance and a mini top-3 leaderboard.','Fixed supabase/spfl_schema.sql: group_id/player_id are uuid in this project, not bigint — the earlier version silently created the SPFL tables with the wrong column type.']},
   {v:'1.79.0',date:'10 Jul 2026',notes:['New: SPFL league mode — fully separate from the World Cup game (own fixtures, own leaderboard, own predictions, own Supabase tables: spfl_predictions/spfl_results/spfl_player_state, plus a new spfl_approved boolean on players). Hidden from everyone by default — grant access per-player from Admin → Players (⋮ Options → Grant SPFL Access), then they can switch leagues from their name menu.','New: Tactics tab (SPFL only) — a powerup shop. Earn 1 coin per 10 SPFL points scored. Double Points (🪙2, unlimited use — double one game\'s points; everyone gets their first weekend-1 use free), The Breakdown (🪙3, once/weekend — reworks that weekend\'s scoring to 1pt/home goal + 1pt/away goal + 3pt correct result), VAR Review (🪙4, once/weekend — random wheel spin, -5pts to an eligible non-immune player), Sabotage (🪙5, once/weekend — pick a rival, -5pts). Once a player\'s been hit by VAR Review or Sabotage in a weekend they\'re immune from further deductions until the next round.','Requires running supabase/spfl_schema.sql once in the Supabase SQL editor before this version goes live (adds players.spfl_approved + the three spfl_* tables) — same graceful-degradation pattern as score_master: login/admin keep working even if it hasn\'t been run yet, SPFL features just stay unavailable.']},
   {v:'1.78.67',date:'7 Jul 2026',notes:['Mobile swipe-between-tabs now only arms from the screen edge (like a browser back/forward gesture) instead of anywhere on the page, so it no longer fights with carousels and sliders in the middle of the screen. Holding the drag shows a chevron that tracks your finger and grows as you pull — the page only changes once you release past the threshold; letting go early or dragging back snaps the chevron away with no navigation.']},
@@ -14052,7 +14128,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.1</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.2</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
