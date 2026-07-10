@@ -1369,7 +1369,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.0</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.1</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1478,8 +1478,9 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <button id="nav-home" class="active" onclick="window.location.reload(true)">Home</button>
       <button id="nav-leaderboard" onclick="showView('leaderboard')">Leaderboard</button>
       <button id="nav-predict" onclick="showView('predict')">Predict</button>
-      <button id="nav-spflPredict" onclick="showView('spflPredict')" style="display:none;">Fixtures</button>
+      <button id="nav-spflHome" onclick="showView('spflHome')" style="display:none;">Home</button>
       <button id="nav-spflLeaderboard" onclick="showView('spflLeaderboard')" style="display:none;">Leaderboard</button>
+      <button id="nav-spflPredict" onclick="showView('spflPredict')" style="display:none;">Predict</button>
       <button id="nav-tactics" onclick="showView('tactics')" style="display:none;">Tactics</button>
       <button id="nav-admin" onclick="showView('admin')" style="display:none;">Admin</button>
     </nav>
@@ -1711,10 +1712,28 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
     </div>
 
     <!-- SPFL (fully separate from the World Cup views above) -->
+    <div id="view-spflHome" class="view">
+      <div class="home-card">
+        <div class="home-card-title">🏴󠁧󠁢󠁳󠁣󠁴󠁿 SPFL</div>
+        <div id="spfl-home-next" style="font-size:.85rem;color:var(--text-muted);"></div>
+      </div>
+      <div class="home-card">
+        <div class="home-card-title">🪙 Your Coins</div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--group-accent);" id="spfl-home-coins">0</div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-top:.25rem;">1 coin per 10 points scored — spend them in Tactics.</div>
+        <button class="sync-refresh" style="margin-top:.6rem;" onclick="showView('tactics')">Go to Tactics →</button>
+      </div>
+      <div class="home-card">
+        <div class="home-card-title">🏆 Top of the table</div>
+        <div id="spfl-home-mini-lb"><div class="loading">Loading…</div></div>
+        <button class="sync-refresh" style="margin-top:.6rem;" onclick="showView('spflLeaderboard')">Full leaderboard →</button>
+      </div>
+    </div>
+
     <div id="view-spflPredict" class="view">
       <div class="page-header">
         <div>
-          <div class="page-title">SPFL Fixtures</div>
+          <div class="page-title">SPFL Predictions</div>
           <div style="font-size:.72rem;color:var(--text-muted);margin-top:.1rem;">Predictions lock at kickoff</div>
         </div>
         <div id="spfl-coin-banner" style="font-size:.85rem;font-weight:700;color:var(--accent);white-space:nowrap;">🪙 <span id="spfl-coin-count">0</span></div>
@@ -3417,6 +3436,57 @@ function spflApplyDeductions(totalsByPlayer, allPowerups){
 }
 
 // ── SPFL PREDICT VIEW ─────────────────────
+// ── SPFL HOME ──────────────────────────────
+async function loadSpflHome(){
+  if(!currentGroup||!currentPlayer) return;
+  const nextEl = document.getElementById('spfl-home-next');
+  const coinsEl = document.getElementById('spfl-home-coins');
+  const lbEl = document.getElementById('spfl-home-mini-lb');
+  nextEl.textContent = 'Loading…';
+  lbEl.innerHTML = '<div class="loading">Loading…</div>';
+  try{
+    const [preds, results, state, players] = await Promise.all([
+      sb(`spfl_predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=match_id,home_score,away_score`),
+      sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`),
+      spflLoadPlayerState(),
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
+    ]);
+    spflPredictions = {}; (preds||[]).forEach(p=>spflPredictions[p.match_id]={home:p.home_score,away:p.away_score});
+    spflResults = {}; (results||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
+    spflPlayerState = state;
+    coinsEl.textContent = spflCoinBalance();
+
+    const now = Date.now();
+    const upcoming = SPFL_FIXTURES.filter(f=>!spflResults[f.id]?.full_time && spflMatchKickoff(f.id)?.getTime()>now)
+      .sort((a,b)=>spflMatchKickoff(a.id)-spflMatchKickoff(b.id))[0];
+    if(upcoming){
+      const ko = spflMatchKickoff(upcoming.id);
+      nextEl.innerHTML = `Next up: <strong style="color:var(--text);">${upcoming.home} v ${upcoming.away}</strong><br>${ko.toLocaleDateString('en-GB',{timeZone:'Europe/London',weekday:'long',day:'numeric',month:'long'})} · KO ${ko.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'})}`;
+    } else {
+      nextEl.textContent = 'No upcoming fixtures.';
+    }
+
+    // The initial fetch above was scoped to the current player only — the mini
+    // leaderboard needs every player's predictions/powerups, so fetch those too.
+    const [allPreds, allState] = await Promise.all([
+      sb(`spfl_predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sb(`spfl_player_state?group_id=eq.${currentGroup.id}&select=player_id,powerups`),
+    ]);
+    const pByPlayer={}; (allPreds||[]).forEach(p=>{ (pByPlayer[p.player_id]=pByPlayer[p.player_id]||{})[p.match_id]={home:p.home_score,away:p.away_score}; });
+    const puByPlayer={}; const allPowerupsFlat=[];
+    (allState||[]).forEach(s=>{ puByPlayer[s.player_id]=s.powerups||[]; (s.powerups||[]).forEach(p=>allPowerupsFlat.push(p)); });
+    const totals={}; (players||[]).forEach(p=>{ totals[p.id]=spflComputePlayerPoints(p.id,pByPlayer,puByPlayer).points; });
+    const final = spflApplyDeductions(totals, allPowerupsFlat);
+    const top3 = (players||[]).map(p=>({id:p.id,name:p.nickname||p.name,points:final[p.id]||0})).sort((a,b)=>b.points-a.points).slice(0,3);
+    const rankCls = ['mlb-gold','mlb-silver','mlb-bronze'];
+    lbEl.innerHTML = top3.map((r,i)=>`<div class="mini-lb-row ${rankCls[i]||''}${r.id===currentPlayer.id?' mlb-you':''}">
+      <div class="mini-lb-rank">${i+1}</div>
+      <div class="mini-lb-name">${r.name}</div>
+      <div class="mini-lb-pts">${r.points}</div>
+    </div>`).join('') || '<div class="empty">No players yet.</div>';
+  }catch(e){ nextEl.textContent=''; lbEl.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
+}
+
 async function loadSpflPredictions(){
   if(!currentGroup||!currentPlayer) return;
   const list = document.getElementById('spfl-fixtures-list');
@@ -3430,56 +3500,149 @@ async function loadSpflPredictions(){
     spflPredictions = {}; (preds||[]).forEach(p=>spflPredictions[p.match_id]={home:p.home_score,away:p.away_score});
     spflResults = {}; (results||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
     spflPlayerState = state;
-    document.getElementById('spfl-coin-count').textContent = spflPlayerState?.coins ?? 0;
+    document.getElementById('spfl-coin-count').textContent = spflCoinBalance();
     renderSpflFixtures(list);
   }catch(e){ list.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
 }
 
+// Club-colour badges stand in for flags on match cards (mirrors WC's f.hf/f.af).
+const SPFL_BADGES = {
+  'Dundee United':'🟠','Rangers':'🔵','Falkirk':'🔵','St. Mirren':'⚫',
+  'Aberdeen':'🔴','Heart of Midlothian':'⚪','St. Johnstone':'🔵','Kilmarnock':'🔵',
+  'Hibernian':'🟢','Motherwell':'🟡','Celtic':'🟢','Dundee':'⚫',
+};
+
 function renderSpflFixtures(list){
   const doubledMatches = new Set((spflPlayerState?.powerups||[]).filter(p=>p.type==='double').map(p=>p.match_id));
-  const curWk = spflCurrentWeekend();
-  const weekendsHtml = SPFL_WEEKENDS.map(wk=>{
-    const fixtures = SPFL_FIXTURES.filter(f=>f.weekend===wk);
-    const cardsHtml = fixtures.map(f=>{
-      const ko = spflMatchKickoff(f.id);
-      const locked = spflIsLocked(f.id);
-      const result = spflResults[f.id];
-      const pick = spflPredictions[f.id]||{};
-      const dp = ko?.toLocaleDateString('en-GB',{timeZone:'Europe/London',weekday:'short',day:'numeric',month:'short'})||'';
-      const tp = ko?.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'})||'';
-      const isDoubled = doubledMatches.has(f.id);
-      const canDouble = !locked;
-      return `<div class="match-card" style="padding:.6rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.5rem;${isDoubled?'box-shadow:0 0 0 2px var(--accent) inset;':''}">
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.68rem;color:var(--text-muted);margin-bottom:.3rem;">
-          <span>${dp} · ${tp}</span>
-          ${isDoubled?'<span style="color:var(--accent);font-weight:700;">2x DOUBLE POINTS</span>':''}
+  const todayKey = new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
+  const grouped = {}, keyMap = {};
+  SPFL_FIXTURES.forEach(f=>{
+    const key = f.date;
+    if(!grouped[key]){ grouped[key]=[]; keyMap[key]=spflDateLabel(f); }
+    grouped[key].push(f);
+  });
+  const keys = Object.keys(grouped).sort();
+  list.innerHTML = keys.map(key=>{
+    const isToday = key===todayKey;
+    const isFuture = key>todayKey;
+    const cardsHtml = grouped[key].map(f=>renderSpflPredictCard(f, spflPredictions[f.id]||{home:'',away:''}, spflResults[f.id], doubledMatches.has(f.id))).join('');
+    return `<div class="matchday-group" data-datekey="${key}"><div class="matchday-label ${isFuture?'dim':''}">${isToday?'<span class="today-dot"></span>':''}${keyMap[key]} · Weekend ${grouped[key][0].weekend}</div>${cardsHtml}</div>`;
+  }).join('') || '<div class="empty">No fixtures yet.</div>';
+}
+
+function spflDateLabel(f){
+  const ko = spflMatchKickoff(f.id);
+  return ko ? ko.toLocaleDateString('en-GB',{timeZone:'Europe/London',weekday:'long',day:'numeric',month:'long'}) : f.date;
+}
+
+function renderSpflPredictCard(f, pred, res, isDoubled){
+  const locked = spflIsLocked(f.id);
+  const isFilled = pred.home!==''&&pred.away!=='';
+  const koTime = spflMatchKickoff(f.id);
+  const koMs = koTime ? koTime.getTime() : null;
+  const now = Date.now();
+  const LIVE_WIN = 130*60*1000;
+  const isLive = !!(koMs && now>=koMs && now<koMs+LIVE_WIN);
+  const hasActualScore = res && res.full_time && res.home!=null && res.away!=null;
+  const koStr = koTime ? koTime.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'}) : '—';
+  const doubleTag = isDoubled ? '<span class="group-tag" style="position:absolute;left:50%;transform:translateX(-50%);text-transform:none;letter-spacing:0;color:var(--group-accent);font-weight:700;">2x DOUBLE</span>' : '';
+
+  let ptsBadge='', ptsAbove='';
+  if(hasActualScore&&isFilled){
+    const breakdownActive = (spflPlayerState?.powerups||[]).some(p=>p.type==='breakdown'&&p.weekend===f.weekend);
+    let pts = spflCalcMatchPoints(f.id,{home:+pred.home,away:+pred.away},res,breakdownActive);
+    if(isDoubled) pts*=2;
+    let ptsColor, ptsVal=(pts>=0?'+':'')+pts;
+    if(pts>=8){ptsBadge=`<span class="pts-badge green">${ptsVal} <span class="pts-star">⭐</span></span>`;ptsColor='#22c55e';}
+    else if(pts>=5){ptsBadge=`<span class="pts-badge green">${ptsVal}</span>`;ptsColor='#22c55e';}
+    else if(pts>0){ptsBadge=`<span class="pts-badge">${ptsVal}</span>`;ptsColor='var(--group-accent)';}
+    else{ptsBadge=`<span class="pts-badge" style="background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.25);">${ptsVal}</span>`;ptsColor='#ef4444';}
+    ptsAbove=`<div class="mc-pts-above">Points Received <span style="color:${ptsColor};font-weight:700;">${ptsVal}</span></div>`;
+  }
+
+  const resStr = hasActualScore
+    ? `<span class="result-badge">${res.home}–${res.away}</span>`
+    : isLive ? `<span class="result-badge" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#ef4444;">0–0</span>` : '';
+  const statusBadge = isLive ? '<span class="live-badge"><span class="live-dot"></span>Live</span>' : '';
+  const doubleBtn = !locked ? `<button class="sync-refresh" onclick="event.stopPropagation();spflApplyDoublePoints('${f.id}')" style="position:absolute;bottom:-1.6rem;right:0;font-size:.6rem;padding:.12rem .45rem;">${isDoubled?'Cancel 2x':'🪙2 Double'}</button>` : '';
+  const cardClass = ['match-card', isFilled?'saved':'', locked?'locked':'', isLive?'is-live':''].filter(Boolean).join(' ');
+
+  if(!locked){
+    const checkClass = isFilled ? 'mc-check done' : 'mc-check';
+    return `<div class="${cardClass}" style="position:relative;margin-bottom:1.6rem;">
+      <div class="mc-header" style="position:relative;">
+        <span class="mc-ko">KO ${koStr}</span>
+        ${doubleTag}
+      </div>
+      <div class="mc-body">
+        <div class="mc-team">
+          <div class="mc-flag">${SPFL_BADGES[f.home]||'⚪'}</div>
+          <div class="mc-name" style="line-height:1.3;">${f.home}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:.5rem;">
-          <div style="flex:1;text-align:right;font-weight:600;">${f.home}</div>
-          <input type="number" min="0" max="20" id="sh-${f.id}" value="${pick.home??''}" ${locked?'disabled':''} onchange="spflAutoSaveIfComplete('${f.id}')" style="width:2.4rem;text-align:center;" />
-          <span>–</span>
-          <input type="number" min="0" max="20" id="sa-${f.id}" value="${pick.away??''}" ${locked?'disabled':''} onchange="spflAutoSaveIfComplete('${f.id}')" style="width:2.4rem;text-align:center;" />
-          <div style="flex:1;font-weight:600;">${f.away}</div>
+        <div class="mc-center">
+          <div class="mc-score-row">
+            <input class="mc-sinput ${pred.home!==''?'filled':''}" type="number" min="0" max="20" id="h-${f.id}" value="${pred.home}" placeholder="–" inputmode="numeric" pattern="[0-9]*" oninput="spflScoreInput(this,'a-${f.id}')" data-match-id="${f.id}" />
+            <div class="${checkClass}" id="chk-${f.id}">✓</div>
+            <input class="mc-sinput ${pred.away!==''?'filled':''}" type="number" min="0" max="20" id="a-${f.id}" value="${pred.away}" placeholder="–" inputmode="numeric" pattern="[0-9]*" oninput="spflScoreInput(this,null)" data-match-id="${f.id}" />
+          </div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.35rem;">
-          <div style="font-size:.7rem;color:var(--text-muted);">${result&&result.full_time?`FT ${result.home}–${result.away}`:locked?'Locked':''}</div>
-          ${canDouble?`<button class="btn-mini" onclick="spflApplyDoublePoints('${f.id}')" style="font-size:.65rem;padding:.15rem .5rem;">${isDoubled?'Cancel 2x':'🪙2 Double'}</button>`:''}
+        <div class="mc-team away">
+          <div class="mc-flag">${SPFL_BADGES[f.away]||'⚪'}</div>
+          <div class="mc-name" style="line-height:1.3;">${f.away}</div>
         </div>
-      </div>`;
-    }).join('');
-    return `<div class="spfl-weekend-group" style="margin-bottom:1rem;">
-      <div style="font-size:.75rem;font-weight:700;letter-spacing:.05em;color:var(--text-muted);margin:.5rem 0 .35rem;">WEEKEND ${wk}${wk===curWk?' · CURRENT':''}</div>
-      ${cardsHtml}
+      </div>
+      ${doubleBtn}
     </div>`;
-  }).join('');
-  list.innerHTML = weekendsHtml;
+  } else {
+    const ph = pred.home!=='' ? pred.home : '–';
+    const pa = pred.away!=='' ? pred.away : '–';
+    const lockIcon = statusBadge || '<span style="font-size:.65rem;color:var(--text-muted);opacity:.45;">🔒</span>';
+    let centerHtml;
+    if(hasActualScore){
+      const predText = isFilled ? `you predicted ${ph}–${pa}` : 'not predicted';
+      centerHtml = `${ptsAbove}<div class="mc-actual-score">${res.home}–${res.away}</div><div class="mc-pred-under">${predText}</div>`;
+    } else {
+      centerHtml = `<div class="mc-locked-pred"><span class="mc-lscore">${ph}</span><span class="mc-lsep">–</span><span class="mc-lscore">${pa}</span></div>${resStr?`<div class="mc-result-row">${resStr}</div>`:''}`;
+    }
+    return `<div class="${cardClass}" style="position:relative;margin-bottom:1.6rem;">
+      <div class="mc-header" style="position:relative;">
+        <span class="mc-ko">KO ${koStr}</span>
+        ${doubleTag}
+        <span class="mc-header-right">${ptsBadge}${lockIcon}</span>
+      </div>
+      <div class="mc-body">
+        <div class="mc-team">
+          <div class="mc-flag">${SPFL_BADGES[f.home]||'⚪'}</div>
+          <div class="mc-name" style="line-height:1.3;">${f.home}</div>
+        </div>
+        <div class="mc-center">${centerHtml}</div>
+        <div class="mc-team away">
+          <div class="mc-flag">${SPFL_BADGES[f.away]||'⚪'}</div>
+          <div class="mc-name" style="line-height:1.3;">${f.away}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+}
+
+function spflScoreInput(el, nextId){
+  const v = el.value.replace(/[^0-9]/g,'');
+  el.value = v.slice(0,2);
+  const matchId = el.dataset.matchId;
+  if(v.length>=1 && nextId){
+    const next = document.getElementById(nextId);
+    if(next && !next.disabled){ next.focus(); next.select(); }
+    spflAutoSaveIfComplete(matchId);
+  } else if(v.length>=1 && !nextId){
+    spflAutoSaveIfComplete(matchId);
+  }
 }
 
 async function spflAutoSaveIfComplete(matchId){
   if(!currentPlayer||!currentGroup) return;
   if(spflIsLocked(matchId)) return;
-  const h = document.getElementById('sh-'+matchId)?.value.trim();
-  const a = document.getElementById('sa-'+matchId)?.value.trim();
+  const h = document.getElementById('h-'+matchId)?.value.trim();
+  const a = document.getElementById('a-'+matchId)?.value.trim();
   if(h===''||h===undefined||a===''||a===undefined) return;
   if(isNaN(+h)||isNaN(+a)) return;
   const existing = spflPredictions[matchId];
@@ -3488,7 +3651,10 @@ async function spflAutoSaveIfComplete(matchId){
     await sb(`spfl_predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.${matchId}`,{method:'DELETE',prefer:'return=minimal'});
     await sb('spfl_predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:matchId,home_score:+h,away_score:+a}});
     spflPredictions[matchId]={home:+h,away:+a};
-    flash('Prediction saved','success');
+    const card = document.getElementById('h-'+matchId)?.closest('.match-card');
+    if(card) card.classList.add('saved');
+    const chk = document.getElementById('chk-'+matchId);
+    if(chk) chk.classList.add('done');
   }catch(e){ flash('Error saving: '+e.message,'error'); }
 }
 
@@ -3621,16 +3787,30 @@ async function loadSpflLeaderboard(){
     const totals = {};
     (players||[]).forEach(p=>{ totals[p.id] = spflComputePlayerPoints(p.id, predsByPlayer, powerupsByPlayer).points; });
     const final = spflApplyDeductions(totals, allPowerupsFlat);
-    const rows = (players||[]).map(p=>({id:p.id, name:p.nickname||p.name, points:final[p.id]||0}))
-      .sort((a,b)=>b.points-a.points);
-    lb.innerHTML = rows.map((r,i)=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:.55rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.4rem;${r.id===currentPlayer?.id?'box-shadow:0 0 0 2px var(--accent) inset;':''}">
-        <div style="display:flex;align-items:center;gap:.6rem;">
-          <div style="width:1.6rem;text-align:center;font-weight:700;color:var(--text-muted);">${i+1}</div>
-          <div style="font-weight:600;">${r.name}</div>
-        </div>
-        <div style="font-weight:700;">${r.points} pts</div>
-      </div>`).join('') || '<div class="empty">No players yet.</div>';
+    const settled = SPFL_FIXTURES.filter(f=>spflResults[f.id]?.full_time);
+    const rows = (players||[]).map(p=>{
+      const preds = predsByPlayer[p.id]||{};
+      let exact=0, correct=0;
+      settled.forEach(f=>{
+        const pick=preds[f.id], res=spflResults[f.id];
+        if(!pick||pick.home==null||pick.away==null) return;
+        if(+pick.home===res.home&&+pick.away===res.away) exact++;
+        else{
+          const pr=pick.home>pick.away?'H':pick.home<pick.away?'A':'D';
+          const ar=res.home>res.away?'H':res.home<res.away?'A':'D';
+          if(pr===ar) correct++;
+        }
+      });
+      return {id:p.id, name:p.nickname||p.name, points:final[p.id]||0, exact, correct};
+    }).sort((a,b)=>b.points-a.points);
+    lb.innerHTML = rows.map((r,i)=>{
+      const rowCls = (i===0?'lb-row lb-gold':i===1?'lb-row lb-silver':i===2?'lb-row lb-bronze':'lb-row')+(r.id===currentPlayer?.id?' lb-you':'');
+      return `<div class="${rowCls}">
+        <div class="lb-rank">${i+1}</div>
+        <div><div class="lb-name">${r.name}</div><div class="lb-breakdown">${r.exact} correct scorelines · ${r.correct} correct results</div></div>
+        <div style="text-align:right;"><div class="lb-points">${r.points}</div><div class="lb-pts-label">pts</div></div>
+      </div>`;
+    }).join('') || '<div class="empty">No players yet.</div>';
   }catch(e){ lb.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
 }
 
@@ -3658,26 +3838,26 @@ async function loadTactics(){
     const otherPlayers = players.filter(p=>p.id!==currentPlayer.id);
     shop.innerHTML = `
       <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:.6rem;">Weekend ${wk} · powerups marked "once/weekend" reset each round</div>
-      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
-        <div style="font-weight:700;">🪙2 Double Points <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· unlimited use</span></div>
-        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Pick one game on the Fixtures tab and double all points earned on it.${!spflPlayerState.free_double_used?' Your first weekend-1 pick is free!':''}</div>
-        <button class="btn-mini" onclick="showView('spflPredict')">Go pick a game →</button>
+      <div class="home-card">
+        <div class="home-card-title">🪙2 Double Points <span style="font-weight:400;letter-spacing:0;text-transform:none;">· unlimited use</span></div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem;">Pick one game on the Predict tab and double all points earned on it.${!spflPlayerState.free_double_used?' Your first weekend-1 pick is free!':''}</div>
+        <button class="sync-refresh" onclick="showView('spflPredict')">Go pick a game →</button>
       </div>
-      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
-        <div style="font-weight:700;">🪙3 The Breakdown <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· once/weekend</span></div>
-        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Converts scoring across every game this weekend to 1pt per home goal you called + 1pt per away goal you called + 3pt for the correct result (max 5/game).</div>
-        <button class="btn-mini" ${hasBreakdown||coins<SPFL_POWERUP_COSTS.breakdown?'disabled':''} onclick="spflBuyBreakdown()">${hasBreakdown?'Active this weekend':'Activate'}</button>
+      <div class="home-card">
+        <div class="home-card-title">🪙3 The Breakdown <span style="font-weight:400;letter-spacing:0;text-transform:none;">· once/weekend</span></div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem;">Converts scoring across every game this weekend to 1pt per home goal you called + 1pt per away goal you called + 3pt for the correct result (max 5/game).</div>
+        <button class="sync-refresh" ${hasBreakdown||coins<SPFL_POWERUP_COSTS.breakdown?'disabled':''} onclick="spflBuyBreakdown()">${hasBreakdown?'Active this weekend':'Activate'}</button>
       </div>
-      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
-        <div style="font-weight:700;">🪙4 VAR Review <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· once/weekend</span></div>
-        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Spins a wheel to randomly hit an eligible (non-immune) player for -5 points.</div>
-        <button class="btn-mini" ${hasVar||coins<SPFL_POWERUP_COSTS.var?'disabled':''} onclick="spflBuyVarReview()">${hasVar?'Used this weekend':'Spin the wheel'}</button>
+      <div class="home-card">
+        <div class="home-card-title">🪙4 VAR Review <span style="font-weight:400;letter-spacing:0;text-transform:none;">· once/weekend</span></div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem;">Spins a wheel to randomly hit an eligible (non-immune) player for -5 points.</div>
+        <button class="sync-refresh" ${hasVar||coins<SPFL_POWERUP_COSTS.var?'disabled':''} onclick="spflBuyVarReview()">${hasVar?'Used this weekend':'Spin the wheel'}</button>
       </div>
-      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
-        <div style="font-weight:700;">🪙5 Sabotage <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· once/weekend</span></div>
-        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Deduct 5 points from a rival of your choosing (can't target an immune player).</div>
+      <div class="home-card">
+        <div class="home-card-title">🪙5 Sabotage <span style="font-weight:400;letter-spacing:0;text-transform:none;">· once/weekend</span></div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem;">Deduct 5 points from a rival of your choosing (can't target an immune player).</div>
         ${otherPlayers.length ? `<select id="sabotage-target" style="margin-right:.4rem;">${otherPlayers.map(p=>`<option value="${p.id}">${p.nickname||p.name}</option>`).join('')}</select>
-        <button class="btn-mini" ${hasSabotage||coins<SPFL_POWERUP_COSTS.sabotage?'disabled':''} onclick="spflSabotageFromSelect()">${hasSabotage?'Used this weekend':'Sabotage'}</button>` : '<div style="font-size:.72rem;color:var(--text-muted);">No other players yet.</div>'}
+        <button class="sync-refresh" ${hasSabotage||coins<SPFL_POWERUP_COSTS.sabotage?'disabled':''} onclick="spflSabotageFromSelect()">${hasSabotage?'Used this weekend':'Sabotage'}</button>` : '<div style="font-size:.72rem;color:var(--text-muted);">No other players yet.</div>'}
       </div>`;
   }catch(e){ shop.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
 }
@@ -5319,9 +5499,10 @@ function showView(name){ closeMenu();
   if(name==='home'){ loadHome(); startCountdown(); }
   if(name==='predict') loadPredictions(true);
   if(name==='leaderboard') loadLeaderboard();
-  if(name==='spflPredict' || name==='spflLeaderboard' || name==='tactics'){
+  if(name==='spflHome' || name==='spflPredict' || name==='spflLeaderboard' || name==='tactics'){
     if(!userHasSpflAccess()){ showView('home'); return; }
   }
+  if(name==='spflHome') loadSpflHome();
   if(name==='spflPredict') loadSpflPredictions();
   if(name==='spflLeaderboard') loadSpflLeaderboard();
   if(name==='tactics') loadTactics();
@@ -6822,6 +7003,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.1',date:'10 Jul 2026',notes:['SPFL now matches the World Cup game\'s actual look and feel instead of a bare-bones placeholder: match cards, score inputs, points badges and locked/live states all reuse the same card styling as Predictions; the leaderboard reuses the same ranked-row styling (gold/silver/bronze, correct-scorelines breakdown) as the World Cup leaderboard.','SPFL nav now mirrors the World Cup tab set — Home, Leaderboard, Predict, plus the extra Tactics tab — instead of a cut-down Fixtures-only version. Added a proper SPFL Home tab with next-fixture countdown, coin balance and a mini top-3 leaderboard.','Fixed supabase/spfl_schema.sql: group_id/player_id are uuid in this project, not bigint — the earlier version silently created the SPFL tables with the wrong column type.']},
   {v:'1.79.0',date:'10 Jul 2026',notes:['New: SPFL league mode — fully separate from the World Cup game (own fixtures, own leaderboard, own predictions, own Supabase tables: spfl_predictions/spfl_results/spfl_player_state, plus a new spfl_approved boolean on players). Hidden from everyone by default — grant access per-player from Admin → Players (⋮ Options → Grant SPFL Access), then they can switch leagues from their name menu.','New: Tactics tab (SPFL only) — a powerup shop. Earn 1 coin per 10 SPFL points scored. Double Points (🪙2, unlimited use — double one game\'s points; everyone gets their first weekend-1 use free), The Breakdown (🪙3, once/weekend — reworks that weekend\'s scoring to 1pt/home goal + 1pt/away goal + 3pt correct result), VAR Review (🪙4, once/weekend — random wheel spin, -5pts to an eligible non-immune player), Sabotage (🪙5, once/weekend — pick a rival, -5pts). Once a player\'s been hit by VAR Review or Sabotage in a weekend they\'re immune from further deductions until the next round.','Requires running supabase/spfl_schema.sql once in the Supabase SQL editor before this version goes live (adds players.spfl_approved + the three spfl_* tables) — same graceful-degradation pattern as score_master: login/admin keep working even if it hasn\'t been run yet, SPFL features just stay unavailable.']},
   {v:'1.78.67',date:'7 Jul 2026',notes:['Mobile swipe-between-tabs now only arms from the screen edge (like a browser back/forward gesture) instead of anywhere on the page, so it no longer fights with carousels and sliders in the middle of the screen. Holding the drag shows a chevron that tracks your finger and grows as you pull — the page only changes once you release past the threshold; letting go early or dragging back snaps the chevron away with no navigation.']},
   {v:'1.78.66',date:'7 Jul 2026',notes:['Points Per Matchday chart now also shows the total points obtainable that day as a background bar behind your score — match days have different numbers of games so the ceiling moves; bar turns gold when you hit the max.']},
@@ -9052,7 +9234,7 @@ function toggleLeague(){
   currentLeague = currentLeague==='spfl' ? 'wc' : 'spfl';
   localStorage.setItem('spfl_current_league', currentLeague);
   applyLeagueVisibility();
-  showView(currentLeague==='spfl' ? 'spflPredict' : 'home');
+  showView(currentLeague==='spfl' ? 'spflHome' : 'home');
 }
 function applyLeagueVisibility(){
   const wc = currentLeague!=='spfl';
@@ -9060,6 +9242,7 @@ function applyLeagueVisibility(){
   show('nav-home', wc);
   show('nav-leaderboard', wc);
   show('nav-predict', wc);
+  show('nav-spflHome', !wc);
   show('nav-spflPredict', !wc);
   show('nav-spflLeaderboard', !wc);
   show('nav-tactics', !wc);
@@ -13869,7 +14052,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.0</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.1</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
