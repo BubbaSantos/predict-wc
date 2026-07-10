@@ -6,10 +6,18 @@
 -- Per-player SPFL access gate + running coin balance + free-powerup flag.
 ALTER TABLE players ADD COLUMN IF NOT EXISTS spfl_approved boolean DEFAULT false;
 
+-- Drop first in case an earlier run of this script created them with the
+-- wrong group_id/player_id type (bigint) before groups.id/players.id were
+-- confirmed to be uuid — safe since no real data has been saved yet.
+DROP TABLE IF EXISTS spfl_predictions;
+DROP TABLE IF EXISTS spfl_results;
+DROP TABLE IF EXISTS spfl_player_state;
+
+-- group_id/player_id are uuid to match groups.id/players.id in this project.
 CREATE TABLE IF NOT EXISTS spfl_predictions (
   id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  group_id    bigint NOT NULL,
-  player_id   bigint NOT NULL,
+  group_id    uuid NOT NULL,
+  player_id   uuid NOT NULL,
   match_id    text NOT NULL,
   home_score  int,
   away_score  int,
@@ -19,7 +27,7 @@ CREATE TABLE IF NOT EXISTS spfl_predictions (
 
 CREATE TABLE IF NOT EXISTS spfl_results (
   id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  group_id    bigint NOT NULL,
+  group_id    uuid NOT NULL,
   match_id    text NOT NULL,
   home_score  int,
   away_score  int,
@@ -33,8 +41,8 @@ CREATE TABLE IF NOT EXISTS spfl_results (
 -- powerups_used / immune_until are jsonb so new powerup types don't need new columns.
 CREATE TABLE IF NOT EXISTS spfl_player_state (
   id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  group_id         bigint NOT NULL,
-  player_id        bigint NOT NULL,
+  group_id         uuid NOT NULL,
+  player_id        uuid NOT NULL,
   coins            int DEFAULT 0,
   free_double_used boolean DEFAULT false, -- everyone starts with one free Double Points, weekend 1 only
   powerups         jsonb DEFAULT '[]'::jsonb, -- [{type, weekend, match_id?, target_player_id?, coin_cost, applied_at}]
