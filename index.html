@@ -1369,7 +1369,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.2</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.3</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1845,9 +1845,9 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
     <!-- ADMIN -->
     <div id="view-admin" class="view">
-      <div class="page-header"><div class="page-title">Admin</div></div>
+      <div class="page-header"><div class="page-title">Admin <span id="admin-league-label" style="font-size:.7rem;font-weight:600;color:var(--text-muted);letter-spacing:.04em;vertical-align:middle;"></span></div></div>
       <div id="admin-unlocked">
-      <div class="sync-bar">
+      <div class="sync-bar" id="admin-sync-bar">
         <span style="font-size:.72rem;color:var(--text-muted);">Auto-syncing every 5 min · or enter scores manually below</span>
       </div>
       <div class="admin-tabs">
@@ -1856,15 +1856,20 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button class="admin-tab" onclick="switchAdminTab('fixtures')">➕ Fixtures</button>
         <button class="admin-tab" onclick="switchAdminTab('branding')">🎨 Branding</button>
         <button class="admin-tab" onclick="switchAdminTab('controls')">⚙️ Controls</button>
-        <button id="admin-tab-spfl" class="admin-tab" onclick="switchAdminTab('spfl')" style="display:none;">🏴󠁧󠁢󠁳󠁣󠁴󠁿 SPFL</button>
         <button id="admin-tab-changelog" class="admin-tab" onclick="switchAdminTab('changelog')" style="display:none;">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
+        <div id="admin-results-wc">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:1rem;">
           <p style="font-size:.78rem;color:var(--text-muted);margin:0;flex:1;">Results update automatically within 5 minutes of a match finishing. You can also enter or override scores manually below.</p>
           <button id="results-godcast-btn" class="godcast-btn" onclick="toggleGodcast()" title="God Mode: write results to every group" style="display:none;">⚡</button>
         </div>
         <div id="admin-fixtures-list"><div class="loading">Loading…</div></div>
+        </div>
+        <div id="admin-results-spfl" style="display:none;">
+          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Enter SPFL results manually — there's no auto-sync for this league.</p>
+          <div id="admin-spfl-list"><div class="loading">Loading…</div></div>
+        </div>
       </div>
       <div id="admin-panel-players" class="admin-panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
@@ -2353,10 +2358,6 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         </div>
         </div><!-- /ctrl-section-danger -->
       </div>
-      <div id="admin-panel-spfl" class="admin-panel">
-        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Enter SPFL results manually — there's no auto-sync for this league. Writes only to spfl_results, never touches the World Cup results table.</p>
-        <div id="admin-spfl-list"><div class="loading">Loading…</div></div>
-      </div>
       <div id="admin-panel-changelog" class="admin-panel">
         <div id="changelog-content"></div>
       </div>
@@ -2605,8 +2606,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 
 <div id="var-wheel-overlay" class="confirm-overlay" style="z-index:9600;">
   <div class="confirm-modal" style="max-width:340px;text-align:center;">
-    <div class="confirm-modal-title" style="font-size:1.3rem;">📺 VAR Review</div>
-    <div style="font-size:.78rem;color:var(--text-dim);margin-bottom:1rem;">Spinning for a random eligible player…</div>
+    <div class="confirm-modal-title" id="var-wheel-title" style="font-size:1.3rem;">📺 VAR Review</div>
+    <div id="var-wheel-subtitle" style="font-size:.78rem;color:var(--text-dim);margin-bottom:1rem;">Spinning for a random eligible player…</div>
     <div style="position:relative;width:240px;height:240px;margin:0 auto 1.25rem;">
       <div id="var-wheel-pointer" style="position:absolute;top:-.6rem;left:50%;transform:translateX(-50%);font-size:1.4rem;z-index:2;">🔻</div>
       <div id="var-wheel" style="width:240px;height:240px;border-radius:50%;border:4px solid var(--border);position:relative;overflow:hidden;transform:rotate(0deg);"></div>
@@ -3581,7 +3582,8 @@ function renderSpflPredictCard(f, pred, res, isDoubled){
     ? `<span class="result-badge">${res.home}–${res.away}</span>`
     : isLive ? `<span class="result-badge" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#ef4444;">0–0</span>` : '';
   const statusBadge = isLive ? '<span class="live-badge"><span class="live-dot"></span>Live</span>' : '';
-  const doubleBtn = !locked ? `<button class="sync-refresh" onclick="event.stopPropagation();spflApplyDoublePoints('${f.id}')" style="position:absolute;bottom:-1.6rem;right:0;font-size:.6rem;padding:.12rem .45rem;">${isDoubled?'Cancel 2x':'🪙2 Double'}</button>` : '';
+  const canDouble = !locked && !(res && res.full_time);
+  const doubleBtn = (canDouble||isDoubled) ? `<button class="sync-refresh" onclick="event.stopPropagation();spflApplyDoublePoints('${f.id}')" style="position:absolute;bottom:-1.6rem;right:0;font-size:.6rem;padding:.12rem .45rem;">${isDoubled?'Cancel 2x':'🪙2 Double'}</button>` : '';
   const cardClass = ['match-card', isFilled?'saved':'', locked?'locked':'', isLive?'is-live':''].filter(Boolean).join(' ');
 
   if(!locked){
@@ -3714,6 +3716,7 @@ async function spflApplyDoublePoints(matchId){
     renderSpflFixtures(document.getElementById('spfl-fixtures-list'));
     return;
   }
+  if(spflResults[matchId]?.full_time){ flash('That match has already been settled — pick another game','error'); return; }
   const useFree = !spflPlayerState.free_double_used && f.weekend===1;
   const cost = useFree ? 0 : SPFL_POWERUP_COSTS.double;
   if(!useFree && spflCoinBalance() < cost){ flash('Not enough coins for Double Points','error'); return; }
@@ -3757,27 +3760,32 @@ async function spflBuyVarReview(){
 }
 
 // ── VAR REVIEW WHEEL ───────────────────────
-const VAR_WHEEL_COLOURS = ['#818cf8','#f472b6','#34d399','#fbbf24','#60a5fa','#fb923c','#a78bfa','#4ade80'];
-function spflSpinVarWheel(eligible, weekend, cost){
-  const n = eligible.length;
+const VAR_WHEEL_COLOURS = ['#dc2626','#ffffff'];
+
+// Shared wheel builder/spinner — used both for the live purchase spin and
+// for replaying someone else's spin as a banner (same visuals, no coin spend).
+function spflAnimateWheel(names, winnerIdx, opts){
+  const n = names.length;
   const seg = 360/n;
-  const winnerIdx = Math.floor(Math.random()*n);
-  const winner = eligible[winnerIdx];
+  const radius = 92; // label placement radius inside the 240px wheel
 
   const wheel = document.getElementById('var-wheel');
+  const titleEl = document.getElementById('var-wheel-title');
+  const subtitleEl = document.getElementById('var-wheel-subtitle');
   const resultEl = document.getElementById('var-wheel-result');
   const closeBtn = document.getElementById('var-wheel-close-btn');
+  titleEl.textContent = opts.title||'📺 VAR Review';
+  subtitleEl.textContent = opts.subtitle||'';
   resultEl.textContent = '';
   closeBtn.style.display = 'none';
 
-  // Build the pie via conic-gradient, then lay each name tangentially around the rim.
-  const gradientStops = eligible.map((p,i)=>`${VAR_WHEEL_COLOURS[i%VAR_WHEEL_COLOURS.length]} ${i*seg}deg ${(i+1)*seg}deg`).join(',');
-  const labelsHtml = eligible.map((p,i)=>{
-    const angle = i*seg + seg/2;
-    const name = (p.nickname||p.name);
-    return `<div style="position:absolute;top:50%;left:50%;width:0;height:0;transform:rotate(${angle}deg);">
-      <span style="display:block;position:absolute;left:.4rem;top:-.55rem;transform:translateX(0) rotate(90deg);transform-origin:left center;font-size:.62rem;font-weight:700;color:#000;white-space:nowrap;max-width:5.5rem;overflow:hidden;text-overflow:ellipsis;">${name}</span>
-    </div>`;
+  const gradientStops = names.map((name,i)=>`${VAR_WHEEL_COLOURS[i%2]} ${i*seg}deg ${(i+1)*seg}deg`).join(',');
+  const labelsHtml = names.map((name,i)=>{
+    const angle = (i*seg + seg/2) * Math.PI/180;
+    const x = 120 + radius*Math.sin(angle);
+    const y = 120 - radius*Math.cos(angle);
+    const textColour = (i%2===0) ? '#fff' : '#000';
+    return `<span style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-50%);font-size:.6rem;font-weight:700;color:${textColour};white-space:nowrap;max-width:4.4rem;overflow:hidden;text-overflow:ellipsis;text-align:center;">${name}</span>`;
   }).join('');
   wheel.style.transition = 'none';
   wheel.style.transform = 'rotate(0deg)';
@@ -3801,21 +3809,97 @@ function spflSpinVarWheel(eligible, weekend, cost){
 
   const onDone = async ()=>{
     wheel.removeEventListener('transitionend', onDone);
-    const targetName = winner.nickname||winner.name;
-    resultEl.textContent = `🎯 ${targetName} — -5 points!`;
+    resultEl.textContent = opts.resultText ? opts.resultText(names[winnerIdx]) : '';
     closeBtn.style.display = '';
-    try{
-      const entry = {type:'var', weekend, match_id:null, target_player_id:winner.id, coin_cost:cost, applied_at:new Date().toISOString()};
-      await spflPersistPlayerState({powerups:[...(spflPlayerState.powerups||[]), entry]});
-    }catch(e){ resultEl.textContent = 'Error saving result: '+e.message; }
+    if(opts.onDone) await opts.onDone();
   };
   wheel.addEventListener('transitionend', onDone);
 }
+
+function spflSpinVarWheel(eligible, weekend, cost){
+  const winnerIdx = Math.floor(Math.random()*eligible.length);
+  const winner = eligible[winnerIdx];
+  const names = eligible.map(p=>p.nickname||p.name);
+  spflAnimateWheel(names, winnerIdx, {
+    title: '📺 VAR Review',
+    subtitle: 'Spinning for a random eligible player…',
+    resultText: (name)=>`🎯 ${name} — -5 points!`,
+    onDone: async ()=>{
+      try{
+        const entry = {type:'var', weekend, match_id:null, target_player_id:winner.id, coin_cost:cost, applied_at:new Date().toISOString()};
+        await spflPersistPlayerState({powerups:[...(spflPlayerState.powerups||[]), entry]});
+        spflMarkVarEventSeen(entry.applied_at);
+      }catch(e){ document.getElementById('var-wheel-result').textContent = 'Error saving result: '+e.message; }
+    }
+  });
+}
+
 function closeVarWheel(){
   const overlay = document.getElementById('var-wheel-overlay');
   overlay.classList.remove('show');
   overlay.style.pointerEvents = 'none';
-  setTimeout(()=>{ overlay.style.display='none'; loadTactics(); }, 160);
+  setTimeout(()=>{ overlay.style.display='none'; if(document.getElementById('view-tactics')?.classList.contains('active')) loadTactics(); }, 160);
+}
+
+// ── VAR REVIEW REPLAY BANNER ───────────────
+// Everyone in the group should see the spin, not just whoever triggered it —
+// since there's no realtime channel here, other players get a short poll
+// while they're in SPFL mode and replay the same wheel animation on the next
+// poll tick after someone uses VAR Review.
+let _spflVarPollTimer = null;
+function spflVarSeenKey(){ return currentGroup ? `spfl_var_seen_${currentGroup.id}` : null; }
+function spflMarkVarEventSeen(ts){
+  const key = spflVarSeenKey(); if(!key) return;
+  const cur = localStorage.getItem(key);
+  if(!cur || new Date(ts) > new Date(cur)) localStorage.setItem(key, ts);
+}
+function spflGetVarSeenTs(){
+  const key = spflVarSeenKey(); if(!key) return null;
+  return localStorage.getItem(key);
+}
+async function spflCheckForVarEvents(){
+  if(!currentGroup||!currentPlayer||currentLeague!=='spfl') return;
+  const overlay = document.getElementById('var-wheel-overlay');
+  if(overlay && overlay.style.display==='flex') return; // don't interrupt an in-progress spin
+  try{
+    const seenTs = spflGetVarSeenTs();
+    const [rows, players] = await Promise.all([
+      sb(`spfl_player_state?group_id=eq.${currentGroup.id}&select=player_id,powerups`),
+      spflLoadGroupPlayers(),
+    ]);
+    const events = [];
+    (rows||[]).forEach(row=>{
+      (row.powerups||[]).forEach(p=>{
+        if(p.type==='var' && (!seenTs || new Date(p.applied_at) > new Date(seenTs))){
+          events.push({actorId:row.player_id, targetId:p.target_player_id, appliedAt:p.applied_at});
+        }
+      });
+    });
+    if(!events.length) return;
+    events.sort((a,b)=>new Date(a.appliedAt)-new Date(b.appliedAt));
+    const latest = events[events.length-1];
+    spflMarkVarEventSeen(latest.appliedAt);
+    const actor = players.find(p=>String(p.id)===String(latest.actorId));
+    const target = players.find(p=>String(p.id)===String(latest.targetId));
+    if(!actor||!target) return;
+    const others = players.filter(p=>String(p.id)!==String(latest.actorId));
+    const winnerIdx = others.findIndex(p=>String(p.id)===String(latest.targetId));
+    if(winnerIdx<0) return;
+    const names = others.map(p=>p.nickname||p.name);
+    spflAnimateWheel(names, winnerIdx, {
+      title: '📺 VAR Review',
+      subtitle: `${actor.nickname||actor.name} called a VAR Review!`,
+      resultText: (name)=>`🎯 ${name} — -5 points!`,
+    });
+  }catch(e){ console.warn('spflCheckForVarEvents failed',e); }
+}
+function spflStartVarWatcher(){
+  if(_spflVarPollTimer) return;
+  if(!spflGetVarSeenTs()) spflMarkVarEventSeen(new Date().toISOString()); // don't replay old spins on first-ever load
+  _spflVarPollTimer = setInterval(spflCheckForVarEvents, 20000);
+}
+function spflStopVarWatcher(){
+  if(_spflVarPollTimer){ clearInterval(_spflVarPollTimer); _spflVarPollTimer=null; }
 }
 
 async function spflBuySabotage(targetId, targetName){
@@ -5584,7 +5668,7 @@ function showView(name){ closeMenu();
   if(name==='admin'){
     if(!isAdmin && !isScoreMaster){ showView('home'); flash('Triple-click the version number to access admin','error'); return; }
     applyAdminRoleVisibility();
-    loadAdminFixtures();
+    applyAdminLeagueVisibility();
   }
 }
 
@@ -7078,6 +7162,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.3',date:'10 Jul 2026',notes:['SPFL: VAR Review wheel labels are now horizontal (not bunched vertically in the middle) and the wheel is red/white segments instead of a rainbow of colours.','SPFL: everyone in the group now sees a replay of the VAR Review wheel — polls every 20s while in SPFL mode and shows "X called a VAR Review!" with the same spin animation landing on the actual result.','SPFL: Double Points can no longer be placed on a match once admin has ticked it Full Time in Results.','SPFL: updated Aberdeen crest.','Admin: removed the separate SPFL tab — the Results tab is now league-aware and shows SPFL score entry automatically when you\'re viewing SPFL (same Players/Branding/Controls settings apply either way). The Admin page title now shows which competition you\'re in.']},
   {v:'1.79.2',date:'10 Jul 2026',notes:['SPFL: VAR Review now spins an actual animated wheel (colour-segmented, player names around the rim) instead of instantly announcing a result — lands on the randomly-picked eligible player after a ~4s spin.','SPFL: real club crest badges replace the coloured-circle placeholders on match cards, resized and optimised for the web (down from several MB of source images to under 35KB each).']},
   {v:'1.79.1',date:'10 Jul 2026',notes:['SPFL now matches the World Cup game\'s actual look and feel instead of a bare-bones placeholder: match cards, score inputs, points badges and locked/live states all reuse the same card styling as Predictions; the leaderboard reuses the same ranked-row styling (gold/silver/bronze, correct-scorelines breakdown) as the World Cup leaderboard.','SPFL nav now mirrors the World Cup tab set — Home, Leaderboard, Predict, plus the extra Tactics tab — instead of a cut-down Fixtures-only version. Added a proper SPFL Home tab with next-fixture countdown, coin balance and a mini top-3 leaderboard.','Fixed supabase/spfl_schema.sql: group_id/player_id are uuid in this project, not bigint — the earlier version silently created the SPFL tables with the wrong column type.']},
   {v:'1.79.0',date:'10 Jul 2026',notes:['New: SPFL league mode — fully separate from the World Cup game (own fixtures, own leaderboard, own predictions, own Supabase tables: spfl_predictions/spfl_results/spfl_player_state, plus a new spfl_approved boolean on players). Hidden from everyone by default — grant access per-player from Admin → Players (⋮ Options → Grant SPFL Access), then they can switch leagues from their name menu.','New: Tactics tab (SPFL only) — a powerup shop. Earn 1 coin per 10 SPFL points scored. Double Points (🪙2, unlimited use — double one game\'s points; everyone gets their first weekend-1 use free), The Breakdown (🪙3, once/weekend — reworks that weekend\'s scoring to 1pt/home goal + 1pt/away goal + 3pt correct result), VAR Review (🪙4, once/weekend — random wheel spin, -5pts to an eligible non-immune player), Sabotage (🪙5, once/weekend — pick a rival, -5pts). Once a player\'s been hit by VAR Review or Sabotage in a weekend they\'re immune from further deductions until the next round.','Requires running supabase/spfl_schema.sql once in the Supabase SQL editor before this version goes live (adds players.spfl_approved + the three spfl_* tables) — same graceful-degradation pattern as score_master: login/admin keep working even if it hasn\'t been run yet, SPFL features just stay unavailable.']},
@@ -9325,6 +9410,7 @@ function applyLeagueVisibility(){
   const btn=document.getElementById('profile-league-btn');
   if(btn) btn.textContent = currentLeague==='spfl' ? '⚽ Switch to World Cup' : '🏴󠁧󠁢󠁳󠁣󠁴󠁿 Switch to SPFL';
   document.body.classList.toggle('spfl-mode', !wc);
+  if(!wc && userHasSpflAccess()) spflStartVarWatcher(); else spflStopVarWatcher();
 }
 function updateGodcastBtn(){
   const btn = document.getElementById('results-godcast-btn');
@@ -11538,7 +11624,7 @@ function checkAdminPass(){
     saveSession();
     document.getElementById('admin-gate').style.display='none';
     document.getElementById('admin-unlocked').style.display='block';
-    loadAdminFixtures();
+    applyAdminLeagueVisibility();
   } else {
     flash('Wrong password','error');
     document.getElementById('admin-pass-input').value='';
@@ -11649,18 +11735,34 @@ function initCollapsibleAdminCards(){
 function switchAdminTab(name){
   if(!isAdmin && isScoreMaster && name!=='results') name='results'; // Score Masters: Results only
   document.querySelectorAll('.admin-tab').forEach((b,i)=>{
-    const tabs=['results','players','fixtures','branding','controls','spfl','changelog'];
+    const tabs=['results','players','fixtures','branding','controls','changelog'];
     b.classList.toggle('active',tabs[i]===name);
   });
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('admin-panel-'+name).classList.add('active');
   initCollapsibleAdminCards();
+  if(name==='results')applyAdminLeagueVisibility();
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
   if(name==='controls'){switchControlsSubTab('group');}
-  if(name==='spfl')loadAdminSpflResults();
   if(name==='changelog')renderChangelog();
+}
+
+// The Results tab shows whichever competition is currently active (WC or
+// SPFL) instead of having its own separate admin tab — same shell, same
+// Results button, different content underneath depending on currentLeague.
+function applyAdminLeagueVisibility(){
+  const isSpfl = currentLeague==='spfl';
+  const wcBlock = document.getElementById('admin-results-wc');
+  const spflBlock = document.getElementById('admin-results-spfl');
+  const syncBar = document.getElementById('admin-sync-bar');
+  const label = document.getElementById('admin-league-label');
+  if(wcBlock) wcBlock.style.display = isSpfl ? 'none' : '';
+  if(spflBlock) spflBlock.style.display = isSpfl ? '' : 'none';
+  if(syncBar) syncBar.style.display = isSpfl ? 'none' : '';
+  if(label) label.textContent = isSpfl ? '· SPFL' : '· World Cup';
+  if(isSpfl) loadAdminSpflResults(); else loadAdminFixtures();
 }
 
 async function loadAdminFixtures(){
@@ -14128,7 +14230,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.2</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.3</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
