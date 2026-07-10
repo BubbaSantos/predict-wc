@@ -1369,7 +1369,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.78.67</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.0</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1478,6 +1478,9 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <button id="nav-home" class="active" onclick="window.location.reload(true)">Home</button>
       <button id="nav-leaderboard" onclick="showView('leaderboard')">Leaderboard</button>
       <button id="nav-predict" onclick="showView('predict')">Predict</button>
+      <button id="nav-spflPredict" onclick="showView('spflPredict')" style="display:none;">Fixtures</button>
+      <button id="nav-spflLeaderboard" onclick="showView('spflLeaderboard')" style="display:none;">Leaderboard</button>
+      <button id="nav-tactics" onclick="showView('tactics')" style="display:none;">Tactics</button>
       <button id="nav-admin" onclick="showView('admin')" style="display:none;">Admin</button>
     </nav>
     <div class="header-user" style="position:relative;">
@@ -1494,6 +1497,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button class="profile-menu-item" onclick="showPlayerThemeModal();closeProfileMenu()">🎨 Theme</button>
         <button class="profile-menu-item" onclick="showReorderHomeCardsModal();closeProfileMenu()">🏠 Reorder Home Cards</button>
 <button id="profile-god-btn" class="profile-menu-item" onclick="showGodMode();closeProfileMenu()">⚡ God Mode</button>
+        <button id="profile-league-btn" class="profile-menu-item" onclick="toggleLeague();closeProfileMenu()" style="display:none;">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Switch to SPFL</button>
         <div style="border-top:1px solid var(--border);margin:.25rem 0;"></div>
         <button class="profile-menu-item" onclick="leaveGroup();closeProfileMenu()" style="color:var(--accent2);">👋 Log Out</button>
       </div>
@@ -1706,6 +1710,35 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       <div id="fixtures-list"><div class="loading">Loading fixtures…</div></div>
     </div>
 
+    <!-- SPFL (fully separate from the World Cup views above) -->
+    <div id="view-spflPredict" class="view">
+      <div class="page-header">
+        <div>
+          <div class="page-title">SPFL Fixtures</div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:.1rem;">Predictions lock at kickoff</div>
+        </div>
+        <div id="spfl-coin-banner" style="font-size:.85rem;font-weight:700;color:var(--accent);white-space:nowrap;">🪙 <span id="spfl-coin-count">0</span></div>
+      </div>
+      <div id="spfl-fixtures-list"><div class="loading">Loading fixtures…</div></div>
+    </div>
+
+    <div id="view-spflLeaderboard" class="view">
+      <div class="page-header"><div class="page-title">SPFL Leaderboard</div></div>
+      <div id="spfl-leaderboard-list"><div class="loading">Calculating…</div></div>
+    </div>
+
+    <div id="view-tactics" class="view">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Tactics</div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:.1rem;">Spend coins on powerups for the current SPFL weekend</div>
+        </div>
+        <div id="tactics-coin-banner" style="font-size:.85rem;font-weight:700;color:var(--accent);white-space:nowrap;">🪙 <span id="tactics-coin-count">0</span></div>
+      </div>
+      <div id="tactics-shop"><div class="loading">Loading…</div></div>
+      <div id="tactics-log"></div>
+    </div>
+
     <!-- LEADERBOARD -->
     <div id="view-leaderboard" class="view">
       <div class="page-header">
@@ -1804,6 +1837,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <button class="admin-tab" onclick="switchAdminTab('fixtures')">➕ Fixtures</button>
         <button class="admin-tab" onclick="switchAdminTab('branding')">🎨 Branding</button>
         <button class="admin-tab" onclick="switchAdminTab('controls')">⚙️ Controls</button>
+        <button id="admin-tab-spfl" class="admin-tab" onclick="switchAdminTab('spfl')" style="display:none;">🏴󠁧󠁢󠁳󠁣󠁴󠁿 SPFL</button>
         <button id="admin-tab-changelog" class="admin-tab" onclick="switchAdminTab('changelog')" style="display:none;">📋 Changelog</button>
       </div>
       <div id="admin-panel-results" class="admin-panel active">
@@ -2299,6 +2333,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           </div>
         </div>
         </div><!-- /ctrl-section-danger -->
+      </div>
+      <div id="admin-panel-spfl" class="admin-panel">
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">Enter SPFL results manually — there's no auto-sync for this league. Writes only to spfl_results, never touches the World Cup results table.</p>
+        <div id="admin-spfl-list"><div class="loading">Loading…</div></div>
       </div>
       <div id="admin-panel-changelog" class="admin-panel">
         <div id="changelog-content"></div>
@@ -2871,7 +2909,860 @@ const FIXTURES = [
   { id:'m104', date:'2026-07-19', group:'Final',             home:'TBD', away:'TBD', hf:'', af:'', venue:'New York/New Jersey', matchday:8, isKnockout:true },
 ];
 
-// Bracket: maps each fixture → which fixture's winner/loser fills home/away.
+// ══════════════════════════════════════════════════════════════════════════
+// SPFL — completely separate data domain from the World Cup above.
+// Own fixture/kickoff arrays, own id namespace ('s001'...), own Supabase
+// tables (spfl_predictions/spfl_results/spfl_player_state). Never merge
+// with FIXTURES/KICKOFFS/KO_BRACKET or the wc26_* localStorage keys — the
+// World Cup game must be unaffected by anything SPFL-related, and vice versa.
+// ══════════════════════════════════════════════════════════════════════════
+
+const SPFL_FIXTURES = [
+  { id:'s001', date:'2026-07-31', home:'Dundee United', away:'Rangers', venue:'CalForth Construction Arena at Tannadice Park', weekend:1 },
+  { id:'s002', date:'2026-08-01', home:'Falkirk', away:'St. Mirren', venue:'The Falkirk Stadium', weekend:1 },
+  { id:'s003', date:'2026-08-01', home:'Aberdeen', away:'Heart of Midlothian', venue:'Pittodrie Stadium', weekend:1 },
+  { id:'s004', date:'2026-08-02', home:'St. Johnstone', away:'Kilmarnock', venue:'McDiarmid Park', weekend:1 },
+  { id:'s005', date:'2026-08-02', home:'Hibernian', away:'Motherwell', venue:'Easter Road Stadium', weekend:1 },
+  { id:'s006', date:'2026-08-03', home:'Celtic', away:'Dundee', venue:'Celtic Park', weekend:1 },
+  { id:'s007', date:'2026-08-08', home:'Dundee', away:'Aberdeen', venue:'Dens Park', weekend:2 },
+  { id:'s008', date:'2026-08-08', home:'Heart of Midlothian', away:'Dundee United', venue:'Tynecastle Park', weekend:2 },
+  { id:'s009', date:'2026-08-08', home:'Motherwell', away:'Falkirk', venue:'Fir Park', weekend:2 },
+  { id:'s010', date:'2026-08-08', home:'St. Mirren', away:'St. Johnstone', venue:'The SMISA Stadium', weekend:2 },
+  { id:'s011', date:'2026-08-09', home:'Kilmarnock', away:'Celtic', venue:'The BBSP Stadium Rugby Park', weekend:2 },
+  { id:'s012', date:'2026-08-09', home:'Rangers', away:'Hibernian', venue:'Ibrox Stadium', weekend:2 },
+  { id:'s013', date:'2026-08-22', home:'Dundee United', away:'Dundee', venue:'CalForth Construction Arena at Tannadice Park', weekend:3 },
+  { id:'s014', date:'2026-08-22', home:'Falkirk', away:'Heart of Midlothian', venue:'The Falkirk Stadium', weekend:3 },
+  { id:'s015', date:'2026-08-22', home:'Hibernian', away:'Kilmarnock', venue:'Easter Road Stadium', weekend:3 },
+  { id:'s016', date:'2026-08-22', home:'Motherwell', away:'Aberdeen', venue:'Fir Park', weekend:3 },
+  { id:'s017', date:'2026-08-22', home:'Rangers', away:'St. Mirren', venue:'Ibrox Stadium', weekend:3 },
+  { id:'s018', date:'2026-08-22', home:'St. Johnstone', away:'Celtic', venue:'McDiarmid Park', weekend:3 },
+  { id:'s019', date:'2026-08-29', home:'Aberdeen', away:'Rangers', venue:'Pittodrie Stadium', weekend:4 },
+  { id:'s020', date:'2026-08-29', home:'Celtic', away:'Falkirk', venue:'Celtic Park', weekend:4 },
+  { id:'s021', date:'2026-08-29', home:'Dundee', away:'Hibernian', venue:'Dens Park', weekend:4 },
+  { id:'s022', date:'2026-08-29', home:'Heart of Midlothian', away:'St. Johnstone', venue:'Tynecastle Park', weekend:4 },
+  { id:'s023', date:'2026-08-29', home:'Kilmarnock', away:'Dundee United', venue:'The BBSP Stadium Rugby Park', weekend:4 },
+  { id:'s024', date:'2026-08-29', home:'St. Mirren', away:'Motherwell', venue:'The SMISA Stadium', weekend:4 },
+  { id:'s025', date:'2026-09-02', home:'Celtic', away:'Aberdeen', venue:'Celtic Park', weekend:5 },
+  { id:'s026', date:'2026-09-02', home:'Dundee', away:'St. Johnstone', venue:'Dens Park', weekend:5 },
+  { id:'s027', date:'2026-09-02', home:'Falkirk', away:'Rangers', venue:'The Falkirk Stadium', weekend:5 },
+  { id:'s028', date:'2026-09-02', home:'Hibernian', away:'Heart of Midlothian', venue:'Easter Road Stadium', weekend:5 },
+  { id:'s029', date:'2026-09-02', home:'Kilmarnock', away:'St. Mirren', venue:'The BBSP Stadium Rugby Park', weekend:5 },
+  { id:'s030', date:'2026-09-02', home:'Motherwell', away:'Dundee United', venue:'Fir Park', weekend:5 },
+  { id:'s031', date:'2026-09-05', home:'Aberdeen', away:'Kilmarnock', venue:'Pittodrie Stadium', weekend:6 },
+  { id:'s032', date:'2026-09-05', home:'Dundee United', away:'Falkirk', venue:'CalForth Construction Arena at Tannadice Park', weekend:6 },
+  { id:'s033', date:'2026-09-05', home:'Heart of Midlothian', away:'Dundee', venue:'Tynecastle Park', weekend:6 },
+  { id:'s034', date:'2026-09-05', home:'Rangers', away:'Motherwell', venue:'Ibrox Stadium', weekend:6 },
+  { id:'s035', date:'2026-09-05', home:'St. Johnstone', away:'Hibernian', venue:'McDiarmid Park', weekend:6 },
+  { id:'s036', date:'2026-09-05', home:'St. Mirren', away:'Celtic', venue:'The SMISA Stadium', weekend:6 },
+  { id:'s037', date:'2026-09-19', home:'Dundee', away:'Motherwell', venue:'Dens Park', weekend:7 },
+  { id:'s038', date:'2026-09-19', home:'Hibernian', away:'Aberdeen', venue:'Easter Road Stadium', weekend:7 },
+  { id:'s039', date:'2026-09-19', home:'Kilmarnock', away:'Heart of Midlothian', venue:'The BBSP Stadium Rugby Park', weekend:7 },
+  { id:'s040', date:'2026-09-19', home:'St. Johnstone', away:'Falkirk', venue:'McDiarmid Park', weekend:7 },
+  { id:'s041', date:'2026-09-19', home:'St. Mirren', away:'Dundee United', venue:'The SMISA Stadium', weekend:7 },
+  { id:'s042', date:'2026-09-20', home:'Celtic', away:'Rangers', venue:'Celtic Park', weekend:7 },
+  { id:'s043', date:'2026-10-10', home:'Aberdeen', away:'St. Johnstone', venue:'Pittodrie Stadium', weekend:8 },
+  { id:'s044', date:'2026-10-10', home:'Dundee United', away:'Hibernian', venue:'CalForth Construction Arena at Tannadice Park', weekend:8 },
+  { id:'s045', date:'2026-10-10', home:'Falkirk', away:'Dundee', venue:'The Falkirk Stadium', weekend:8 },
+  { id:'s046', date:'2026-10-10', home:'Heart of Midlothian', away:'St. Mirren', venue:'Tynecastle Park', weekend:8 },
+  { id:'s047', date:'2026-10-10', home:'Motherwell', away:'Celtic', venue:'Fir Park', weekend:8 },
+  { id:'s048', date:'2026-10-10', home:'Rangers', away:'Kilmarnock', venue:'Ibrox Stadium', weekend:8 },
+  { id:'s049', date:'2026-10-17', home:'Aberdeen', away:'St. Mirren', venue:'Pittodrie Stadium', weekend:9 },
+  { id:'s050', date:'2026-10-17', home:'Celtic', away:'Heart of Midlothian', venue:'Celtic Park', weekend:9 },
+  { id:'s051', date:'2026-10-17', home:'Dundee', away:'Rangers', venue:'Dens Park', weekend:9 },
+  { id:'s052', date:'2026-10-17', home:'Hibernian', away:'Falkirk', venue:'Easter Road Stadium', weekend:9 },
+  { id:'s053', date:'2026-10-17', home:'Kilmarnock', away:'Motherwell', venue:'The BBSP Stadium Rugby Park', weekend:9 },
+  { id:'s054', date:'2026-10-17', home:'St. Johnstone', away:'Dundee United', venue:'McDiarmid Park', weekend:9 },
+  { id:'s055', date:'2026-10-24', home:'Dundee United', away:'Aberdeen', venue:'CalForth Construction Arena at Tannadice Park', weekend:10 },
+  { id:'s056', date:'2026-10-24', home:'Falkirk', away:'Kilmarnock', venue:'The Falkirk Stadium', weekend:10 },
+  { id:'s057', date:'2026-10-24', home:'Hibernian', away:'Celtic', venue:'Easter Road Stadium', weekend:10 },
+  { id:'s058', date:'2026-10-24', home:'Motherwell', away:'Heart of Midlothian', venue:'Fir Park', weekend:10 },
+  { id:'s059', date:'2026-10-24', home:'Rangers', away:'St. Johnstone', venue:'Ibrox Stadium', weekend:10 },
+  { id:'s060', date:'2026-10-24', home:'St. Mirren', away:'Dundee', venue:'The SMISA Stadium', weekend:10 },
+  { id:'s061', date:'2026-10-28', home:'Aberdeen', away:'Falkirk', venue:'Pittodrie Stadium', weekend:11 },
+  { id:'s062', date:'2026-10-28', home:'Celtic', away:'Dundee United', venue:'Celtic Park', weekend:11 },
+  { id:'s063', date:'2026-10-28', home:'Dundee', away:'Kilmarnock', venue:'Dens Park', weekend:11 },
+  { id:'s064', date:'2026-10-28', home:'Heart of Midlothian', away:'Rangers', venue:'Tynecastle Park', weekend:11 },
+  { id:'s065', date:'2026-10-28', home:'St. Johnstone', away:'Motherwell', venue:'McDiarmid Park', weekend:11 },
+  { id:'s066', date:'2026-10-28', home:'St. Mirren', away:'Hibernian', venue:'The SMISA Stadium', weekend:11 },
+  { id:'s067', date:'2026-10-31', home:'Dundee United', away:'Heart of Midlothian', venue:'CalForth Construction Arena at Tannadice Park', weekend:12 },
+  { id:'s068', date:'2026-10-31', home:'Falkirk', away:'Celtic', venue:'The Falkirk Stadium', weekend:12 },
+  { id:'s069', date:'2026-10-31', home:'Hibernian', away:'Dundee', venue:'Easter Road Stadium', weekend:12 },
+  { id:'s070', date:'2026-10-31', home:'Kilmarnock', away:'St. Johnstone', venue:'The BBSP Stadium Rugby Park', weekend:12 },
+  { id:'s071', date:'2026-10-31', home:'Motherwell', away:'St. Mirren', venue:'Fir Park', weekend:12 },
+  { id:'s072', date:'2026-10-31', home:'Rangers', away:'Aberdeen', venue:'Ibrox Stadium', weekend:12 },
+  { id:'s073', date:'2026-11-07', home:'Aberdeen', away:'Hibernian', venue:'Pittodrie Stadium', weekend:13 },
+  { id:'s074', date:'2026-11-07', home:'Celtic', away:'Kilmarnock', venue:'Celtic Park', weekend:13 },
+  { id:'s075', date:'2026-11-07', home:'Dundee United', away:'Motherwell', venue:'CalForth Construction Arena at Tannadice Park', weekend:13 },
+  { id:'s076', date:'2026-11-07', home:'St. Johnstone', away:'Dundee', venue:'McDiarmid Park', weekend:13 },
+  { id:'s077', date:'2026-11-07', home:'St. Mirren', away:'Rangers', venue:'The SMISA Stadium', weekend:13 },
+  { id:'s078', date:'2026-11-08', home:'Heart of Midlothian', away:'Falkirk', venue:'Tynecastle Park', weekend:13 },
+  { id:'s079', date:'2026-11-21', home:'Celtic', away:'St. Mirren', venue:'Celtic Park', weekend:14 },
+  { id:'s080', date:'2026-11-21', home:'Dundee', away:'Heart of Midlothian', venue:'Dens Park', weekend:14 },
+  { id:'s081', date:'2026-11-21', home:'Falkirk', away:'St. Johnstone', venue:'The Falkirk Stadium', weekend:14 },
+  { id:'s082', date:'2026-11-21', home:'Hibernian', away:'Dundee United', venue:'Easter Road Stadium', weekend:14 },
+  { id:'s083', date:'2026-11-21', home:'Kilmarnock', away:'Aberdeen', venue:'The BBSP Stadium Rugby Park', weekend:14 },
+  { id:'s084', date:'2026-11-21', home:'Motherwell', away:'Rangers', venue:'Fir Park', weekend:14 },
+  { id:'s085', date:'2026-11-28', home:'Aberdeen', away:'Dundee', venue:'Pittodrie Stadium', weekend:15 },
+  { id:'s086', date:'2026-11-28', home:'Dundee United', away:'St. Johnstone', venue:'CalForth Construction Arena at Tannadice Park', weekend:15 },
+  { id:'s087', date:'2026-11-28', home:'Heart of Midlothian', away:'Celtic', venue:'Tynecastle Park', weekend:15 },
+  { id:'s088', date:'2026-11-28', home:'Motherwell', away:'Hibernian', venue:'Fir Park', weekend:15 },
+  { id:'s089', date:'2026-11-28', home:'Rangers', away:'Falkirk', venue:'Ibrox Stadium', weekend:15 },
+  { id:'s090', date:'2026-11-28', home:'St. Mirren', away:'Kilmarnock', venue:'The SMISA Stadium', weekend:15 },
+  { id:'s091', date:'2026-12-02', home:'Dundee', away:'Celtic', venue:'Dens Park', weekend:16 },
+  { id:'s092', date:'2026-12-02', home:'Falkirk', away:'Motherwell', venue:'The Falkirk Stadium', weekend:16 },
+  { id:'s093', date:'2026-12-02', home:'Heart of Midlothian', away:'Aberdeen', venue:'Tynecastle Park', weekend:16 },
+  { id:'s094', date:'2026-12-02', home:'Kilmarnock', away:'Hibernian', venue:'The BBSP Stadium Rugby Park', weekend:16 },
+  { id:'s095', date:'2026-12-02', home:'Rangers', away:'Dundee United', venue:'Ibrox Stadium', weekend:16 },
+  { id:'s096', date:'2026-12-02', home:'St. Johnstone', away:'St. Mirren', venue:'McDiarmid Park', weekend:16 },
+  { id:'s097', date:'2026-12-05', home:'Aberdeen', away:'Dundee United', venue:'Pittodrie Stadium', weekend:17 },
+  { id:'s098', date:'2026-12-05', home:'Celtic', away:'St. Johnstone', venue:'Celtic Park', weekend:17 },
+  { id:'s099', date:'2026-12-05', home:'Dundee', away:'Falkirk', venue:'Dens Park', weekend:17 },
+  { id:'s100', date:'2026-12-05', home:'Hibernian', away:'Rangers', venue:'Easter Road Stadium', weekend:17 },
+  { id:'s101', date:'2026-12-05', home:'Motherwell', away:'Kilmarnock', venue:'Fir Park', weekend:17 },
+  { id:'s102', date:'2026-12-05', home:'St. Mirren', away:'Heart of Midlothian', venue:'The SMISA Stadium', weekend:17 },
+  { id:'s103', date:'2026-12-12', home:'Celtic', away:'Hibernian', venue:'Celtic Park', weekend:18 },
+  { id:'s104', date:'2026-12-12', home:'Dundee United', away:'St. Mirren', venue:'CalForth Construction Arena at Tannadice Park', weekend:18 },
+  { id:'s105', date:'2026-12-12', home:'Falkirk', away:'Aberdeen', venue:'The Falkirk Stadium', weekend:18 },
+  { id:'s106', date:'2026-12-12', home:'Heart of Midlothian', away:'Motherwell', venue:'Tynecastle Park', weekend:18 },
+  { id:'s107', date:'2026-12-12', home:'Kilmarnock', away:'Dundee', venue:'The BBSP Stadium Rugby Park', weekend:18 },
+  { id:'s108', date:'2026-12-12', home:'St. Johnstone', away:'Rangers', venue:'McDiarmid Park', weekend:18 },
+  { id:'s109', date:'2026-12-19', home:'Aberdeen', away:'Celtic', venue:'Pittodrie Stadium', weekend:19 },
+  { id:'s110', date:'2026-12-19', home:'Dundee United', away:'Kilmarnock', venue:'CalForth Construction Arena at Tannadice Park', weekend:19 },
+  { id:'s111', date:'2026-12-19', home:'Hibernian', away:'St. Johnstone', venue:'Easter Road Stadium', weekend:19 },
+  { id:'s112', date:'2026-12-19', home:'Motherwell', away:'Dundee', venue:'Fir Park', weekend:19 },
+  { id:'s113', date:'2026-12-19', home:'Rangers', away:'Heart of Midlothian', venue:'Ibrox Stadium', weekend:19 },
+  { id:'s114', date:'2026-12-19', home:'St. Mirren', away:'Falkirk', venue:'The SMISA Stadium', weekend:19 },
+  { id:'s115', date:'2026-12-26', home:'Celtic', away:'Motherwell', venue:'Celtic Park', weekend:20 },
+  { id:'s116', date:'2026-12-26', home:'Dundee', away:'St. Mirren', venue:'Dens Park', weekend:20 },
+  { id:'s117', date:'2026-12-26', home:'Falkirk', away:'Dundee United', venue:'The Falkirk Stadium', weekend:20 },
+  { id:'s118', date:'2026-12-26', home:'Heart of Midlothian', away:'Hibernian', venue:'Tynecastle Park', weekend:20 },
+  { id:'s119', date:'2026-12-26', home:'Kilmarnock', away:'Rangers', venue:'The BBSP Stadium Rugby Park', weekend:20 },
+  { id:'s120', date:'2026-12-26', home:'St. Johnstone', away:'Aberdeen', venue:'McDiarmid Park', weekend:20 },
+  { id:'s121', date:'2026-12-30', home:'Aberdeen', away:'Motherwell', venue:'Pittodrie Stadium', weekend:21 },
+  { id:'s122', date:'2026-12-30', home:'Dundee United', away:'Celtic', venue:'CalForth Construction Arena at Tannadice Park', weekend:21 },
+  { id:'s123', date:'2026-12-30', home:'Hibernian', away:'St. Mirren', venue:'Easter Road Stadium', weekend:21 },
+  { id:'s124', date:'2026-12-30', home:'Kilmarnock', away:'Falkirk', venue:'The BBSP Stadium Rugby Park', weekend:21 },
+  { id:'s125', date:'2026-12-30', home:'Rangers', away:'Dundee', venue:'Ibrox Stadium', weekend:21 },
+  { id:'s126', date:'2026-12-30', home:'St. Johnstone', away:'Heart of Midlothian', venue:'McDiarmid Park', weekend:21 },
+  { id:'s127', date:'2027-01-02', home:'Dundee', away:'Dundee United', venue:'Dens Park', weekend:22 },
+  { id:'s128', date:'2027-01-02', home:'Falkirk', away:'Hibernian', venue:'The Falkirk Stadium', weekend:22 },
+  { id:'s129', date:'2027-01-02', home:'Heart of Midlothian', away:'Kilmarnock', venue:'Tynecastle Park', weekend:22 },
+  { id:'s130', date:'2027-01-02', home:'Motherwell', away:'St. Johnstone', venue:'Fir Park', weekend:22 },
+  { id:'s131', date:'2027-01-02', home:'Rangers', away:'Celtic', venue:'Ibrox Stadium', weekend:22 },
+  { id:'s132', date:'2027-01-02', home:'St. Mirren', away:'Aberdeen', venue:'The SMISA Stadium', weekend:22 },
+  { id:'s133', date:'2027-01-09', home:'Aberdeen', away:'Heart of Midlothian', venue:'Pittodrie Stadium', weekend:23 },
+  { id:'s134', date:'2027-01-09', home:'Celtic', away:'Dundee', venue:'Celtic Park', weekend:23 },
+  { id:'s135', date:'2027-01-09', home:'Dundee United', away:'Rangers', venue:'CalForth Construction Arena at Tannadice Park', weekend:23 },
+  { id:'s136', date:'2027-01-09', home:'Hibernian', away:'Motherwell', venue:'Easter Road Stadium', weekend:23 },
+  { id:'s137', date:'2027-01-09', home:'Kilmarnock', away:'St. Mirren', venue:'The BBSP Stadium Rugby Park', weekend:23 },
+  { id:'s138', date:'2027-01-09', home:'St. Johnstone', away:'Falkirk', venue:'McDiarmid Park', weekend:23 },
+  { id:'s139', date:'2027-01-23', home:'Dundee', away:'Aberdeen', venue:'Dens Park', weekend:24 },
+  { id:'s140', date:'2027-01-23', home:'Falkirk', away:'Heart of Midlothian', venue:'The Falkirk Stadium', weekend:24 },
+  { id:'s141', date:'2027-01-23', home:'Hibernian', away:'Kilmarnock', venue:'Easter Road Stadium', weekend:24 },
+  { id:'s142', date:'2027-01-23', home:'Motherwell', away:'Dundee United', venue:'Fir Park', weekend:24 },
+  { id:'s143', date:'2027-01-23', home:'Rangers', away:'St. Johnstone', venue:'Ibrox Stadium', weekend:24 },
+  { id:'s144', date:'2027-01-23', home:'St. Mirren', away:'Celtic', venue:'The SMISA Stadium', weekend:24 },
+  { id:'s145', date:'2027-01-30', home:'Aberdeen', away:'Rangers', venue:'Pittodrie Stadium', weekend:25 },
+  { id:'s146', date:'2027-01-30', home:'Celtic', away:'Falkirk', venue:'Celtic Park', weekend:25 },
+  { id:'s147', date:'2027-01-30', home:'Dundee', away:'Hibernian', venue:'Dens Park', weekend:25 },
+  { id:'s148', date:'2027-01-30', home:'Heart of Midlothian', away:'St. Mirren', venue:'Tynecastle Park', weekend:25 },
+  { id:'s149', date:'2027-01-30', home:'Kilmarnock', away:'Motherwell', venue:'The BBSP Stadium Rugby Park', weekend:25 },
+  { id:'s150', date:'2027-01-30', home:'St. Johnstone', away:'Dundee United', venue:'McDiarmid Park', weekend:25 },
+  { id:'s151', date:'2027-02-03', home:'Aberdeen', away:'Falkirk', venue:'Pittodrie Stadium', weekend:26 },
+  { id:'s152', date:'2027-02-03', home:'Dundee United', away:'Hibernian', venue:'CalForth Construction Arena at Tannadice Park', weekend:26 },
+  { id:'s153', date:'2027-02-03', home:'Heart of Midlothian', away:'Dundee', venue:'Tynecastle Park', weekend:26 },
+  { id:'s154', date:'2027-02-03', home:'Motherwell', away:'Celtic', venue:'Fir Park', weekend:26 },
+  { id:'s155', date:'2027-02-03', home:'Rangers', away:'Kilmarnock', venue:'Ibrox Stadium', weekend:26 },
+  { id:'s156', date:'2027-02-03', home:'St. Mirren', away:'St. Johnstone', venue:'The SMISA Stadium', weekend:26 },
+  { id:'s157', date:'2027-02-13', home:'Celtic', away:'Heart of Midlothian', venue:'Celtic Park', weekend:27 },
+  { id:'s158', date:'2027-02-13', home:'Dundee', away:'St. Johnstone', venue:'Dens Park', weekend:27 },
+  { id:'s159', date:'2027-02-13', home:'Falkirk', away:'Rangers', venue:'The Falkirk Stadium', weekend:27 },
+  { id:'s160', date:'2027-02-13', home:'Hibernian', away:'Aberdeen', venue:'Easter Road Stadium', weekend:27 },
+  { id:'s161', date:'2027-02-13', home:'Kilmarnock', away:'Dundee United', venue:'The BBSP Stadium Rugby Park', weekend:27 },
+  { id:'s162', date:'2027-02-13', home:'St. Mirren', away:'Motherwell', venue:'The SMISA Stadium', weekend:27 },
+  { id:'s163', date:'2027-02-20', home:'Dundee United', away:'Aberdeen', venue:'CalForth Construction Arena at Tannadice Park', weekend:28 },
+  { id:'s164', date:'2027-02-20', home:'Falkirk', away:'Dundee', venue:'The Falkirk Stadium', weekend:28 },
+  { id:'s165', date:'2027-02-20', home:'Hibernian', away:'Celtic', venue:'Easter Road Stadium', weekend:28 },
+  { id:'s166', date:'2027-02-20', home:'Motherwell', away:'Heart of Midlothian', venue:'Fir Park', weekend:28 },
+  { id:'s167', date:'2027-02-20', home:'Rangers', away:'St. Mirren', venue:'Ibrox Stadium', weekend:28 },
+  { id:'s168', date:'2027-02-20', home:'St. Johnstone', away:'Kilmarnock', venue:'McDiarmid Park', weekend:28 },
+  { id:'s169', date:'2027-02-27', home:'Aberdeen', away:'St. Johnstone', venue:'Pittodrie Stadium', weekend:29 },
+  { id:'s170', date:'2027-02-27', home:'Celtic', away:'Rangers', venue:'Celtic Park', weekend:29 },
+  { id:'s171', date:'2027-02-27', home:'Dundee', away:'Kilmarnock', venue:'Dens Park', weekend:29 },
+  { id:'s172', date:'2027-02-27', home:'Heart of Midlothian', away:'Dundee United', venue:'Tynecastle Park', weekend:29 },
+  { id:'s173', date:'2027-02-27', home:'Motherwell', away:'Falkirk', venue:'Fir Park', weekend:29 },
+  { id:'s174', date:'2027-02-27', home:'St. Mirren', away:'Hibernian', venue:'The SMISA Stadium', weekend:29 },
+  { id:'s175', date:'2027-03-13', home:'Aberdeen', away:'St. Mirren', venue:'Pittodrie Stadium', weekend:30 },
+  { id:'s176', date:'2027-03-13', home:'Dundee United', away:'Dundee', venue:'CalForth Construction Arena at Tannadice Park', weekend:30 },
+  { id:'s177', date:'2027-03-13', home:'Hibernian', away:'Falkirk', venue:'Easter Road Stadium', weekend:30 },
+  { id:'s178', date:'2027-03-13', home:'Kilmarnock', away:'Heart of Midlothian', venue:'The BBSP Stadium Rugby Park', weekend:30 },
+  { id:'s179', date:'2027-03-13', home:'Rangers', away:'Motherwell', venue:'Ibrox Stadium', weekend:30 },
+  { id:'s180', date:'2027-03-13', home:'St. Johnstone', away:'Celtic', venue:'McDiarmid Park', weekend:30 },
+  { id:'s181', date:'2027-03-20', home:'Celtic', away:'Aberdeen', venue:'Celtic Park', weekend:31 },
+  { id:'s182', date:'2027-03-20', home:'Dundee', away:'Motherwell', venue:'Dens Park', weekend:31 },
+  { id:'s183', date:'2027-03-20', home:'Falkirk', away:'Kilmarnock', venue:'The Falkirk Stadium', weekend:31 },
+  { id:'s184', date:'2027-03-20', home:'Heart of Midlothian', away:'Rangers', venue:'Tynecastle Park', weekend:31 },
+  { id:'s185', date:'2027-03-20', home:'St. Johnstone', away:'Hibernian', venue:'McDiarmid Park', weekend:31 },
+  { id:'s186', date:'2027-03-20', home:'St. Mirren', away:'Dundee United', venue:'The SMISA Stadium', weekend:31 },
+  { id:'s187', date:'2027-04-03', home:'Dundee United', away:'Falkirk', venue:'CalForth Construction Arena at Tannadice Park', weekend:32 },
+  { id:'s188', date:'2027-04-03', home:'Heart of Midlothian', away:'St. Johnstone', venue:'Tynecastle Park', weekend:32 },
+  { id:'s189', date:'2027-04-03', home:'Kilmarnock', away:'Celtic', venue:'The BBSP Stadium Rugby Park', weekend:32 },
+  { id:'s190', date:'2027-04-03', home:'Motherwell', away:'Aberdeen', venue:'Fir Park', weekend:32 },
+  { id:'s191', date:'2027-04-03', home:'Rangers', away:'Hibernian', venue:'Ibrox Stadium', weekend:32 },
+  { id:'s192', date:'2027-04-03', home:'St. Mirren', away:'Dundee', venue:'The SMISA Stadium', weekend:32 },
+  { id:'s193', date:'2027-04-10', home:'Aberdeen', away:'Kilmarnock', venue:'Pittodrie Stadium', weekend:33 },
+  { id:'s194', date:'2027-04-10', home:'Celtic', away:'Dundee United', venue:'Celtic Park', weekend:33 },
+  { id:'s195', date:'2027-04-10', home:'Dundee', away:'Rangers', venue:'Dens Park', weekend:33 },
+  { id:'s196', date:'2027-04-10', home:'Falkirk', away:'St. Mirren', venue:'The Falkirk Stadium', weekend:33 },
+  { id:'s197', date:'2027-04-10', home:'Hibernian', away:'Heart of Midlothian', venue:'Easter Road Stadium', weekend:33 },
+  { id:'s198', date:'2027-04-10', home:'St. Johnstone', away:'Motherwell', venue:'McDiarmid Park', weekend:33 },
+];
+
+const SPFL_KICKOFFS = {
+  's001':'2026-07-31T19:00:00Z',
+  's002':'2026-08-01T14:00:00Z',
+  's003':'2026-08-01T16:30:00Z',
+  's004':'2026-08-02T13:00:00Z',
+  's005':'2026-08-02T15:30:00Z',
+  's006':'2026-08-03T18:30:00Z',
+  's007':'2026-08-08T14:00:00Z',
+  's008':'2026-08-08T14:00:00Z',
+  's009':'2026-08-08T14:00:00Z',
+  's010':'2026-08-08T14:00:00Z',
+  's011':'2026-08-09T12:30:00Z',
+  's012':'2026-08-09T15:00:00Z',
+  's013':'2026-08-22T14:00:00Z',
+  's014':'2026-08-22T14:00:00Z',
+  's015':'2026-08-22T14:00:00Z',
+  's016':'2026-08-22T14:00:00Z',
+  's017':'2026-08-22T14:00:00Z',
+  's018':'2026-08-22T14:00:00Z',
+  's019':'2026-08-29T14:00:00Z',
+  's020':'2026-08-29T14:00:00Z',
+  's021':'2026-08-29T14:00:00Z',
+  's022':'2026-08-29T14:00:00Z',
+  's023':'2026-08-29T14:00:00Z',
+  's024':'2026-08-29T14:00:00Z',
+  's025':'2026-09-02T18:45:00Z',
+  's026':'2026-09-02T18:45:00Z',
+  's027':'2026-09-02T18:45:00Z',
+  's028':'2026-09-02T18:45:00Z',
+  's029':'2026-09-02T18:45:00Z',
+  's030':'2026-09-02T18:45:00Z',
+  's031':'2026-09-05T14:00:00Z',
+  's032':'2026-09-05T14:00:00Z',
+  's033':'2026-09-05T14:00:00Z',
+  's034':'2026-09-05T14:00:00Z',
+  's035':'2026-09-05T14:00:00Z',
+  's036':'2026-09-05T14:00:00Z',
+  's037':'2026-09-19T14:00:00Z',
+  's038':'2026-09-19T14:00:00Z',
+  's039':'2026-09-19T14:00:00Z',
+  's040':'2026-09-19T14:00:00Z',
+  's041':'2026-09-19T14:00:00Z',
+  's042':'2026-09-20T11:00:00Z',
+  's043':'2026-10-10T14:00:00Z',
+  's044':'2026-10-10T14:00:00Z',
+  's045':'2026-10-10T14:00:00Z',
+  's046':'2026-10-10T14:00:00Z',
+  's047':'2026-10-10T14:00:00Z',
+  's048':'2026-10-10T14:00:00Z',
+  's049':'2026-10-17T14:00:00Z',
+  's050':'2026-10-17T14:00:00Z',
+  's051':'2026-10-17T14:00:00Z',
+  's052':'2026-10-17T14:00:00Z',
+  's053':'2026-10-17T14:00:00Z',
+  's054':'2026-10-17T14:00:00Z',
+  's055':'2026-10-24T14:00:00Z',
+  's056':'2026-10-24T14:00:00Z',
+  's057':'2026-10-24T14:00:00Z',
+  's058':'2026-10-24T14:00:00Z',
+  's059':'2026-10-24T14:00:00Z',
+  's060':'2026-10-24T14:00:00Z',
+  's061':'2026-10-28T19:45:00Z',
+  's062':'2026-10-28T19:45:00Z',
+  's063':'2026-10-28T19:45:00Z',
+  's064':'2026-10-28T19:45:00Z',
+  's065':'2026-10-28T19:45:00Z',
+  's066':'2026-10-28T19:45:00Z',
+  's067':'2026-10-31T15:00:00Z',
+  's068':'2026-10-31T15:00:00Z',
+  's069':'2026-10-31T15:00:00Z',
+  's070':'2026-10-31T15:00:00Z',
+  's071':'2026-10-31T15:00:00Z',
+  's072':'2026-10-31T15:00:00Z',
+  's073':'2026-11-07T15:00:00Z',
+  's074':'2026-11-07T15:00:00Z',
+  's075':'2026-11-07T15:00:00Z',
+  's076':'2026-11-07T15:00:00Z',
+  's077':'2026-11-07T15:00:00Z',
+  's078':'2026-11-08T15:00:00Z',
+  's079':'2026-11-21T15:00:00Z',
+  's080':'2026-11-21T15:00:00Z',
+  's081':'2026-11-21T15:00:00Z',
+  's082':'2026-11-21T15:00:00Z',
+  's083':'2026-11-21T15:00:00Z',
+  's084':'2026-11-21T15:00:00Z',
+  's085':'2026-11-28T15:00:00Z',
+  's086':'2026-11-28T15:00:00Z',
+  's087':'2026-11-28T15:00:00Z',
+  's088':'2026-11-28T15:00:00Z',
+  's089':'2026-11-28T15:00:00Z',
+  's090':'2026-11-28T15:00:00Z',
+  's091':'2026-12-02T19:45:00Z',
+  's092':'2026-12-02T19:45:00Z',
+  's093':'2026-12-02T19:45:00Z',
+  's094':'2026-12-02T19:45:00Z',
+  's095':'2026-12-02T19:45:00Z',
+  's096':'2026-12-02T19:45:00Z',
+  's097':'2026-12-05T15:00:00Z',
+  's098':'2026-12-05T15:00:00Z',
+  's099':'2026-12-05T15:00:00Z',
+  's100':'2026-12-05T15:00:00Z',
+  's101':'2026-12-05T15:00:00Z',
+  's102':'2026-12-05T15:00:00Z',
+  's103':'2026-12-12T15:00:00Z',
+  's104':'2026-12-12T15:00:00Z',
+  's105':'2026-12-12T15:00:00Z',
+  's106':'2026-12-12T15:00:00Z',
+  's107':'2026-12-12T15:00:00Z',
+  's108':'2026-12-12T15:00:00Z',
+  's109':'2026-12-19T15:00:00Z',
+  's110':'2026-12-19T15:00:00Z',
+  's111':'2026-12-19T15:00:00Z',
+  's112':'2026-12-19T15:00:00Z',
+  's113':'2026-12-19T15:00:00Z',
+  's114':'2026-12-19T15:00:00Z',
+  's115':'2026-12-26T15:00:00Z',
+  's116':'2026-12-26T15:00:00Z',
+  's117':'2026-12-26T15:00:00Z',
+  's118':'2026-12-26T15:00:00Z',
+  's119':'2026-12-26T15:00:00Z',
+  's120':'2026-12-26T15:00:00Z',
+  's121':'2026-12-30T19:45:00Z',
+  's122':'2026-12-30T19:45:00Z',
+  's123':'2026-12-30T19:45:00Z',
+  's124':'2026-12-30T19:45:00Z',
+  's125':'2026-12-30T19:45:00Z',
+  's126':'2026-12-30T19:45:00Z',
+  's127':'2027-01-02T15:00:00Z',
+  's128':'2027-01-02T15:00:00Z',
+  's129':'2027-01-02T15:00:00Z',
+  's130':'2027-01-02T15:00:00Z',
+  's131':'2027-01-02T15:00:00Z',
+  's132':'2027-01-02T15:00:00Z',
+  's133':'2027-01-09T15:00:00Z',
+  's134':'2027-01-09T15:00:00Z',
+  's135':'2027-01-09T15:00:00Z',
+  's136':'2027-01-09T15:00:00Z',
+  's137':'2027-01-09T15:00:00Z',
+  's138':'2027-01-09T15:00:00Z',
+  's139':'2027-01-23T15:00:00Z',
+  's140':'2027-01-23T15:00:00Z',
+  's141':'2027-01-23T15:00:00Z',
+  's142':'2027-01-23T15:00:00Z',
+  's143':'2027-01-23T15:00:00Z',
+  's144':'2027-01-23T15:00:00Z',
+  's145':'2027-01-30T15:00:00Z',
+  's146':'2027-01-30T15:00:00Z',
+  's147':'2027-01-30T15:00:00Z',
+  's148':'2027-01-30T15:00:00Z',
+  's149':'2027-01-30T15:00:00Z',
+  's150':'2027-01-30T15:00:00Z',
+  's151':'2027-02-03T19:45:00Z',
+  's152':'2027-02-03T19:45:00Z',
+  's153':'2027-02-03T19:45:00Z',
+  's154':'2027-02-03T19:45:00Z',
+  's155':'2027-02-03T19:45:00Z',
+  's156':'2027-02-03T19:45:00Z',
+  's157':'2027-02-13T15:00:00Z',
+  's158':'2027-02-13T15:00:00Z',
+  's159':'2027-02-13T15:00:00Z',
+  's160':'2027-02-13T15:00:00Z',
+  's161':'2027-02-13T15:00:00Z',
+  's162':'2027-02-13T15:00:00Z',
+  's163':'2027-02-20T15:00:00Z',
+  's164':'2027-02-20T15:00:00Z',
+  's165':'2027-02-20T15:00:00Z',
+  's166':'2027-02-20T15:00:00Z',
+  's167':'2027-02-20T15:00:00Z',
+  's168':'2027-02-20T15:00:00Z',
+  's169':'2027-02-27T15:00:00Z',
+  's170':'2027-02-27T15:00:00Z',
+  's171':'2027-02-27T15:00:00Z',
+  's172':'2027-02-27T15:00:00Z',
+  's173':'2027-02-27T15:00:00Z',
+  's174':'2027-02-27T15:00:00Z',
+  's175':'2027-03-13T15:00:00Z',
+  's176':'2027-03-13T15:00:00Z',
+  's177':'2027-03-13T15:00:00Z',
+  's178':'2027-03-13T15:00:00Z',
+  's179':'2027-03-13T15:00:00Z',
+  's180':'2027-03-13T15:00:00Z',
+  's181':'2027-03-20T15:00:00Z',
+  's182':'2027-03-20T15:00:00Z',
+  's183':'2027-03-20T15:00:00Z',
+  's184':'2027-03-20T15:00:00Z',
+  's185':'2027-03-20T15:00:00Z',
+  's186':'2027-03-20T15:00:00Z',
+  's187':'2027-04-03T14:00:00Z',
+  's188':'2027-04-03T14:00:00Z',
+  's189':'2027-04-03T14:00:00Z',
+  's190':'2027-04-03T14:00:00Z',
+  's191':'2027-04-03T14:00:00Z',
+  's192':'2027-04-03T14:00:00Z',
+  's193':'2027-04-10T14:00:00Z',
+  's194':'2027-04-10T14:00:00Z',
+  's195':'2027-04-10T14:00:00Z',
+  's196':'2027-04-10T14:00:00Z',
+  's197':'2027-04-10T14:00:00Z',
+  's198':'2027-04-10T14:00:00Z',
+};
+
+// ── SPFL ENGINE ───────────────────────────
+// Everything below reads/writes only spfl_* Supabase tables and SPFL_*
+// consts — never the WC `predictions`/`results`/`FIXTURES`/`KICKOFFS`.
+let spflPredictions = {};      // matchId -> {home,away}
+let spflResults = {};          // matchId -> {home,away,full_time}
+let spflPlayerState = null;    // current player's row from spfl_player_state
+let spflGroupPlayers = [];     // [{id,name,nickname}] for this group, for Sabotage targeting
+
+const SPFL_POWERUP_COSTS = { double:2, breakdown:3, var:4, sabotage:5 };
+const SPFL_WEEKENDS = [...new Set(SPFL_FIXTURES.map(f=>f.weekend))].sort((a,b)=>a-b);
+
+function spflMatchKickoff(matchId){
+  const iso = SPFL_KICKOFFS[matchId];
+  return iso ? new Date(iso) : null;
+}
+function spflIsLocked(matchId){
+  const ko = spflMatchKickoff(matchId);
+  return !!(ko && ko.getTime() <= Date.now());
+}
+// Current weekend = the weekend containing the earliest fixture that hasn't
+// finished full-time yet; falls back to the last weekend once everything's done.
+function spflCurrentWeekend(){
+  for(const wk of SPFL_WEEKENDS){
+    const fixtures = SPFL_FIXTURES.filter(f=>f.weekend===wk);
+    const allDone = fixtures.every(f=>spflResults[f.id]?.full_time);
+    if(!allDone) return wk;
+  }
+  return SPFL_WEEKENDS[SPFL_WEEKENDS.length-1]||1;
+}
+
+async function spflLoadPlayerState(){
+  if(!currentPlayer||!currentGroup) return null;
+  const rows = await sb(`spfl_player_state?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}`).catch(()=>null);
+  if(rows && rows.length) return rows[0];
+  // First time this player has touched SPFL — create their state row with the free Double Points.
+  const created = await sb('spfl_player_state',{method:'POST',prefer:'return=representation',body:{group_id:currentGroup.id,player_id:currentPlayer.id,coins:0,free_double_used:false,powerups:[]}}).catch(()=>null);
+  return (created&&created[0]) || {group_id:currentGroup.id,player_id:currentPlayer.id,coins:0,free_double_used:false,powerups:[]};
+}
+
+// Base scoring for one fixture under a given player's own powerups for that weekend.
+// breakdownActive = true if this player has "The Breakdown" active for the fixture's weekend.
+function spflCalcMatchPoints(matchId, pick, result, breakdownActive){
+  if(!pick || !result || result.home==null || result.away==null) return 0;
+  let pts;
+  if(breakdownActive){
+    // 1pt for correctly picking the home team's goal tally + 1pt for the away
+    // team's + 3pt for the correct result — max 5/game (1+1+3), no bonus for
+    // exact scoreline on top of that.
+    const pr = pick.home>pick.away?'H':pick.home<pick.away?'A':'D';
+    const ar = result.home>result.away?'H':result.home<result.away?'A':'D';
+    pts = (pick.home===result.home?1:0) + (pick.away===result.away?1:0) + (pr===ar?3:0);
+  } else {
+    pts = calcPoints(pick.home,pick.away,result.home,result.away) || 0;
+  }
+  return pts;
+}
+
+// Computes one player's SPFL totals across all settled fixtures, applying
+// their own powerup ledger (Double Points, Breakdown) — Sabotage/VAR Review
+// deductions are applied separately at the leaderboard level since they
+// target other players. Returns {points, byMatch:{matchId:pts}}.
+function spflComputePlayerPoints(playerId, predsByPlayer, powerupsByPlayer){
+  const preds = predsByPlayer[playerId]||{};
+  const powerups = powerupsByPlayer[playerId]||[];
+  const doubledMatches = new Set(powerups.filter(p=>p.type==='double').map(p=>p.match_id));
+  const breakdownWeekends = new Set(powerups.filter(p=>p.type==='breakdown').map(p=>p.weekend));
+  let total = 0;
+  const byMatch = {};
+  for(const f of SPFL_FIXTURES){
+    const result = spflResults[f.id];
+    if(!result || !result.full_time) continue;
+    const pick = preds[f.id];
+    let pts = spflCalcMatchPoints(f.id, pick, result, breakdownWeekends.has(f.weekend));
+    if(doubledMatches.has(f.id)) pts *= 2;
+    byMatch[f.id] = pts;
+    total += pts;
+  }
+  return {points:total, byMatch};
+}
+
+// Sabotage/VAR Review deductions are stored as powerup log entries with
+// type 'sabotage'/'var' and a target_player_id — apply them against the
+// target's total once base points are known for everyone.
+function spflApplyDeductions(totalsByPlayer, allPowerups){
+  const deductions = {};
+  allPowerups.forEach(p=>{
+    if(p.type!=='sabotage' && p.type!=='var') return;
+    if(!p.target_player_id) return;
+    deductions[p.target_player_id] = (deductions[p.target_player_id]||0) + 5;
+  });
+  const final = {};
+  Object.keys(totalsByPlayer).forEach(pid=>{
+    final[pid] = totalsByPlayer[pid] - (deductions[pid]||0);
+  });
+  return final;
+}
+
+// ── SPFL PREDICT VIEW ─────────────────────
+async function loadSpflPredictions(){
+  if(!currentGroup||!currentPlayer) return;
+  const list = document.getElementById('spfl-fixtures-list');
+  list.innerHTML = '<div class="loading">Loading fixtures…</div>';
+  try{
+    const [preds, results, state] = await Promise.all([
+      sb(`spfl_predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=match_id,home_score,away_score`),
+      sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`),
+      spflLoadPlayerState(),
+    ]);
+    spflPredictions = {}; (preds||[]).forEach(p=>spflPredictions[p.match_id]={home:p.home_score,away:p.away_score});
+    spflResults = {}; (results||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
+    spflPlayerState = state;
+    document.getElementById('spfl-coin-count').textContent = spflPlayerState?.coins ?? 0;
+    renderSpflFixtures(list);
+  }catch(e){ list.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
+}
+
+function renderSpflFixtures(list){
+  const doubledMatches = new Set((spflPlayerState?.powerups||[]).filter(p=>p.type==='double').map(p=>p.match_id));
+  const curWk = spflCurrentWeekend();
+  const weekendsHtml = SPFL_WEEKENDS.map(wk=>{
+    const fixtures = SPFL_FIXTURES.filter(f=>f.weekend===wk);
+    const cardsHtml = fixtures.map(f=>{
+      const ko = spflMatchKickoff(f.id);
+      const locked = spflIsLocked(f.id);
+      const result = spflResults[f.id];
+      const pick = spflPredictions[f.id]||{};
+      const dp = ko?.toLocaleDateString('en-GB',{timeZone:'Europe/London',weekday:'short',day:'numeric',month:'short'})||'';
+      const tp = ko?.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'})||'';
+      const isDoubled = doubledMatches.has(f.id);
+      const canDouble = !locked;
+      return `<div class="match-card" style="padding:.6rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.5rem;${isDoubled?'box-shadow:0 0 0 2px var(--accent) inset;':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.68rem;color:var(--text-muted);margin-bottom:.3rem;">
+          <span>${dp} · ${tp}</span>
+          ${isDoubled?'<span style="color:var(--accent);font-weight:700;">2x DOUBLE POINTS</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <div style="flex:1;text-align:right;font-weight:600;">${f.home}</div>
+          <input type="number" min="0" max="20" id="sh-${f.id}" value="${pick.home??''}" ${locked?'disabled':''} onchange="spflAutoSaveIfComplete('${f.id}')" style="width:2.4rem;text-align:center;" />
+          <span>–</span>
+          <input type="number" min="0" max="20" id="sa-${f.id}" value="${pick.away??''}" ${locked?'disabled':''} onchange="spflAutoSaveIfComplete('${f.id}')" style="width:2.4rem;text-align:center;" />
+          <div style="flex:1;font-weight:600;">${f.away}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.35rem;">
+          <div style="font-size:.7rem;color:var(--text-muted);">${result&&result.full_time?`FT ${result.home}–${result.away}`:locked?'Locked':''}</div>
+          ${canDouble?`<button class="btn-mini" onclick="spflApplyDoublePoints('${f.id}')" style="font-size:.65rem;padding:.15rem .5rem;">${isDoubled?'Cancel 2x':'🪙2 Double'}</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="spfl-weekend-group" style="margin-bottom:1rem;">
+      <div style="font-size:.75rem;font-weight:700;letter-spacing:.05em;color:var(--text-muted);margin:.5rem 0 .35rem;">WEEKEND ${wk}${wk===curWk?' · CURRENT':''}</div>
+      ${cardsHtml}
+    </div>`;
+  }).join('');
+  list.innerHTML = weekendsHtml;
+}
+
+async function spflAutoSaveIfComplete(matchId){
+  if(!currentPlayer||!currentGroup) return;
+  if(spflIsLocked(matchId)) return;
+  const h = document.getElementById('sh-'+matchId)?.value.trim();
+  const a = document.getElementById('sa-'+matchId)?.value.trim();
+  if(h===''||h===undefined||a===''||a===undefined) return;
+  if(isNaN(+h)||isNaN(+a)) return;
+  const existing = spflPredictions[matchId];
+  if(existing && existing.home===+h && existing.away===+a) return;
+  try{
+    await sb(`spfl_predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.${matchId}`,{method:'DELETE',prefer:'return=minimal'});
+    await sb('spfl_predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:matchId,home_score:+h,away_score:+a}});
+    spflPredictions[matchId]={home:+h,away:+a};
+    flash('Prediction saved','success');
+  }catch(e){ flash('Error saving: '+e.message,'error'); }
+}
+
+// ── SPFL POWERUPS ─────────────────────────
+// Coins are always recomputed from the player's own settled points minus
+// what they've spent — spfl_player_state.coins is not trusted as the source
+// of truth, just kept in sync for admin visibility.
+function spflMyPoints(){
+  if(!currentPlayer) return 0;
+  const predsByPlayer = {[currentPlayer.id]: spflPredictions};
+  const powerupsByPlayer = {[currentPlayer.id]: (spflPlayerState?.powerups||[])};
+  return spflComputePlayerPoints(currentPlayer.id, predsByPlayer, powerupsByPlayer).points;
+}
+function spflCoinBalance(){
+  const earned = Math.floor(spflMyPoints()/10);
+  const spent = (spflPlayerState?.powerups||[]).reduce((s,p)=>s+(p.coin_cost||0),0);
+  return Math.max(0, earned - spent);
+}
+function spflWeekendHasPowerup(weekend, type){
+  return (spflPlayerState?.powerups||[]).some(p=>p.weekend===weekend && p.type===type);
+}
+
+async function spflPersistPlayerState(patch){
+  await sb(`spfl_player_state?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}`,{method:'PATCH',prefer:'return=minimal',body:patch});
+  spflPlayerState = {...spflPlayerState, ...patch};
+}
+
+async function spflApplyDoublePoints(matchId){
+  if(!currentPlayer||!currentGroup||!spflPlayerState) return;
+  const f = SPFL_FIXTURES.find(x=>x.id===matchId);
+  if(!f || spflIsLocked(matchId)) return;
+  const existing = (spflPlayerState.powerups||[]);
+  const already = existing.find(p=>p.type==='double' && p.match_id===matchId);
+  if(already){
+    // Cancel — remove it and refund the coin cost (or free-use credit).
+    const newPowerups = existing.filter(p=>p!==already);
+    const patch = {powerups:newPowerups};
+    if(already.coin_cost===0) patch.free_double_used = false;
+    await spflPersistPlayerState(patch);
+    renderSpflFixtures(document.getElementById('spfl-fixtures-list'));
+    return;
+  }
+  const useFree = !spflPlayerState.free_double_used && f.weekend===1;
+  const cost = useFree ? 0 : SPFL_POWERUP_COSTS.double;
+  if(!useFree && spflCoinBalance() < cost){ flash('Not enough coins for Double Points','error'); return; }
+  const entry = {type:'double', weekend:f.weekend, match_id:matchId, target_player_id:null, coin_cost:cost, applied_at:new Date().toISOString()};
+  const patch = {powerups:[...existing, entry]};
+  if(useFree) patch.free_double_used = true;
+  try{
+    await spflPersistPlayerState(patch);
+    flash(useFree?'Free Double Points used!':'Double Points active on this match','success');
+    renderSpflFixtures(document.getElementById('spfl-fixtures-list'));
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+async function spflBuyBreakdown(){
+  if(!spflPlayerState) return;
+  const wk = spflCurrentWeekend();
+  if(spflWeekendHasPowerup(wk,'breakdown')){ flash('The Breakdown is already active this weekend','error'); return; }
+  const cost = SPFL_POWERUP_COSTS.breakdown;
+  if(spflCoinBalance() < cost){ flash('Not enough coins','error'); return; }
+  const entry = {type:'breakdown', weekend:wk, match_id:null, target_player_id:null, coin_cost:cost, applied_at:new Date().toISOString()};
+  try{
+    await spflPersistPlayerState({powerups:[...(spflPlayerState.powerups||[]), entry]});
+    flash('The Breakdown active for this weekend','success');
+    loadTactics();
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+async function spflBuyVarReview(){
+  if(!spflPlayerState||!currentGroup) return;
+  const wk = spflCurrentWeekend();
+  if(spflWeekendHasPowerup(wk,'var')){ flash('VAR Review already used this weekend','error'); return; }
+  const cost = SPFL_POWERUP_COSTS.var;
+  if(spflCoinBalance() < cost){ flash('Not enough coins','error'); return; }
+  try{
+    const players = await spflLoadGroupPlayers();
+    const immune = await spflImmunePlayerIds(wk);
+    const eligible = players.filter(p=>p.id!==currentPlayer.id && !immune.has(p.id));
+    if(!eligible.length){ flash('No eligible players — everyone is immune this weekend','error'); return; }
+    const target = eligible[Math.floor(Math.random()*eligible.length)];
+    const entry = {type:'var', weekend:wk, match_id:null, target_player_id:target.id, coin_cost:cost, applied_at:new Date().toISOString()};
+    await spflPersistPlayerState({powerups:[...(spflPlayerState.powerups||[]), entry]});
+    flash(`VAR Review wheel landed on ${target.nickname||target.name} — -5 points!`,'success');
+    loadTactics();
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+async function spflBuySabotage(targetId, targetName){
+  if(!spflPlayerState) return;
+  const wk = spflCurrentWeekend();
+  if(spflWeekendHasPowerup(wk,'sabotage')){ flash('Sabotage already used this weekend','error'); return; }
+  const cost = SPFL_POWERUP_COSTS.sabotage;
+  if(spflCoinBalance() < cost){ flash('Not enough coins','error'); return; }
+  const immune = await spflImmunePlayerIds(wk);
+  if(immune.has(targetId)){ flash(targetName+' is immune this weekend','error'); return; }
+  const entry = {type:'sabotage', weekend:wk, match_id:null, target_player_id:targetId, coin_cost:cost, applied_at:new Date().toISOString()};
+  try{
+    await spflPersistPlayerState({powerups:[...(spflPlayerState.powerups||[]), entry]});
+    flash(`Sabotaged ${targetName} for -5 points!`,'success');
+    loadTactics();
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+
+async function spflLoadGroupPlayers(){
+  if(!currentGroup) return [];
+  const rows = await sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`).catch(()=>[]);
+  spflGroupPlayers = rows||[];
+  return spflGroupPlayers;
+}
+
+// ── SPFL LEADERBOARD ──────────────────────
+async function loadSpflLeaderboard(){
+  if(!currentGroup) return;
+  const lb = document.getElementById('spfl-leaderboard-list');
+  lb.innerHTML = '<div class="loading">Calculating…</div>';
+  try{
+    const [players, allPreds, allResults, allState] = await Promise.all([
+      sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
+      sb(`spfl_predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`),
+      sb(`spfl_player_state?group_id=eq.${currentGroup.id}&select=player_id,powerups`),
+    ]);
+    spflResults = {}; (allResults||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
+    const predsByPlayer = {};
+    (allPreds||[]).forEach(p=>{ (predsByPlayer[p.player_id]=predsByPlayer[p.player_id]||{})[p.match_id]={home:p.home_score,away:p.away_score}; });
+    const powerupsByPlayer = {};
+    const allPowerupsFlat = [];
+    (allState||[]).forEach(s=>{ powerupsByPlayer[s.player_id]=s.powerups||[]; (s.powerups||[]).forEach(p=>allPowerupsFlat.push(p)); });
+    const totals = {};
+    (players||[]).forEach(p=>{ totals[p.id] = spflComputePlayerPoints(p.id, predsByPlayer, powerupsByPlayer).points; });
+    const final = spflApplyDeductions(totals, allPowerupsFlat);
+    const rows = (players||[]).map(p=>({id:p.id, name:p.nickname||p.name, points:final[p.id]||0}))
+      .sort((a,b)=>b.points-a.points);
+    lb.innerHTML = rows.map((r,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.55rem .75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.4rem;${r.id===currentPlayer?.id?'box-shadow:0 0 0 2px var(--accent) inset;':''}">
+        <div style="display:flex;align-items:center;gap:.6rem;">
+          <div style="width:1.6rem;text-align:center;font-weight:700;color:var(--text-muted);">${i+1}</div>
+          <div style="font-weight:600;">${r.name}</div>
+        </div>
+        <div style="font-weight:700;">${r.points} pts</div>
+      </div>`).join('') || '<div class="empty">No players yet.</div>';
+  }catch(e){ lb.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
+}
+
+// ── TACTICS TAB ────────────────────────────
+async function loadTactics(){
+  if(!currentGroup||!currentPlayer) return;
+  const shop = document.getElementById('tactics-shop');
+  shop.innerHTML = '<div class="loading">Loading…</div>';
+  try{
+    const [preds, results, state, players] = await Promise.all([
+      sb(`spfl_predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=match_id,home_score,away_score`),
+      sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`),
+      spflLoadPlayerState(),
+      spflLoadGroupPlayers(),
+    ]);
+    spflPredictions = {}; (preds||[]).forEach(p=>spflPredictions[p.match_id]={home:p.home_score,away:p.away_score});
+    spflResults = {}; (results||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
+    spflPlayerState = state;
+    const coins = spflCoinBalance();
+    document.getElementById('tactics-coin-count').textContent = coins;
+    const wk = spflCurrentWeekend();
+    const hasBreakdown = spflWeekendHasPowerup(wk,'breakdown');
+    const hasVar = spflWeekendHasPowerup(wk,'var');
+    const hasSabotage = spflWeekendHasPowerup(wk,'sabotage');
+    const otherPlayers = players.filter(p=>p.id!==currentPlayer.id);
+    shop.innerHTML = `
+      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:.6rem;">Weekend ${wk} · powerups marked "once/weekend" reset each round</div>
+      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
+        <div style="font-weight:700;">🪙2 Double Points <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· unlimited use</span></div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Pick one game on the Fixtures tab and double all points earned on it.${!spflPlayerState.free_double_used?' Your first weekend-1 pick is free!':''}</div>
+        <button class="btn-mini" onclick="showView('spflPredict')">Go pick a game →</button>
+      </div>
+      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
+        <div style="font-weight:700;">🪙3 The Breakdown <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· once/weekend</span></div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Converts scoring across every game this weekend to 1pt per home goal you called + 1pt per away goal you called + 3pt for the correct result (max 5/game).</div>
+        <button class="btn-mini" ${hasBreakdown||coins<SPFL_POWERUP_COSTS.breakdown?'disabled':''} onclick="spflBuyBreakdown()">${hasBreakdown?'Active this weekend':'Activate'}</button>
+      </div>
+      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
+        <div style="font-weight:700;">🪙4 VAR Review <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· once/weekend</span></div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Spins a wheel to randomly hit an eligible (non-immune) player for -5 points.</div>
+        <button class="btn-mini" ${hasVar||coins<SPFL_POWERUP_COSTS.var?'disabled':''} onclick="spflBuyVarReview()">${hasVar?'Used this weekend':'Spin the wheel'}</button>
+      </div>
+      <div class="tactics-card" style="padding:.75rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.6rem;">
+        <div style="font-weight:700;">🪙5 Sabotage <span style="font-weight:400;font-size:.68rem;color:var(--text-muted);">· once/weekend</span></div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0;">Deduct 5 points from a rival of your choosing (can't target an immune player).</div>
+        ${otherPlayers.length ? `<select id="sabotage-target" style="margin-right:.4rem;">${otherPlayers.map(p=>`<option value="${p.id}">${p.nickname||p.name}</option>`).join('')}</select>
+        <button class="btn-mini" ${hasSabotage||coins<SPFL_POWERUP_COSTS.sabotage?'disabled':''} onclick="spflSabotageFromSelect()">${hasSabotage?'Used this weekend':'Sabotage'}</button>` : '<div style="font-size:.72rem;color:var(--text-muted);">No other players yet.</div>'}
+      </div>`;
+  }catch(e){ shop.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
+}
+function spflSabotageFromSelect(){
+  const sel = document.getElementById('sabotage-target');
+  if(!sel||!sel.value) return;
+  const target = spflGroupPlayers.find(p=>String(p.id)===String(sel.value));
+  if(!target) return;
+  spflBuySabotage(target.id, target.nickname||target.name);
+}
+
+// ── ADMIN: SPFL RESULTS ───────────────────
+async function loadAdminSpflResults(){
+  if(!currentGroup||!isAdmin) return;
+  const list = document.getElementById('admin-spfl-list');
+  list.innerHTML = '<div class="loading">Loading…</div>';
+  try{
+    const res = await sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`);
+    spflResults = {}; (res||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
+    const weekendsHtml = SPFL_WEEKENDS.map(wk=>{
+      const fixtures = SPFL_FIXTURES.filter(f=>f.weekend===wk);
+      const rowsHtml = fixtures.map(f=>{
+        const r = spflResults[f.id]||{};
+        const ko = spflMatchKickoff(f.id);
+        const dp = ko?.toLocaleDateString('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short'})||'';
+        return `<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:.68rem;color:var(--text-muted);width:3.2rem;">${dp}</div>
+          <div style="flex:1;text-align:right;font-size:.8rem;">${f.home}</div>
+          <input type="text" inputmode="numeric" id="rsh-${f.id}" value="${r.home??''}" maxlength="2" style="width:2.2rem;text-align:center;" oninput="adminSpflScoreInput(this,'rsa-${f.id}')" />
+          <span>–</span>
+          <input type="text" inputmode="numeric" id="rsa-${f.id}" value="${r.away??''}" maxlength="2" style="width:2.2rem;text-align:center;" oninput="adminSpflScoreInput(this,null)" />
+          <div style="flex:1;font-size:.8rem;">${f.away}</div>
+          <label style="font-size:.65rem;color:var(--text-muted);display:flex;align-items:center;gap:.2rem;">
+            <input type="checkbox" id="rsft-${f.id}" ${r.full_time?'checked':''} onchange="adminSpflAutoSave('${f.id}')" /> FT
+          </label>
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:.75rem;"><div style="font-size:.72rem;font-weight:700;color:var(--text-muted);margin-bottom:.2rem;">WEEKEND ${wk}</div>${rowsHtml}</div>`;
+    }).join('');
+    list.innerHTML = weekendsHtml;
+  }catch(e){ list.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
+}
+function adminSpflScoreInput(el, nextId){
+  const v = el.value.replace(/[^0-9]/g,'');
+  el.value = v.slice(0,2);
+  if(v.length>=1 && nextId){ const next=document.getElementById(nextId); if(next){ next.focus(); next.select(); } }
+  const matchId = el.id.replace('rsh-','').replace('rsa-','');
+  if(v.length>=1) adminSpflAutoSave(matchId);
+}
+async function adminSpflAutoSave(matchId){
+  if(!currentGroup) return;
+  const h = document.getElementById('rsh-'+matchId)?.value.trim();
+  const a = document.getElementById('rsa-'+matchId)?.value.trim();
+  const ft = document.getElementById('rsft-'+matchId)?.checked || false;
+  if(h===''||h===undefined||a===''||a===undefined) return;
+  if(isNaN(+h)||isNaN(+a)) return;
+  const existing = spflResults[matchId];
+  if(existing && existing.home===+h && existing.away===+a && existing.full_time===ft) return;
+  try{
+    await sb(`spfl_results?group_id=eq.${currentGroup.id}&match_id=eq.${matchId}`,{method:'DELETE',prefer:'return=minimal'});
+    await sb('spfl_results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a,full_time:ft}});
+    spflResults[matchId]={home:+h,away:+a,full_time:ft};
+    flash('SPFL result saved','success');
+  }catch(e){ flash('Error saving: '+e.message,'error'); }
+}
+
+// A player who's already had a deduction (Sabotage or VAR Review) this
+// weekend is immune from further deductions until the next round of matches.
+// Deductions are recorded on the ATTACKER's powerup ledger (with a
+// target_player_id), so this scans every player's spfl_player_state row in
+// the group for entries landed on each target this weekend.
+async function spflImmunePlayerIds(weekend){
+  if(!currentGroup) return new Set();
+  const rows = await sb(`spfl_player_state?group_id=eq.${currentGroup.id}&select=powerups`).catch(()=>[]);
+  const immune = new Set();
+  (rows||[]).forEach(row=>{
+    (row.powerups||[]).forEach(p=>{
+      if((p.type==='sabotage'||p.type==='var') && p.weekend===weekend && p.target_player_id){
+        immune.add(p.target_player_id);
+      }
+    });
+  });
+  return immune;
+}
+
 // Entries must be in topological order (R16 before QF, QF before SF, etc.)
 // so enrichment propagates correctly in a single pass.
 const KO_BRACKET = {
@@ -3591,13 +4482,13 @@ async function loginPlayer(){
     }
 
     // Find player by login name, then nickname, then previous names
-    let players = await sbSelectOptional(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`, ['score_master']);
+    let players = await sbSelectOptional(`players?group_id=eq.${groupId}&name=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master,spfl_approved`, ['score_master','spfl_approved']);
     if(!players||!players.length){
-      players = await sbSelectOptional(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master`, ['score_master']);
+      players = await sbSelectOptional(`players?group_id=eq.${groupId}&nickname=eq.${encodeURIComponent(name)}&select=id,name,group_id,pin,is_admin,god_mode,score_master,spfl_approved`, ['score_master','spfl_approved']);
     }
     if(!players||!players.length){
       // Check previous_names array (for players whose login name was changed)
-      const all = await sbSelectOptional(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,score_master,previous_names`, ['score_master']).catch(()=>[]);
+      const all = await sbSelectOptional(`players?group_id=eq.${groupId}&select=id,name,group_id,pin,is_admin,god_mode,score_master,spfl_approved,previous_names`, ['score_master','spfl_approved']).catch(()=>[]);
       players = (all||[]).filter(p=>(p.previous_names||[]).some(n=>n.toLowerCase()===name.toLowerCase()));
     }
     if(!players||!players.length){showErr(errEl,"Name not found. Have you registered yet?");return;}
@@ -3673,17 +4564,18 @@ async function refreshGroup(){
 async function refreshPlayerSelf(){
   if(!currentPlayer?.id) return;
   try{
-    const rows = await sbSelectOptional('players?id=eq.'+currentPlayer.id+'&select=is_admin,god_mode,score_master,accent,background_id,card_opacity', ['score_master','accent','background_id','card_opacity']);
+    const rows = await sbSelectOptional('players?id=eq.'+currentPlayer.id+'&select=is_admin,god_mode,score_master,accent,background_id,card_opacity,spfl_approved', ['score_master','accent','background_id','card_opacity','spfl_approved']);
     if(rows && rows.length){
       const row = rows[0];
       const wasScoreMaster = !!currentPlayer.score_master;
-      currentPlayer = {...currentPlayer, is_admin:row.is_admin||false, god_mode:row.god_mode||false, score_master:row.score_master||false, accent:row.accent||null, background_id:row.background_id||null, card_opacity:row.card_opacity??null};
+      currentPlayer = {...currentPlayer, is_admin:row.is_admin||false, god_mode:row.god_mode||false, score_master:row.score_master||false, accent:row.accent||null, background_id:row.background_id||null, card_opacity:row.card_opacity??null, spfl_approved:row.spfl_approved||false};
       if(row.is_admin) isAdmin = true;
       isScoreMaster = !!row.score_master;
       saveSession();
       const adminBtn = document.getElementById('nav-admin');
       if(adminBtn) adminBtn.style.display = (isAdmin || isScoreMaster) ? 'inline-block' : 'none';
       if(isScoreMaster && !wasScoreMaster) maybeShowScoreMasterExplainer();
+      updateLeagueMenuItem();
     }
   }catch(e){ console.warn('refreshPlayerSelf failed',e); }
 }
@@ -3737,6 +4629,7 @@ function enterApp(){
     document.getElementById('h-player-chip').innerHTML='<strong>Admin</strong>';
   }
   updateGodModeMenuItem();
+  updateLeagueMenuItem();
   showView('home');
   startCountdown();
   startHeartbeat();
@@ -4426,6 +5319,12 @@ function showView(name){ closeMenu();
   if(name==='home'){ loadHome(); startCountdown(); }
   if(name==='predict') loadPredictions(true);
   if(name==='leaderboard') loadLeaderboard();
+  if(name==='spflPredict' || name==='spflLeaderboard' || name==='tactics'){
+    if(!userHasSpflAccess()){ showView('home'); return; }
+  }
+  if(name==='spflPredict') loadSpflPredictions();
+  if(name==='spflLeaderboard') loadSpflLeaderboard();
+  if(name==='tactics') loadTactics();
   if(name==='admin'){
     if(!isAdmin && !isScoreMaster){ showView('home'); flash('Triple-click the version number to access admin','error'); return; }
     applyAdminRoleVisibility();
@@ -4961,7 +5860,8 @@ async function loadPredictions(scrollToToday){
   try{
     // Refresh player data to get latest pay_choice and nickname
     const freshPlayer = await sb('players?id=eq.'+currentPlayer.id+'&select=id,name,nickname,pay_choice,god_mode,is_admin').catch(()=>null);
-    if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem(); saveSession(); }
+    if(freshPlayer&&freshPlayer.length){ currentPlayer={...currentPlayer,...freshPlayer[0]}; updateGodModeMenuItem();
+  updateLeagueMenuItem(); saveSession(); }
 
     const [res,preds,tb,allGroupPreds,allPlayers]=await Promise.all([
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
@@ -5922,6 +6822,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.0',date:'10 Jul 2026',notes:['New: SPFL league mode — fully separate from the World Cup game (own fixtures, own leaderboard, own predictions, own Supabase tables: spfl_predictions/spfl_results/spfl_player_state, plus a new spfl_approved boolean on players). Hidden from everyone by default — grant access per-player from Admin → Players (⋮ Options → Grant SPFL Access), then they can switch leagues from their name menu.','New: Tactics tab (SPFL only) — a powerup shop. Earn 1 coin per 10 SPFL points scored. Double Points (🪙2, unlimited use — double one game\'s points; everyone gets their first weekend-1 use free), The Breakdown (🪙3, once/weekend — reworks that weekend\'s scoring to 1pt/home goal + 1pt/away goal + 3pt correct result), VAR Review (🪙4, once/weekend — random wheel spin, -5pts to an eligible non-immune player), Sabotage (🪙5, once/weekend — pick a rival, -5pts). Once a player\'s been hit by VAR Review or Sabotage in a weekend they\'re immune from further deductions until the next round.','Requires running supabase/spfl_schema.sql once in the Supabase SQL editor before this version goes live (adds players.spfl_approved + the three spfl_* tables) — same graceful-degradation pattern as score_master: login/admin keep working even if it hasn\'t been run yet, SPFL features just stay unavailable.']},
   {v:'1.78.67',date:'7 Jul 2026',notes:['Mobile swipe-between-tabs now only arms from the screen edge (like a browser back/forward gesture) instead of anywhere on the page, so it no longer fights with carousels and sliders in the middle of the screen. Holding the drag shows a chevron that tracks your finger and grows as you pull — the page only changes once you release past the threshold; letting go early or dragging back snaps the chevron away with no navigation.']},
   {v:'1.78.66',date:'7 Jul 2026',notes:['Points Per Matchday chart now also shows the total points obtainable that day as a background bar behind your score — match days have different numbers of games so the ceiling moves; bar turns gold when you hit the max.']},
   {v:'1.78.65',date:'5 Jul 2026',notes:['Today\'s Fixtures carousel now opens on the live game (if there is one) on a fresh load/restart, instead of whichever fixture happens to sort first — later refreshes leave your position alone once you\'ve navigated.','Shrunk the "Live" indicator text a bit more.','Admin → Results: once a match has kicked off with no score entered yet, both boxes hint "0" instead of a bare dash (most games start scoreless) — it\'s just a placeholder, replaced the moment you type the real score.']},
@@ -8127,6 +9028,44 @@ function updateGodModeMenuItem(){
 }
 function userHasGodAccess(){
   return !!(_godUnlocked || _inGodSession || (currentPlayer && (currentPlayer.is_admin || currentPlayer.god_mode)));
+}
+
+// ── SPFL LEAGUE SWITCH ───────────────────
+// currentLeague is a UI-only concern — it decides which nav/views are shown.
+// It never touches wc26_* keys or FIXTURES/KICKOFFS; SPFL data lives entirely
+// under its own SPFL_* consts and spfl_* Supabase tables/localStorage keys.
+let currentLeague = localStorage.getItem('spfl_current_league')||'wc';
+function userHasSpflAccess(){
+  return !!(currentPlayer && (currentPlayer.is_admin || currentPlayer.spfl_approved));
+}
+function updateLeagueMenuItem(){
+  const btn = document.getElementById('profile-league-btn');
+  if(!btn) return;
+  const hasAccess = userHasSpflAccess();
+  btn.style.display = hasAccess ? '' : 'none';
+  btn.textContent = currentLeague==='spfl' ? '⚽ Switch to World Cup' : '🏴󠁧󠁢󠁳󠁣󠁴󠁿 Switch to SPFL';
+  if(!hasAccess && currentLeague==='spfl'){ currentLeague='wc'; localStorage.setItem('spfl_current_league','wc'); }
+  applyLeagueVisibility();
+}
+function toggleLeague(){
+  if(!userHasSpflAccess()) return;
+  currentLeague = currentLeague==='spfl' ? 'wc' : 'spfl';
+  localStorage.setItem('spfl_current_league', currentLeague);
+  applyLeagueVisibility();
+  showView(currentLeague==='spfl' ? 'spflPredict' : 'home');
+}
+function applyLeagueVisibility(){
+  const wc = currentLeague!=='spfl';
+  const show=(id,on)=>{ const el=document.getElementById(id); if(el) el.style.display = on?'':'none'; };
+  show('nav-home', wc);
+  show('nav-leaderboard', wc);
+  show('nav-predict', wc);
+  show('nav-spflPredict', !wc);
+  show('nav-spflLeaderboard', !wc);
+  show('nav-tactics', !wc);
+  const btn=document.getElementById('profile-league-btn');
+  if(btn) btn.textContent = currentLeague==='spfl' ? '⚽ Switch to World Cup' : '🏴󠁧󠁢󠁳󠁣󠁴󠁿 Switch to SPFL';
+  document.body.classList.toggle('spfl-mode', !wc);
 }
 function updateGodcastBtn(){
   const btn = document.getElementById('results-godcast-btn');
@@ -10451,7 +11390,7 @@ function initCollapsibleAdminCards(){
 function switchAdminTab(name){
   if(!isAdmin && isScoreMaster && name!=='results') name='results'; // Score Masters: Results only
   document.querySelectorAll('.admin-tab').forEach((b,i)=>{
-    const tabs=['results','players','fixtures','branding','controls','changelog'];
+    const tabs=['results','players','fixtures','branding','controls','spfl','changelog'];
     b.classList.toggle('active',tabs[i]===name);
   });
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
@@ -10461,6 +11400,7 @@ function switchAdminTab(name){
   if(name==='fixtures')renderKOFixturesList();
   if(name==='branding')loadBrandingPanel();
   if(name==='controls'){switchControlsSubTab('group');}
+  if(name==='spfl')loadAdminSpflResults();
   if(name==='changelog')renderChangelog();
 }
 
@@ -10640,7 +11580,7 @@ async function loadPlayersPanel(){
   el.innerHTML='<div class="loading">Loading…</div>';
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
-      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_cards_hidden`, ['score_master','accent','background_id','card_opacity','home_cards_hidden']),
+      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_cards_hidden,spfl_approved`, ['score_master','accent','background_id','card_opacity','home_cards_hidden','spfl_approved']),
       sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -10649,7 +11589,7 @@ async function loadPlayersPanel(){
     const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,home_cards_hidden:p.home_cards_hidden||null};});
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,spfl_approved:p.spfl_approved||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,home_cards_hidden:p.home_cards_hidden||null};});
     (preds||[]).forEach(p=>{
       if(!pm[p.player_id])return;
       pm[p.player_id].preds++;
@@ -10661,7 +11601,7 @@ async function loadPlayersPanel(){
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
-          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${p.score_master ? ' <span title="Score Master" style="font-size:.75rem;margin-left:.15rem;">📊</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode, p.accent, p.background_id, p.card_opacity)}</span></div>
+          <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${p.score_master ? ' <span title="Score Master" style="font-size:.75rem;margin-left:.15rem;">📊</span>' : ''}${p.spfl_approved ? ' <span title="SPFL Access" style="font-size:.75rem;margin-left:.15rem;">🏴󠁧󠁢󠁳󠁣󠁴󠁿</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode, p.accent, p.background_id, p.card_opacity)}</span></div>
           <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${p.background_id ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🖼️ Background: <strong style="color:var(--text);">${BACKGROUNDS.find(b=>b.id===p.background_id)?.label||p.background_id}</strong></div>` : ''}
           ${p.home_cards_hidden ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🙈 Personally hidden: <strong style="color:var(--text);">${p.home_cards_hidden.split(',').map(k=>HOME_CARD_DEFS.find(c=>c.key===k)?.label||k).join(', ')}</strong></div>` : ''}
@@ -10686,6 +11626,10 @@ async function loadPlayersPanel(){
             ${p.is_admin ? '' : p.score_master
               ? `<button class="player-options-item" onclick="revokeScoreMaster('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">📊 Revoke Score Master</button>`
               : `<button class="player-options-item" onclick="grantScoreMaster('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">📊 Make Score Master</button>`
+            }
+            ${p.spfl_approved
+              ? `<button class="player-options-item" onclick="revokeSpflAccess('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Revoke SPFL Access</button>`
+              : `<button class="player-options-item" onclick="grantSpflAccess('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Grant SPFL Access</button>`
             }
             <hr class="player-options-divider">
             <button class="player-options-item danger" onclick="removePlayer('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🗑️ Remove Player</button>
@@ -10970,6 +11914,26 @@ async function revokeScoreMaster(playerId, name){
     try{
       await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{score_master:false}});
       flash(name+' is no longer a Score Master','success');
+      loadPlayersPanel();
+    }catch(e){flash('Error: '+e.message,'error');}
+  });
+}
+
+async function grantSpflAccess(playerId, name){
+  showConfirm('🏴󠁧󠁢󠁳󠁣󠁴󠁿','Grant SPFL Access','Let '+name+' switch to the SPFL league from their name menu? This is separate from the World Cup game — hidden from everyone else.','Grant Access', async ()=>{
+    try{
+      await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{spfl_approved:true}});
+      flash(name+' can now access SPFL','success');
+      loadPlayersPanel();
+    }catch(e){flash('Error: '+e.message,'error');}
+  });
+}
+
+async function revokeSpflAccess(playerId, name){
+  showConfirm('🏴󠁧󠁢󠁳󠁣󠁴󠁿','Revoke SPFL Access','Remove '+name+'\'s access to the SPFL league? They\'ll be switched back to the World Cup automatically next time they open the app.','Revoke', async ()=>{
+    try{
+      await sb('players?id=eq.'+playerId,{method:'PATCH',prefer:'return=minimal',body:{spfl_approved:false}});
+      flash(name+' no longer has SPFL access','success');
       loadPlayersPanel();
     }catch(e){flash('Error: '+e.message,'error');}
   });
@@ -12167,6 +13131,7 @@ if(currentGroup&&currentPlayer){
   enterApp();
 }
 updateGodModeMenuItem();
+  updateLeagueMenuItem();
 // Hide loader once fonts/scripts are ready
 
 
@@ -12291,6 +13256,7 @@ function checkGodPass(){
     _godUnlocked = true;
     localStorage.setItem('wc26_god_unlocked','1');
     updateGodModeMenuItem();
+  updateLeagueMenuItem();
     input.value='';
     errEl.style.display='none';
     unlockGodUI();
@@ -12903,7 +13869,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.78.67</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.0</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
