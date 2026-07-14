@@ -1369,7 +1369,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.5</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.6</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5835,7 +5835,7 @@ const KICKOFFS = {
   'm099':'2026-07-11T21:00:00Z', // 17:00 ET
   'm100':'2026-07-12T00:00:00Z', // 20:00 ET Jul 11
   // SEMI-FINALS
-  'm101':'2026-07-14T18:00:00Z', // 14:00 ET
+  'm101':'2026-07-14T19:00:00Z', // 20:00 BST / 15:00 ET (was wrongly set to 19:00 BST / 14:00 ET, locking predictions an hour before actual KO)
   'm102':'2026-07-15T19:00:00Z', // 15:00 ET
   // THIRD PLACE
   'm103':'2026-07-18T21:00:00Z', // 17:00 ET
@@ -7162,6 +7162,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.6',date:'14 Jul 2026',notes:['Fixed Semi-Final kickoff time for France v Spain (m101) — was set an hour early (19:00 BST / 14:00 ET), which locked predictions before the match actually kicked off. Correct time is 20:00 BST / 15:00 ET.']},
   {v:'1.79.5',date:'10 Jul 2026',notes:['Quarter-Final kickoff time for Portugal/Spain v USA/Belgium (m098) moved to 20:00 BST (was mistakenly set to 20:00 ET in 1.79.4).']},
   {v:'1.79.4',date:'10 Jul 2026',notes:['Quarter-Final kickoff time for Portugal/Spain v USA/Belgium (m098) moved to 20:00 ET.']},
   {v:'1.79.3',date:'10 Jul 2026',notes:['SPFL: VAR Review wheel labels are now horizontal (not bunched vertically in the middle) and the wheel is red/white segments instead of a rainbow of colours.','SPFL: everyone in the group now sees a replay of the VAR Review wheel — polls every 20s while in SPFL mode and shows "X called a VAR Review!" with the same spin animation landing on the actual result.','SPFL: Double Points can no longer be placed on a match once admin has ticked it Full Time in Results.','SPFL: updated Aberdeen crest.','Admin: removed the separate SPFL tab — the Results tab is now league-aware and shows SPFL score entry automatically when you\'re viewing SPFL (same Players/Branding/Controls settings apply either way). The Admin page title now shows which competition you\'re in.']},
@@ -14232,7 +14233,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.5</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.6</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
