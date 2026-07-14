@@ -1369,7 +1369,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.6</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.8</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1793,6 +1793,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
       <div id="lb-pot-breakdown" style="display:none;margin-bottom:1.25rem;"></div>
       <div id="lb-forfeit-banner" style="display:none;margin-bottom:1rem;"></div>
+      <div id="lb-lockin-banner" style="display:none;margin-bottom:1rem;"></div>
       <div id="lb-info-panel" style="display:none;margin-bottom:.75rem;display:flex;flex-direction:column;gap:.5rem;">
         <div id="lb-streak-key" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;display:flex;flex-wrap:wrap;gap:.35rem .75rem;align-items:center;">
           <span style="font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);flex-basis:100%;">Streak Key</span>
@@ -4219,6 +4220,22 @@ async function sb(path, opts={}){
   try{ return JSON.parse(txt); }catch(e){ return null; }
 }
 
+// PostgREST caps any single GET at 1000 rows (Supabase project default) —
+// a plain sb() call on a big table (e.g. every prediction in a group once it
+// passes 1000 rows total across all players/games) silently truncates,
+// which under-counts whichever rows happen to land past the cutoff. Used
+// for reads that must return every row regardless of table size.
+async function sbAll(path, pageSize=1000){
+  let out=[], offset=0;
+  while(true){
+    const page = await sb(path, {headers:{Range:`${offset}-${offset+pageSize-1}`}}) || [];
+    out = out.concat(page);
+    if(page.length < pageSize) break;
+    offset += pageSize;
+  }
+  return out;
+}
+
 // Some players columns (score_master, accent, background_id, card_opacity)
 // are newer and may not exist yet in a given Supabase instance until the
 // matching ALTER TABLE has been run. Retries with each missing column (as
@@ -6207,7 +6224,7 @@ async function loadPredictions(scrollToToday){
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
       sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&select=top_scorer,goals`),
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
     ]);
     results={}; (res||[]).forEach(r=>results[r.match_id]={home:r.home_score,away:r.away_score,fullTime:!!r.full_time,ko_winner:r.ko_winner||null,ko_method:r.ko_method||null});
@@ -6714,7 +6731,7 @@ async function loadLeaderboard(){
   lb.innerHTML='<div class="loading">Calculating…</div>';
   try{
     const [allPreds,allResults,allPlayers,allTiebreaks]=await Promise.all([
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -7162,6 +7179,8 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.8',date:'14 Jul 2026',notes:['Fixed a scoring bug affecting groups with a lot of predictions logged: Supabase only ever returns 1000 rows per request unless asked for more, so once a group passed 1000 total prediction rows the leaderboard was silently missing whichever rows landed past that cutoff — undercounting a handful of players\' points (e.g. missed exact-scoreline results worth 8pts each). The leaderboard, predictions, admin and stats pages now page through every row instead of assuming the first batch is everything.']},
+  {v:'1.79.7',date:'14 Jul 2026',notes:['Leaderboard now shows a banner the moment 1st place and/or last place become mathematically locked in — worked out from the points gap to the nearest rival vs. how many points are still up for grabs (remaining fixtures × 8, the max score for one game), so it appears as soon as nobody left can catch up or escape, not just once the tournament ends.']},
   {v:'1.79.6',date:'14 Jul 2026',notes:['Fixed Semi-Final kickoff time for France v Spain (m101) — was set an hour early (19:00 BST / 14:00 ET), which locked predictions before the match actually kicked off. Correct time is 20:00 BST / 15:00 ET.']},
   {v:'1.79.5',date:'10 Jul 2026',notes:['Quarter-Final kickoff time for Portugal/Spain v USA/Belgium (m098) moved to 20:00 BST (was mistakenly set to 20:00 ET in 1.79.4).']},
   {v:'1.79.4',date:'10 Jul 2026',notes:['Quarter-Final kickoff time for Portugal/Spain v USA/Belgium (m098) moved to 20:00 ET.']},
@@ -8620,7 +8639,7 @@ async function loadHome(){
   const statsEl = document.getElementById('home-stats-content');
   try{
     const [allPreds, allResults, allPlayers, homeTiebreaks] = await Promise.all([
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time,ko_winner,ko_method`),
       sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,last_seen,home_card_order,home_cards_hidden`, ['home_card_order','home_cards_hidden']),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
@@ -9656,7 +9675,7 @@ async function showPlayerStats(playerId, name){
   let allPreds, allResults, allPlayers;
   try{
     [allPreds, allResults, allPlayers] = await Promise.all([
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname`),
     ]);
@@ -9991,7 +10010,7 @@ async function showPlayerCompare(aId, aName, bId, bName){
   let allPreds, allResults;
   try{
     [allPreds, allResults] = await Promise.all([
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
     ]);
   }catch(e){ flash('Error: '+e.message,'error'); return; }
@@ -11945,7 +11964,7 @@ async function loadPlayersPanel(){
   try{
     const [playersList,preds,res,tbs]=await Promise.all([
       sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_cards_hidden,spfl_approved`, ['score_master','accent','background_id','card_opacity','home_cards_hidden','spfl_approved']),
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
     ]);
@@ -12752,6 +12771,8 @@ function renderLeaderboard(){
 
   // ── Form view: rank by last-5-days points
   if(_lbFormView){
+    const lockinBannerFV = document.getElementById('lb-lockin-banner');
+    if(lockinBannerFV) lockinBannerFV.style.display='none';
     if(!_lbFormDates.length){ lb.innerHTML='<div class="empty" style="font-size:.82rem;color:var(--text-muted);">No completed matchdays yet.</div>'; return; }
     // Merge overall players with form scores so everyone appears (0 pts if they played no form games)
     const allNames=new Set([...Object.keys(_lbScores||{})]);
@@ -12836,6 +12857,36 @@ function renderLeaderboard(){
   const lastRank = ranks[lastIdx];
   const rankCounts = {};
   ranks.forEach(r=>{rankCounts[r]=(rankCounts[r]||0)+1;});
+
+  // Mathematical lock-in banner: since scoring only ever adds points (max 8/game,
+  // see calcPoints), 1st/last place is confirmed once the gap to the nearest rival
+  // exceeds every point still up for grabs (remaining unplayed fixtures × 8).
+  const lockinBanner = document.getElementById('lb-lockin-banner');
+  if(lockinBanner){
+    const rmLB = {};
+    (_lbRawResults||[]).forEach(r=>rmLB[r.match_id]=r);
+    const remainingGames = allFixtures().filter(f=>!(rmLB[f.id]&&rmLB[f.id].home_score!=null)).length;
+    const maxSwing = remainingGames * 8;
+    const leaderScore = sorted[0][1].total;
+    const nextBest = sorted.find(([,s])=>s.total<leaderScore);
+    const firstLocked = sorted.length>1 && !!nextBest && (leaderScore-nextBest[1].total) > maxSwing;
+    const lastScore = sorted[lastIdx][1].total;
+    let nextWorst = null;
+    for(let i=lastIdx-1;i>=0;i--){ if(sorted[i][1].total>lastScore){ nextWorst=sorted[i]; break; } }
+    const lastLocked = sorted.length>1 && !!nextWorst && (nextWorst[1].total-lastScore) > maxSwing;
+    if(firstLocked || lastLocked){
+      const gamesLeftText = remainingGames+' game'+(remainingGames!==1?'s':'')+' left';
+      const rows=[];
+      if(firstLocked) rows.push(`<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:.7rem 1rem;font-size:.85rem;">🏆 <strong>${sorted[0][0]}</strong>'s 1st place is mathematically locked in — ${gamesLeftText}, nobody can catch up.</div>`);
+      if(lastLocked) rows.push(`<div style="background:color-mix(in srgb,#ef4444 12%,transparent);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:.7rem 1rem;font-size:.85rem;">⚓ <strong>${sorted[lastIdx][0]}</strong> is mathematically locked into last place — ${gamesLeftText}, no result can save them.</div>`);
+      lockinBanner.style.display='flex';
+      lockinBanner.style.flexDirection='column';
+      lockinBanner.style.gap='.5rem';
+      lockinBanner.innerHTML = rows.join('');
+    } else {
+      lockinBanner.style.display='none';
+    }
+  }
 
   // Build map of previous-game rank per player name (only when admin has enabled it)
   const _showRankChange = currentGroup && currentGroup.show_rank_change === true;
@@ -13033,7 +13084,7 @@ async function viewPlayerPredictions(playerId,name){
       sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}&select=match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`tiebreaks?group_id=eq.${currentGroup.id}&player_id=eq.${playerId}&select=top_scorer,goals`),
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
     ]);
     const rankHistory = calcLbRankHistory(allPreds, res);
     const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
@@ -13304,7 +13355,7 @@ async function exportLeaderboardCSV(){
   if(!currentGroup)return;
   try{
     const [allPreds,allResults,allPlayers]=await Promise.all([
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
     ]);
@@ -13332,7 +13383,7 @@ async function exportAllPredictionsCSV(){
   if(!currentGroup)return;
   try{
     const [preds,res,players]=await Promise.all([
-      sb(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
       sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
       sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice`),
     ]);
@@ -14233,7 +14284,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.6</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.8</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
