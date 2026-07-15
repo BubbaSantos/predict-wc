@@ -1376,7 +1376,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.11</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.12</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -7505,6 +7505,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.12',date:'15 Jul 2026',notes:['Fixed the mathematical lock-in banner falsely declaring a leader "locked into 1st" while tied on points with another player — it was comparing the gap to 3rd place instead of recognising the tie, so a tied leader could wrongly show as unbeatable. Same fix applied to the last-place lock-in check.']},
   {v:'1.79.11',date:'15 Jul 2026',notes:['SPFL branding can now use an image instead of an emoji for the group icon — Admin → Branding (while on the SPFL side) has a new Icon Image field with a one-tap "Use SPFL Logo" button for the official Scottish Premiership crest.', 'News ticker is now separated per league (it\'s shown above every screen, so a World Cup ticker message was bleeding into SPFL screens and vice versa) — text/on/off/speed are all set independently per league from Admin → Controls → Display.', 'SPFL leaderboard now updates live — polls for new results every 20s (piggybacking on the existing VAR-watcher tick) and refreshes whichever SPFL screen is open the moment an admin enters/changes a score, instead of requiring a manual refresh.', 'SPFL leaderboard rows now show a small "+N" under the points total — the same idea as the World Cup leaderboard\'s per-matchday delta, showing how many points each player has earned so far in the current SPFL weekend.']},
   {v:'1.79.10',date:'15 Jul 2026',notes:['Admin settings are now properly separated between World Cup and SPFL: Branding (group name, tagline, icon, accent colour) is saved independently per league — editing it while viewing SPFL no longer touches the World Cup side and vice versa (site theme stays shared by design). Danger Zone now has its own SPFL section (Reset SPFL Results / Predictions / Master Reset) alongside the existing World Cup ones, since there was previously no way to wipe SPFL data at all. Players tab now shows SPFL prediction count, points and coin balance instead of World Cup stats when viewing it from the SPFL side. SPFL admin Results tab restyled to match the World Cup layout — weekend groups with a "Live Now" section and full match cards (score inputs, Full Time toggle, Clear) instead of a long flat list.\n\n⚠️ Requires a new Supabase column — run the new ALTER TABLE at the bottom of supabase/spfl_schema.sql: `ALTER TABLE groups ADD COLUMN IF NOT EXISTS settings_spfl jsonb DEFAULT \'{}\'::jsonb;`']},
   {v:'1.79.9',date:'15 Jul 2026',notes:['SPFL home page overhaul: new 🎯 Tactics Board card shows your coin balance plus a one-tap tile for each powerup (dimmed when you can\'t afford it or it\'s already used this weekend); new 📅 This Weekend\'s Fixtures card lists every game for the current matchweek with day/kickoff time and updates automatically once results are entered; new 📊 League Stats card (same idea as World Cup Tournament Stats — games, goals, avg/game, draws, clean sheets, top scorers, best defense, biggest blowout, common scorelines) scoped to SPFL results only.']},
@@ -13252,11 +13253,13 @@ function renderLeaderboard(){
     const maxSwing = remainingGames * 8;
     const leaderScore = sorted[0][1].total;
     const nextBest = sorted.find(([,s])=>s.total<leaderScore);
-    const firstLocked = sorted.length>1 && !!nextBest && (leaderScore-nextBest[1].total) > maxSwing;
+    // A tie for 1st (someone else already matching the leader's score) means
+    // nobody is solely locked into 1st, no matter the gap to 3rd place.
+    const firstLocked = sorted.length>1 && rankCounts[1]===1 && !!nextBest && (leaderScore-nextBest[1].total) > maxSwing;
     const lastScore = sorted[lastIdx][1].total;
     let nextWorst = null;
     for(let i=lastIdx-1;i>=0;i--){ if(sorted[i][1].total>lastScore){ nextWorst=sorted[i]; break; } }
-    const lastLocked = sorted.length>1 && !!nextWorst && (nextWorst[1].total-lastScore) > maxSwing;
+    const lastLocked = sorted.length>1 && rankCounts[lastRank]===1 && !!nextWorst && (nextWorst[1].total-lastScore) > maxSwing;
     if(firstLocked || lastLocked){
       const gamesLeftText = remainingGames+' game'+(remainingGames!==1?'s':'')+' left';
       const rows=[];
@@ -14699,7 +14702,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.11</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.12</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
