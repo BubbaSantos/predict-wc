@@ -1376,7 +1376,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.9</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.10</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1892,7 +1892,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
       <div id="admin-panel-players" class="admin-panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-          <p style="font-size:.78rem;color:var(--text-muted);">Manage competition participants.</p>
+          <p style="font-size:.78rem;color:var(--text-muted);">Manage competition participants. <span id="players-league-label" style="font-weight:600;"></span></p>
           <button class="sync-refresh" onclick="loadPlayersPanel()">↻ Refresh</button>
         </div>
         <div id="admin-players-list"><div class="loading">Loading…</div></div>
@@ -1923,7 +1923,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
       <div id="admin-panel-branding" class="admin-panel">
         <div class="status-card">
-          <h3>Group Branding</h3>
+          <h3>Group Branding <span id="brand-league-label" style="font-size:.7rem;font-weight:600;color:var(--text-muted);"></span></h3>
+          <div id="brand-league-hint" style="font-size:.72rem;color:var(--text-muted);margin-bottom:.75rem;display:none;">Editing SPFL-only branding — this doesn't affect the World Cup side.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
             <div><label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Group Name</label><input id="brand-name" type="text" class="config-input" maxlength="40" /></div>
             <div><label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Tagline</label><input id="brand-tagline" type="text" class="config-input" maxlength="60" /></div>
@@ -2359,7 +2360,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           </div>
         </div>
         <div class="status-card" style="border-color:rgba(239,68,68,.2);">
-          <h3 style="color:var(--accent2);">⚠️ Danger Zone</h3>
+          <h3 style="color:var(--accent2);">⚠️ Danger Zone · World Cup</h3>
           <div style="display:flex;flex-direction:column;gap:.75rem;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
               <div><div style="font-size:.875rem;font-weight:600;">Reset All Results</div><div style="font-size:.75rem;color:var(--text-muted);">Clears scores. Predictions kept.</div></div>
@@ -2372,6 +2373,23 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <div style="border-top:1px solid var(--border);padding-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
               <div><div style="font-size:.875rem;font-weight:600;">Full Master Reset</div><div style="font-size:.75rem;color:var(--text-muted);">Wipes everything.</div></div>
               <button class="danger-btn" onclick="confirmReset('all')">Master Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="status-card" style="border-color:rgba(239,68,68,.2);margin-top:.85rem;">
+          <h3 style="color:var(--accent2);">⚠️ Danger Zone · SPFL</h3>
+          <div style="display:flex;flex-direction:column;gap:.75rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+              <div><div style="font-size:.875rem;font-weight:600;">Reset SPFL Results</div><div style="font-size:.75rem;color:var(--text-muted);">Clears SPFL scores. Predictions kept.</div></div>
+              <button class="danger-btn" onclick="confirmReset('spfl_results')">Reset SPFL Results</button>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+              <div><div style="font-size:.875rem;font-weight:600;">Reset SPFL Predictions</div><div style="font-size:.75rem;color:var(--text-muted);">Wipes SPFL predictions, coins and powerups. Results kept.</div></div>
+              <button class="danger-btn" onclick="confirmReset('spfl_predictions')">Reset SPFL Predictions</button>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+              <div><div style="font-size:.875rem;font-weight:600;">Full SPFL Master Reset</div><div style="font-size:.75rem;color:var(--text-muted);">Wipes everything SPFL.</div></div>
+              <button class="danger-btn" onclick="confirmReset('spfl_all')">SPFL Master Reset</button>
             </div>
           </div>
         </div>
@@ -4196,6 +4214,9 @@ function spflSabotageFromSelect(){
 }
 
 // ── ADMIN: SPFL RESULTS ───────────────────
+// Matches the World Cup admin results layout: matchday-style groups (here,
+// weekend groups) with a "Live Now" bucket pulled to the top, and rich
+// per-match cards (.admin-match) instead of a flat list of thin rows.
 async function loadAdminSpflResults(){
   if(!currentGroup||!isAdmin) return;
   const list = document.getElementById('admin-spfl-list');
@@ -4203,28 +4224,67 @@ async function loadAdminSpflResults(){
   try{
     const res = await sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`);
     spflResults = {}; (res||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
-    const weekendsHtml = SPFL_WEEKENDS.map(wk=>{
-      const fixtures = SPFL_FIXTURES.filter(f=>f.weekend===wk);
-      const rowsHtml = fixtures.map(f=>{
-        const r = spflResults[f.id]||{};
-        const ko = spflMatchKickoff(f.id);
-        const dp = ko?.toLocaleDateString('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short'})||'';
-        return `<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid var(--border);">
-          <div style="font-size:.68rem;color:var(--text-muted);width:3.2rem;">${dp}</div>
-          <div style="flex:1;text-align:right;font-size:.8rem;">${f.home}</div>
-          <input type="text" inputmode="numeric" id="rsh-${f.id}" value="${r.home??''}" maxlength="2" style="width:2.2rem;text-align:center;" oninput="adminSpflScoreInput(this,'rsa-${f.id}')" />
-          <span>–</span>
-          <input type="text" inputmode="numeric" id="rsa-${f.id}" value="${r.away??''}" maxlength="2" style="width:2.2rem;text-align:center;" oninput="adminSpflScoreInput(this,null)" />
-          <div style="flex:1;font-size:.8rem;">${f.away}</div>
-          <label style="font-size:.65rem;color:var(--text-muted);display:flex;align-items:center;gap:.2rem;">
-            <input type="checkbox" id="rsft-${f.id}" ${r.full_time?'checked':''} onchange="adminSpflAutoSave('${f.id}')" /> FT
-          </label>
-        </div>`;
-      }).join('');
-      return `<div style="margin-bottom:.75rem;"><div style="font-size:.72rem;font-weight:700;color:var(--text-muted);margin-bottom:.2rem;">WEEKEND ${wk}</div>${rowsHtml}</div>`;
-    }).join('');
-    list.innerHTML = weekendsHtml;
+
+    const nowMs = Date.now();
+    const LIVE_WIN = 130*60*1000;
+    const liveFixtures = SPFL_FIXTURES.filter(f=>{
+      const ko = spflMatchKickoff(f.id);
+      const koMs = ko?ko.getTime():null;
+      return !!(koMs && nowMs>=koMs && nowMs<koMs+LIVE_WIN);
+    });
+    const liveIds = new Set(liveFixtures.map(f=>f.id));
+    const curWk = spflCurrentWeekend();
+    const wkOrder = SPFL_WEEKENDS.slice().sort((a,b)=>{
+      if(a===curWk) return -1;
+      if(b===curWk) return 1;
+      if(a>curWk && b>curWk) return a-b;  // future: soonest first
+      if(a<curWk && b<curWk) return b-a;  // past: most recent first
+      return a>curWk ? -1 : 1;            // future before past
+    });
+
+    let html='';
+    if(liveFixtures.length){
+      html += `<div class="matchday-group"><div class="matchday-label"><span class="today-dot"></span>Live Now</div>`;
+      liveFixtures.forEach(f=>{ html += renderSpflAdminCard(f, spflResults[f.id]); });
+      html += `</div>`;
+    }
+    wkOrder.forEach(wk=>{
+      const fixtures = SPFL_FIXTURES.filter(f=>f.weekend===wk && !liveIds.has(f.id));
+      if(!fixtures.length) return;
+      const isCurrent = wk===curWk, isFuture = wk>curWk;
+      html += `<div class="matchday-group"><div class="matchday-label ${isFuture?'dim':''}">${isCurrent?'<span class="today-dot"></span>':''}Weekend ${wk}</div>`;
+      fixtures.forEach(f=>{ html += renderSpflAdminCard(f, spflResults[f.id]); });
+      html += `</div>`;
+    });
+    list.innerHTML = html || '<div class="empty">No fixtures yet.</div>';
   }catch(e){ list.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
+}
+function renderSpflAdminCard(f,res){
+  const h=res?res.home:'', a=res?res.away:'';
+  const hasScore = h!==null&&h!==undefined&&h!=='';
+  const ko = spflMatchKickoff(f.id);
+  const kickedOff = !hasScore && ko && ko.getTime() <= Date.now();
+  const scorePh = kickedOff ? '0' : '–';
+  const ftOn = !!(res && res.full_time);
+  return `<div class="admin-match ${ftOn?'is-fulltime':''}" id="spfl-acard-${f.id}">
+    <div class="team">${spflBadgeHtml(f.home)}<span class="team-name">${f.home}</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;">
+      <div style="display:flex;align-items:center;gap:.4rem;">
+        <input class="actual-input" type="number" min="0" max="99" id="rsh-${f.id}" value="${h!==null&&h!==undefined?h:''}" placeholder="${scorePh}" inputmode="numeric" oninput="adminSpflScoreInput(this,'rsa-${f.id}')" />
+        <span class="score-sep">–</span>
+        <input class="actual-input" type="number" min="0" max="99" id="rsa-${f.id}" value="${a!==null&&a!==undefined?a:''}" placeholder="${scorePh}" inputmode="numeric" oninput="adminSpflScoreInput(this,null)" />
+      </div>
+      ${hasScore? `<span class="result-badge">${h}–${a}</span>`:''}
+    </div>
+    <div class="team away"><span class="team-name">${f.away}</span>${spflBadgeHtml(f.away)}</div>
+    <div class="match-meta">
+      <span class="match-info">Weekend ${f.weekend} · ${spflDateLabel(f)}</span>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+        ${hasScore ? `<button class="actual-save-btn ft-btn ${ftOn?'on':''}" onclick="toggleSpflFullTime('${f.id}')" title="Mark match as full time — triggers SPFL scoring/leaderboard updates">${ftOn?'⏱ Full Time ✓':'⏱ Full Time'}</button>` : ''}
+        ${hasScore ? `<button class="actual-save-btn" onclick="clearSpflResult('${f.id}')" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;font-size:.7rem;padding:.3rem .6rem;">✕ Clear</button>` : ''}
+      </div>
+    </div>
+  </div>`;
 }
 function adminSpflScoreInput(el, nextId){
   const v = el.value.replace(/[^0-9]/g,'');
@@ -4237,17 +4297,44 @@ async function adminSpflAutoSave(matchId){
   if(!currentGroup) return;
   const h = document.getElementById('rsh-'+matchId)?.value.trim();
   const a = document.getElementById('rsa-'+matchId)?.value.trim();
-  const ft = document.getElementById('rsft-'+matchId)?.checked || false;
   if(h===''||h===undefined||a===''||a===undefined) return;
   if(isNaN(+h)||isNaN(+a)) return;
   const existing = spflResults[matchId];
-  if(existing && existing.home===+h && existing.away===+a && existing.full_time===ft) return;
+  const ft = existing ? existing.full_time : false;
+  if(existing && existing.home===+h && existing.away===+a) return;
   try{
     await sb(`spfl_results?group_id=eq.${currentGroup.id}&match_id=eq.${matchId}`,{method:'DELETE',prefer:'return=minimal'});
     await sb('spfl_results',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,match_id:matchId,home_score:+h,away_score:+a,full_time:ft}});
     spflResults[matchId]={home:+h,away:+a,full_time:ft};
+    const f = SPFL_FIXTURES.find(x=>x.id===matchId);
+    const card = document.getElementById('spfl-acard-'+matchId);
+    if(card && f) card.outerHTML = renderSpflAdminCard(f, spflResults[matchId]);
     flash('SPFL result saved','success');
   }catch(e){ flash('Error saving: '+e.message,'error'); }
+}
+async function toggleSpflFullTime(matchId){
+  if(!currentGroup) return;
+  if(!spflResults[matchId]){ flash('Enter a score first','error'); return; }
+  const newVal = !spflResults[matchId].full_time;
+  try{
+    await sb(`spfl_results?group_id=eq.${currentGroup.id}&match_id=eq.${matchId}`,{method:'PATCH',prefer:'return=minimal',body:{full_time:newVal}});
+    spflResults[matchId].full_time = newVal;
+    const f = SPFL_FIXTURES.find(x=>x.id===matchId);
+    const card = document.getElementById('spfl-acard-'+matchId);
+    if(card && f) card.outerHTML = renderSpflAdminCard(f, spflResults[matchId]);
+    flash(newVal?'⏱ Marked Full Time':'Full Time unmarked','success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
+}
+async function clearSpflResult(matchId){
+  if(!currentGroup) return;
+  try{
+    await sb(`spfl_results?group_id=eq.${currentGroup.id}&match_id=eq.${matchId}`,{method:'DELETE',prefer:'return=minimal'});
+    delete spflResults[matchId];
+    const f = SPFL_FIXTURES.find(x=>x.id===matchId);
+    const card = document.getElementById('spfl-acard-'+matchId);
+    if(card && f) card.outerHTML = renderSpflAdminCard(f, null);
+    flash('Result cleared','success');
+  }catch(e){ flash('Error: '+e.message,'error'); }
 }
 
 // A player who's already had a deduction (Sabotage or VAR Review) this
@@ -5723,20 +5810,38 @@ function applyEdges(style){
   }
 }
 
+// Branding (name/tagline/emoji/accent) is stored per-league — WC uses the
+// flat groups.name/tagline/emoji/accent columns as before, SPFL keeps its
+// own copy inside groups.settings_spfl (falling back to WC's values until
+// an admin explicitly saves SPFL branding, so it never shows blank).
+function getLeagueBranding(){
+  if(!currentGroup) return {name:'Predictor',tagline:'',emoji:'⚽',accent:'#6d5cff'};
+  if(currentLeague==='spfl'){
+    const s = currentGroup.settings_spfl||{};
+    return {
+      name: s.name || currentGroup.name || 'Predictor',
+      tagline: s.tagline!=null ? s.tagline : (currentGroup.tagline||''),
+      emoji: s.emoji || currentGroup.emoji || '⚽',
+      accent: s.accent || currentGroup.accent || '#6d5cff',
+    };
+  }
+  return { name: currentGroup.name||'Predictor', tagline: currentGroup.tagline||'', emoji: currentGroup.emoji||'⚽', accent: currentGroup.accent||'#6d5cff' };
+}
 function applyBranding(){
   if(!currentGroup) return;
   const playerTheme = getPlayerThemeKey() ? localStorage.getItem(getPlayerThemeKey()) : null;
   const playerAccent = getPlayerAccentKey() ? localStorage.getItem(getPlayerAccentKey()) : null;
   const playerEdges = getPlayerEdgesKey() ? localStorage.getItem(getPlayerEdgesKey()) : null;
   const playerBg = getPlayerBgKey() ? localStorage.getItem(getPlayerBgKey()) : null;
+  const branding = getLeagueBranding();
   applyTheme(playerTheme || currentGroup.theme||'dark');
   applyEdges(playerEdges||'curved');
   applyPlayerBackground(playerBg); // also sets --card-opacity based on whether a background is active
-  const accent = playerAccent || currentGroup.accent||'#6d5cff';
+  const accent = playerAccent || branding.accent;
   document.documentElement.style.setProperty('--group-accent', accent);
-  const emoji = currentGroup.emoji||'⚽';
-  const name  = currentGroup.name||'Predictor';
-  const tag   = currentGroup.tagline||'';
+  const emoji = branding.emoji;
+  const name  = branding.name;
+  const tag   = branding.tagline;
 
   document.getElementById('h-logo').textContent=emoji+' ';
   document.getElementById('h-group-name').textContent=name;
@@ -7345,6 +7450,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.10',date:'15 Jul 2026',notes:['Admin settings are now properly separated between World Cup and SPFL: Branding (group name, tagline, icon, accent colour) is saved independently per league — editing it while viewing SPFL no longer touches the World Cup side and vice versa (site theme stays shared by design). Danger Zone now has its own SPFL section (Reset SPFL Results / Predictions / Master Reset) alongside the existing World Cup ones, since there was previously no way to wipe SPFL data at all. Players tab now shows SPFL prediction count, points and coin balance instead of World Cup stats when viewing it from the SPFL side. SPFL admin Results tab restyled to match the World Cup layout — weekend groups with a "Live Now" section and full match cards (score inputs, Full Time toggle, Clear) instead of a long flat list.\n\n⚠️ Requires a new Supabase column — run the new ALTER TABLE at the bottom of supabase/spfl_schema.sql: `ALTER TABLE groups ADD COLUMN IF NOT EXISTS settings_spfl jsonb DEFAULT \'{}\'::jsonb;`']},
   {v:'1.79.9',date:'15 Jul 2026',notes:['SPFL home page overhaul: new 🎯 Tactics Board card shows your coin balance plus a one-tap tile for each powerup (dimmed when you can\'t afford it or it\'s already used this weekend); new 📅 This Weekend\'s Fixtures card lists every game for the current matchweek with day/kickoff time and updates automatically once results are entered; new 📊 League Stats card (same idea as World Cup Tournament Stats — games, goals, avg/game, draws, clean sheets, top scorers, best defense, biggest blowout, common scorelines) scoped to SPFL results only.']},
   {v:'1.79.8',date:'14 Jul 2026',notes:['Fixed a scoring bug affecting groups with a lot of predictions logged: Supabase only ever returns 1000 rows per request unless asked for more, so once a group passed 1000 total prediction rows the leaderboard was silently missing whichever rows landed past that cutoff — undercounting a handful of players\' points (e.g. missed exact-scoreline results worth 8pts each). The leaderboard, predictions, admin and stats pages now page through every row instead of assuming the first batch is everything.']},
   {v:'1.79.7',date:'14 Jul 2026',notes:['Leaderboard now shows a banner the moment 1st place and/or last place become mathematically locked in — worked out from the points gap to the nearest rival vs. how many points are still up for grabs (remaining fixtures × 8, the max score for one game), so it appears as soon as nobody left can catch up or escape, not just once the tournament ends.']},
@@ -9600,6 +9706,7 @@ function applyLeagueVisibility(){
   if(btn) btn.textContent = currentLeague==='spfl' ? '⚽ Switch to World Cup' : '🏴󠁧󠁢󠁳󠁣󠁴󠁿 Switch to SPFL';
   document.body.classList.toggle('spfl-mode', !wc);
   if(!wc && userHasSpflAccess()) spflStartVarWatcher(); else spflStopVarWatcher();
+  applyBranding();
 }
 function updateGodcastBtn(){
   const btn = document.getElementById('results-godcast-btn');
@@ -11930,6 +12037,8 @@ function switchAdminTab(name){
   document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('admin-panel-'+name).classList.add('active');
   initCollapsibleAdminCards();
+  const _label = document.getElementById('admin-league-label');
+  if(_label) _label.textContent = currentLeague==='spfl' ? '· SPFL' : '· World Cup';
   if(name==='results')applyAdminLeagueVisibility();
   if(name==='players')loadPlayersPanel();
   if(name==='fixtures')renderKOFixturesList();
@@ -12128,40 +12237,67 @@ async function loadPlayersPanel(){
   if(!currentGroup)return;
   const el=document.getElementById('admin-players-list');
   el.innerHTML='<div class="loading">Loading…</div>';
+  const isSpfl = currentLeague==='spfl';
+  const lbl=document.getElementById('players-league-label');
+  if(lbl) lbl.textContent = isSpfl ? '· SPFL' : '· World Cup';
   try{
-    const [playersList,preds,res,tbs]=await Promise.all([
-      sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_cards_hidden,spfl_approved`, ['score_master','accent','background_id','card_opacity','home_cards_hidden','spfl_approved']),
-      sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
-      sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
-      sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
-    ]);
-    const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
-    const tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
+    const playersList = await sbSelectOptional(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,pay_choice,pin,last_seen,is_admin,god_mode,score_master,theme,light_mode,accent,background_id,card_opacity,home_cards_hidden,spfl_approved`, ['score_master','accent','background_id','card_opacity','home_cards_hidden','spfl_approved']);
     const pm={};
     const now2=Date.now();
-    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,spfl_approved:p.spfl_approved||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,home_cards_hidden:p.home_cards_hidden||null};});
-    (preds||[]).forEach(p=>{
-      if(!pm[p.player_id])return;
-      pm[p.player_id].preds++;
-      const r=rm[p.match_id]; if(!r)return;
-      const pts=calcPoints(p.home_score,p.away_score,r.home_score,r.away_score);
-      if(pts)pm[p.player_id].pts+=pts;
-    });
+    (playersList||[]).forEach(p=>{const online=p.last_seen&&(now2-new Date(p.last_seen).getTime()<120000);pm[p.id]={name:p.name,nickname:p.nickname,preds:0,pts:0,coins:0,pay_choice:p.pay_choice,pin:p.pin,online,last_seen:p.last_seen,is_admin:p.is_admin||false,god_mode:p.god_mode||false,score_master:p.score_master||false,spfl_approved:p.spfl_approved||false,theme:p.theme||null,light_mode:p.light_mode,accent:p.accent||null,background_id:p.background_id||null,card_opacity:p.card_opacity??null,home_cards_hidden:p.home_cards_hidden||null};});
+    let tbm={};
+    if(isSpfl){
+      const [spflPreds,spflRes,spflState]=await Promise.all([
+        sbAll(`spfl_predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+        sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`),
+        sb(`spfl_player_state?group_id=eq.${currentGroup.id}&select=player_id,coins,powerups`),
+      ]);
+      spflResults = {}; (spflRes||[]).forEach(r=>spflResults[r.match_id]={home:r.home_score,away:r.away_score,full_time:!!r.full_time});
+      const pByPlayer={}; (spflPreds||[]).forEach(p=>{
+        (pByPlayer[p.player_id]=pByPlayer[p.player_id]||{})[p.match_id]={home:p.home_score,away:p.away_score};
+        if(pm[p.player_id]) pm[p.player_id].preds++;
+      });
+      const puByPlayer={}; (spflState||[]).forEach(s=>{ puByPlayer[s.player_id]=s.powerups||[]; });
+      const ownPts={};
+      Object.keys(pm).forEach(id=>{
+        ownPts[id] = spflComputePlayerPoints(id,pByPlayer,puByPlayer).points; // pre-deduction, coins are earned off this
+        const spent = (puByPlayer[id]||[]).reduce((s,p)=>s+(p.coin_cost||0),0);
+        pm[id].coins = Math.max(0, Math.floor(ownPts[id]/10) - spent);
+      });
+      const allPowerupsFlat=[]; (spflState||[]).forEach(s=>(s.powerups||[]).forEach(p=>allPowerupsFlat.push(p)));
+      const final = spflApplyDeductions(ownPts, allPowerupsFlat); // final leaderboard total, after sabotage/VAR hits
+      Object.keys(pm).forEach(id=>{ pm[id].pts = final[id]??ownPts[id]??0; });
+    } else {
+      const [preds,res,tbs]=await Promise.all([
+        sbAll(`predictions?group_id=eq.${currentGroup.id}&select=player_id,match_id,home_score,away_score`),
+        sb(`results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score`),
+        sb(`tiebreaks?group_id=eq.${currentGroup.id}&select=player_id,top_scorer,goals`),
+      ]);
+      const rm={}; (res||[]).forEach(r=>rm[r.match_id]=r);
+      tbm={}; (tbs||[]).forEach(t=>tbm[t.player_id]={scorer:t.top_scorer,goals:t.goals});
+      (preds||[]).forEach(p=>{
+        if(!pm[p.player_id])return;
+        pm[p.player_id].preds++;
+        const r=rm[p.match_id]; if(!r)return;
+        const pts=calcPoints(p.home_score,p.away_score,r.home_score,r.away_score);
+        if(pts)pm[p.player_id].pts+=pts;
+      });
+    }
     if(!Object.keys(pm).length){el.innerHTML='<div class="empty">No players yet.</div>';return;}
     el.innerHTML=Object.entries(pm).map(([id,p])=>`
       <div class="player-row">
         <div>
           <div class="player-row-name">${p.online ? '<span title="Online now" style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#10b981;margin-right:.35rem;vertical-align:middle;"></span>' : ''}<span style="vertical-align:middle;">${p.name}${p.nickname ? ' <span style="color:var(--text-muted);font-weight:400;font-size:.8rem;">('+p.nickname+')</span>' : ''}${p.is_admin ? ' <span title="Admin" style="font-size:.75rem;margin-left:.25rem;">👑</span>' : ''}${p.god_mode ? ' <span title="God Mode" style="font-size:.75rem;margin-left:.15rem;">⚡</span>' : ''}${p.score_master ? ' <span title="Score Master" style="font-size:.75rem;margin-left:.15rem;">📊</span>' : ''}${p.spfl_approved ? ' <span title="SPFL Access" style="font-size:.75rem;margin-left:.15rem;">🏴󠁧󠁢󠁳󠁣󠁴󠁿</span>' : ''}${playerAppearanceChipHtml(p.theme, p.light_mode, p.accent, p.background_id, p.card_opacity)}</span></div>
-          <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
+          <div class="player-row-stats">${p.preds} predictions · ${p.pts} pts${isSpfl?` · 🪙${p.coins}`:''} · <span style="color:${p.online?'#10b981':'var(--text-muted)'};">${p.online ? 'online now' : p.last_seen ? 'last seen ' + (d=>{const s=Math.floor((now2-d)/1000);return s<120?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';})(new Date(p.last_seen).getTime()) : 'never seen'}</span></div>
           ${p.background_id ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🖼️ Background: <strong style="color:var(--text);">${BACKGROUNDS.find(b=>b.id===p.background_id)?.label||p.background_id}</strong></div>` : ''}
           ${p.home_cards_hidden ? `<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">🙈 Personally hidden: <strong style="color:var(--text);">${p.home_cards_hidden.split(',').map(k=>HOME_CARD_DEFS.find(c=>c.key===k)?.label||k).join(', ')}</strong></div>` : ''}
-          ${tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>'}
+          ${isSpfl ? '' : (tbm[id] ? `<div style="font-size:.72rem;margin-top:.2rem;"><span style="color:var(--text-muted);">⚽ Top scorer:</span> <strong style="color:var(--group-accent);">${tbm[id].scorer}</strong> <span style="color:var(--text-muted);">(${tbm[id].goals} goals)</span></div>` : '<div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem;">⚽ No tie-break submitted</div>')}
         </div>
         <div style="flex-shrink:0;position:relative;">
           <button class="player-options-btn" onclick="togglePlayerMenu(this)" data-id="${id}">⋮ Options</button>
           <div class="player-options-menu" style="display:none;">
             <button class="player-options-item" onclick="viewPlayerPredictions('${id}','${(p.nickname||p.name).replace(/'/g,"\\'")}');closePlayerMenus()">📊 View Predictions</button>
-            ${tbm[id] ? `<button class="player-options-item" onclick="unlockTiebreak('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔓 Unlock Tie-Break</button>` : ''}
+            ${(!isSpfl && tbm[id]) ? `<button class="player-options-item" onclick="unlockTiebreak('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔓 Unlock Tie-Break</button>` : ''}
             <button class="player-options-item" onclick="showRenameInMenu('${id}','${p.name.replace(/'/g,"\\'")}','${(p.nickname||'').replace(/'/g,"\\'")}');closePlayerMenus()">✏️ Set Nickname</button>
             <button class="player-options-item" onclick="fixLoginName('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔧 Fix Login Name</button>
             <button class="player-options-item" onclick="resetPlayerPin('${id}','${p.name.replace(/'/g,"\\'")}');closePlayerMenus()">🔑 Reset PIN</button>
@@ -13346,15 +13482,24 @@ function _capVpredRowsHeight(rowCount){
 }
 
 // ── BRANDING PANEL ────────────────────────
+// Name/tagline/emoji/accent are per-league (WC uses the flat groups columns,
+// SPFL uses groups.settings_spfl) — see getLeagueBranding(). Theme stays shared.
 function loadBrandingPanel(){
   if(!currentGroup)return;
-  document.getElementById('brand-name').value=currentGroup.name||'';
-  document.getElementById('brand-tagline').value=currentGroup.tagline||'';
-  document.getElementById('brand-emoji').value=currentGroup.emoji||'⚽';
+  selectedColour = null;
+  const b = getLeagueBranding();
+  document.getElementById('brand-name').value=b.name||'';
+  document.getElementById('brand-tagline').value=b.tagline||'';
+  document.getElementById('brand-emoji').value=b.emoji||'⚽';
+  const isSpfl = currentLeague==='spfl';
+  const leagueLbl = document.getElementById('brand-league-label');
+  if(leagueLbl) leagueLbl.textContent = isSpfl ? '· SPFL' : '· World Cup';
+  const hint = document.getElementById('brand-league-hint');
+  if(hint) hint.style.display = isSpfl ? '' : 'none';
   const grid=document.getElementById('colour-grid');
   grid.innerHTML=ACCENT_COLOURS.map(c=>`
-    <div class="colour-swatch ${currentGroup.accent===c.val?'selected':''}"
-      style="background:${c.val};border-color:${currentGroup.accent===c.val?accentRingColor(c.val):'transparent'};" title="${c.name}"
+    <div class="colour-swatch ${b.accent===c.val?'selected':''}"
+      style="background:${c.val};border-color:${b.accent===c.val?accentRingColor(c.val):'transparent'};" title="${c.name}"
       onclick="selectColour('${c.val}',this)"></div>`).join('');
   renderThemePicker();
 }
@@ -13411,14 +13556,20 @@ async function saveBranding(){
   const name=document.getElementById('brand-name').value.trim();
   const tagline=document.getElementById('brand-tagline').value.trim();
   const emoji=document.getElementById('brand-emoji').value.trim()||'⚽';
-  const accent=selectedColour||currentGroup.accent||'#6d5cff';
+  const accent=selectedColour||getLeagueBranding().accent;
   if(!name){flash('Group name is required','error');return;}
   try{
-    await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{name,tagline,emoji,accent}});
-    currentGroup={...currentGroup,name,tagline,emoji,accent};
+    if(currentLeague==='spfl'){
+      const settings_spfl = {...(currentGroup.settings_spfl||{}), name, tagline, emoji, accent};
+      await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{settings_spfl}});
+      currentGroup={...currentGroup,settings_spfl};
+    } else {
+      await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{name,tagline,emoji,accent}});
+      currentGroup={...currentGroup,name,tagline,emoji,accent};
+    }
     saveSession();
     applyBranding();
-    flash('Branding updated!','success');
+    flash(currentLeague==='spfl'?'SPFL branding updated!':'Branding updated!','success');
   }catch(e){flash('Error: '+e.message,'error');}
 }
 
@@ -13613,9 +13764,12 @@ function checkAdminGate(){
 function confirmReset(type){
   requireAdminPassword(()=>{
     const c={
-      results:{icon:'📋',title:'Reset All Results',body:'Delete all scores? The leaderboard resets to zero. Predictions are kept.',label:'Reset Results'},
-      predictions:{icon:'🗑️',title:'Reset All Predictions',body:'Wipe every player prediction? Cannot be undone.',label:'Reset Predictions'},
-      all:{icon:'💥',title:'Master Reset',body:'Delete everything — predictions, results, and tie-breaks. Cannot be undone.',label:'Yes, Reset Everything'},
+      results:{icon:'📋',title:'Reset All Results',body:'Delete all World Cup scores? The leaderboard resets to zero. Predictions are kept.',label:'Reset Results'},
+      predictions:{icon:'🗑️',title:'Reset All Predictions',body:'Wipe every World Cup prediction? Cannot be undone.',label:'Reset Predictions'},
+      all:{icon:'💥',title:'Master Reset',body:'Delete everything World Cup — predictions, results, and tie-breaks. Cannot be undone.',label:'Yes, Reset Everything'},
+      spfl_results:{icon:'📋',title:'Reset SPFL Results',body:'Delete all SPFL scores? The SPFL leaderboard resets to zero. Predictions are kept.',label:'Reset SPFL Results'},
+      spfl_predictions:{icon:'🗑️',title:'Reset SPFL Predictions',body:'Wipe every SPFL prediction, plus everyone\'s coins and powerups? Cannot be undone.',label:'Reset SPFL Predictions'},
+      spfl_all:{icon:'💥',title:'SPFL Master Reset',body:'Delete everything SPFL — predictions, results, coins and powerups. Cannot be undone.',label:'Yes, Reset Everything'},
     }[type];
     showConfirm(c.icon,c.title,c.body,c.label,()=>doReset(type));
   });
@@ -13627,11 +13781,17 @@ async function doReset(type){
     if(type==='results'||type==='all') ops.push(sb(`results?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='predictions'||type==='all') ops.push(sb(`predictions?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='predictions'||type==='all') ops.push(sb(`tiebreaks?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
+    if(type==='spfl_results'||type==='spfl_all') ops.push(sb(`spfl_results?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
+    if(type==='spfl_predictions'||type==='spfl_all') ops.push(sb(`spfl_predictions?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
+    if(type==='spfl_predictions'||type==='spfl_all') ops.push(sb(`spfl_player_state?group_id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{coins:0,free_double_used:false,powerups:[]}}));
     await Promise.all(ops);
     if(type==='results'||type==='all')results={};
+    if(type==='spfl_results'||type==='spfl_all')spflResults={};
     flash('Reset complete','success');
     const al=document.getElementById('admin-fixtures-list');
     if(al)renderFixtures(al,true);
+    const sl=document.getElementById('admin-spfl-list');
+    if(sl && (type.startsWith('spfl')))loadAdminSpflResults();
   }catch(e){flash('Reset failed: '+e.message,'error');}
 }
 
@@ -14451,7 +14611,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.9</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.10</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>

@@ -61,3 +61,10 @@ DROP POLICY IF EXISTS "spfl player_state rw" ON spfl_player_state;
 CREATE POLICY "spfl predictions rw" ON spfl_predictions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "spfl results rw" ON spfl_results FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "spfl player_state rw" ON spfl_player_state FOR ALL USING (true) WITH CHECK (true);
+
+-- SPFL-only branding overrides (group name/tagline/emoji/accent) so admins
+-- can set different branding per league without touching the World Cup
+-- side's flat groups.name/tagline/emoji/accent columns. Empty until an
+-- admin explicitly saves branding while viewing SPFL — the app falls back
+-- to the WC values in the meantime (see getLeagueBranding() in index.html).
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS settings_spfl jsonb DEFAULT '{}'::jsonb;
