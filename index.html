@@ -1376,7 +1376,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.10</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.11</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1760,7 +1760,12 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
     </div>
 
     <div id="view-spflLeaderboard" class="view">
-      <div class="page-header"><div class="page-title">SPFL Leaderboard</div></div>
+      <div class="page-header">
+        <div>
+          <div class="page-title">SPFL Leaderboard</div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:.1rem;">The small number under each score is points earned so far this weekend</div>
+        </div>
+      </div>
       <div id="spfl-leaderboard-list"><div class="loading">Calculating…</div></div>
     </div>
 
@@ -1929,6 +1934,14 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <div><label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Group Name</label><input id="brand-name" type="text" class="config-input" maxlength="40" /></div>
             <div><label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Tagline</label><input id="brand-tagline" type="text" class="config-input" maxlength="60" /></div>
             <div><label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Icon / Emoji</label><input id="brand-emoji" type="text" class="config-input" maxlength="20" placeholder="⚽" /></div>
+          </div>
+          <div id="brand-icon-image-row" style="display:none;margin-bottom:1rem;">
+            <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">Icon Image <span style="text-transform:none;font-weight:400;">(overrides the emoji above when set)</span></label>
+            <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+              <input id="brand-icon-image" type="text" class="config-input" placeholder="e.g. img/spfl-badges/scottish-premiership-logo.png" style="flex:1;min-width:200px;" />
+              <button class="sync-refresh" type="button" onclick="useSpflCrestIcon()">🦁 Use SPFL Logo</button>
+              <button class="sync-refresh" type="button" onclick="document.getElementById('brand-icon-image').value=''">✕ Clear</button>
+            </div>
           </div>
           <label style="display:block;font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">Accent Colour</label>
           <div class="colour-grid" id="colour-grid"></div>
@@ -2301,7 +2314,8 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
           <button class="sync-refresh" style="margin-top:.85rem;" onclick="savePlayerStatsSettings()">Save Player Stats</button>
         </div>
         <div class="status-card">
-          <h3>News Ticker</h3>
+          <h3>News Ticker <span id="ticker-league-label" style="font-size:.7rem;font-weight:600;color:var(--text-muted);"></span></h3>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.75rem;">Ticker text/on-off is set per league — this only shows while viewing the league named above.</div>
           <div class="toggle-row" style="margin-bottom:1rem;">
             <div>
               <div class="toggle-label">Show Ticker</div>
@@ -4078,10 +4092,34 @@ async function spflCheckForVarEvents(){
     });
   }catch(e){ console.warn('spflCheckForVarEvents failed',e); }
 }
+// Keeps the SPFL leaderboard/home live when an admin enters a result in a
+// different session — mirrors startResultsPoller() on the WC side, but rides
+// the same 20s tick as the VAR watcher instead of its own interval.
+async function spflCheckForResultChanges(){
+  if(!currentGroup||!currentPlayer||currentLeague!=='spfl') return;
+  try{
+    const fresh = await sb(`spfl_results?group_id=eq.${currentGroup.id}&select=match_id,home_score,away_score,full_time`);
+    if(!fresh) return;
+    let changed = false;
+    fresh.forEach(r=>{
+      const ex = spflResults[r.match_id];
+      const ftNow = !!r.full_time;
+      if(!ex || ex.home!==r.home_score || ex.away!==r.away_score || ex.full_time!==ftNow){
+        spflResults[r.match_id] = {home:r.home_score, away:r.away_score, full_time:ftNow};
+        changed = true;
+      }
+    });
+    if(!changed) return;
+    const active = document.querySelector('.view.active')?.id;
+    if(active==='view-spflHome') loadSpflHome();
+    else if(active==='view-spflLeaderboard') loadSpflLeaderboard();
+    else if(active==='view-spflPredict') loadSpflPredictions();
+  }catch(e){ console.warn('spflCheckForResultChanges failed',e); }
+}
 function spflStartVarWatcher(){
   if(_spflVarPollTimer) return;
   if(!spflGetVarSeenTs()) spflMarkVarEventSeen(new Date().toISOString()); // don't replay old spins on first-ever load
-  _spflVarPollTimer = setInterval(spflCheckForVarEvents, 20000);
+  _spflVarPollTimer = setInterval(()=>{ spflCheckForVarEvents(); spflCheckForResultChanges(); }, 20000);
 }
 function spflStopVarWatcher(){
   if(_spflVarPollTimer){ clearInterval(_spflVarPollTimer); _spflVarPollTimer=null; }
@@ -4128,10 +4166,18 @@ async function loadSpflLeaderboard(){
     const powerupsByPlayer = {};
     const allPowerupsFlat = [];
     (allState||[]).forEach(s=>{ powerupsByPlayer[s.player_id]=s.powerups||[]; (s.powerups||[]).forEach(p=>allPowerupsFlat.push(p)); });
-    const totals = {};
-    (players||[]).forEach(p=>{ totals[p.id] = spflComputePlayerPoints(p.id, predsByPlayer, powerupsByPlayer).points; });
+    const totals = {}; const byMatchByPlayer = {};
+    (players||[]).forEach(p=>{
+      const r = spflComputePlayerPoints(p.id, predsByPlayer, powerupsByPlayer);
+      totals[p.id] = r.points;
+      byMatchByPlayer[p.id] = r.byMatch;
+    });
     const final = spflApplyDeductions(totals, allPowerupsFlat);
     const settled = SPFL_FIXTURES.filter(f=>spflResults[f.id]?.full_time);
+    // "+N" delta — points earned so far in the current SPFL weekend, same idea
+    // as the World Cup leaderboard's last-matchday delta (index.html ~13258).
+    const curWk = spflCurrentWeekend();
+    const weekendFixtureIds = new Set(SPFL_FIXTURES.filter(f=>f.weekend===curWk).map(f=>f.id));
     const rows = (players||[]).map(p=>{
       const preds = predsByPlayer[p.id]||{};
       let exact=0, correct=0;
@@ -4145,14 +4191,18 @@ async function loadSpflLeaderboard(){
           if(pr===ar) correct++;
         }
       });
-      return {id:p.id, name:p.nickname||p.name, points:final[p.id]||0, exact, correct};
+      const byMatch = byMatchByPlayer[p.id]||{};
+      let weekendPts=0; weekendFixtureIds.forEach(mid=>{ weekendPts += byMatch[mid]||0; });
+      return {id:p.id, name:p.nickname||p.name, points:final[p.id]||0, exact, correct, weekendPts};
     }).sort((a,b)=>b.points-a.points);
     lb.innerHTML = rows.map((r,i)=>{
       const rowCls = (i===0?'lb-row lb-gold':i===1?'lb-row lb-silver':i===2?'lb-row lb-bronze':'lb-row')+(r.id===currentPlayer?.id?' lb-you':'');
+      const wp = r.weekendPts;
+      const wpColor = wp>=8?'#22c55e':wp>=3?'#f59e0b':'var(--text-muted)';
       return `<div class="${rowCls}">
         <div class="lb-rank">${i+1}</div>
         <div><div class="lb-name">${r.name}</div><div class="lb-breakdown">${r.exact} correct scorelines · ${r.correct} correct results</div></div>
-        <div style="text-align:right;"><div class="lb-points">${r.points}</div><div class="lb-pts-label">pts</div></div>
+        <div style="text-align:right;"><div class="lb-points">${r.points}</div><div class="lb-pts-label">pts</div><div style="font-size:.6rem;color:${wpColor};">${wp>0?'+'+wp:'0'}</div></div>
       </div>`;
     }).join('') || '<div class="empty">No players yet.</div>';
   }catch(e){ lb.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`; }
@@ -5823,9 +5873,10 @@ function getLeagueBranding(){
       tagline: s.tagline!=null ? s.tagline : (currentGroup.tagline||''),
       emoji: s.emoji || currentGroup.emoji || '⚽',
       accent: s.accent || currentGroup.accent || '#6d5cff',
+      iconImage: s.icon_image || null,
     };
   }
-  return { name: currentGroup.name||'Predictor', tagline: currentGroup.tagline||'', emoji: currentGroup.emoji||'⚽', accent: currentGroup.accent||'#6d5cff' };
+  return { name: currentGroup.name||'Predictor', tagline: currentGroup.tagline||'', emoji: currentGroup.emoji||'⚽', accent: currentGroup.accent||'#6d5cff', iconImage: null };
 }
 function applyBranding(){
   if(!currentGroup) return;
@@ -5843,7 +5894,9 @@ function applyBranding(){
   const name  = branding.name;
   const tag   = branding.tagline;
 
-  document.getElementById('h-logo').textContent=emoji+' ';
+  const hLogoEl = document.getElementById('h-logo');
+  if(branding.iconImage) hLogoEl.innerHTML = `<img src="${branding.iconImage}" alt="" style="height:1.4em;width:1.4em;object-fit:contain;vertical-align:middle;border-radius:4px;">`;
+  else hLogoEl.textContent = emoji+' ';
   document.getElementById('h-group-name').textContent=name;
   const isGodUser=_godUnlocked||_inGodSession||(currentPlayer&&(currentPlayer.god_mode||currentPlayer.is_admin));
   const verEl=document.getElementById('ver-btn');
@@ -5851,7 +5904,9 @@ function applyBranding(){
   document.getElementById('h-group-sub').textContent=tag;
   const godVerEl=document.getElementById('h-god-ver');
   if(godVerEl){godVerEl.textContent=verTxt;godVerEl.style.display=isGodUser&&verTxt?'':'none';}
-  document.getElementById('gh-icon').textContent=emoji;
+  const ghIconEl = document.getElementById('gh-icon');
+  if(branding.iconImage) ghIconEl.innerHTML = `<img src="${branding.iconImage}" alt="" style="width:3rem;height:3rem;object-fit:contain;">`;
+  else ghIconEl.textContent = emoji;
   document.getElementById('gh-name').textContent=name;
   document.getElementById('gh-tag').textContent=tag;
   document.getElementById('gh-key').textContent='Group key: '+currentGroup.key;
@@ -7450,6 +7505,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.11',date:'15 Jul 2026',notes:['SPFL branding can now use an image instead of an emoji for the group icon — Admin → Branding (while on the SPFL side) has a new Icon Image field with a one-tap "Use SPFL Logo" button for the official Scottish Premiership crest.', 'News ticker is now separated per league (it\'s shown above every screen, so a World Cup ticker message was bleeding into SPFL screens and vice versa) — text/on/off/speed are all set independently per league from Admin → Controls → Display.', 'SPFL leaderboard now updates live — polls for new results every 20s (piggybacking on the existing VAR-watcher tick) and refreshes whichever SPFL screen is open the moment an admin enters/changes a score, instead of requiring a manual refresh.', 'SPFL leaderboard rows now show a small "+N" under the points total — the same idea as the World Cup leaderboard\'s per-matchday delta, showing how many points each player has earned so far in the current SPFL weekend.']},
   {v:'1.79.10',date:'15 Jul 2026',notes:['Admin settings are now properly separated between World Cup and SPFL: Branding (group name, tagline, icon, accent colour) is saved independently per league — editing it while viewing SPFL no longer touches the World Cup side and vice versa (site theme stays shared by design). Danger Zone now has its own SPFL section (Reset SPFL Results / Predictions / Master Reset) alongside the existing World Cup ones, since there was previously no way to wipe SPFL data at all. Players tab now shows SPFL prediction count, points and coin balance instead of World Cup stats when viewing it from the SPFL side. SPFL admin Results tab restyled to match the World Cup layout — weekend groups with a "Live Now" section and full match cards (score inputs, Full Time toggle, Clear) instead of a long flat list.\n\n⚠️ Requires a new Supabase column — run the new ALTER TABLE at the bottom of supabase/spfl_schema.sql: `ALTER TABLE groups ADD COLUMN IF NOT EXISTS settings_spfl jsonb DEFAULT \'{}\'::jsonb;`']},
   {v:'1.79.9',date:'15 Jul 2026',notes:['SPFL home page overhaul: new 🎯 Tactics Board card shows your coin balance plus a one-tap tile for each powerup (dimmed when you can\'t afford it or it\'s already used this weekend); new 📅 This Weekend\'s Fixtures card lists every game for the current matchweek with day/kickoff time and updates automatically once results are entered; new 📊 League Stats card (same idea as World Cup Tournament Stats — games, goals, avg/game, draws, clean sheets, top scorers, best defense, biggest blowout, common scorelines) scoped to SPFL results only.']},
   {v:'1.79.8',date:'14 Jul 2026',notes:['Fixed a scoring bug affecting groups with a lot of predictions logged: Supabase only ever returns 1000 rows per request unless asked for more, so once a group passed 1000 total prediction rows the leaderboard was silently missing whichever rows landed past that cutoff — undercounting a handful of players\' points (e.g. missed exact-scoreline results worth 8pts each). The leaderboard, predictions, admin and stats pages now page through every row instead of assuming the first batch is everything.']},
@@ -8283,15 +8339,31 @@ async function saveKnockoutsLive(){
   }catch(e){flash('Save failed: '+e.message,'error');}
 }
 
+// Ticker on/off/text/speed is per-league (WC uses the flat groups columns,
+// SPFL keeps its own copy inside groups.settings_spfl) since #news-ticker is
+// global chrome shown above every view — without this split a WC ticker
+// message would keep scrolling while browsing SPFL screens, and vice versa.
+function getLeagueTickerSettings(){
+  if(!currentGroup) return {enabled:false,text:'',speed:'normal'};
+  if(currentLeague==='spfl'){
+    const s = currentGroup.settings_spfl||{};
+    return { enabled: s.ticker_enabled===true, text: s.ticker_text||'', speed: s.ticker_speed||'normal' };
+  }
+  return { enabled: currentGroup.ticker_enabled===true, text: currentGroup.ticker_text||'', speed: currentGroup.ticker_speed||'normal' };
+}
+function tickerSeenKey(){ return currentLeague==='spfl' ? 'wc26_ticker_saved_at_spfl' : 'wc26_ticker_saved_at'; }
 function loadTickerSettings(){
   const tog=document.getElementById('ticker-enabled-toggle');
   const txt=document.getElementById('ticker-text');
-  if(tog) tog.checked=currentGroup.ticker_enabled===true;
-  if(txt) txt.value=currentGroup.ticker_text||'';
-  setTickerSpeed(currentGroup.ticker_speed||'normal', true);
+  const t = getLeagueTickerSettings();
+  if(tog) tog.checked=t.enabled;
+  if(txt) txt.value=t.text;
+  setTickerSpeed(t.speed, true);
+  const lbl = document.getElementById('ticker-league-label');
+  if(lbl) lbl.textContent = currentLeague==='spfl' ? '· SPFL' : '· World Cup';
   const seenSec = document.getElementById('ticker-seen-section');
-  if(seenSec) seenSec.style.display = currentGroup.ticker_enabled ? '' : 'none';
-  if(currentGroup.ticker_enabled) loadTickerSeenBy();
+  if(seenSec) seenSec.style.display = t.enabled ? '' : 'none';
+  if(t.enabled) loadTickerSeenBy();
 }
 
 async function loadTickerSeenBy(){
@@ -8300,7 +8372,7 @@ async function loadTickerSeenBy(){
   if(!el) return;
   el.innerHTML = '<span style="color:var(--text-muted);font-size:.75rem;">Loading…</span>';
   try{
-    const savedAt = localStorage.getItem('wc26_ticker_saved_at');
+    const savedAt = localStorage.getItem(tickerSeenKey());
     const cutoff = savedAt ? new Date(savedAt) : null;
     const players = await sb(`players?group_id=eq.${currentGroup.id}&select=id,name,nickname,last_seen`);
     if(!players){ el.innerHTML='<span style="color:var(--text-muted);">–</span>'; return; }
@@ -8316,7 +8388,7 @@ async function loadTickerSeenBy(){
 }
 
 function resetTickerSeenAt(){
-  localStorage.setItem('wc26_ticker_saved_at', new Date().toISOString());
+  localStorage.setItem(tickerSeenKey(), new Date().toISOString());
   loadTickerSeenBy();
   const seenBar=document.getElementById('ticker-seen-bar');
   if(seenBar&&seenBar.style.display!=='none') renderTickerSeenBar(seenBar,null,false);
@@ -8338,12 +8410,19 @@ async function saveTickerSettings(){
   const enabled=document.getElementById('ticker-enabled-toggle')?.checked??false;
   const text=(document.getElementById('ticker-text')?.value||'').trim();
   const speed=(['slow','normal','fast'].find(s=>document.getElementById('ticker-speed-'+s)?.classList.contains('active')))||'normal';
+  const prev = getLeagueTickerSettings();
   try{
-    await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed}});
-    const textChanged=(text||null)!==(currentGroup.ticker_text||null);
-    const justEnabled=enabled&&!currentGroup.ticker_enabled;
+    if(currentLeague==='spfl'){
+      const settings_spfl = {...(currentGroup.settings_spfl||{}), ticker_enabled:enabled, ticker_text:text||null, ticker_speed:speed};
+      await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{settings_spfl}});
+      currentGroup={...currentGroup,settings_spfl};
+    } else {
+      await sb('groups?id=eq.'+currentGroup.id,{method:'PATCH',prefer:'return=minimal',body:{ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed}});
+      currentGroup={...currentGroup,ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed};
+    }
+    const textChanged=(text||null)!==(prev.text||null);
+    const justEnabled=enabled&&!prev.enabled;
     if(textChanged||justEnabled) resetTickerSeenAt();
-    currentGroup={...currentGroup,ticker_enabled:enabled,ticker_text:text||null,ticker_speed:speed};
     saveSession();
     renderTicker();
     flash('Ticker saved!','success');
@@ -8626,8 +8705,8 @@ function renderTicker(){
   const textEl=document.getElementById('news-ticker-text');
   const seenBar=document.getElementById('ticker-seen-bar');
   if(!el) return;
-  const enabled=currentGroup&&currentGroup.ticker_enabled===true;
-  const text=(currentGroup&&currentGroup.ticker_text||'').trim();
+  const t = getLeagueTickerSettings();
+  const enabled=t.enabled, text=t.text.trim();
   if(!enabled||!text){
     el.style.display='none';
     if(tab) tab.style.display='none';
@@ -8635,7 +8714,7 @@ function renderTicker(){
     return;
   }
   textEl.textContent=text;
-  const speed=currentGroup&&currentGroup.ticker_speed;
+  const speed=t.speed;
   const mult=speed==='slow'?0.27:speed==='fast'?0.10:0.18;
   const [minD,maxD]=speed==='slow'?[20,90]:speed==='fast'?[8,35]:[14,60];
   const duration=Math.min(maxD,Math.max(minD,text.length*mult))+'s';
@@ -9707,6 +9786,7 @@ function applyLeagueVisibility(){
   document.body.classList.toggle('spfl-mode', !wc);
   if(!wc && userHasSpflAccess()) spflStartVarWatcher(); else spflStopVarWatcher();
   applyBranding();
+  renderTicker();
 }
 function updateGodcastBtn(){
   const btn = document.getElementById('results-godcast-btn');
@@ -13491,11 +13571,14 @@ function loadBrandingPanel(){
   document.getElementById('brand-name').value=b.name||'';
   document.getElementById('brand-tagline').value=b.tagline||'';
   document.getElementById('brand-emoji').value=b.emoji||'⚽';
+  document.getElementById('brand-icon-image').value=b.iconImage||'';
   const isSpfl = currentLeague==='spfl';
   const leagueLbl = document.getElementById('brand-league-label');
   if(leagueLbl) leagueLbl.textContent = isSpfl ? '· SPFL' : '· World Cup';
   const hint = document.getElementById('brand-league-hint');
   if(hint) hint.style.display = isSpfl ? '' : 'none';
+  const iconRow = document.getElementById('brand-icon-image-row');
+  if(iconRow) iconRow.style.display = isSpfl ? '' : 'none';
   const grid=document.getElementById('colour-grid');
   grid.innerHTML=ACCENT_COLOURS.map(c=>`
     <div class="colour-swatch ${b.accent===c.val?'selected':''}"
@@ -13543,6 +13626,10 @@ async function saveTheme(){
   }catch(e){flash('Error: '+e.message,'error');}
 }
 
+function useSpflCrestIcon(){
+  const el = document.getElementById('brand-icon-image');
+  if(el) el.value = 'img/spfl-badges/scottish-premiership-logo.png';
+}
 let selectedColour = null;
 function selectColour(val,el){
   selectedColour=val;
@@ -13557,10 +13644,11 @@ async function saveBranding(){
   const tagline=document.getElementById('brand-tagline').value.trim();
   const emoji=document.getElementById('brand-emoji').value.trim()||'⚽';
   const accent=selectedColour||getLeagueBranding().accent;
+  const iconImage=document.getElementById('brand-icon-image').value.trim();
   if(!name){flash('Group name is required','error');return;}
   try{
     if(currentLeague==='spfl'){
-      const settings_spfl = {...(currentGroup.settings_spfl||{}), name, tagline, emoji, accent};
+      const settings_spfl = {...(currentGroup.settings_spfl||{}), name, tagline, emoji, accent, icon_image: iconImage||null};
       await sb(`groups?id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{settings_spfl}});
       currentGroup={...currentGroup,settings_spfl};
     } else {
@@ -14611,7 +14699,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.10</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.11</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
