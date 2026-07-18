@@ -1411,7 +1411,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.15</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.16</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -7581,6 +7581,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.16',date:'18 Jul 2026',notes:['⚡ Double Points card gets a wee taunt: "Go on Kaney, you wouldnae".']},
   {v:'1.79.15',date:'18 Jul 2026',notes:['⚡ Double Points VOTE YES button now triggers a crackling electric flash (shake + purple/gold glow bolts) on the card when you tap it.','Admin → Danger Zone · World Cup: new "Reset Double Points Vote" button — clears everyone\'s YES vote (and deactivates Double Points if it had been triggered) without touching any other predictions or results.']},
   {v:'1.79.14',date:'18 Jul 2026',notes:['New ⚡ Double Points home card: purple/gold themed card with a progress meter that fills as players vote YES. Only when every player has voted YES does it flip to an activated state (gold glow, "DOUBLE POINTS ACTIVATED"). Once activated the 3rd Place Play-off (m103) and Final (m104) score double points on the leaderboard — 8→16, 3→6. Individual vote is one-tap and permanent (no un-vote). Player predictions modal shows a ×2 badge on those matches when active.']},
   {v:'1.79.13',date:'18 Jul 2026',notes:['Pre-kickoff pick privacy: Today\'s Fixtures card no longer shows group picks or pick percentages before a match kicks off — a "Picks will be visible after kick-off, in the interest of fairness" message appears in their place. Tapping a player on the leaderboard also hides their prediction for any fixture that hasn\'t yet kicked off, showing "Pick hidden until kick-off" instead.','Update prompt: when a new version is available the old dismissible pill banner is replaced by a blocking modal — players must tap "Refresh now" to continue, ensuring everyone picks up the latest version.']},
@@ -9017,7 +9018,8 @@ function renderDoublePointsCard(dpVotes, allPlayers){
       <div style="font-size:.83rem;color:var(--text-muted);line-height:1.6;margin-bottom:.85rem;text-align:center;">
         Spice things up? 🌶️<br>
         If <strong style="color:var(--text);">every player</strong> votes <strong style="color:#a855f7;">YES</strong>, double points will be activated for the final two games.<br>
-        <span style="color:#eab308;font-weight:700;">Are yer baws big enough? ⚡</span>
+        <span style="color:#eab308;font-weight:700;">Are yer baws big enough? ⚡</span><br>
+        <span style="color:#a855f7;font-weight:600;font-style:italic;">Go on Kaney, you wouldnae 👀</span>
       </div>
       <div style="font-size:.7rem;color:var(--text-muted);text-align:center;margin-bottom:.25rem;">${yesCount}/${totalPlayers} voted YES${waiting>0?` · ${waiting} still needed`:' · ✓ unanimous'}</div>
       <div class="dp-meter-track"><div class="dp-meter-fill" style="width:${pct}%;"></div></div>
@@ -14861,7 +14863,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.15</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.16</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
