@@ -1656,7 +1656,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
 
       <!-- Double Points Vote -->
-      <div class="home-card" id="home-dp-card" style="background:linear-gradient(135deg,rgba(168,85,247,.08) 0%,rgba(234,179,8,.05) 100%);border:1px solid rgba(168,85,247,.35);">
+      <div class="home-card" id="home-dp-card" style="background:linear-gradient(135deg,rgba(168,85,247,.18) 0%,rgba(234,179,8,.12) 100%),color-mix(in srgb,var(--bg) 97%,transparent);border:1px solid rgba(168,85,247,.45);text-align:center;">
         <div class="home-card-title" style="color:#a855f7;">⚡ Double Points</div>
         <div id="home-dp-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
@@ -8980,15 +8980,12 @@ function renderDoublePointsCard(dpVotes, allPlayers){
     }).filter(Boolean);
     const namesHtml=voterNames.length?`<div style="font-size:.68rem;color:var(--text-muted);margin-top:.4rem;margin-bottom:.6rem;">${voterNames.join(' · ')}</div>`:'<div style="margin-bottom:.6rem;"></div>';
     el.innerHTML=`
-      <div style="font-size:.83rem;color:var(--text-muted);line-height:1.6;margin-bottom:.85rem;">
+      <div style="font-size:.83rem;color:var(--text-muted);line-height:1.6;margin-bottom:.85rem;text-align:center;">
         Spice things up? 🌶️<br>
         If <strong style="color:var(--text);">every player</strong> votes <strong style="color:#a855f7;">YES</strong>, double points will be activated for the final two games.<br>
         <span style="color:#eab308;font-weight:700;">Are yer baws big enough? ⚡</span>
       </div>
-      <div style="font-size:.7rem;color:var(--text-muted);display:flex;justify-content:space-between;margin-bottom:.25rem;">
-        <span>${yesCount}/${totalPlayers} voted YES</span>
-        <span>${waiting>0?`${waiting} still needed`:'✓ unanimous'}</span>
-      </div>
+      <div style="font-size:.7rem;color:var(--text-muted);text-align:center;margin-bottom:.25rem;">${yesCount}/${totalPlayers} voted YES${waiting>0?` · ${waiting} still needed`:' · ✓ unanimous'}</div>
       <div class="dp-meter-track"><div class="dp-meter-fill" style="width:${pct}%;"></div></div>
       ${namesHtml}
       ${myVoted
