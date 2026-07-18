@@ -677,6 +677,12 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
   @keyframes scaleIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
   @keyframes popIn { 0%{transform:scale(.8);opacity:0} 70%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
   @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  @keyframes dpGlow { 0%{box-shadow:0 0 12px rgba(168,85,247,.3),0 0 24px rgba(234,179,8,.15)} 100%{box-shadow:0 0 20px rgba(168,85,247,.5),0 0 40px rgba(234,179,8,.3)} }
+  .dp-meter-track{background:rgba(255,255,255,.1);border-radius:99px;height:8px;overflow:hidden;margin:.4rem 0 .8rem;}
+  .dp-meter-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#7c3aed,#a855f7,#eab308);transition:width .5s ease;}
+  .dp-vote-btn{width:100%;padding:.75rem;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:800;cursor:pointer;letter-spacing:.06em;transition:transform .1s,box-shadow .1s;}
+  .dp-vote-btn:active{transform:scale(.97);}
+  .dp-activated-box{background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(234,179,8,.18));border:1.5px solid rgba(234,179,8,.5);border-radius:10px;padding:1rem;text-align:center;animation:dpGlow 2s ease-in-out infinite alternate;}
   @keyframes bounceIn { 0%{transform:translateY(-6px);opacity:0} 60%{transform:translateY(3px)} 100%{transform:translateY(0);opacity:1} }
 
   /* Landing cards animate in */
@@ -1376,7 +1382,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.13</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.14</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1647,6 +1653,12 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
         <div class="home-card-title">Paid Places Vote</div>
         <div id="home-paidplaces-question" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.9rem;">How many places should be paid out?</div>
         <div id="home-paidplaces"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+      </div>
+
+      <!-- Double Points Vote -->
+      <div class="home-card" id="home-dp-card" style="background:linear-gradient(135deg,rgba(168,85,247,.08) 0%,rgba(234,179,8,.05) 100%);border:1px solid rgba(168,85,247,.35);">
+        <div class="home-card-title" style="color:#a855f7;">⚡ Double Points</div>
+        <div id="home-dp-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
       <!-- Tournament Stats (off by default; admin enables in Controls → Display) -->
@@ -7110,6 +7122,9 @@ async function loadLeaderboard(){
     _lbRawPreds = allPreds||[];
     _lbRawResults = allResults||[];
     _lbRawPlayers = allPlayers||[];
+    const _dpYesVotes=(allPreds||[]).filter(p=>p.match_id==='dp-yes');
+    _doublePointsActive = _dpYesVotes.length>0 && _dpYesVotes.length>=(allPlayers||[]).length && (allPlayers||[]).length>0;
+    const dpMult=mid=>(_doublePointsActive&&DOUBLE_POINTS_IDS.has(mid))?2:1;
     const scores={};
     const lbGamePreds=(allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
     lbGamePreds.forEach(p=>{
@@ -7117,10 +7132,11 @@ async function loadLeaderboard(){
       if(!scores[name])scores[name]={exact:0,result:0,wrong:0,total:0,played:0,playerId:p.player_id};
       scores[name].played++;
       const res=rm[p.match_id]; if(!res)return;
-      const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
-      if(pts===8){scores[name].exact++;scores[name].result++;scores[name].total+=8;}
-      else if(pts===5){scores[name].exact++;scores[name].total+=5;}
-      else if(pts===3){scores[name].result++;scores[name].total+=3;}
+      const _bp=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+      const pts=_bp*dpMult(p.match_id);
+      if(_bp===8){scores[name].exact++;scores[name].result++;scores[name].total+=pts;}
+      else if(_bp===5){scores[name].exact++;scores[name].total+=pts;}
+      else if(_bp===3){scores[name].result++;scores[name].total+=pts;}
       else{scores[name].wrong++;}
     });
     // Snapshot scores before the previous day's fixtures (all games with KO date in ET < today).
@@ -7145,10 +7161,11 @@ async function loadLeaderboard(){
         const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
         const ps=prevScores[name]; if(!ps) return;
         const res=rm[p.match_id]; if(!res) return;
-        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
-        if(pts===8){ps.exact--;ps.result--;ps.total-=8;}
-        else if(pts===5){ps.exact--;ps.total-=5;}
-        else if(pts===3){ps.result--;ps.total-=3;}
+        const _bp=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        const pts=_bp*dpMult(p.match_id);
+        if(_bp===8){ps.exact--;ps.result--;ps.total-=pts;}
+        else if(_bp===5){ps.exact--;ps.total-=pts;}
+        else if(_bp===3){ps.result--;ps.total-=pts;}
         else{ps.wrong--;}
       });
     }
@@ -7157,7 +7174,7 @@ async function loadLeaderboard(){
     if(_lastRoundIds.size){
       lbGamePreds.filter(p=>_lastRoundIds.has(p.match_id)).forEach(p=>{
         const res=rm[p.match_id]; if(!res) return;
-        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score)*dpMult(p.match_id);
         _lbLastMatchPts[p.player_id]=(_lbLastMatchPts[p.player_id]||0)+pts;
       });
     }
@@ -7176,7 +7193,7 @@ async function loadLeaderboard(){
       const dayPts={};
       lbGamePreds.filter(p=>dayIds.has(p.match_id)).forEach(p=>{
         const res=rm[p.match_id]; if(!res) return;
-        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score)*dpMult(p.match_id);
         dayPts[p.player_id]=(dayPts[p.player_id]||0)+pts;
       });
       if(!Object.keys(dayPts).length) return;
@@ -7197,7 +7214,7 @@ async function loadLeaderboard(){
       lbGamePreds.filter(p=>allFormIds.has(p.match_id)).forEach(p=>{
         const pdata=pm[p.player_id]; const name=(typeof pdata==='string'?pdata:(pdata&&(pdata.display||pdata.name)))||'Unknown';
         const res=rm[p.match_id]; if(!res) return;
-        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+        const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score)*dpMult(p.match_id);
         const d=_formKoDateET(allFixtures().find(f=>f.id===p.match_id));
         if(!d) return;
         if(!_lbAllFormDayPts[name]) _lbAllFormDayPts[name]={};
@@ -7273,7 +7290,11 @@ const PAIDPLACES_OPTIONS = [
   {id:'pp-3', emoji:'🏅', label:'Top 4 paid'},
 ];
 const PAIDPLACES_IDS = new Set(PAIDPLACES_OPTIONS.map(o=>o.id));
-const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS]);
+const DP_OPTIONS = [{id:'dp-yes',emoji:'⚡',label:'Yes — Let\'s go!'}];
+const DP_IDS = new Set(['dp-yes']);
+const DOUBLE_POINTS_IDS = new Set(['m103','m104']);
+let _doublePointsActive = false;
+const ALL_VOTE_IDS = new Set([...FORFEIT_IDS,...PAIDPLACES_IDS,...DP_IDS]);
 const HOME_CARD_DEFS = [
   {key:'pwa-tip',   id:'pwa-tip-card',        label:'Install Tip Card',   toggleId:null,                         flag:null},
   {key:'hero',      id:'group-hero-block',    label:'Group Hero',         toggleId:'home-show-hero-toggle',      flag:'home_show_hero'},
@@ -7281,7 +7302,8 @@ const HOME_CARD_DEFS = [
   {key:'next',      id:'home-next-card',       label:"Today's Fixtures",   toggleId:'home-show-next-toggle',      flag:'home_show_next'},
   {key:'standings', id:'home-mini-lb-card',   label:'Standings',          toggleId:'home-show-standings-toggle', flag:'home_show_standings'},
   {key:'forfeit',   id:'home-forfeit-card',   label:'Forfeit Vote',       toggleId:null,                         flag:null},
-  {key:'paidplaces',id:'home-paidplaces-card',label:'Paid Places Vote',   toggleId:null,                         flag:null},
+  {key:'paidplaces',  id:'home-paidplaces-card', label:'Paid Places Vote',    toggleId:null,                                  flag:null},
+  {key:'double_points',id:'home-dp-card',      label:'⚡ Double Points',     toggleId:null,                                  flag:null},
   {key:'stats',     id:'home-stats-card',     label:'Tournament Stats',   toggleId:'home-show-stats-toggle',     flag:'home_show_stats', defaultOff:true},
   {key:'rival',     id:'home-rival-card',     label:'Closest Rival',      toggleId:'home-show-rival-toggle',     flag:'home_show_rival', defaultOff:true},
   {key:'personal_stats', id:'home-personal-stats-card', label:'Personal Stats', toggleId:'home-show-personal-stats-toggle', flag:'home_show_personal_stats', defaultOff:true},
@@ -7398,6 +7420,7 @@ function getGroupHomeCardOrder(){
 function isHomeCardVisible(def){
   if(def.key==='forfeit') return currentGroup?.forfeit_poll_enabled !== false;
   if(def.key==='paidplaces') return currentGroup?.paidplaces_poll_enabled !== false;
+  if(def.key==='double_points') return currentGroup?.dp_vote_enabled !== false;
   if(!def.flag) return true;
   return def.defaultOff ? currentGroup?.[def.flag] === true : currentGroup?.[def.flag] !== false;
 }
@@ -7521,6 +7544,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.14',date:'18 Jul 2026',notes:['New ⚡ Double Points home card: purple/gold themed card with a progress meter that fills as players vote YES. Only when every player has voted YES does it flip to an activated state (gold glow, "DOUBLE POINTS ACTIVATED"). Once activated the 3rd Place Play-off (m103) and Final (m104) score double points on the leaderboard — 8→16, 3→6. Individual vote is one-tap and permanent (no un-vote). Player predictions modal shows a ×2 badge on those matches when active.']},
   {v:'1.79.13',date:'18 Jul 2026',notes:['Pre-kickoff pick privacy: Today\'s Fixtures card no longer shows group picks or pick percentages before a match kicks off — a "Picks will be visible after kick-off, in the interest of fairness" message appears in their place. Tapping a player on the leaderboard also hides their prediction for any fixture that hasn\'t yet kicked off, showing "Pick hidden until kick-off" instead.','Update prompt: when a new version is available the old dismissible pill banner is replaced by a blocking modal — players must tap "Refresh now" to continue, ensuring everyone picks up the latest version.']},
   {v:'1.79.12',date:'15 Jul 2026',notes:['Fixed the mathematical lock-in banner falsely declaring a leader "locked into 1st" while tied on points with another player — it was comparing the gap to 3rd place instead of recognising the tie, so a tied leader could wrongly show as unbeatable. Same fix applied to the last-place lock-in check.']},
   {v:'1.79.11',date:'15 Jul 2026',notes:['SPFL branding can now use an image instead of an emoji for the group icon — Admin → Branding (while on the SPFL side) has a new Icon Image field with a one-tap "Use SPFL Logo" button for the official Scottish Premiership crest.', 'News ticker is now separated per league (it\'s shown above every screen, so a World Cup ticker message was bleeding into SPFL screens and vice versa) — text/on/off/speed are all set independently per league from Admin → Controls → Display.', 'SPFL leaderboard now updates live — polls for new results every 20s (piggybacking on the existing VAR-watcher tick) and refreshes whichever SPFL screen is open the moment an admin enters/changes a score, instead of requiring a manual refresh.', 'SPFL leaderboard rows now show a small "+N" under the points total — the same idea as the World Cup leaderboard\'s per-matchday delta, showing how many points each player has earned so far in the current SPFL weekend.']},
@@ -8927,6 +8951,58 @@ async function castPaidPlacesVotePredict(optionId){
   try{ await _doCastVote(optionId,PAIDPLACES_OPTIONS); }catch(e){ flash('Vote failed: '+e.message,'error'); }
   loadPredictVotes();
 }
+function renderDoublePointsCard(dpVotes, allPlayers){
+  const el=document.getElementById('home-dp-content');
+  if(!el) return;
+  const totalPlayers=allPlayers.length;
+  const yesVotes=dpVotes.filter(v=>v.match_id==='dp-yes');
+  const yesCount=yesVotes.length;
+  const myVoted=!!yesVotes.find(v=>v.player_id===currentPlayer?.id);
+  const allVotedYes=yesCount>0&&yesCount>=totalPlayers&&totalPlayers>0;
+
+  if(allVotedYes){
+    el.innerHTML=`<div class="dp-activated-box">
+      <div style="font-size:2rem;margin-bottom:.4rem;">⚡</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.05rem;font-weight:800;letter-spacing:.06em;background:linear-gradient(135deg,#a855f7,#eab308);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.35rem;">DOUBLE POINTS ACTIVATED</div>
+      <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem;">All ${totalPlayers} player${totalPlayers!==1?'s':''} voted YES — baws of absolute steel! 🏆</div>
+      <div style="font-size:.7rem;color:rgba(234,179,8,.8);">Active for: 3rd Place Play-off &amp; Final</div>
+    </div>`;
+  } else {
+    const pct=totalPlayers>0?Math.round(yesCount/totalPlayers*100):0;
+    const waiting=totalPlayers-yesCount;
+    const voterNames=yesVotes.map(v=>{
+      const p=allPlayers.find(pl=>pl.id===v.player_id);
+      return p?(p.nickname||p.name):null;
+    }).filter(Boolean);
+    const namesHtml=voterNames.length?`<div style="font-size:.68rem;color:var(--text-muted);margin-top:.4rem;margin-bottom:.6rem;">${voterNames.join(' · ')}</div>`:'<div style="margin-bottom:.6rem;"></div>';
+    el.innerHTML=`
+      <div style="font-size:.83rem;color:var(--text-muted);line-height:1.6;margin-bottom:.85rem;">
+        Spice things up? 🌶️<br>
+        If <strong style="color:var(--text);">every player</strong> votes <strong style="color:#a855f7;">YES</strong>, double points will be activated for the final two games.<br>
+        <span style="color:#eab308;font-weight:700;">Are yer baws big enough? ⚡</span>
+      </div>
+      <div style="font-size:.7rem;color:var(--text-muted);display:flex;justify-content:space-between;margin-bottom:.25rem;">
+        <span>${yesCount}/${totalPlayers} voted YES</span>
+        <span>${waiting>0?`${waiting} still needed`:'✓ unanimous'}</span>
+      </div>
+      <div class="dp-meter-track"><div class="dp-meter-fill" style="width:${pct}%;"></div></div>
+      ${namesHtml}
+      ${myVoted
+        ? `<div style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.35);border-radius:8px;padding:.6rem .9rem;font-size:.83rem;color:#a855f7;font-weight:700;text-align:center;">⚡ You're in — waiting for ${waiting} more…</div>`
+        : `<button class="dp-vote-btn" onclick="castDoublePointsVote()">⚡ &nbsp;VOTE YES</button>`
+      }`;
+  }
+}
+async function castDoublePointsVote(){
+  if(!currentPlayer||!currentGroup) return;
+  const el=document.getElementById('home-dp-content');
+  if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);text-align:center;padding:.5rem;">Saving…</div>';
+  try{
+    await sb(`predictions?group_id=eq.${currentGroup.id}&player_id=eq.${currentPlayer.id}&match_id=eq.dp-yes`,{method:'DELETE',prefer:'return=minimal'});
+    await sb('predictions',{method:'POST',prefer:'return=minimal',body:{group_id:currentGroup.id,player_id:currentPlayer.id,match_id:'dp-yes',home_score:1,away_score:0}});
+  }catch(e){flash('Vote failed: '+e.message,'error');}
+  loadHome();
+}
 async function loadPredictVotes(){
   if(!currentGroup||!currentPlayer) return;
   const forfeitCard=document.getElementById('predict-forfeit-card');
@@ -9032,7 +9108,9 @@ async function loadHome(){
     // Split forfeit votes from real game predictions
     const forfeitVotes    = (allPreds||[]).filter(p=>FORFEIT_IDS.has(p.match_id));
     const paidPlacesVotes = (allPreds||[]).filter(p=>PAIDPLACES_IDS.has(p.match_id));
+    const dpVotes         = (allPreds||[]).filter(p=>DP_IDS.has(p.match_id));
     const gamePreds       = (allPreds||[]).filter(p=>!ALL_VOTE_IDS.has(p.match_id));
+    _doublePointsActive   = dpVotes.filter(v=>v.match_id==='dp-yes').length >= (allPlayers||[]).length && (allPlayers||[]).length > 0;
 
     const rm = {}; (allResults||[]).forEach(r=>rm[r.match_id]=r);
     // Keep global results/predictions fresh for the countdown card
@@ -9378,6 +9456,12 @@ async function loadHome(){
         renderVoteSection(forfeitEl, forfeitVotes, getForfeitOptions(), forfeitLocked, 'castForfeitVote', true);
       }
     }
+
+    // Double Points vote card
+    const dpEnabled = currentGroup.dp_vote_enabled !== false;
+    const dpCard = document.getElementById('home-dp-card');
+    if(dpCard) dpCard.style.display = (dpEnabled && !isHomeCardHiddenByPlayer('double_points')) ? '' : 'none';
+    if(dpEnabled) renderDoublePointsCard(dpVotes, allPlayers||[]);
 
     // Tournament Stats — derived from match results + this group's predictions
     const completedFixtures = allFixtures().filter(f=>{
@@ -13457,13 +13541,15 @@ function calcLbRankHistory(allPreds, allResults){
   const history={};
   completed.forEach(f=>{
     const res=rm[f.id];
+    const _rhMult=(_doublePointsActive&&DOUBLE_POINTS_IDS.has(f.id))?2:1;
     (byMatch[f.id]||[]).forEach(p=>{
       if(!totals[p.player_id]) totals[p.player_id]={total:0,result:0};
-      const pts=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+      const _bp=calcPoints(p.home_score,p.away_score,res.home_score,res.away_score);
+      const pts=_bp*_rhMult;
       const t=totals[p.player_id];
-      if(pts===8){t.result++;t.total+=8;}
-      else if(pts===5){t.total+=5;}
-      else if(pts===3){t.result++;t.total+=3;}
+      if(_bp===8){t.result++;t.total+=pts;}
+      else if(_bp===5){t.total+=pts;}
+      else if(_bp===3){t.result++;t.total+=pts;}
     });
     const arr=Object.entries(totals).sort((a,b)=>b[1].total-a[1].total||b[1].result-a[1].result);
     const ranks={}, counts={};
@@ -13508,14 +13594,17 @@ async function viewPlayerPredictions(playerId,name){
         upcomingArr.push({f,ts,hasPred:true}); // predicted but pre-kickoff — hide pick in the interest of fairness
         return;
       }
-      const pts=r?calcPoints(p.h,p.a,r.home_score,r.away_score):null;
+      const _basePts=r?calcPoints(p.h,p.a,r.home_score,r.away_score):null;
+      const _isDp=_doublePointsActive&&DOUBLE_POINTS_IDS.has(f.id);
+      const pts=(_basePts!==null&&_isDp)?_basePts*2:_basePts;
       if(pts!==null){
         totalPts+=pts;
-        if(pts>=5)statExact++;
-        else if(pts>=3)statResult++;
-        else if(pts===0)statWrong++;
+        if(_basePts>=5)statExact++;
+        else if(_basePts>=3)statResult++;
+        else if(_basePts===0)statWrong++;
       }
-      const ptsTxt=pts===null?'<span style="color:var(--text-muted)">—</span>':pts===8?'<span style="color:var(--green)">+8⭐</span>':pts===5?'<span style="color:var(--green)">+5</span>':pts===3?'<span style="color:#f59e0b">+3 ✅</span>':'<span style="color:var(--text-muted)">0 ❌</span>';
+      const _dpTag=(_isDp&&pts>0)?`<span style="font-size:.58rem;color:#eab308;font-weight:800;margin-left:.15rem;">×2</span>`:'';
+      const ptsTxt=pts===null?'<span style="color:var(--text-muted)">—</span>':_basePts===8?`<span style="color:var(--green)">+${pts}⭐${_dpTag}</span>`:_basePts===5?`<span style="color:var(--green)">+${pts}${_dpTag}</span>`:_basePts===3?`<span style="color:#f59e0b">+${pts} ✅${_dpTag}</span>`:'<span style="color:var(--text-muted)">0 ❌</span>';
       const resTxt=r?` <span style="color:var(--text-muted);font-size:.7rem;">(${r.home_score}–${r.away_score})</span>`:'';
       const rh=rankHistory[f.id];
       const rankNum=rh?rh.ranks[playerId]:null;
@@ -14728,7 +14817,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.13</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.14</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
