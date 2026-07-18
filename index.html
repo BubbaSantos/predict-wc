@@ -1376,7 +1376,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.12</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.13</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5361,7 +5361,7 @@ function renderMatchCardBody(){
       if(_nextUpcomingAll.length > 1){
         nextHtml += `<div class="hmc-label">${lbl}</div>`;
         const cn = _nextUpcomingAll.length, cnTN = cn+2;
-        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),np=_picksViewModeByCard.next==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item)),hnp=!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}<div class="hmc-tap-zone" onclick="togglePicksView('next')"><div class="hmc-match-header">${timer}</div>${_pctTeamsHtml(item.f,cls,sc,nid)}${_nextGamePredHtmlAll[ri]||''}${hnp?picksHintFor('next'):''}</div>${np}<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">${matchExtrasHtml(item.f,'next')}</div></div>`; };
+        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),preKO=!item.live&&!item.finished,np=preKO?(_matchPredsMap[nid]?.length?`<div class="hmc-others" style="font-style:italic;font-size:.72rem;opacity:.7;">Picks will be visible after kick-off, in the interest of fairness.</div>`:''):(_picksViewModeByCard.next==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item))),hnp=!preKO&&!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}<div class="hmc-tap-zone"${preKO?'':` onclick="togglePicksView('next')"`}><div class="hmc-match-header">${timer}</div>${_pctTeamsHtml(item.f,cls,sc,nid,preKO)}${_nextGamePredHtmlAll[ri]||''}${hnp?picksHintFor('next'):''}</div>${np}<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">${matchExtrasHtml(item.f,'next')}</div></div>`; };
         const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
         const pct = (_nextUpcomingIdx+1)*(100/cnTN);
         nextHtml += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
@@ -5372,9 +5372,12 @@ function renderMatchCardBody(){
         const _nbc=BROADCASTERS[nextId];
         nextHtml += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">${lbl}${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
         const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
-        const nextPicks = _picksViewModeByCard.next==='grouped' ? groupedPicksFor(_nextUpcoming,nextId) : namedPicksHtml(nextId,nuMode(_nextUpcoming));
-        const hasNextPicks = !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
-        nextHtml += `<div class="hmc-tap-zone" onclick="togglePicksView('next')"><div class="hmc-match-header">`+timer+`</div>`+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId)+_nextGamePredHtml+(hasNextPicks?picksHintFor('next'):'')+`</div>`+nextPicks+`<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">`+matchExtrasHtml(_nextUpcoming.f,'next')+`</div>`;
+        const preKO = !_nextUpcoming.live && !_nextUpcoming.finished;
+        const nextPicks = preKO
+          ? (_matchPredsMap[nextId]?.length ? `<div class="hmc-others" style="font-style:italic;font-size:.72rem;opacity:.7;">Picks will be visible after kick-off, in the interest of fairness.</div>` : '')
+          : (_picksViewModeByCard.next==='grouped' ? groupedPicksFor(_nextUpcoming,nextId) : namedPicksHtml(nextId,nuMode(_nextUpcoming)));
+        const hasNextPicks = !preKO && !!(_livePicksMap[nextId]||(_matchPredsMap[nextId]?.length));
+        nextHtml += `<div class="hmc-tap-zone"${preKO?'':` onclick="togglePicksView('next')"`}><div class="hmc-match-header">`+timer+`</div>`+_pctTeamsHtml(_nextUpcoming.f,cls,sc,nextId,preKO)+_nextGamePredHtml+(hasNextPicks?picksHintFor('next'):'')+`</div>`+nextPicks+`<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">`+matchExtrasHtml(_nextUpcoming.f,'next')+`</div>`;
       }
     }
     if(!nextHtml) nextHtml = '<div style="font-size:.8rem;color:var(--text-muted);">All matches complete.</div>';
@@ -5444,8 +5447,8 @@ function _orTeamHtml(name,size){
   const s=size||'.6em';
   return `${t1}<br><span style="font-size:${s};color:var(--text-muted);line-height:2;">or</span><br>${t2}`;
 }
-function _pctTeamsHtml(f, scoreClass, scoreContent, mid){
-  const pct=_predPcts(mid);
+function _pctTeamsHtml(f, scoreClass, scoreContent, mid, noPct){
+  const pct=noPct?null:_predPcts(mid);
   const pctRow=pct?`<div class="hmc-pred-pct"><span class="hmc-pct">${pct.hp}%</span><span class="hmc-pct-draw">${pct.dp}% draw</span><span class="hmc-pct">${pct.ap}%</span></div>`:'';
   return `<div class="hmc-teams">
     <div class="hmc-team"><div class="hmc-flag">${f.hf}</div><div class="hmc-tname" style="line-height:1.3;">${_orTeamHtml(f.home)}</div></div>
@@ -5946,7 +5949,20 @@ async function checkForUpdate(){
       if(sbGen>0&&sbGen>parseInt(localStorage.getItem('frg_sb')||'0')){currentGroup={...currentGroup,force_refresh_gen:sbGen};show=true;}
     }catch(e){}
   }
-  if(show){const b=document.getElementById('update-banner');if(b)b.style.display='flex';}
+  if(show) showForceRefreshModal();
+}
+function showForceRefreshModal(){
+  if(document.getElementById('force-refresh-modal')) return;
+  const overlay=document.createElement('div');
+  overlay.id='force-refresh-modal';
+  overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+  overlay.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:340px;width:100%;padding:1.75rem 1.5rem;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.55);">
+    <div style="font-size:2rem;margin-bottom:.75rem;">⚡</div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:.04em;margin-bottom:.5rem;">New version available</div>
+    <div style="font-size:.83rem;color:var(--text-muted);line-height:1.55;margin-bottom:1.4rem;">A new update has been released. Please refresh to get the latest version.</div>
+    <button onclick="applyUpdateRefresh()" style="width:100%;padding:.75rem;background:var(--group-accent);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;letter-spacing:.03em;">Refresh now</button>
+  </div>`;
+  document.body.appendChild(overlay);
 }
 function dismissUpdateBanner(){
   if(_lastFrg>0) localStorage.setItem('frg',String(_lastFrg));
@@ -5954,7 +5970,7 @@ function dismissUpdateBanner(){
   const b=document.getElementById('update-banner');if(b)b.style.display='none';
 }
 function applyUpdateRefresh(){
-  // Write seen-markers synchronously before reload so banner doesn't reappear
+  // Write seen-markers synchronously before reload so modal doesn't reappear
   if(_lastFrg>0) localStorage.setItem('frg',String(_lastFrg));
   if(currentGroup?.force_refresh_gen) localStorage.setItem('frg_sb',String(currentGroup.force_refresh_gen));
   location.reload(true);
@@ -7505,6 +7521,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.13',date:'18 Jul 2026',notes:['Pre-kickoff pick privacy: Today\'s Fixtures card no longer shows group picks or pick percentages before a match kicks off — a "Picks will be visible after kick-off, in the interest of fairness" message appears in their place. Tapping a player on the leaderboard also hides their prediction for any fixture that hasn\'t yet kicked off, showing "Pick hidden until kick-off" instead.','Update prompt: when a new version is available the old dismissible pill banner is replaced by a blocking modal — players must tap "Refresh now" to continue, ensuring everyone picks up the latest version.']},
   {v:'1.79.12',date:'15 Jul 2026',notes:['Fixed the mathematical lock-in banner falsely declaring a leader "locked into 1st" while tied on points with another player — it was comparing the gap to 3rd place instead of recognising the tie, so a tied leader could wrongly show as unbeatable. Same fix applied to the last-place lock-in check.']},
   {v:'1.79.11',date:'15 Jul 2026',notes:['SPFL branding can now use an image instead of an emoji for the group icon — Admin → Branding (while on the SPFL side) has a new Icon Image field with a one-tap "Use SPFL Logo" button for the official Scottish Premiership crest.', 'News ticker is now separated per league (it\'s shown above every screen, so a World Cup ticker message was bleeding into SPFL screens and vice versa) — text/on/off/speed are all set independently per league from Admin → Controls → Display.', 'SPFL leaderboard now updates live — polls for new results every 20s (piggybacking on the existing VAR-watcher tick) and refreshes whichever SPFL screen is open the moment an admin enters/changes a score, instead of requiring a manual refresh.', 'SPFL leaderboard rows now show a small "+N" under the points total — the same idea as the World Cup leaderboard\'s per-matchday delta, showing how many points each player has earned so far in the current SPFL weekend.']},
   {v:'1.79.10',date:'15 Jul 2026',notes:['Admin settings are now properly separated between World Cup and SPFL: Branding (group name, tagline, icon, accent colour) is saved independently per league — editing it while viewing SPFL no longer touches the World Cup side and vice versa (site theme stays shared by design). Danger Zone now has its own SPFL section (Reset SPFL Results / Predictions / Master Reset) alongside the existing World Cup ones, since there was previously no way to wipe SPFL data at all. Players tab now shows SPFL prediction count, points and coin balance instead of World Cup stats when viewing it from the SPFL side. SPFL admin Results tab restyled to match the World Cup layout — weekend groups with a "Live Now" section and full match cards (score inputs, Full Time toggle, Clear) instead of a long flat list.\n\n⚠️ Requires a new Supabase column — run the new ALTER TABLE at the bottom of supabase/spfl_schema.sql: `ALTER TABLE groups ADD COLUMN IF NOT EXISTS settings_spfl jsonb DEFAULT \'{}\'::jsonb;`']},
@@ -13481,8 +13498,14 @@ async function viewPlayerPredictions(playerId,name){
     allFixtures().forEach(f=>{
       const p=predMap[f.id],r=rm[f.id];
       const ts=getMatchKickoff(f)?.getTime() ?? (f.date?new Date(f.date).getTime():0);
+      const _fko=getMatchKickoff(f);
+      const hasKickedOff=_fko?_fko.getTime()<=Date.now():!!r;
       if(!p){
-        if(!r) upcomingArr.push({f,ts}); // no prediction yet, no result yet — an upcoming fixture preview
+        if(!r) upcomingArr.push({f,ts,hasPred:false}); // no prediction yet, no result yet — an upcoming fixture preview
+        return;
+      }
+      if(!hasKickedOff){
+        upcomingArr.push({f,ts,hasPred:true}); // predicted but pre-kickoff — hide pick in the interest of fairness
         return;
       }
       const pts=r?calcPoints(p.h,p.a,r.home_score,r.away_score):null;
@@ -13504,10 +13527,13 @@ async function viewPlayerPredictions(playerId,name){
     rowsArr.sort((a,b)=>a.ts-b.ts); // oldest first — most recent finished game sits at the bottom
     upcomingArr.sort((a,b)=>a.ts-b.ts);
     const nextUpcoming = upcomingArr.slice(0,3);
-    const upcomingHtml = nextUpcoming.map(({f})=>{
+    const upcomingHtml = nextUpcoming.map(({f,hasPred})=>{
       const ko=getMatchKickoff(f);
       const koTxt = ko ? `${ko.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} ${ko.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}` : 'TBC';
-      return `<div class="pred-row pred-row-upcoming"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span><span style="color:var(--text-muted);font-size:.75rem;">${koTxt}</span></div>`;
+      const sub = hasPred
+        ? `<span style="color:var(--text-muted);font-size:.72rem;font-style:italic;">Pick hidden until kick-off</span>`
+        : `<span style="color:var(--text-muted);font-size:.75rem;">${koTxt}</span>`;
+      return `<div class="pred-row pred-row-upcoming"><span class="pred-match">${f.hf} ${f.home} v ${f.away} ${f.af}</span>${sub}</div>`;
     });
     const totalRowCount = rowsArr.length + nextUpcoming.length;
     // Chronological DOM order (oldest at top, newest + upcoming at bottom).
@@ -14702,7 +14728,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.12</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.13</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
