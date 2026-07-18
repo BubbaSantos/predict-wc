@@ -1411,7 +1411,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.16</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.17</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -7581,6 +7581,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.17',date:'18 Jul 2026',notes:['⚡ Double Points: after voting YES the card now just says "You\'re in!" instead of counting down how many players are still needed.']},
   {v:'1.79.16',date:'18 Jul 2026',notes:['⚡ Double Points card gets a wee taunt: "Go on Kaney, you wouldnae".']},
   {v:'1.79.15',date:'18 Jul 2026',notes:['⚡ Double Points VOTE YES button now triggers a crackling electric flash (shake + purple/gold glow bolts) on the card when you tap it.','Admin → Danger Zone · World Cup: new "Reset Double Points Vote" button — clears everyone\'s YES vote (and deactivates Double Points if it had been triggered) without touching any other predictions or results.']},
   {v:'1.79.14',date:'18 Jul 2026',notes:['New ⚡ Double Points home card: purple/gold themed card with a progress meter that fills as players vote YES. Only when every player has voted YES does it flip to an activated state (gold glow, "DOUBLE POINTS ACTIVATED"). Once activated the 3rd Place Play-off (m103) and Final (m104) score double points on the leaderboard — 8→16, 3→6. Individual vote is one-tap and permanent (no un-vote). Player predictions modal shows a ×2 badge on those matches when active.']},
@@ -9025,7 +9026,7 @@ function renderDoublePointsCard(dpVotes, allPlayers){
       <div class="dp-meter-track"><div class="dp-meter-fill" style="width:${pct}%;"></div></div>
       ${namesHtml}
       ${myVoted
-        ? `<div style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.35);border-radius:8px;padding:.6rem .9rem;font-size:.83rem;color:#a855f7;font-weight:700;text-align:center;">⚡ You're in — waiting for ${waiting} more…</div>`
+        ? `<div style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.35);border-radius:8px;padding:.6rem .9rem;font-size:.83rem;color:#a855f7;font-weight:700;text-align:center;">⚡ You're in!</div>`
         : `<button class="dp-vote-btn" onclick="castDoublePointsVote()">⚡ &nbsp;VOTE YES</button>`
       }`;
   }
@@ -14863,7 +14864,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.16</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.17</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
