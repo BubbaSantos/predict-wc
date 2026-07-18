@@ -682,7 +682,9 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
   .dp-meter-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#7c3aed,#a855f7,#eab308);transition:width .5s ease;}
   .dp-vote-btn{width:100%;padding:.75rem;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:800;cursor:pointer;letter-spacing:.06em;transition:transform .1s,box-shadow .1s;}
   .dp-vote-btn:active{transform:scale(.97);}
-  .dp-activated-box{background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(234,179,8,.18));border:1.5px solid rgba(234,179,8,.5);border-radius:10px;padding:1rem;text-align:center;animation:dpGlow 2s ease-in-out infinite alternate;}
+  .dp-activated-box{background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(234,179,8,.18));border:1.5px solid rgba(234,179,8,.5);border-radius:10px;padding:1rem;text-align:center;animation:dpGlow 2s ease-in-out infinite alternate;position:relative;z-index:1;}
+  .dp-spin-bg{position:absolute;inset:-60%;background:linear-gradient(135deg,rgba(168,85,247,.35) 0%,rgba(234,179,8,.22) 50%,rgba(168,85,247,.35) 100%);animation:dpBgSpin 14s linear infinite;z-index:0;pointer-events:none;}
+  @keyframes dpBgSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
   @keyframes dpElectrifyShake {
     0%,100%{transform:translate(0,0);}
     10%{transform:translate(-2px,1px);}
@@ -1411,7 +1413,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.17</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.18</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -1685,9 +1687,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
       </div>
 
       <!-- Double Points Vote -->
-      <div class="home-card" id="home-dp-card" style="background:linear-gradient(135deg,rgba(168,85,247,.18) 0%,rgba(234,179,8,.12) 100%),color-mix(in srgb,var(--bg) 97%,transparent);border:1px solid rgba(168,85,247,.45);text-align:center;">
-        <div class="home-card-title" style="color:#a855f7;">⚡ Double Points</div>
-        <div id="home-dp-content"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
+      <div class="home-card" id="home-dp-card" style="background:color-mix(in srgb,var(--bg) 97%,transparent);border:1px solid rgba(168,85,247,.45);text-align:center;position:relative;overflow:hidden;">
+        <div class="dp-spin-bg"></div>
+        <div class="home-card-title" style="color:#a855f7;position:relative;z-index:1;">⚡ Double Points</div>
+        <div id="home-dp-content" style="position:relative;z-index:1;"><div class="loading" style="font-size:.82rem;">Loading…</div></div>
       </div>
 
       <!-- Tournament Stats (off by default; admin enables in Controls → Display) -->
@@ -7581,6 +7584,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.18',date:'18 Jul 2026',notes:['⚡ Double Points card background now slowly spins — the purple/gold gradient rotates continuously behind the card content.']},
   {v:'1.79.17',date:'18 Jul 2026',notes:['⚡ Double Points: after voting YES the card now just says "You\'re in!" instead of counting down how many players are still needed.']},
   {v:'1.79.16',date:'18 Jul 2026',notes:['⚡ Double Points card gets a wee taunt: "Go on Kaney, you wouldnae".']},
   {v:'1.79.15',date:'18 Jul 2026',notes:['⚡ Double Points VOTE YES button now triggers a crackling electric flash (shake + purple/gold glow bolts) on the card when you tap it.','Admin → Danger Zone · World Cup: new "Reset Double Points Vote" button — clears everyone\'s YES vote (and deactivates Double Points if it had been triggered) without touching any other predictions or results.']},
@@ -14864,7 +14868,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.17</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.18</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
