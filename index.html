@@ -1411,7 +1411,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.20</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.21</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5406,7 +5406,7 @@ function renderMatchCardBody(){
       if(_nextUpcomingAll.length > 1){
         nextHtml += `<div class="hmc-label">${lbl}</div>`;
         const cn = _nextUpcomingAll.length, cnTN = cn+2;
-        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),preKO=!item.live&&!item.finished,np=preKO?(_matchPredsMap[nid]?.length?`<div class="hmc-others" style="font-style:italic;font-size:.72rem;opacity:.7;">Picks will be visible after kick-off, in the interest of fairness.</div>`:''):(_picksViewModeByCard.next==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item))),hnp=!preKO&&!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}<div class="hmc-tap-zone"${preKO?'':` onclick="togglePicksView('next')"`}><div class="hmc-match-header">${timer}</div>${_pctTeamsHtml(item.f,cls,sc,nid,preKO)}${_nextGamePredHtmlAll[ri]||''}${hnp?picksHintFor('next'):''}</div>${np}<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">${matchExtrasHtml(item.f,'next')}</div></div>`; };
+        const mkNuSlide = ri => { const item=_nextUpcomingAll[ri],nid=item.f.id,{timer,sc,cls}=nuItemHtml(item,nid),preKO=!item.live&&!item.finished&&!_adminSeesPrePicks(),np=preKO?(_matchPredsMap[nid]?.length?`<div class="hmc-others" style="font-style:italic;font-size:.72rem;opacity:.7;">Picks will be visible after kick-off, in the interest of fairness.</div>`:''):(_picksViewModeByCard.next==='grouped'?groupedPicksFor(item,nid):namedPicksHtml(nid,nuMode(item))),hnp=!preKO&&!!(_livePicksMap[nid]||(_matchPredsMap[nid]?.length));const _nbc=BROADCASTERS[nid],_nbcH=_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}" style="position:absolute;top:0;right:0;">${_nbc}</span>`:''; return `<div class="hmc-carousel-slide" style="width:${100/cnTN}%;position:relative;">${_nbcH}<div class="hmc-tap-zone"${preKO?'':` onclick="togglePicksView('next')"`}><div class="hmc-match-header">${timer}</div>${_pctTeamsHtml(item.f,cls,sc,nid,preKO)}${_nextGamePredHtmlAll[ri]||''}${hnp?picksHintFor('next'):''}</div>${np}<div class="hmc-tap-zone" onclick="toggleMatchExtras(event,'next')">${matchExtrasHtml(item.f,'next')}</div></div>`; };
         const nuSlides = [cn-1,...Array.from({length:cn},(_,i)=>i),0].map(mkNuSlide).join('');
         const pct = (_nextUpcomingIdx+1)*(100/cnTN);
         nextHtml += `<div class="hmc-carousel-wrap"><div class="hmc-carousel-track" id="hmc-carousel-track" data-rn="${cn}" style="width:${cnTN*100}%;transform:translateX(-${pct}%)">${nuSlides}</div></div>`;
@@ -5417,7 +5417,7 @@ function renderMatchCardBody(){
         const _nbc=BROADCASTERS[nextId];
         nextHtml += `<div class="hmc-label" style="display:flex;justify-content:space-between;align-items:center;">${lbl}${_nbc?`<span class="broadcaster-badge ${_nbc.toLowerCase()}">${_nbc}</span>`:''}</div>`;
         const {timer,sc,cls}=nuItemHtml(_nextUpcoming,nextId);
-        const preKO = !_nextUpcoming.live && !_nextUpcoming.finished;
+        const preKO = !_nextUpcoming.live && !_nextUpcoming.finished && !_adminSeesPrePicks();
         const nextPicks = preKO
           ? (_matchPredsMap[nextId]?.length ? `<div class="hmc-others" style="font-style:italic;font-size:.72rem;opacity:.7;">Picks will be visible after kick-off, in the interest of fairness.</div>` : '')
           : (_picksViewModeByCard.next==='grouped' ? groupedPicksFor(_nextUpcoming,nextId) : namedPicksHtml(nextId,nuMode(_nextUpcoming)));
@@ -5477,6 +5477,9 @@ function _hmcSyncWrapHeight(track, domIdx){
   wrap.style.height = slide.scrollHeight + 'px';
 }
 
+function _adminSeesPrePicks(){
+  return !!((currentPlayer && (currentPlayer.is_admin || currentPlayer.god_mode)) || _inGodSession);
+}
 function _predPcts(mid){
   const preds=_matchPredsMap[mid];
   if(!preds||!preds.length) return null;
@@ -5722,7 +5725,7 @@ function predPanelInnerHtml(mid){
   const now = Date.now();
   const isLive = !!(koMs && now>=koMs && now<koMs+130*60*1000);
   const mode = hasScore ? 'result' : isLive ? 'live' : 'upcoming';
-  if(mode==='upcoming'){
+  if(mode==='upcoming' && !_adminSeesPrePicks()){
     const fairnessMsg = _matchPredsMap[mid]?.length
       ? `<div class="hmc-others" style="font-style:italic;font-size:.72rem;opacity:.7;">Picks will be visible after kick-off, in the interest of fairness.</div>`
       : '';
@@ -7587,6 +7590,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.21',date:'18 Jul 2026',notes:['Admins (and God Mode) can now see everyone\'s picks before kick-off — on the Home fixtures card, the Predict page and the leaderboard\'s player predictions view. Regular players still see the "hidden until kick-off" fairness message.']},
   {v:'1.79.20',date:'18 Jul 2026',notes:['Pre-kickoff pick privacy on the Predict page: tapping a fixture card that hasn\'t kicked off no longer reveals everyone\'s exact picks or the home/draw/away split — shows "Picks will be visible after kick-off, in the interest of fairness" instead, matching the behaviour already in place on the Home fixtures card and leaderboard.']},
   {v:'1.79.19',date:'18 Jul 2026',notes:['Reverted the spinning gradient background on the ⚡ Double Points card — didn\'t land well, back to the static purple/gold gradient.']},
   {v:'1.79.17',date:'18 Jul 2026',notes:['⚡ Double Points: after voting YES the card now just says "You\'re in!" instead of counting down how many players are still needed.']},
@@ -13643,7 +13647,7 @@ async function viewPlayerPredictions(playerId,name){
         if(!r) upcomingArr.push({f,ts,hasPred:false}); // no prediction yet, no result yet — an upcoming fixture preview
         return;
       }
-      if(!hasKickedOff){
+      if(!hasKickedOff && !_adminSeesPrePicks()){
         upcomingArr.push({f,ts,hasPred:true}); // predicted but pre-kickoff — hide pick in the interest of fairness
         return;
       }
@@ -14872,7 +14876,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.20</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.21</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
