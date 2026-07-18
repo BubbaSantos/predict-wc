@@ -1411,7 +1411,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.19</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.20</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -5722,6 +5722,12 @@ function predPanelInnerHtml(mid){
   const now = Date.now();
   const isLive = !!(koMs && now>=koMs && now<koMs+130*60*1000);
   const mode = hasScore ? 'result' : isLive ? 'live' : 'upcoming';
+  if(mode==='upcoming'){
+    const fairnessMsg = _matchPredsMap[mid]?.length
+      ? `<div class="hmc-others" style="font-style:italic;font-size:.72rem;opacity:.7;">Picks will be visible after kick-off, in the interest of fairness.</div>`
+      : '';
+    return fairnessMsg + matchExtrasHtml(fx);
+  }
   const pct = _predPcts(mid);
   const pctHtml = pct ? `<div class="pred-card-pct-row"><span class="pred-card-pct">${pct.hp}%</span><span class="pred-card-pct-draw">${pct.dp}% draw</span><span class="pred-card-pct">${pct.ap}%</span></div>` : '';
   return pctHtml + namedPicksHtml(mid, mode) + matchExtrasHtml(fx);
@@ -7581,6 +7587,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.20',date:'18 Jul 2026',notes:['Pre-kickoff pick privacy on the Predict page: tapping a fixture card that hasn\'t kicked off no longer reveals everyone\'s exact picks or the home/draw/away split — shows "Picks will be visible after kick-off, in the interest of fairness" instead, matching the behaviour already in place on the Home fixtures card and leaderboard.']},
   {v:'1.79.19',date:'18 Jul 2026',notes:['Reverted the spinning gradient background on the ⚡ Double Points card — didn\'t land well, back to the static purple/gold gradient.']},
   {v:'1.79.17',date:'18 Jul 2026',notes:['⚡ Double Points: after voting YES the card now just says "You\'re in!" instead of counting down how many players are still needed.']},
   {v:'1.79.16',date:'18 Jul 2026',notes:['⚡ Double Points card gets a wee taunt: "Go on Kaney, you wouldnae".']},
@@ -14865,7 +14872,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.19</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.20</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
