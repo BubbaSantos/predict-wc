@@ -683,6 +683,35 @@ body.predict-scroll-lock{height:100dvh;overflow:hidden;}
   .dp-vote-btn{width:100%;padding:.75rem;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:800;cursor:pointer;letter-spacing:.06em;transition:transform .1s,box-shadow .1s;}
   .dp-vote-btn:active{transform:scale(.97);}
   .dp-activated-box{background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(234,179,8,.18));border:1.5px solid rgba(234,179,8,.5);border-radius:10px;padding:1rem;text-align:center;animation:dpGlow 2s ease-in-out infinite alternate;}
+  @keyframes dpElectrifyShake {
+    0%,100%{transform:translate(0,0);}
+    10%{transform:translate(-2px,1px);}
+    20%{transform:translate(2px,-1px);}
+    30%{transform:translate(-3px,0);}
+    40%{transform:translate(3px,1px);}
+    50%{transform:translate(-1px,-2px);}
+    60%{transform:translate(1px,2px);}
+    70%{transform:translate(-2px,-1px);}
+    80%{transform:translate(2px,1px);}
+    90%{transform:translate(-1px,0);}
+  }
+  @keyframes dpElectrifyGlow {
+    0%,100%{box-shadow:0 0 0 rgba(168,85,247,0),0 0 0 rgba(234,179,8,0);}
+    15%{box-shadow:0 0 18px 4px rgba(168,85,247,.95),0 0 34px 8px rgba(234,179,8,.6);}
+    30%{box-shadow:0 0 4px 1px rgba(234,179,8,.5);}
+    45%{box-shadow:0 0 26px 6px rgba(234,179,8,1),0 0 46px 12px rgba(168,85,247,.8);}
+    60%{box-shadow:0 0 6px 1px rgba(168,85,247,.6);}
+    75%{box-shadow:0 0 20px 5px rgba(168,85,247,.9),0 0 36px 9px rgba(234,179,8,.65);}
+    90%{box-shadow:0 0 3px rgba(234,179,8,.4);}
+  }
+  .dp-electrify{position:relative;animation:dpElectrifyShake .55s steps(2,end),dpElectrifyGlow .55s steps(2,end);will-change:transform,box-shadow;}
+  .dp-electrify::before{content:'⚡';position:absolute;font-size:1.6rem;opacity:0;pointer-events:none;animation:dpSparkPop .55s ease-out;left:50%;top:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 6px #eab308);}
+  @keyframes dpSparkPop {
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-10deg);}
+    30%{opacity:1;transform:translate(-50%,-70%) scale(1.6) rotate(8deg);}
+    60%{opacity:1;transform:translate(-50%,-90%) scale(1.3) rotate(-6deg);}
+    100%{opacity:0;transform:translate(-50%,-120%) scale(.9) rotate(0deg);}
+  }
   @keyframes bounceIn { 0%{transform:translateY(-6px);opacity:0} 60%{transform:translateY(3px)} 100%{transform:translateY(0);opacity:1} }
 
   /* Landing cards animate in */
@@ -1382,7 +1411,7 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
 <div id="scotland-banner-top"></div>
 <div id="scotland-banner-bottom"></div>
 <div id="screen-landing">
-<div class="ver-chip" onclick="versionClick(event)">v1.79.14</div>
+<div class="ver-chip" onclick="versionClick(event)">v1.79.15</div>
   <div class="landing">
     <div class="landing-logo" onclick="window.location.reload(true)" style="cursor:pointer;white-space:nowrap;" title="Tap to refresh">⚽ Predictor</div>
     <div class="landing-sub">World Cup 2026</div>
@@ -2395,6 +2424,10 @@ nav button:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
             <div style="border-top:1px solid var(--border);padding-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
               <div><div style="font-size:.875rem;font-weight:600;">Reset All Predictions</div><div style="font-size:.75rem;color:var(--text-muted);">Wipes all predictions. Results kept.</div></div>
               <button class="danger-btn" onclick="confirmReset('predictions')">Reset Predictions</button>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+              <div><div style="font-size:.875rem;font-weight:600;">Reset Double Points Vote</div><div style="font-size:.75rem;color:var(--text-muted);">Clears everyone's ⚡ Double Points YES votes. Everything else kept.</div></div>
+              <button class="danger-btn" onclick="confirmReset('dp_votes')">Reset DP Vote</button>
             </div>
             <div style="border-top:1px solid var(--border);padding-top:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
               <div><div style="font-size:.875rem;font-weight:600;">Full Master Reset</div><div style="font-size:.75rem;color:var(--text-muted);">Wipes everything.</div></div>
@@ -7548,6 +7581,7 @@ async function resetPlayerHomeCardOrder(){
   }catch(e){ flash('Error saving: '+e.message, 'error'); }
 }
 const CHANGELOG = [
+  {v:'1.79.15',date:'18 Jul 2026',notes:['⚡ Double Points VOTE YES button now triggers a crackling electric flash (shake + purple/gold glow bolts) on the card when you tap it.','Admin → Danger Zone · World Cup: new "Reset Double Points Vote" button — clears everyone\'s YES vote (and deactivates Double Points if it had been triggered) without touching any other predictions or results.']},
   {v:'1.79.14',date:'18 Jul 2026',notes:['New ⚡ Double Points home card: purple/gold themed card with a progress meter that fills as players vote YES. Only when every player has voted YES does it flip to an activated state (gold glow, "DOUBLE POINTS ACTIVATED"). Once activated the 3rd Place Play-off (m103) and Final (m104) score double points on the leaderboard — 8→16, 3→6. Individual vote is one-tap and permanent (no un-vote). Player predictions modal shows a ×2 badge on those matches when active.']},
   {v:'1.79.13',date:'18 Jul 2026',notes:['Pre-kickoff pick privacy: Today\'s Fixtures card no longer shows group picks or pick percentages before a match kicks off — a "Picks will be visible after kick-off, in the interest of fairness" message appears in their place. Tapping a player on the leaderboard also hides their prediction for any fixture that hasn\'t yet kicked off, showing "Pick hidden until kick-off" instead.','Update prompt: when a new version is available the old dismissible pill banner is replaced by a blocking modal — players must tap "Refresh now" to continue, ensuring everyone picks up the latest version.']},
   {v:'1.79.12',date:'15 Jul 2026',notes:['Fixed the mathematical lock-in banner falsely declaring a leader "locked into 1st" while tied on points with another player — it was comparing the gap to 3rd place instead of recognising the tie, so a tied leader could wrongly show as unbeatable. Same fix applied to the last-place lock-in check.']},
@@ -8996,6 +9030,13 @@ function renderDoublePointsCard(dpVotes, allPlayers){
 }
 async function castDoublePointsVote(){
   if(!currentPlayer||!currentGroup) return;
+  const card=document.getElementById('home-dp-card');
+  if(card){
+    card.classList.remove('dp-electrify');
+    void card.offsetWidth; // restart animation
+    card.classList.add('dp-electrify');
+    setTimeout(()=>card.classList.remove('dp-electrify'),600);
+  }
   const el=document.getElementById('home-dp-content');
   if(el) el.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);text-align:center;padding:.5rem;">Saving…</div>';
   try{
@@ -13974,6 +14015,7 @@ function confirmReset(type){
       results:{icon:'📋',title:'Reset All Results',body:'Delete all World Cup scores? The leaderboard resets to zero. Predictions are kept.',label:'Reset Results'},
       predictions:{icon:'🗑️',title:'Reset All Predictions',body:'Wipe every World Cup prediction? Cannot be undone.',label:'Reset Predictions'},
       all:{icon:'💥',title:'Master Reset',body:'Delete everything World Cup — predictions, results, and tie-breaks. Cannot be undone.',label:'Yes, Reset Everything'},
+      dp_votes:{icon:'⚡',title:'Reset Double Points Vote',body:'Clear every player\'s ⚡ Double Points YES vote? The meter goes back to 0 and Double Points is deactivated if it had been triggered. Cannot be undone.',label:'Reset DP Vote'},
       spfl_results:{icon:'📋',title:'Reset SPFL Results',body:'Delete all SPFL scores? The SPFL leaderboard resets to zero. Predictions are kept.',label:'Reset SPFL Results'},
       spfl_predictions:{icon:'🗑️',title:'Reset SPFL Predictions',body:'Wipe every SPFL prediction, plus everyone\'s coins and powerups? Cannot be undone.',label:'Reset SPFL Predictions'},
       spfl_all:{icon:'💥',title:'SPFL Master Reset',body:'Delete everything SPFL — predictions, results, coins and powerups. Cannot be undone.',label:'Yes, Reset Everything'},
@@ -13988,6 +14030,7 @@ async function doReset(type){
     if(type==='results'||type==='all') ops.push(sb(`results?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='predictions'||type==='all') ops.push(sb(`predictions?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='predictions'||type==='all') ops.push(sb(`tiebreaks?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
+    if(type==='dp_votes') ops.push(sb(`predictions?group_id=eq.${currentGroup.id}&match_id=eq.dp-yes`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='spfl_results'||type==='spfl_all') ops.push(sb(`spfl_results?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='spfl_predictions'||type==='spfl_all') ops.push(sb(`spfl_predictions?group_id=eq.${currentGroup.id}`,{method:'DELETE',prefer:'return=minimal'}));
     if(type==='spfl_predictions'||type==='spfl_all') ops.push(sb(`spfl_player_state?group_id=eq.${currentGroup.id}`,{method:'PATCH',prefer:'return=minimal',body:{coins:0,free_double_used:false,powerups:[]}}));
@@ -14818,7 +14861,7 @@ const _sbOrig = window.sb || null;
 // Admin can log in via join group using admin password as PIN
 // (handled in loginPlayer — if pin matches admin_password, set isAdmin=true)
 </script>
-<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.14</div>
+<div id="ver-btn" class="ver-chip" onclick="versionClick(event)">v1.79.15</div>
 <div id="update-banner"><span>⚡ New version available</span><div style="display:flex;gap:.5rem;"><button onclick="applyUpdateRefresh()">Refresh now</button><button onclick="dismissUpdateBanner()" style="background:rgba(255,255,255,.1);padding:.3rem .5rem;">✕</button></div></div>
 </body>
 </html>
