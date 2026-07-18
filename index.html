@@ -7436,7 +7436,11 @@ function isHomeCardHiddenByPlayer(key){
 function applyHomeCardOrder(){
   const homeView = document.getElementById('view-home');
   if(!homeView || !currentGroup) return;
+  // Double Points card is always pinned first, above everything else
+  const dpCardEl = document.getElementById('home-dp-card');
+  if(dpCardEl) homeView.insertBefore(dpCardEl, homeView.firstChild);
   getHomeCardOrder().forEach(key=>{
+    if(key==='double_points') return; // already pinned
     const def = HOME_CARD_DEFS.find(c=>c.key===key);
     if(def){ const el=document.getElementById(def.id); if(el) homeView.appendChild(el); }
   });
